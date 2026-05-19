@@ -5,6 +5,9 @@
 Memora helps you keep what you've already learned alive, in three rhythms:
 **Scan → Reinforcement → Focus**. A few minutes a day. No streaks. No noise.
 
+> **Naming note.** "Memora" is a working codename. The final consumer-facing
+> name is not yet chosen. See [`docs/PRODUCT.md`](docs/PRODUCT.md).
+
 ## Stack
 
 | Layer | Tech |
@@ -16,10 +19,10 @@ Memora helps you keep what you've already learned alive, in three rhythms:
 | Animations | Reanimated 4 + Moti |
 | Icons | lucide-react-native |
 | Fonts | Inter (400/500/600/700) via `@expo-google-fonts/inter` |
-| Auth & DB | Supabase (Auth + Postgres + Storage + Edge Functions) |
+| Auth & DB | Supabase — Auth + Postgres + Storage + Edge Functions |
 | Payments | Wix Payments (web checkout, Spotify-style pattern) |
-| Push | Expo Notifications |
-| Monitoring | Sentry |
+| Push | Expo Notifications (Phase 4) |
+| Monitoring | Sentry (Phase 4) |
 
 ## Getting started
 
@@ -38,9 +41,26 @@ npm start
 
 Open the QR code with **Expo Go** on iOS or Android.
 
-> Without a `.env` the app boots in **offline demo mode**: the two demo accounts
-> from the login screen (`angelo.casula@gmail.com` user · `maurizio.cocco@memora.app` admin)
-> work locally with any password. Set the Supabase env vars to switch to real auth.
+> Without a `.env`, the app boots in **offline demo mode**: the two demo accounts
+> from the login screen (`angelo.casula@gmail.com` user ·
+> `maurizio.cocco@memora.app` admin) work locally with any password. Set the
+> Supabase env vars to switch to real auth. You can also force demo mode with
+> `EXPO_PUBLIC_DEMO_MODE=true` even when creds are present.
+
+## Where to read next
+
+- [`AGENTS.md`](AGENTS.md) — operating manual for AI agents working in this repo
+- [`docs/PRODUCT.md`](docs/PRODUCT.md) — what we're building, for whom, and why
+- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — stack, layering, data flow
+- [`docs/DATA-MODEL.md`](docs/DATA-MODEL.md) — Supabase schema and RLS
+- [`docs/DESIGN-SYSTEM.md`](docs/DESIGN-SYSTEM.md) — colors, type, components
+- [`docs/ROUTING.md`](docs/ROUTING.md) — Expo Router file map
+- [`docs/SRS.md`](docs/SRS.md) — the spaced-repetition algorithm
+- [`docs/PAYMENTS.md`](docs/PAYMENTS.md) — Wix Payments flow, Spotify pattern
+- [`docs/ROADMAP.md`](docs/ROADMAP.md) — phase-by-phase scope and acceptance
+- [`docs/CONTRIBUTING.md`](docs/CONTRIBUTING.md) — branches, commits, code style
+- [`docs/DEPLOY.md`](docs/DEPLOY.md) — EAS Build, TestFlight, Play Internal
+- [`docs/TROUBLESHOOTING.md`](docs/TROUBLESHOOTING.md) — common issues
 
 ## Project layout
 
@@ -54,43 +74,29 @@ app/                       Expo Router routes (file-based)
     knowledge.tsx          Folders list (Phase 2)
     health.tsx             Memory health (Phase 2)
     settings.tsx           Settings + sign out
-  (admin)/home.tsx         Admin panel (Phase 4)
+  (admin)/home.tsx         Admin panel home (Phase 4)
 
 components/                Cross-screen UI primitives
-  Mascot.tsx               Brand mascot image wrapper
-  ScreenStub.tsx           Editorial header shell for Phase 1 stubs
-
-lib/
-  supabase.ts              Supabase client (auto-falls-back to demo mode)
-  auth-store.ts            Zustand auth store (Supabase + offline demo)
-
+lib/                       Supabase client, Zustand stores, infra
 theme/tokens.ts            Color / radius / layer tokens (mirrors Tailwind)
 tailwind.config.js         Design system colors + type scale + radii
 global.css                 NativeWind entry
+supabase/                  Versioned database (config + migrations)
+docs/                      Architectural documentation
+assets/brand/              Mascot, icon, logo
 ```
-
-## Design contract
-
-Visual design lives in the **Editorial direction** mocked up in Claude Design.
-See the chat transcript and HTML mockup bundled under `_design_drop/memora/` in
-the repo root (one level up from this app) for source-of-truth visuals.
-
-**Design system finalised**
-- Font: Inter 400 / 500 / 600 / 700, tabular figures on numbers
-- Palette: navy `#1A2C4F`, scan `#6DA8E5`, reinforcement `#9B8CE8`, focus `#1A2C4F`, active `#3EC07B`, fading `#F5A89C`, archived `#C5C3BE`
-- Card radius 14px, hairline borders `rgba(26,44,79,0.08)`
-- Monochrome 1.75px stroke icons (Lucide)
-- Layer order **Scan → Reinforcement → Focus** (do not reorder)
 
 ## Roadmap
 
-| Phase | Scope |
-|---|---|
-| ✅ 1 | Foundation — Expo + Supabase wiring, login with demo accounts, tab bar shell |
-| 2 | User screens — onboarding, Today, Knowledge, folder details, Add, Health, Settings |
-| 3 | Review engine — SRS algorithm, Scan / Reinforcement / Focus, Complete |
-| 4 | Admin panel + Wix Payments + push + store builds |
+| Phase | Scope | Status |
+|---|---|---|
+| 1 | Foundation — Expo + Supabase wiring, login with demo accounts, tab bar shell, schema | ✅ Done |
+| 2 | User screens — onboarding, Today, Knowledge, folder details, Add, Health, Settings | Next |
+| 3 | Review engine — SRS scheduler + Scan / Reinforcement / Focus + Complete | After Phase 2 |
+| 4 | Admin panel + Wix Payments + push + store builds | After Phase 3 |
+
+See [`docs/ROADMAP.md`](docs/ROADMAP.md) for acceptance criteria per phase.
 
 ## License
 
-Proprietary. © Memora / Tailor App Studio. All rights reserved.
+Proprietary. © Tailor App Studio. All rights reserved.
