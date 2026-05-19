@@ -13,6 +13,25 @@ npm start -- --clear
 
 If that doesn't fix it, also delete `.expo/` and rerun.
 
+## Metro 500 error: "Cannot find module 'babel-preset-expo'"
+
+Seen on first run with Expo SDK 54. The `babel.config.js` references
+`babel-preset-expo` but it isn't included as a direct dependency of the
+generated project.
+
+```bash
+npx expo install babel-preset-expo
+# verify SDK-compatible version (should be ~54.0.10 for SDK 54)
+node -e "console.log(require('babel-preset-expo/package.json').version)"
+# if it installed a newer major (e.g. 55.x), pin it:
+npm install --save-dev babel-preset-expo@~54.0.10 --legacy-peer-deps
+```
+
+Then restart with cache cleared:
+```bash
+npx expo start --port <free-port> --clear
+```
+
 ## NativeWind classes aren't applying
 
 Three usual causes, in order of likelihood:
