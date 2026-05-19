@@ -14,7 +14,6 @@ import { router } from "expo-router";
 import { TopBar } from "@/components/TopBar";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { GhostButton } from "@/components/GhostButton";
-import { Toast } from "@/components/Toast";
 import {
   ADD_PREVIEW_BY_KIND,
   FOLDER_LABELS,
@@ -32,9 +31,7 @@ export default function AddScreen() {
   const [text, setText] = useState("");
   const [dailyCount, setDailyCount] = useState(12);
   const dailyMax = 20;
-  const toast = useUIStore((s) => s.toast);
   const showToast = useUIStore((s) => s.showToast);
-  const hideToast = useUIStore((s) => s.hideToast);
 
   // Reset type when folder changes if current type isn't valid for the new folder
   useEffect(() => {
@@ -55,7 +52,8 @@ export default function AddScreen() {
     if (addAnother) {
       setText("");
     } else {
-      setTimeout(() => router.back(), 600);
+      // Toast is rendered at the root layout — it survives this unmount.
+      router.back();
     }
   };
 
@@ -336,7 +334,6 @@ export default function AddScreen() {
         </View>
       </KeyboardAvoidingView>
 
-      <Toast message={toast} onDismiss={hideToast} />
     </SafeAreaView>
   );
 }

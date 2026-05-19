@@ -23,7 +23,12 @@ export const colors = {
   // Memory states.
   active: "#3EC07B",
   fading: "#F5A89C",
-  archived: "#C5C3BE",
+  /**
+   * Single canonical "archived" grey used everywhere: RetentionBar segment,
+   * StatBlock dot, FilterChip dot, HealthRow ring, ItemRow dot. Do NOT
+   * introduce another grey for this concept.
+   */
+  archived: "#9C9C95",
   // Semantic.
   danger: "#B04A38",
   dangerSoft: "#FDEEEA",
@@ -46,10 +51,28 @@ export const palette = {
 export const radii = {
   tag: 6,
   input: 12,
-  cta: 13,
+  /**
+   * CTA radius matches `card` (14) per mockup. Previously 13 — drift
+   * from the design. Don't reintroduce the asymmetry.
+   */
+  cta: 14,
   card: 14,
   chip: 10,
+  filter: 8,
   pill: 999,
+} as const;
+
+/**
+ * Soft layer-tint backgrounds — used on tinted "Folder" pills above the
+ * term in review screens, layer pip backgrounds in onboarding, and
+ * handoff next-layer hero. Kept centralized so the three tints can't drift.
+ */
+export const layerTint = {
+  scan: "#E6F0FA",
+  reinforcement: "#F1EEFC",
+  focus: "#EDF0F6",
+  /** Scan reveal panel — paler blue than the pill background. */
+  scanReveal: "#EDF4FB",
 } as const;
 
 export const layer = {

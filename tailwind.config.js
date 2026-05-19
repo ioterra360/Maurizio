@@ -47,7 +47,7 @@ module.exports = {
         caption: ["12px", { lineHeight: "16px" }],
         body: ["13.5px", { lineHeight: "20px" }],
         "body-lg": ["14.5px", { lineHeight: "22px" }],
-        cta: ["15px", { lineHeight: "20px", letterSpacing: "-0.01em" }],
+        cta: ["16px", { lineHeight: "22px", letterSpacing: "-0.01em" }],
         h2: ["19px", { lineHeight: "24px", letterSpacing: "-0.02em" }],
         h1: ["30px", { lineHeight: "33px", letterSpacing: "-0.03em" }],
         display: ["44px", { lineHeight: "48px", letterSpacing: "-0.035em" }],
@@ -55,9 +55,10 @@ module.exports = {
       borderRadius: {
         tag: "6px",
         input: "12px",
-        cta: "13px",
+        cta: "14px",
         card: "14px",
         chip: "10px",
+        filter: "8px",
         pill: "999px",
       },
       boxShadow: {

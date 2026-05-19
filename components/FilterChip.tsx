@@ -20,7 +20,7 @@ export function FilterChip({ label, count, active, dot, onPress }: Props) {
       accessibilityRole="button"
       accessibilityLabel={`Filter ${label}, ${count} items`}
       accessibilityState={{ selected: active }}
-      className="flex-row items-center rounded-chip"
+      className="flex-row items-center rounded-filter"
       style={({ pressed }) => ({
         height: 32,
         paddingHorizontal: 12,

@@ -42,7 +42,7 @@ export function Toast({ message, onDismiss, durationMs = 1800 }: Props) {
 
   const animatedStyle = useAnimatedStyle(() => ({
     opacity: opacity.value,
-    transform: [{ translateX: -120 }, { translateY: translateY.value }],
+    transform: [{ translateY: translateY.value }],
   }));
 
   if (!message) return null;
@@ -54,6 +54,7 @@ export function Toast({ message, onDismiss, durationMs = 1800 }: Props) {
         {
           position: "absolute",
           left: "50%",
+          marginLeft: -120, // half of the 240 width — centers the pill
           bottom: 110,
           width: 240,
           paddingVertical: 12,

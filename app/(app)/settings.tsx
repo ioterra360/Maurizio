@@ -137,7 +137,7 @@ export default function SettingsScreen() {
               fontFamily: FONT.bold,
               fontSize: 10.5,
               color: colors.fading,
-              letterSpacing: 1.4,
+              letterSpacing: 1.05, // 0.1em on 10.5px (was 1.4 = too wide)
               textTransform: "uppercase",
             }}
           >
@@ -147,7 +147,7 @@ export default function SettingsScreen() {
         <View style={{ paddingHorizontal: 16, gap: 8 }}>
           <Pressable
             onPress={handleSignOut}
-            className="rounded-card bg-surface"
+            className="rounded-input bg-surface"
             style={({ pressed }) => ({
               paddingHorizontal: 16,
               paddingVertical: 14,
@@ -181,7 +181,7 @@ export default function SettingsScreen() {
 
           <Pressable
             onPress={() => setConfirmDelete(true)}
-            className="rounded-card bg-surface"
+            className="rounded-input bg-surface"
             style={({ pressed }) => ({
               paddingHorizontal: 16,
               paddingVertical: 14,
@@ -194,7 +194,7 @@ export default function SettingsScreen() {
               style={{
                 fontFamily: FONT.semibold,
                 fontSize: 14,
-                color: "#B04A38",
+                color: colors.danger,
                 letterSpacing: -0.07,
               }}
             >
@@ -223,12 +223,25 @@ export default function SettingsScreen() {
         animationType="slide"
         onRequestClose={() => setConfirmDelete(false)}
       >
-        <Pressable
-          onPress={() => setConfirmDelete(false)}
-          style={{ flex: 1, backgroundColor: "rgba(15,27,51,0.32)", justifyContent: "flex-end" }}
-        >
+        {/* Backdrop and sheet are SIBLINGS, not nested. React Native's
+            Pressable does not honor synthetic e.stopPropagation(), so a
+            nested-pressable approach would dismiss the sheet on any tap
+            inside it. Here only the backdrop receives taps to close. */}
+        <View style={{ flex: 1, justifyContent: "flex-end" }}>
           <Pressable
-            onPress={(e) => e.stopPropagation()}
+            accessibilityRole="button"
+            accessibilityLabel="Close"
+            onPress={() => setConfirmDelete(false)}
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: "rgba(15,27,51,0.32)",
+            }}
+          />
+          <View
             style={{
               backgroundColor: colors.warmWhite,
               borderTopLeftRadius: 22,
@@ -280,7 +293,7 @@ export default function SettingsScreen() {
               <PrimaryButton
                 label="Yes, delete everything"
                 onPress={() => setConfirmDelete(false)}
-                style={{ backgroundColor: colors.fading }}
+                style={{ backgroundColor: colors.danger }}
               />
               <GhostButton
                 label="Cancel"
@@ -288,8 +301,8 @@ export default function SettingsScreen() {
                 variant="link"
               />
             </View>
-          </Pressable>
-        </Pressable>
+          </View>
+        </View>
       </Modal>
     </SafeAreaView>
   );

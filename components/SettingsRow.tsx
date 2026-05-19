@@ -11,23 +11,49 @@ type RowProps = {
 
 /**
  * Settings list row: label on the left, optional hint underneath,
- * value on the right. Tappable when an onPress is given.
+ * value on the right. Tappable when an onPress is given; otherwise
+ * renders a non-interactive View (no pressed feedback).
  */
 export function SettingsRow({ label, hint, value, onPress }: RowProps) {
-  const Wrapper: any = onPress ? Pressable : View;
+  if (onPress) {
+    return (
+      <Pressable
+        onPress={onPress}
+        accessibilityRole="button"
+        accessibilityLabel={label}
+        className="flex-row items-center justify-between rounded-chip bg-surface"
+        style={({ pressed }) => ({
+          paddingHorizontal: 16,
+          paddingVertical: 13,
+          gap: 12,
+          borderWidth: 1,
+          borderColor: colors.hairline,
+          opacity: pressed ? 0.85 : 1,
+        })}
+      >
+        <RowBody label={label} hint={hint} value={value} />
+      </Pressable>
+    );
+  }
   return (
-    <Wrapper
-      onPress={onPress}
+    <View
       className="flex-row items-center justify-between rounded-chip bg-surface"
-      style={({ pressed }: { pressed?: boolean }) => ({
+      style={{
         paddingHorizontal: 16,
         paddingVertical: 13,
         gap: 12,
         borderWidth: 1,
         borderColor: colors.hairline,
-        opacity: pressed ? 0.85 : 1,
-      })}
+      }}
     >
+      <RowBody label={label} hint={hint} value={value} />
+    </View>
+  );
+}
+
+function RowBody({ label, hint, value }: Omit<RowProps, "onPress">) {
+  return (
+    <>
       <View className="flex-1" style={{ minWidth: 0 }}>
         <Text
           className="text-navy"
@@ -56,7 +82,7 @@ export function SettingsRow({ label, hint, value, onPress }: RowProps) {
           {value}
         </Text>
       ) : null}
-    </Wrapper>
+    </>
   );
 }
 

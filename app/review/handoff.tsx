@@ -1,89 +1,103 @@
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { router, useFocusEffect } from "expo-router";
-import { Radar, Repeat, Target, type LucideIcon } from "lucide-react-native";
+import { Check } from "lucide-react-native";
+import { router } from "expo-router";
 
 import { PrimaryButton } from "@/components/PrimaryButton";
+import { LayerCard } from "@/components/LayerCard";
 import { useReviewStore } from "@/lib/review-store";
 import { FONT, colors, layer as layerTokens, type LayerKey } from "@/theme/tokens";
-
-const ICONS: Record<LayerKey, LucideIcon> = {
-  scan: Radar,
-  reinforcement: Repeat,
-  focus: Target,
-};
 
 export default function ReviewHandoffScreen() {
   const layer = useReviewStore((s) => s.layer);
   const setLayer = useReviewStore((s) => s.setLayer);
-  // After we get here the store still says the layer we just finished;
-  // figure out the next one and trigger the layer reset.
-  const nextLayer: LayerKey =
-    layer === "scan" ? "reinforcement" : layer === "reinforcement" ? "focus" : "focus";
 
-  const { color, label } = layerTokens[nextLayer];
-  const Icon = ICONS[nextLayer];
+  // The store's `layer` still holds the layer we just finished.
+  const nextLayer: LayerKey | null =
+    layer === "scan" ? "reinforcement" :
+    layer === "reinforcement" ? "focus" :
+    null;
 
+  // Defensive: if we somehow land here on focus, go straight to complete.
+  // (Don't pretend "next layer is focus" when we just finished focus.)
+  useEffect(() => {
+    if (!nextLayer) router.replace("/review/complete");
+  }, [nextLayer]);
+
+  const ranRef = useRef(false);
   const goNext = useCallback(() => {
+    if (ranRef.current || !nextLayer) return;
+    ranRef.current = true;
     setLayer(nextLayer);
     if (nextLayer === "reinforcement") router.replace("/review/reinforcement");
     else router.replace("/review/focus");
   }, [setLayer, nextLayer]);
 
-  useEffect(() => {
-    const t = setTimeout(goNext, 2200);
-    return () => clearTimeout(t);
-  }, [goNext]);
+  if (!nextLayer) return null;
+
+  const finishedLabel = layerTokens[layer].label;
+  const next = layerTokens[nextLayer];
+  const outgoingColor = layerTokens[layer].color;
 
   return (
     <SafeAreaView className="flex-1 bg-warm-white" edges={["top"]}>
-      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 28 }}>
+      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 26 }}>
+        {/* Green check badge */}
+        <View
+          style={{
+            width: 64,
+            height: 64,
+            borderRadius: 32,
+            backgroundColor: "#E7F5EE",
+            alignItems: "center",
+            justifyContent: "center",
+            shadowColor: colors.active,
+            shadowOpacity: 0.18,
+            shadowOffset: { width: 0, height: 10 },
+            shadowRadius: 20,
+            elevation: 3,
+          }}
+        >
+          <Check size={28} color={colors.active} strokeWidth={2.4} />
+        </View>
+
+        {/* Outgoing layer done caption */}
         <Text
           style={{
-            fontFamily: FONT.semibold,
+            marginTop: 24,
+            fontFamily: FONT.bold,
             fontSize: 11,
-            color: colors.midGrey,
-            letterSpacing: 1.4,
+            color: outgoingColor,
+            letterSpacing: 1.32,
             textTransform: "uppercase",
           }}
         >
-          {layer === "scan" ? "Scan done" : "Reinforcement done"} · on to {label}
+          {finishedLabel} done
         </Text>
 
-        <View
-          style={{
-            marginTop: 28,
-            width: 88,
-            height: 88,
-            borderRadius: 24,
-            backgroundColor: color === colors.focus ? colors.tagUserBg : color === colors.reinforcement ? "#F1EEFC" : "#E6F0FA",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <Icon size={42} color={color} strokeWidth={1.7} />
-        </View>
-
+        {/* Next title */}
         <Text
           style={{
+            marginTop: 8,
             fontFamily: FONT.bold,
-            fontSize: 30,
+            fontSize: 24,
             color: colors.navy,
-            letterSpacing: -0.9,
-            marginTop: 22,
+            letterSpacing: -0.6,
+            lineHeight: 28,
+            textAlign: "center",
           }}
         >
-          {label}
+          On to {next.label}
         </Text>
         <Text
           style={{
+            marginTop: 6,
             fontFamily: FONT.regular,
             fontSize: 14,
             color: colors.midGrey,
-            marginTop: 8,
-            textAlign: "center",
             lineHeight: 20,
+            textAlign: "center",
             maxWidth: 280,
           }}
         >
@@ -91,10 +105,27 @@ export default function ReviewHandoffScreen() {
             ? "Guided recall — last 3–7 days, with hints when you need them."
             : "Deep review — yesterday's items, three-way recall."}
         </Text>
+
+        {/* Layer preview card */}
+        <View style={{ alignSelf: "stretch", marginTop: 28 }}>
+          <LayerCard
+            layerKey={nextLayer}
+            items={nextLayer === "reinforcement" ? 6 : 4}
+            subtitle={nextLayer === "reinforcement" ? "Last 3–7 days · ~6 min" : "From yesterday · ~6 min"}
+            onPress={goNext}
+          />
+        </View>
       </View>
 
       <View style={{ paddingHorizontal: 22, paddingBottom: 32 }}>
-        <PrimaryButton label={`Continue with ${label}`} onPress={goNext} />
+        <PrimaryButton
+          label={`Start ${next.label}`}
+          onPress={goNext}
+          style={{
+            backgroundColor: next.color,
+            shadowColor: next.color,
+          }}
+        />
       </View>
     </SafeAreaView>
   );

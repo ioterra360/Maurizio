@@ -1,25 +1,32 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useFocusEffect } from "expo-router";
-import { useCallback } from "react";
 
 import { ReviewHeader } from "@/components/ReviewHeader";
+import { FolderPill } from "@/components/FolderPill";
 import { useReviewStore } from "@/lib/review-store";
-import { FONT, colors } from "@/theme/tokens";
+import { FONT, colors, layerTint } from "@/theme/tokens";
 
 export default function ScanScreen() {
   const start = useReviewStore((s) => s.start);
+  const layerState = useReviewStore((s) => s.layer);
+  const modeState = useReviewStore((s) => s.mode);
   const cards = useReviewStore((s) => s.cards());
   const index = useReviewStore((s) => s.index);
   const recordAndAdvance = useReviewStore((s) => s.recordAndAdvance);
   const [revealed, setRevealed] = useState(false);
 
+  // Only start a new flow when we land on Scan from outside the review group
+  // — re-entering Scan via back gesture from a later layer must NOT reset
+  // the totals. Guard on layer + index.
   useFocusEffect(
     useCallback(() => {
-      start("scan", "flow");
+      if (layerState !== "scan" || index === 0) {
+        start("scan", "flow");
+      }
       setRevealed(false);
-    }, [start]),
+    }, [start, layerState, index]),
   );
 
   useEffect(() => {
@@ -34,9 +41,7 @@ export default function ScanScreen() {
     else if (result === "done") router.replace("/review/complete");
   };
 
-  const handleShowMe = () => {
-    setRevealed(true);
-  };
+  const handleShowMe = () => setRevealed(true);
 
   if (!card) return null;
 
@@ -44,8 +49,9 @@ export default function ScanScreen() {
     <SafeAreaView className="flex-1 bg-warm-white" edges={["top"]}>
       <ReviewHeader layerKey="scan" index={index} total={cards.length} />
 
-      {/* Term */}
-      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 24 }}>
+      <View style={{ flex: 1, paddingHorizontal: 24, alignItems: "center", justifyContent: "center" }}>
+        <FolderPill folder={card.folder} layerKey="scan" />
+
         <Text
           style={{
             fontFamily: FONT.bold,
@@ -54,6 +60,7 @@ export default function ScanScreen() {
             letterSpacing: -2,
             textAlign: "center",
             lineHeight: 70,
+            marginTop: 20,
           }}
         >
           {card.front}
@@ -72,35 +79,22 @@ export default function ScanScreen() {
           </Text>
         ) : null}
 
-        {/* Reveal panel */}
         {revealed ? (
           <View
-            className="rounded-card"
             style={{
-              backgroundColor: colors.divider,
+              backgroundColor: layerTint.scanReveal,
               paddingHorizontal: 20,
               paddingVertical: 18,
               marginTop: 36,
               alignSelf: "stretch",
+              borderRadius: 14,
             }}
           >
-            <Text
-              style={{
-                fontFamily: FONT.semibold,
-                fontSize: 11,
-                color: colors.midGrey,
-                letterSpacing: 1.2,
-                textTransform: "uppercase",
-              }}
-            >
-              From {card.folder}
-            </Text>
             <Text
               style={{
                 fontFamily: FONT.medium,
                 fontSize: 16,
                 color: colors.navy,
-                marginTop: 6,
                 lineHeight: 22,
                 letterSpacing: -0.1,
               }}
@@ -108,19 +102,7 @@ export default function ScanScreen() {
               {card.back}
             </Text>
           </View>
-        ) : (
-          <Text
-            style={{
-              fontFamily: FONT.regular,
-              fontSize: 13,
-              color: colors.midGrey,
-              marginTop: 36,
-              textAlign: "center",
-            }}
-          >
-            From {card.folder}
-          </Text>
-        )}
+        ) : null}
       </View>
 
       {/* Actions */}

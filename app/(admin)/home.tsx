@@ -13,8 +13,10 @@ import { router } from "expo-router";
 
 import { AdminTopBar } from "@/components/AdminTopBar";
 import { SectionLabel } from "@/components/SectionLabel";
+import { RetentionCurves } from "@/components/RetentionCurves";
 import { useAuthStore } from "@/lib/auth-store";
 import { ACTIVITY, KPIS, type KPI } from "@/lib/admin-data";
+import { firstName } from "@/lib/format";
 import { FONT, colors } from "@/theme/tokens";
 
 const ICONS: Record<"folder" | "warn" | "sparkle" | "check", LucideIcon> = {
@@ -26,16 +28,16 @@ const ICONS: Record<"folder" | "warn" | "sparkle" | "check", LucideIcon> = {
 
 export default function AdminHomeScreen() {
   const user = useAuthStore((s) => s.user);
-  const firstName = (user?.name ?? "Admin").split(" ")[0] ?? "Admin";
+  const display = firstName(user?.name, "Admin");
 
   return (
     <SafeAreaView className="flex-1 bg-warm-white" edges={["top"]}>
       <ScrollView
-        contentContainerStyle={{ paddingBottom: 120 }}
+        contentContainerStyle={{ paddingBottom: 140 }}
         showsVerticalScrollIndicator={false}
       >
         <AdminTopBar
-          title={`Hi, ${firstName}`}
+          title={`Hi, ${display}`}
           subtitle="Production · MON · MAY 19"
           rightSlot={
             <Pressable
@@ -64,7 +66,7 @@ export default function AdminHomeScreen() {
                   borderRadius: 4,
                   backgroundColor: colors.fading,
                   borderWidth: 1.5,
-                  borderColor: "#fff",
+                  borderColor: colors.warmWhite,
                 }}
               />
             </Pressable>
@@ -77,7 +79,7 @@ export default function AdminHomeScreen() {
             <KpiCard kpi={KPIS[0]} />
             <KpiCard kpi={KPIS[1]} />
           </View>
-          <View className="mt-2.5 flex-row" style={{ gap: 10, marginTop: 10 }}>
+          <View className="flex-row" style={{ gap: 10, marginTop: 10 }}>
             <KpiCard kpi={KPIS[2]} />
             <KpiCard kpi={KPIS[3]} />
           </View>
@@ -105,7 +107,7 @@ export default function AdminHomeScreen() {
               <Text
                 style={{
                   fontFamily: FONT.semibold,
-                  fontSize: 13,
+                  fontSize: 12.5,
                   color: colors.navy,
                   letterSpacing: -0.05,
                 }}
@@ -115,7 +117,7 @@ export default function AdminHomeScreen() {
               <Text
                 style={{
                   fontFamily: FONT.regular,
-                  fontSize: 12,
+                  fontSize: 11.5,
                   color: colors.midGrey,
                   marginTop: 2,
                 }}
@@ -139,7 +141,7 @@ export default function AdminHomeScreen() {
             }}
           >
             <View className="flex-row items-center justify-between">
-              <SectionLabel>Retention · 30d</SectionLabel>
+              <SectionLabel size="lg">Retention · 30d</SectionLabel>
               <Text
                 style={{
                   fontFamily: FONT.regular,
@@ -151,8 +153,8 @@ export default function AdminHomeScreen() {
                 survival by layer
               </Text>
             </View>
-            <View style={{ marginTop: 12 }}>
-              <CompactRetentionChart />
+            <View style={{ marginTop: 12, alignItems: "stretch" }}>
+              <RetentionCurves width={320} height={90} />
             </View>
             <View className="mt-2 flex-row justify-between" style={{ marginTop: 10 }}>
               <CompactLegend color={colors.focus} label="Focus" val="91%" />
@@ -164,7 +166,7 @@ export default function AdminHomeScreen() {
 
         {/* Activity feed */}
         <View style={{ paddingHorizontal: 22, paddingTop: 22, paddingBottom: 8 }}>
-          <SectionLabel>Activity</SectionLabel>
+          <SectionLabel size="lg">Activity</SectionLabel>
         </View>
         <View style={{ paddingHorizontal: 16, gap: 6 }}>
           {ACTIVITY.map((a, i) => {
@@ -217,7 +219,7 @@ export default function AdminHomeScreen() {
                 </View>
                 <Text
                   style={{
-                    fontFamily: FONT.medium,
+                    fontFamily: FONT.regular,
                     fontSize: 11.5,
                     color: colors.midGrey,
                     fontVariant: ["tabular-nums"],
@@ -260,25 +262,26 @@ function KpiCard({ kpi }: { kpi: KPI }) {
       <Text
         style={{
           fontFamily: FONT.bold,
-          fontSize: 10,
+          fontSize: 10.5,
           color: colors.midGrey,
-          letterSpacing: 1.1,
+          letterSpacing: 1.05, // 0.1em on 10.5px
           textTransform: "uppercase",
         }}
       >
         {kpi.label}
       </Text>
       <View
-        className="mt-1 flex-row items-baseline justify-between"
+        className="flex-row items-baseline justify-between"
         style={{ marginTop: 6 }}
       >
         <Text
           style={{
             fontFamily: FONT.bold,
-            fontSize: 22,
+            fontSize: 21,
             color: colors.navy,
-            letterSpacing: -0.5,
+            letterSpacing: -0.42,
             fontVariant: ["tabular-nums"],
+            lineHeight: 22,
           }}
         >
           {kpi.value}
@@ -293,74 +296,6 @@ function KpiCard({ kpi }: { kpi: KPI }) {
         >
           {kpi.delta}
         </Text>
-      </View>
-    </View>
-  );
-}
-
-/** Stylized survival-curves chart (mocked, illustrative). */
-function CompactRetentionChart() {
-  const days = 30;
-  // Sample curves — Focus high & flat, Reinforcement medium, Scan lower & declining
-  const points = (start: number, end: number) => {
-    return Array.from({ length: days + 1 }, (_, i) => {
-      const t = i / days;
-      // ease-out interpolation between start and end
-      return start - (start - end) * (t * t);
-    });
-  };
-  const focus = points(100, 91);
-  const reinf = points(100, 74);
-  const scan = points(100, 62);
-
-  return (
-    <View style={{ height: 90 }}>
-      <View
-        style={{
-          flex: 1,
-          flexDirection: "row",
-          alignItems: "flex-end",
-          gap: 1.5,
-        }}
-      >
-        {Array.from({ length: days + 1 }, (_, i) => (
-          <View
-            key={i}
-            style={{
-              flex: 1,
-              flexDirection: "column",
-              alignItems: "stretch",
-              justifyContent: "flex-end",
-              height: 90,
-              gap: 1,
-            }}
-          >
-            <View
-              style={{
-                height: 1.5,
-                backgroundColor: colors.scan,
-                opacity: 0.85,
-                marginBottom: `${100 - scan[i]}%` as any,
-              }}
-            />
-            <View
-              style={{
-                height: 1.5,
-                backgroundColor: colors.reinforcement,
-                opacity: 0.85,
-                marginBottom: `${100 - reinf[i]}%` as any,
-              }}
-            />
-            <View
-              style={{
-                height: 1.5,
-                backgroundColor: colors.focus,
-                opacity: 0.85,
-                marginBottom: `${100 - focus[i]}%` as any,
-              }}
-            />
-          </View>
-        ))}
       </View>
     </View>
   );

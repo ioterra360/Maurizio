@@ -61,6 +61,11 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
   index: 0,
   totals: { remembered: 0, struggled: 0, forgot: 0, reviewed: 0 },
 
+  /**
+   * Begin a session from layer 0. CALLERS BEWARE: this resets totals.
+   * Re-entering an in-flight session must NOT call start() — guard with
+   * `if (state.layer !== targetLayer || state.index === 0)` at the call site.
+   */
   start: (layer, mode) =>
     set({ layer, mode, index: 0, totals: { remembered: 0, struggled: 0, forgot: 0, reviewed: 0 } }),
 

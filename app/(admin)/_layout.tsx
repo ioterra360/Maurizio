@@ -1,5 +1,6 @@
 import { Tabs } from "expo-router";
 import { StyleSheet } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { BlurView } from "expo-blur";
 import {
   BarChart3,
@@ -14,7 +15,11 @@ import { colors } from "@/theme/tokens";
 
 export default function AdminLayout() {
   const gate = useAuthGate("admin");
+  const insets = useSafeAreaInsets();
   if (gate) return gate;
+
+  const barPaddingBottom = Math.max(insets.bottom, 22);
+  const barHeight = 10 + 44 + barPaddingBottom;
 
   return (
     <Tabs
@@ -26,9 +31,9 @@ export default function AdminLayout() {
           backgroundColor: "rgba(250,248,244,0.92)",
           borderTopColor: colors.hairline,
           borderTopWidth: 1,
-          height: 84,
+          height: barHeight,
           paddingTop: 10,
-          paddingBottom: 24,
+          paddingBottom: barPaddingBottom,
           position: "absolute",
         },
         tabBarBackground: () => (
@@ -36,8 +41,8 @@ export default function AdminLayout() {
         ),
         tabBarLabelStyle: {
           fontFamily: "Inter_600SemiBold",
-          fontSize: 10,
-          letterSpacing: 0.5,
+          fontSize: 10.5,
+          letterSpacing: -0.05,
           marginTop: 4,
         },
       }}

@@ -4,6 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useFocusEffect } from "expo-router";
 
 import { ReviewHeader } from "@/components/ReviewHeader";
+import { FolderPill } from "@/components/FolderPill";
 import { RecallButton } from "@/components/RecallButton";
 import { useReviewStore } from "@/lib/review-store";
 import { FONT, colors } from "@/theme/tokens";
@@ -32,8 +33,11 @@ export default function FocusScreen() {
     <SafeAreaView className="flex-1 bg-warm-white" edges={["top"]}>
       <ReviewHeader layerKey="focus" index={index} total={cards.length} />
 
-      {/* Term and meaning */}
-      <View style={{ flex: 1, paddingHorizontal: 22, paddingTop: 36 }}>
+      <View style={{ flex: 1, paddingHorizontal: 22, paddingTop: 28 }}>
+        <View style={{ alignItems: "center" }}>
+          <FolderPill folder={card.folder} layerKey="focus" />
+        </View>
+
         <Text
           style={{
             fontFamily: FONT.bold,
@@ -42,6 +46,7 @@ export default function FocusScreen() {
             letterSpacing: -2,
             textAlign: "center",
             lineHeight: 60,
+            marginTop: 20,
           }}
         >
           {card.front}
@@ -65,28 +70,16 @@ export default function FocusScreen() {
           className="rounded-card"
           style={{
             backgroundColor: colors.divider,
-            paddingHorizontal: 20,
-            paddingVertical: 18,
+            paddingHorizontal: 18,
+            paddingVertical: 16,
             marginTop: 36,
           }}
         >
           <Text
             style={{
               fontFamily: FONT.semibold,
-              fontSize: 11,
-              color: colors.midGrey,
-              letterSpacing: 1.2,
-              textTransform: "uppercase",
-            }}
-          >
-            From {card.folder}
-          </Text>
-          <Text
-            style={{
-              fontFamily: FONT.semibold,
               fontSize: 17,
               color: colors.navy,
-              marginTop: 6,
               lineHeight: 24,
               letterSpacing: -0.15,
             }}

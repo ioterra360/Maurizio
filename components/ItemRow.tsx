@@ -8,7 +8,11 @@ const STATE_META = {
   archived: { dot: "#9C9C95",       bg: "#EFEDE7", text: "#7A7975", label: "Archived" },
 } as const;
 
-const isCjk = (s: string) => /[　-鿿]/.test(s);
+// CJK detection: Hiragana (3040-309F), Katakana (30A0-30FF), CJK Unified
+// (4E00-9FFF), and ideographic space (3000). Covers Japanese contents in
+// the seed folders.
+const isCjk = (s: string) =>
+  /[　-ヿ一-鿿]/.test(s);
 
 type Props = {
   item: FolderItem;
@@ -24,7 +28,7 @@ export function ItemRow({ item }: Props) {
 
   return (
     <View
-      className="flex-row items-start rounded-chip bg-surface"
+      className="flex-row items-start rounded-input bg-surface"
       style={{
         paddingHorizontal: 14,
         paddingVertical: 13,

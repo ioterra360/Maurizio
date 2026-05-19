@@ -3,13 +3,13 @@ import { ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 
-import { HeaderHero } from "@/components/HeaderHero";
 import { TimeBudgetChips } from "@/components/TimeBudgetChips";
 import { SectionLabel } from "@/components/SectionLabel";
 import { LayerCard } from "@/components/LayerCard";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { GhostButton } from "@/components/GhostButton";
 import { useAuthStore } from "@/lib/auth-store";
+import { firstName, dateBadge, timeGreeting } from "@/lib/format";
 import { FONT, colors } from "@/theme/tokens";
 
 type LayerPlan = { items: number; subtitle: string };
@@ -24,12 +24,13 @@ const TOTAL_ITEMS = PLAN.scan.items + PLAN.reinforcement.items + PLAN.focus.item
 
 export default function TodayScreen() {
   const name = useAuthStore((s) => s.user?.name ?? "");
-  const firstName = name.split(" ")[0] ?? "";
+  const display = firstName(name, "Welcome");
   const [budget, setBudget] = useState(15);
 
-  const greeting = useMemo(() => greetingForNow(), []);
-  const dateLabel = useMemo(() => formatDateBadge(new Date()), []);
-  const totalMinutes = budget;
+  // Recompute date label each render so a day rollover during a long session
+  // doesn't leave a stale "MON · MAY 18" header.
+  const greeting = timeGreeting();
+  const dateLabel = useMemo(() => dateBadge(), []);
 
   const startReview = () => router.push("/review/scan");
   const startLayer = (path: "scan" | "reinforcement" | "focus") =>
@@ -38,16 +39,11 @@ export default function TodayScreen() {
   return (
     <SafeAreaView className="flex-1 bg-warm-white" edges={["top"]}>
       <ScrollView
-        contentContainerStyle={{ paddingBottom: 220 }}
+        contentContainerStyle={{ paddingBottom: 240 }}
         showsVerticalScrollIndicator={false}
       >
-        <View style={{ paddingHorizontal: 24, paddingTop: 16 }}>
-          <Text
-            className="text-mid-grey"
-            style={{ fontFamily: FONT.medium, fontSize: 14 }}
-          >
-            {greeting}
-          </Text>
+        {/* Editorial hero — single two-line title at 32/700, NOT a kicker + name split */}
+        <View style={{ paddingHorizontal: 28, paddingTop: 14 }}>
           <Text
             accessibilityRole="header"
             style={{
@@ -56,17 +52,18 @@ export default function TodayScreen() {
               color: colors.navy,
               lineHeight: 35,
               letterSpacing: -1,
-              marginTop: 2,
             }}
           >
-            {firstName || "Welcome"}
+            {greeting}
+            {"\n"}
+            {display}
           </Text>
           <Text
             style={{
               fontFamily: FONT.semibold,
               fontSize: 12,
               color: colors.midGrey,
-              letterSpacing: 1.7,
+              letterSpacing: 1.68, // 0.14em on 12px
               marginTop: 12,
             }}
           >
@@ -107,14 +104,14 @@ export default function TodayScreen() {
         <Text
           style={{
             textAlign: "center",
-            fontFamily: FONT.medium,
+            fontFamily: FONT.regular,
             fontSize: 13,
             color: colors.midGrey,
             paddingTop: 18,
             fontVariant: ["tabular-nums"],
           }}
         >
-          Total · {TOTAL_ITEMS} items · about {totalMinutes} min
+          Total · {TOTAL_ITEMS} items · about {budget} min
         </Text>
       </ScrollView>
 
@@ -125,7 +122,7 @@ export default function TodayScreen() {
           position: "absolute",
           left: 20,
           right: 20,
-          bottom: 100,
+          bottom: 96,
           alignItems: "center",
           gap: 12,
         }}
@@ -135,17 +132,4 @@ export default function TodayScreen() {
       </View>
     </SafeAreaView>
   );
-}
-
-function greetingForNow() {
-  const hour = new Date().getHours();
-  if (hour < 12) return "Good morning,";
-  if (hour < 18) return "Good afternoon,";
-  return "Good evening,";
-}
-
-function formatDateBadge(date: Date) {
-  const days = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
-  const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
-  return `${days[date.getDay()]} · ${months[date.getMonth()]} ${date.getDate()}`;
 }

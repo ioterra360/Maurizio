@@ -39,7 +39,7 @@ export function LayerCard({ layerKey, items, subtitle, onPress }: Props) {
       <View
         className="flex-row items-center"
         style={{
-          paddingLeft: 14,
+          paddingLeft: 8,
           paddingRight: 14,
           paddingVertical: 16,
           flex: 1,

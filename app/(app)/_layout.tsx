@@ -1,5 +1,6 @@
 import { Tabs } from "expo-router";
 import { StyleSheet } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { BlurView } from "expo-blur";
 import { Home, Folder, BarChart3, Settings as SettingsIcon } from "lucide-react-native";
 
@@ -8,7 +9,14 @@ import { colors } from "@/theme/tokens";
 
 export default function AppLayout() {
   const gate = useAuthGate("app");
+  const insets = useSafeAreaInsets();
   if (gate) return gate;
+
+  // Mockup-faithful bar: paddingTop 10 + content (~44) + paddingBottom 22,
+  // with the safe-area bottom inset added on top so the home indicator
+  // doesn't overlap the labels on notched devices.
+  const barPaddingBottom = Math.max(insets.bottom, 22);
+  const barHeight = 10 + 44 + barPaddingBottom;
 
   return (
     <Tabs
@@ -17,14 +25,12 @@ export default function AppLayout() {
         tabBarActiveTintColor: colors.navy,
         tabBarInactiveTintColor: colors.midGrey,
         tabBarStyle: {
-          // Translucent warm-white over a blur — matches the mockup's
-          // "frosted iOS-style" bottom bar so content reads through at scroll edges.
           backgroundColor: "rgba(250,248,244,0.92)",
           borderTopColor: colors.hairline,
           borderTopWidth: 1,
-          height: 84,
+          height: barHeight,
           paddingTop: 10,
-          paddingBottom: 24,
+          paddingBottom: barPaddingBottom,
           position: "absolute",
         },
         tabBarBackground: () => (
@@ -32,8 +38,8 @@ export default function AppLayout() {
         ),
         tabBarLabelStyle: {
           fontFamily: "Inter_600SemiBold",
-          fontSize: 10.5,
-          letterSpacing: 0.6,
+          fontSize: 11,
+          letterSpacing: -0.05,
           marginTop: 4,
         },
       }}

@@ -36,7 +36,7 @@ export function RetentionBar({
     >
       <View style={{ flex: active, backgroundColor: colors.active }} />
       <View style={{ flex: fading, backgroundColor: colors.fading }} />
-      <View style={{ flex: archived, backgroundColor: "#C7C5BF" }} />
+      <View style={{ flex: archived, backgroundColor: colors.archived }} />
     </View>
   );
 }

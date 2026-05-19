@@ -23,62 +23,20 @@ export default function AdminModerationScreen() {
         subtitle={`${counts.queue} pending · ${counts.resolved} resolved this week`}
       />
 
-      {/* Tab switcher */}
-      <View
-        className="flex-row rounded-chip"
-        style={{
-          marginHorizontal: 16,
-          backgroundColor: colors.divider,
-          padding: 4,
-          gap: 4,
-        }}
-      >
-        <Pressable
+      {/* Paired pill toggle (mockup pattern), embedded count badge per tab */}
+      <View className="flex-row" style={{ marginHorizontal: 16, gap: 8 }}>
+        <TabPill
+          label="Queue"
+          count={counts.queue}
+          active={tab === "queue"}
           onPress={() => setTab("queue")}
-          accessibilityRole="button"
-          className="flex-1 items-center rounded-tag"
-          style={{
-            paddingVertical: 8,
-            backgroundColor: tab === "queue" ? colors.surface : "transparent",
-            shadowColor: "#000",
-            shadowOpacity: tab === "queue" ? 0.06 : 0,
-            shadowRadius: 6,
-            elevation: tab === "queue" ? 1 : 0,
-          }}
-        >
-          <Text
-            style={{
-              fontFamily: tab === "queue" ? FONT.semibold : FONT.medium,
-              fontSize: 13,
-              color: tab === "queue" ? colors.navy : colors.midGrey,
-            }}
-          >
-            Queue
-          </Text>
-        </Pressable>
-        <Pressable
+        />
+        <TabPill
+          label="Auto-rules"
+          count={counts.auto}
+          active={tab === "rules"}
           onPress={() => setTab("rules")}
-          accessibilityRole="button"
-          className="flex-1 items-center rounded-tag"
-          style={{
-            paddingVertical: 8,
-            backgroundColor: tab === "rules" ? colors.surface : "transparent",
-            shadowColor: "#000",
-            shadowOpacity: tab === "rules" ? 0.06 : 0,
-            shadowRadius: 6,
-            elevation: tab === "rules" ? 1 : 0,
-          }}
-        >
-          <Text
-            style={{
-              fontFamily: tab === "rules" ? FONT.semibold : FONT.medium,
-              fontSize: 13,
-              color: tab === "rules" ? colors.navy : colors.midGrey,
-            }}
-          >
-            Auto-rules
-          </Text>
-        </Pressable>
+        />
       </View>
 
       <ScrollView
@@ -215,6 +173,57 @@ function FlagCard({ flag }: { flag: FlagItem }) {
         </Pressable>
       </View>
     </View>
+  );
+}
+
+function TabPill({
+  label,
+  count,
+  active,
+  onPress,
+}: {
+  label: string;
+  count: number;
+  active: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`${label}, ${count} items`}
+      accessibilityState={{ selected: active }}
+      className="flex-1 flex-row items-center justify-center rounded-chip"
+      style={({ pressed }) => ({
+        height: 40,
+        gap: 6,
+        backgroundColor: active ? colors.navy : "transparent",
+        borderWidth: active ? 0 : 1,
+        borderColor: colors.hairline,
+        opacity: pressed && !active ? 0.65 : 1,
+      })}
+    >
+      <Text
+        style={{
+          fontFamily: active ? FONT.semibold : FONT.medium,
+          fontSize: 13,
+          color: active ? "#fff" : colors.navy,
+          letterSpacing: -0.07,
+        }}
+      >
+        {label}
+      </Text>
+      <Text
+        style={{
+          fontFamily: FONT.semibold,
+          fontSize: 11.5,
+          color: active ? "rgba(255,255,255,0.7)" : colors.midGrey,
+          fontVariant: ["tabular-nums"],
+        }}
+      >
+        {count}
+      </Text>
+    </Pressable>
   );
 }
 

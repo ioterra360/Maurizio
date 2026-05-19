@@ -1,11 +1,11 @@
 import { useMemo, useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Plus, Repeat, Settings as SettingsIcon } from "lucide-react-native";
+import { Plus, Repeat } from "lucide-react-native";
 import { router, useLocalSearchParams } from "expo-router";
 
 import { TopBar } from "@/components/TopBar";
-import { FolderTile } from "@/components/FolderTile";
+import { FolderTopBar } from "@/components/FolderTopBar";
 import { RetentionBar } from "@/components/RetentionBar";
 import { StatBlock } from "@/components/StatBlock";
 import { ActionPill } from "@/components/ActionPill";
@@ -40,7 +40,7 @@ export default function FolderDetailScreen() {
     };
   }, [data]);
 
-  if (!data) {
+  if (!data || !kind) {
     return (
       <SafeAreaView className="flex-1 bg-warm-white" edges={["top"]}>
         <TopBar />
@@ -58,58 +58,37 @@ export default function FolderDetailScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-warm-white" edges={["top"]}>
-      <TopBar
-        title={data.name}
-        rightSlot={
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Folder settings"
-            style={({ pressed }) => ({
-              width: 40,
-              height: 40,
-              alignItems: "center",
-              justifyContent: "center",
-              opacity: pressed ? 0.5 : 1,
-            })}
-          >
-            <SettingsIcon size={20} color={colors.navy} strokeWidth={1.7} />
-          </Pressable>
-        }
-      />
+      <FolderTopBar kind={kind} name={data.name} priority={data.priority} />
+
       <ScrollView
-        contentContainerStyle={{ paddingBottom: 110 }}
+        contentContainerStyle={{ paddingBottom: 200 }}
         showsVerticalScrollIndicator={false}
       >
-        {/* Hero */}
-        <View
-          className="flex-row items-center"
-          style={{ paddingHorizontal: 24, paddingTop: 14, gap: 12 }}
-        >
-          <FolderTile kind={data.kind} size={44} />
-          <View style={{ flex: 1 }}>
-            <Text
-              style={{
-                fontFamily: FONT.bold,
-                fontSize: 28,
-                color: colors.navy,
-                letterSpacing: -0.9,
-                lineHeight: 31,
-              }}
-            >
-              {data.name}
-            </Text>
-            <Text
-              style={{
-                fontFamily: FONT.regular,
-                fontSize: 13,
-                color: colors.midGrey,
-                marginTop: 4,
-                fontVariant: ["tabular-nums"],
-              }}
-            >
-              {data.count} items · added {data.addedThisWeek} this week
-            </Text>
-          </View>
+        {/* Editorial hero — title + sub-line only. No tile (it lives in the top bar). */}
+        <View style={{ paddingHorizontal: 22, paddingTop: 14 }}>
+          <Text
+            accessibilityRole="header"
+            style={{
+              fontFamily: FONT.bold,
+              fontSize: 28,
+              color: colors.navy,
+              letterSpacing: -0.84,
+              lineHeight: 31,
+            }}
+          >
+            {data.name}
+          </Text>
+          <Text
+            style={{
+              fontFamily: FONT.regular,
+              fontSize: 13,
+              color: colors.midGrey,
+              marginTop: 5,
+              fontVariant: ["tabular-nums"],
+            }}
+          >
+            {data.count} items · added {data.addedThisWeek} this week
+          </Text>
         </View>
 
         {/* Stats card */}
@@ -145,7 +124,7 @@ export default function FolderDetailScreen() {
                 count={Math.round((data.count * data.fading) / 100)}
               />
               <StatBlock
-                dot="#9C9C95"
+                dot={colors.archived}
                 label="Archived"
                 pct={data.archived}
                 count={Math.round((data.count * data.archived) / 100)}
@@ -169,7 +148,7 @@ export default function FolderDetailScreen() {
         </View>
 
         {/* Filters */}
-        <View style={{ paddingHorizontal: 24, paddingTop: 20, paddingBottom: 10 }}>
+        <View style={{ paddingHorizontal: 22, paddingTop: 20, paddingBottom: 10 }}>
           <SectionLabel>Items</SectionLabel>
         </View>
         <ScrollView
@@ -201,7 +180,7 @@ export default function FolderDetailScreen() {
             label="Archived"
             count={counts.archived}
             active={filter === "archived"}
-            dot="#9C9C95"
+            dot={colors.archived}
             onPress={() => setFilter("archived")}
           />
         </ScrollView>
@@ -227,7 +206,7 @@ export default function FolderDetailScreen() {
         </View>
       </ScrollView>
 
-      {/* FAB */}
+      {/* FAB — `bottom: 110` clears the absolute tab bar (~84 high). */}
       <Pressable
         onPress={addItem}
         accessibilityRole="button"
@@ -235,7 +214,7 @@ export default function FolderDetailScreen() {
         style={({ pressed }) => ({
           position: "absolute",
           right: 22,
-          bottom: 30,
+          bottom: 110,
           width: 56,
           height: 56,
           borderRadius: 28,

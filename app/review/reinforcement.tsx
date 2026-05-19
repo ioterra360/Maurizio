@@ -2,8 +2,10 @@ import { useCallback, useEffect, useState } from "react";
 import { Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useFocusEffect } from "expo-router";
+import { Sparkles } from "lucide-react-native";
 
 import { ReviewHeader } from "@/components/ReviewHeader";
+import { FolderPill } from "@/components/FolderPill";
 import { useReviewStore } from "@/lib/review-store";
 import { FONT, colors } from "@/theme/tokens";
 
@@ -36,13 +38,16 @@ export default function ReinforcementScreen() {
     else if (result === "done") router.replace("/review/complete");
   };
 
-  const hint = card.back.split(" · ")[0] ?? card.back.slice(0, 18);
+  // Derive hint as the first sense in a multi-sense back string.
+  const hint = card.back.split(" · ")[0] ?? card.back.slice(0, 22);
 
   return (
     <SafeAreaView className="flex-1 bg-warm-white" edges={["top"]}>
       <ReviewHeader layerKey="reinforcement" index={index} total={cards.length} />
 
       <View style={{ flex: 1, paddingHorizontal: 24, alignItems: "center", justifyContent: "center" }}>
+        <FolderPill folder={card.folder} layerKey="reinforcement" />
+
         <Text
           style={{
             fontFamily: FONT.bold,
@@ -51,6 +56,7 @@ export default function ReinforcementScreen() {
             letterSpacing: -2,
             textAlign: "center",
             lineHeight: 60,
+            marginTop: 20,
           }}
         >
           {card.front}
@@ -69,37 +75,30 @@ export default function ReinforcementScreen() {
           </Text>
         ) : null}
 
+        {/* Hint card — sparkle + single-line hint, dashed violet border */}
         {stage === "hint" ? (
           <View
+            className="flex-row items-center self-stretch"
             style={{
               marginTop: 32,
-              paddingHorizontal: 18,
-              paddingVertical: 14,
+              paddingHorizontal: 14,
+              paddingVertical: 12,
               borderRadius: 12,
               borderWidth: 1,
               borderColor: colors.reinforcement,
               borderStyle: "dashed",
-              alignSelf: "stretch",
+              gap: 10,
             }}
           >
+            <Sparkles size={18} color={colors.reinforcement} strokeWidth={1.8} />
             <Text
               style={{
-                fontFamily: FONT.semibold,
-                fontSize: 11,
-                color: colors.reinforcement,
-                letterSpacing: 1.2,
-                textTransform: "uppercase",
-              }}
-            >
-              Hint
-            </Text>
-            <Text
-              style={{
+                flex: 1,
                 fontFamily: FONT.medium,
                 fontSize: 15,
                 color: colors.navy,
-                marginTop: 4,
                 lineHeight: 21,
+                letterSpacing: -0.07,
               }}
             >
               {hint}…
@@ -107,35 +106,23 @@ export default function ReinforcementScreen() {
           </View>
         ) : null}
 
+        {/* Answer panel */}
         {stage === "answer" ? (
           <View
+            className="self-stretch rounded-card bg-surface"
             style={{
               marginTop: 32,
-              padding: 18,
-              borderRadius: 14,
-              backgroundColor: colors.surface,
+              paddingHorizontal: 18,
+              paddingVertical: 16,
               borderWidth: 1,
               borderColor: colors.hairline,
-              alignSelf: "stretch",
             }}
           >
             <Text
               style={{
                 fontFamily: FONT.semibold,
-                fontSize: 11,
-                color: colors.midGrey,
-                letterSpacing: 1.1,
-                textTransform: "uppercase",
-              }}
-            >
-              From {card.folder}
-            </Text>
-            <Text
-              style={{
-                fontFamily: FONT.semibold,
                 fontSize: 18,
                 color: colors.navy,
-                marginTop: 6,
                 lineHeight: 24,
                 letterSpacing: -0.2,
               }}
@@ -146,7 +133,6 @@ export default function ReinforcementScreen() {
         ) : null}
       </View>
 
-      {/* Actions */}
       <View style={{ paddingHorizontal: 22, paddingBottom: 32, gap: 10 }}>
         {stage === "pre" ? (
           <>

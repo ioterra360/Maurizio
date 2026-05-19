@@ -23,7 +23,8 @@ export function TopBar({ title, onBack, rightSlot }: Props) {
     <View
       className="flex-row items-center justify-between"
       style={{
-        paddingHorizontal: 14,
+        paddingLeft: 14,
+        paddingRight: 18,
         paddingVertical: 8,
         height: 48,
         backgroundColor: "rgba(250,248,244,0.94)",

@@ -41,7 +41,7 @@ export default function HealthScreen() {
                 segments={[
                   { color: colors.active, pct: 62 },
                   { color: colors.fading, pct: 24 },
-                  { color: "#9C9C95", pct: 14 },
+                  { color: colors.archived, pct: 14 },
                 ]}
               />
             </View>
@@ -50,14 +50,14 @@ export default function HealthScreen() {
                 textAlign: "center",
                 marginTop: 14,
                 fontFamily: FONT.medium,
-                fontSize: 12.5,
+                fontSize: 13,
                 color: "rgba(255,255,255,0.78)",
-                letterSpacing: 1.2,
+                letterSpacing: 0.52, // 0.04em on 13px (was 1.2 = too wide)
                 textTransform: "uppercase",
                 fontVariant: ["tabular-nums"],
               }}
             >
-              1,024 items tracked
+              779 items tracked
             </Text>
             <View
               className="flex-row justify-center"
@@ -65,7 +65,7 @@ export default function HealthScreen() {
             >
               <LegendDot color={colors.active} label="Stable" pct="62%" />
               <LegendDot color={colors.fading} label="Fading" pct="24%" />
-              <LegendDot color="#9C9C95" label="Archived" pct="14%" />
+              <LegendDot color={colors.archived} label="Archived" pct="14%" />
             </View>
           </View>
         </View>

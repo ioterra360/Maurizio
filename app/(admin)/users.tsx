@@ -12,9 +12,15 @@ import { FONT, colors } from "@/theme/tokens";
 type PlanFilter = "all" | "Pro" | "Free" | "At risk";
 
 const PLAN_TINT: Record<AdminUser["plan"], { bg: string; text: string }> = {
-  Pro:          { bg: "#E7F5EE", text: "#1F8552" },
+  Pro:          { bg: "#EEEAFB", text: "#5A4DB1" }, // violet — Pro identity
   Free:         { bg: "#EFEDE7", text: "#7A7975" },
   "At risk":    { bg: "#FDEEEA", text: "#A65B4A" },
+};
+
+const RETENTION_PILL: Record<"high" | "med" | "low", { bg: string; text: string }> = {
+  high: { bg: "#E7F5EE", text: "#1F8552" },
+  med:  { bg: "#EFEDE7", text: "#5C5A55" },
+  low:  { bg: "#FDEEEA", text: "#A65B4A" },
 };
 
 export default function AdminUsersScreen() {
@@ -139,8 +145,10 @@ export default function AdminUsersScreen() {
 
 function UserRow({ user }: { user: AdminUser }) {
   const tint = PLAN_TINT[user.plan];
-  const retentionColor =
-    user.retention >= 75 ? colors.active : user.retention >= 50 ? colors.fading : "#B04A38";
+  const retentionPill =
+    user.retention >= 75 ? RETENTION_PILL.high :
+    user.retention >= 50 ? RETENTION_PILL.med :
+    RETENTION_PILL.low;
   return (
     <Pressable
       accessibilityRole="button"
@@ -155,11 +163,7 @@ function UserRow({ user }: { user: AdminUser }) {
         opacity: pressed ? 0.85 : 1,
       })}
     >
-      <InitialsAvatar
-        initials={user.initials}
-        size={36}
-        variant={user.plan === "Pro" ? "user" : "user"}
-      />
+      <InitialsAvatar initials={user.initials} size={36} variant="user" />
       <View style={{ flex: 1, minWidth: 0 }}>
         <View className="flex-row items-center" style={{ gap: 6 }}>
           <Text
@@ -206,23 +210,31 @@ function UserRow({ user }: { user: AdminUser }) {
         </Text>
       </View>
 
-      <View style={{ alignItems: "flex-end" }}>
-        <Text
+      <View style={{ alignItems: "flex-end", gap: 4 }}>
+        <View
+          className="rounded-tag"
           style={{
-            fontFamily: FONT.bold,
-            fontSize: 13,
-            color: retentionColor,
-            fontVariant: ["tabular-nums"],
+            backgroundColor: retentionPill.bg,
+            paddingHorizontal: 7,
+            paddingVertical: 2,
           }}
         >
-          {user.retention}%
-        </Text>
+          <Text
+            style={{
+              fontFamily: FONT.bold,
+              fontSize: 11,
+              color: retentionPill.text,
+              fontVariant: ["tabular-nums"],
+            }}
+          >
+            {user.retention}%
+          </Text>
+        </View>
         <Text
           style={{
-            fontFamily: FONT.medium,
+            fontFamily: FONT.regular,
             fontSize: 10.5,
             color: colors.midGrey,
-            marginTop: 1,
             fontVariant: ["tabular-nums"],
           }}
         >

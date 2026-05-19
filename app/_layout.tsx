@@ -18,6 +18,8 @@ import {
 } from "@expo-google-fonts/inter";
 
 import { useAuthStore } from "@/lib/auth-store";
+import { useUIStore } from "@/lib/ui-store";
+import { Toast } from "@/components/Toast";
 import { colors } from "@/theme/tokens";
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -98,8 +100,19 @@ export default function RootLayout() {
               }}
             />
           </Stack>
+          <GlobalToast />
         </View>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );
+}
+
+/**
+ * Lifted toast so it survives `router.back()` from screens like Add — the
+ * Toast subscribes to the global ui-store and renders above every route.
+ */
+function GlobalToast() {
+  const toast = useUIStore((s) => s.toast);
+  const hideToast = useUIStore((s) => s.hideToast);
+  return <Toast message={toast} onDismiss={hideToast} />;
 }
