@@ -88,7 +88,16 @@ export default function RootLayout() {
               headerShown: false,
               contentStyle: { backgroundColor: colors.canvas },
             }}
-          />
+          >
+            <Stack.Screen
+              name="add"
+              options={{
+                presentation: "modal",
+                animation: "slide_from_bottom",
+                contentStyle: { backgroundColor: colors.warmWhite },
+              }}
+            />
+          </Stack>
         </View>
       </SafeAreaProvider>
     </GestureHandlerRootView>
