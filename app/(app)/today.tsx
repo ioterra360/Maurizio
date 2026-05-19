@@ -1,17 +1,31 @@
-import { useAuthStore } from "../../lib/auth-store";
-import { ScreenStub } from "../../components/ScreenStub";
+import { Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+
+import { useAuthStore } from "@/lib/auth-store";
 
 export default function TodayScreen() {
   const name = useAuthStore((s) => s.user?.name ?? "");
-  const greeting = greetingForNow();
-  const firstName = name.split(" ")[0] || "";
+  const firstName = name.split(" ")[0] ?? "";
 
   return (
-    <ScreenStub
-      greeting={`${greeting}${firstName ? `, ${firstName}` : ""}`}
-      title="Today"
-      note="Phase 2 will land here: time-budget chips (5 / 15 / 30 / 1 hr), the Scan → Reinforcement → Focus recommended flow, and the primary CTA. The recommended order is locked: Scan first."
-    />
+    <SafeAreaView className="flex-1 bg-warm-white" edges={["top"]}>
+      <View className="px-6 pt-5 pb-6">
+        <Text
+          className="text-body text-mid-grey"
+          style={{ fontFamily: "Inter_500Medium" }}
+        >
+          {greetingForNow()}
+          {firstName ? `, ${firstName}` : ""}
+        </Text>
+        <Text
+          className="mt-1 text-h1 text-navy"
+          style={{ fontFamily: "Inter_700Bold" }}
+          accessibilityRole="header"
+        >
+          Today
+        </Text>
+      </View>
+    </SafeAreaView>
   );
 }
 

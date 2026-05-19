@@ -1,14 +1,14 @@
-import { Redirect, Tabs } from "expo-router";
-import { Home, BookOpen, Activity, Settings as SettingsIcon } from "lucide-react-native";
+import { Tabs } from "expo-router";
+import { StyleSheet } from "react-native";
+import { BlurView } from "expo-blur";
+import { Home, Folder, BarChart3, Settings as SettingsIcon } from "lucide-react-native";
 
-import { useAuthStore } from "../../lib/auth-store";
-import { colors } from "../../theme/tokens";
+import { useAuthGate } from "@/lib/auth-gate";
+import { colors } from "@/theme/tokens";
 
 export default function AppLayout() {
-  const user = useAuthStore((s) => s.user);
-
-  if (!user) return <Redirect href="/(auth)/login" />;
-  if (user.role === "admin") return <Redirect href="/(admin)/home" />;
+  const gate = useAuthGate("app");
+  if (gate) return gate;
 
   return (
     <Tabs
@@ -17,13 +17,19 @@ export default function AppLayout() {
         tabBarActiveTintColor: colors.navy,
         tabBarInactiveTintColor: colors.midGrey,
         tabBarStyle: {
-          backgroundColor: colors.warmWhite,
+          // Translucent warm-white over a blur — matches the mockup's
+          // "frosted iOS-style" bottom bar so content reads through at scroll edges.
+          backgroundColor: "rgba(250,248,244,0.92)",
           borderTopColor: colors.hairline,
           borderTopWidth: 1,
           height: 84,
           paddingTop: 10,
           paddingBottom: 24,
+          position: "absolute",
         },
+        tabBarBackground: () => (
+          <BlurView intensity={40} tint="light" style={StyleSheet.absoluteFill} />
+        ),
         tabBarLabelStyle: {
           fontFamily: "Inter_600SemiBold",
           fontSize: 10.5,
@@ -43,14 +49,14 @@ export default function AppLayout() {
         name="knowledge"
         options={{
           title: "Knowledge",
-          tabBarIcon: ({ color }) => <BookOpen size={22} color={color} strokeWidth={1.75} />,
+          tabBarIcon: ({ color }) => <Folder size={22} color={color} strokeWidth={1.75} />,
         }}
       />
       <Tabs.Screen
         name="health"
         options={{
-          title: "Health",
-          tabBarIcon: ({ color }) => <Activity size={22} color={color} strokeWidth={1.75} />,
+          title: "Progress",
+          tabBarIcon: ({ color }) => <BarChart3 size={22} color={color} strokeWidth={1.75} />,
         }}
       />
       <Tabs.Screen

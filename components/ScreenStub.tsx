@@ -3,42 +3,36 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 type Props = {
   title: string;
-  greeting?: string;
-  note: string;
+  subtitle?: string;
   children?: React.ReactNode;
 };
 
 /**
- * Shared shell for the four primary user screens during Phase 1.
- * Mimics the editorial header from Memora App.html (warm canvas, big serif-feeling
- * title, mid-grey sub-line) while the real content gets built in Phase 2.
+ * Editorial header pattern used across the four primary user screens
+ * during Phase 1. Mirrors the mockup: warm canvas, large navy h1 with
+ * `-0.03em` tracking, optional mid-grey sub-line directly beneath.
+ *
+ * Phase 2 replaces each consumer with its real screen content.
  */
-export function ScreenStub({ title, greeting, note, children }: Props) {
+export function ScreenStub({ title, subtitle, children }: Props) {
   return (
     <SafeAreaView className="flex-1 bg-warm-white" edges={["top"]}>
-      <View className="px-6 pt-4 pb-6">
-        {greeting ? (
-          <Text
-            className="mb-2 text-body text-mid-grey"
-            style={{ fontFamily: "Inter_500Medium" }}
-          >
-            {greeting}
-          </Text>
-        ) : null}
+      <View className="px-6 pt-5 pb-6">
         <Text
           className="text-h1 text-navy"
-          style={{ fontFamily: "Inter_700Bold", lineHeight: 33 }}
+          style={{ fontFamily: "Inter_700Bold" }}
+          accessibilityRole="header"
         >
           {title}
         </Text>
-      </View>
-      <View className="mx-4 rounded-card bg-surface p-5" style={{ borderWidth: 1, borderColor: "rgba(26,44,79,0.08)" }}>
-        <Text
-          className="text-body text-mid-grey"
-          style={{ fontFamily: "Inter_400Regular", lineHeight: 20 }}
-        >
-          {note}
-        </Text>
+        {subtitle ? (
+          <Text
+            className="mt-1.5 text-body-lg text-mid-grey"
+            style={{ fontFamily: "Inter_400Regular" }}
+          >
+            {subtitle}
+          </Text>
+        ) : null}
       </View>
       {children}
     </SafeAreaView>

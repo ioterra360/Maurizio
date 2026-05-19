@@ -9,47 +9,56 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // Memora editorial palette (from Memora App.html design contract)
+        // Memora editorial palette (mirrors theme/tokens.ts).
         navy: "#1A2C4F",
         canvas: "#F5F3EF",
-        "warm-white": "#FBF9F4",
+        "warm-white": "#FAF8F4",
         surface: "#FFFFFF",
         "mid-grey": "#8A8A88",
+        placeholder: "#B5B3AE",
         hairline: "rgba(26,44,79,0.08)",
-        "hairline-strong": "rgba(26,44,79,0.16)",
-        // Layer colors (Scan → Reinforcement → Focus)
+        "hairline-strong": "rgba(26,44,79,0.14)",
+        divider: "#EFEDE7",
+        // Layers (Scan → Reinforcement → Focus, locked order).
         scan: "#6DA8E5",
         reinforcement: "#9B8CE8",
         focus: "#1A2C4F",
-        // Memory states
+        // Memory states.
         active: "#3EC07B",
         fading: "#F5A89C",
         archived: "#C5C3BE",
-        // Semantic
+        // Semantic.
         danger: "#B04A38",
+        "danger-soft": "#FDEEEA",
+        // Tag chip backgrounds.
+        "tag-user": "#EDF0F6",
       },
       fontFamily: {
         sans: ["Inter_400Regular", "system-ui", "sans-serif"],
-        medium: ["Inter_500Medium"],
-        semibold: ["Inter_600SemiBold"],
-        bold: ["Inter_700Bold"],
+        "inter-medium": ["Inter_500Medium"],
+        "inter-semibold": ["Inter_600SemiBold"],
+        "inter-bold": ["Inter_700Bold"],
       },
       fontSize: {
-        // Type scale calibrated from the Memora App.html mockup
-        "xs-tight": ["10.5px", { lineHeight: "14px", letterSpacing: "0.16em" }],
+        // Type scale calibrated from Memora App.html.
+        "xs-tight": ["10.5px", { lineHeight: "13px", letterSpacing: "0.14em" }],
+        "xs-tag":   ["10.5px", { lineHeight: "13px", letterSpacing: "0.08em" }],
         micro: ["11px", { lineHeight: "15px" }],
         caption: ["12px", { lineHeight: "16px" }],
         body: ["13.5px", { lineHeight: "20px" }],
         "body-lg": ["14.5px", { lineHeight: "22px" }],
-        cta: ["16px", { lineHeight: "22px", letterSpacing: "-0.01em" }],
+        cta: ["15px", { lineHeight: "20px", letterSpacing: "-0.01em" }],
         h2: ["19px", { lineHeight: "24px", letterSpacing: "-0.02em" }],
         h1: ["30px", { lineHeight: "33px", letterSpacing: "-0.03em" }],
         display: ["44px", { lineHeight: "48px", letterSpacing: "-0.035em" }],
       },
       borderRadius: {
+        tag: "6px",
+        input: "12px",
+        cta: "13px",
         card: "14px",
-        pill: "999px",
         chip: "10px",
+        pill: "999px",
       },
       boxShadow: {
         cta: "0 6px 18px -8px rgba(26,44,79,0.4)",

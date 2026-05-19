@@ -35,6 +35,9 @@ yarn-error.*
 .env.local
 .env*.local
 
+# locally generated artefacts (QR codes for Expo Go etc.)
+expo-qr.png
+
 # typescript
 *.tsbuildinfo
 
