@@ -1,9 +1,8 @@
-import { Redirect, Stack } from "expo-router";
-import { useAuthStore } from "../../lib/auth-store";
+import { Stack } from "expo-router";
+import { useAuthGate } from "@/lib/auth-gate";
 
 export default function AdminLayout() {
-  const user = useAuthStore((s) => s.user);
-  if (!user) return <Redirect href="/(auth)/login" />;
-  if (user.role !== "admin") return <Redirect href="/(app)/today" />;
+  const gate = useAuthGate("admin");
+  if (gate) return gate;
   return <Stack screenOptions={{ headerShown: false }} />;
 }
