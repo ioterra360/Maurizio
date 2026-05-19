@@ -99,7 +99,14 @@ If you do create a branch: `feature/<area>-<short-desc>` or
 app/                Expo Router routes (file-based). Groups: (auth) (app) (admin).
 components/         Cross-screen primitives (Mascot, ScreenStub, …).
 features/           Feature folders (review, folders, …) — add as needed in Phase 2+.
-lib/                Infrastructure (supabase client, stores, utilities).
+lib/
+  api.ts            SINGLE point of Supabase access. Components import from here.
+  mappers.ts        DB row → frontend model mappers (camelCase boundary).
+  constants.ts      Domain constants (folder kinds, time budgets, etc.).
+  supabase.ts       Supabase client + SecureStore adapter + demo-mode toggle.
+  auth-store.ts     Zustand auth store with onAuthStateChange subscription.
+  auth-gate.tsx     useAuthGate(surface) — single source of routing decisions.
+  auth-errors.ts    Supabase-error → user-message mapping.
 theme/              Design tokens mirroring tailwind.config.js for non-NW consumers.
 supabase/           Versioned database (config.toml + migrations/).
 docs/               Architectural docs.
@@ -129,6 +136,23 @@ npm run lint                # tsc --noEmit
 2. Wrap with `<SafeAreaView edges={["top"]}>` if it owns the top of the screen.
 3. Reuse `<ScreenStub>` for placeholders during Phase 2 stubbing.
 4. Add it to `docs/ROUTING.md`.
+
+### Talk to the database
+
+NEVER import `@supabase/supabase-js` directly from a component. Always go
+through `lib/api.ts`:
+
+```ts
+import { fetchDueMemories } from "@/lib/api";
+const memories = await fetchDueMemories(userId);
+```
+
+The api module:
+- Runs every read through a mapper in `lib/mappers.ts` so the rest of the
+  app speaks camelCase
+- Has an explicit demo-mode branch (returns mocks) so the UI works without
+  a backend
+- Is the single chokepoint for adding logging, retries, or caching later
 
 ### Modify the database schema
 
