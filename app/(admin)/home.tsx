@@ -1,65 +1,397 @@
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import {
+  Bell,
+  ChevronRight,
+  Folder,
+  ShieldAlert,
+  Sparkles,
+  CheckCircle2,
+  type LucideIcon,
+} from "lucide-react-native";
 import { router } from "expo-router";
 
+import { AdminTopBar } from "@/components/AdminTopBar";
+import { SectionLabel } from "@/components/SectionLabel";
 import { useAuthStore } from "@/lib/auth-store";
+import { ACTIVITY, KPIS, type KPI } from "@/lib/admin-data";
+import { FONT, colors } from "@/theme/tokens";
+
+const ICONS: Record<"folder" | "warn" | "sparkle" | "check", LucideIcon> = {
+  folder: Folder,
+  warn: ShieldAlert,
+  sparkle: Sparkles,
+  check: CheckCircle2,
+};
 
 export default function AdminHomeScreen() {
   const user = useAuthStore((s) => s.user);
-  const signOut = useAuthStore((s) => s.signOut);
-
-  const handleSignOut = async () => {
-    await signOut();
-    router.replace("/(auth)/login");
-  };
+  const firstName = (user?.name ?? "Admin").split(" ")[0] ?? "Admin";
 
   return (
     <SafeAreaView className="flex-1 bg-warm-white" edges={["top"]}>
-      <ScrollView contentContainerStyle={{ paddingBottom: 32 }}>
-        <View className="px-6 pt-5 pb-6">
-          <Text className="text-body text-mid-grey" style={{ fontFamily: "Inter_500Medium" }}>
-            Welcome back
-          </Text>
-          <View className="mt-1 flex-row items-center gap-2">
-            <Text
-              className="text-h1 text-navy"
-              style={{ fontFamily: "Inter_700Bold" }}
-              accessibilityRole="header"
+      <ScrollView
+        contentContainerStyle={{ paddingBottom: 120 }}
+        showsVerticalScrollIndicator={false}
+      >
+        <AdminTopBar
+          title={`Hi, ${firstName}`}
+          subtitle="Production · MON · MAY 19"
+          rightSlot={
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Open alerts"
+              style={({ pressed }) => ({
+                width: 38,
+                height: 38,
+                borderRadius: 11,
+                backgroundColor: colors.surface,
+                alignItems: "center",
+                justifyContent: "center",
+                borderWidth: 1,
+                borderColor: colors.hairline,
+                opacity: pressed ? 0.75 : 1,
+              })}
             >
-              {user?.name ?? "Admin"}
-            </Text>
-            <View
-              className="rounded-tag px-1.5 py-0.5"
-              style={{ backgroundColor: "#1A2C4F" }}
-            >
+              <Bell size={17} color={colors.navy} strokeWidth={1.8} />
+              <View
+                style={{
+                  position: "absolute",
+                  top: 8,
+                  right: 8,
+                  width: 7,
+                  height: 7,
+                  borderRadius: 4,
+                  backgroundColor: colors.fading,
+                  borderWidth: 1.5,
+                  borderColor: "#fff",
+                }}
+              />
+            </Pressable>
+          }
+        />
+
+        {/* 2x2 KPI grid */}
+        <View style={{ paddingHorizontal: 16, paddingTop: 6 }}>
+          <View className="flex-row" style={{ gap: 10 }}>
+            <KpiCard kpi={KPIS[0]} />
+            <KpiCard kpi={KPIS[1]} />
+          </View>
+          <View className="mt-2.5 flex-row" style={{ gap: 10, marginTop: 10 }}>
+            <KpiCard kpi={KPIS[2]} />
+            <KpiCard kpi={KPIS[3]} />
+          </View>
+        </View>
+
+        {/* Moderation alert callout */}
+        <View style={{ paddingHorizontal: 16, paddingTop: 14 }}>
+          <Pressable
+            onPress={() => router.push("/(admin)/moderation")}
+            accessibilityRole="button"
+            accessibilityLabel="Open moderation queue"
+            className="flex-row items-center rounded-card bg-surface"
+            style={({ pressed }) => ({
+              paddingHorizontal: 14,
+              paddingVertical: 13,
+              gap: 10,
+              borderWidth: 1,
+              borderColor: colors.hairline,
+              borderLeftWidth: 3,
+              borderLeftColor: colors.fading,
+              opacity: pressed ? 0.85 : 1,
+            })}
+          >
+            <View style={{ flex: 1, minWidth: 0 }}>
               <Text
                 style={{
-                  color: "#fff",
-                  fontFamily: "Inter_700Bold",
-                  fontSize: 9.5,
-                  letterSpacing: 0.8,
+                  fontFamily: FONT.semibold,
+                  fontSize: 13,
+                  color: colors.navy,
+                  letterSpacing: -0.05,
                 }}
               >
-                ADMIN
+                <Text style={{ fontFamily: FONT.bold }}>5 items</Text> in moderation queue
               </Text>
+              <Text
+                style={{
+                  fontFamily: FONT.regular,
+                  fontSize: 12,
+                  color: colors.midGrey,
+                  marginTop: 2,
+                }}
+              >
+                3 high severity · oldest 4h ago
+              </Text>
+            </View>
+            <ChevronRight size={18} color="#C0BEB8" strokeWidth={1.8} />
+          </Pressable>
+        </View>
+
+        {/* Retention chart */}
+        <View style={{ paddingHorizontal: 16, paddingTop: 14 }}>
+          <View
+            className="rounded-card bg-surface"
+            style={{
+              paddingHorizontal: 16,
+              paddingVertical: 16,
+              borderWidth: 1,
+              borderColor: colors.hairline,
+            }}
+          >
+            <View className="flex-row items-center justify-between">
+              <SectionLabel>Retention · 30d</SectionLabel>
+              <Text
+                style={{
+                  fontFamily: FONT.regular,
+                  fontSize: 11.5,
+                  color: colors.midGrey,
+                  fontVariant: ["tabular-nums"],
+                }}
+              >
+                survival by layer
+              </Text>
+            </View>
+            <View style={{ marginTop: 12 }}>
+              <CompactRetentionChart />
+            </View>
+            <View className="mt-2 flex-row justify-between" style={{ marginTop: 10 }}>
+              <CompactLegend color={colors.focus} label="Focus" val="91%" />
+              <CompactLegend color={colors.reinforcement} label="Reinforce" val="74%" />
+              <CompactLegend color={colors.scan} label="Scan" val="62%" />
             </View>
           </View>
         </View>
 
-        <Pressable
-          onPress={handleSignOut}
-          className="mx-4 mt-4 rounded-card bg-surface px-4 py-3.5"
-          style={({ pressed }) => ({
-            opacity: pressed ? 0.85 : 1,
-            borderWidth: 1,
-            borderColor: "rgba(26,44,79,0.14)",
+        {/* Activity feed */}
+        <View style={{ paddingHorizontal: 22, paddingTop: 22, paddingBottom: 8 }}>
+          <SectionLabel>Activity</SectionLabel>
+        </View>
+        <View style={{ paddingHorizontal: 16, gap: 6 }}>
+          {ACTIVITY.map((a, i) => {
+            const Icon = ICONS[a.iconKind];
+            return (
+              <View
+                key={i}
+                className="flex-row items-center rounded-chip bg-surface"
+                style={{
+                  paddingHorizontal: 14,
+                  paddingVertical: 11,
+                  gap: 12,
+                  borderWidth: 1,
+                  borderColor: colors.hairline,
+                }}
+              >
+                <View
+                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: 8,
+                    backgroundColor: tintFor(a.color),
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Icon size={15} color={a.color} strokeWidth={2} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text
+                    style={{
+                      fontFamily: FONT.semibold,
+                      fontSize: 13,
+                      color: colors.navy,
+                      letterSpacing: -0.05,
+                    }}
+                  >
+                    {a.title}
+                  </Text>
+                  <Text
+                    style={{
+                      fontFamily: FONT.regular,
+                      fontSize: 12,
+                      color: colors.midGrey,
+                      marginTop: 1,
+                    }}
+                  >
+                    {a.body}
+                  </Text>
+                </View>
+                <Text
+                  style={{
+                    fontFamily: FONT.medium,
+                    fontSize: 11.5,
+                    color: colors.midGrey,
+                    fontVariant: ["tabular-nums"],
+                  }}
+                >
+                  {a.time}
+                </Text>
+              </View>
+            );
           })}
-        >
-          <Text className="text-body text-navy" style={{ fontFamily: "Inter_600SemiBold" }}>
-            Sign out
-          </Text>
-        </Pressable>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
+}
+
+function KpiCard({ kpi }: { kpi: KPI }) {
+  const up = kpi.delta.startsWith("+");
+  return (
+    <View
+      className="flex-1 overflow-hidden rounded-chip bg-surface"
+      style={{
+        paddingHorizontal: 14,
+        paddingVertical: 13,
+        borderWidth: 1,
+        borderColor: colors.hairline,
+        position: "relative",
+      }}
+    >
+      <View
+        style={{
+          position: "absolute",
+          top: 0,
+          bottom: 0,
+          left: 0,
+          width: 3,
+          backgroundColor: kpi.accent,
+        }}
+      />
+      <Text
+        style={{
+          fontFamily: FONT.bold,
+          fontSize: 10,
+          color: colors.midGrey,
+          letterSpacing: 1.1,
+          textTransform: "uppercase",
+        }}
+      >
+        {kpi.label}
+      </Text>
+      <View
+        className="mt-1 flex-row items-baseline justify-between"
+        style={{ marginTop: 6 }}
+      >
+        <Text
+          style={{
+            fontFamily: FONT.bold,
+            fontSize: 22,
+            color: colors.navy,
+            letterSpacing: -0.5,
+            fontVariant: ["tabular-nums"],
+          }}
+        >
+          {kpi.value}
+        </Text>
+        <Text
+          style={{
+            fontFamily: FONT.semibold,
+            fontSize: 11.5,
+            color: up ? colors.active : colors.fading,
+            fontVariant: ["tabular-nums"],
+          }}
+        >
+          {kpi.delta}
+        </Text>
+      </View>
+    </View>
+  );
+}
+
+/** Stylized survival-curves chart (mocked, illustrative). */
+function CompactRetentionChart() {
+  const days = 30;
+  // Sample curves — Focus high & flat, Reinforcement medium, Scan lower & declining
+  const points = (start: number, end: number) => {
+    return Array.from({ length: days + 1 }, (_, i) => {
+      const t = i / days;
+      // ease-out interpolation between start and end
+      return start - (start - end) * (t * t);
+    });
+  };
+  const focus = points(100, 91);
+  const reinf = points(100, 74);
+  const scan = points(100, 62);
+
+  return (
+    <View style={{ height: 90 }}>
+      <View
+        style={{
+          flex: 1,
+          flexDirection: "row",
+          alignItems: "flex-end",
+          gap: 1.5,
+        }}
+      >
+        {Array.from({ length: days + 1 }, (_, i) => (
+          <View
+            key={i}
+            style={{
+              flex: 1,
+              flexDirection: "column",
+              alignItems: "stretch",
+              justifyContent: "flex-end",
+              height: 90,
+              gap: 1,
+            }}
+          >
+            <View
+              style={{
+                height: 1.5,
+                backgroundColor: colors.scan,
+                opacity: 0.85,
+                marginBottom: `${100 - scan[i]}%` as any,
+              }}
+            />
+            <View
+              style={{
+                height: 1.5,
+                backgroundColor: colors.reinforcement,
+                opacity: 0.85,
+                marginBottom: `${100 - reinf[i]}%` as any,
+              }}
+            />
+            <View
+              style={{
+                height: 1.5,
+                backgroundColor: colors.focus,
+                opacity: 0.85,
+                marginBottom: `${100 - focus[i]}%` as any,
+              }}
+            />
+          </View>
+        ))}
+      </View>
+    </View>
+  );
+}
+
+function CompactLegend({ color, label, val }: { color: string; label: string; val: string }) {
+  return (
+    <View className="flex-row items-center" style={{ gap: 5 }}>
+      <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: color }} />
+      <Text style={{ fontFamily: FONT.medium, fontSize: 11.5, color: colors.midGrey }}>
+        {label}
+      </Text>
+      <Text
+        style={{
+          fontFamily: FONT.semibold,
+          fontSize: 11.5,
+          color: colors.navy,
+          fontVariant: ["tabular-nums"],
+        }}
+      >
+        {val}
+      </Text>
+    </View>
+  );
+}
+
+function tintFor(color: string): string {
+  if (color === colors.active)        return "#E7F5EE";
+  if (color === colors.fading)        return "#FDEEEA";
+  if (color === colors.reinforcement) return "#F1EEFC";
+  if (color === colors.scan)          return "#E6F0FA";
+  if (color === colors.navy)          return "#EDF0F6";
+  return "#EFEDE7";
 }
