@@ -9,6 +9,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
+import * as Linking from "expo-linking";
 import {
   useFonts,
   Inter_400Regular,
@@ -46,9 +47,26 @@ export default function RootLayout() {
   const hydrated = useAuthStore((s) => s.hydrated);
   const subscribeAuthChanges = useAuthStore((s) => s.subscribeAuthChanges);
 
-  // Kick off auth hydration on mount.
+  // Kick off auth hydration on mount. If the deep-link URL the app was
+  // opened with carries `?reset=1` (the QR points here in DEV so testers
+  // always land on the login screen), wipe any persisted session FIRST
+  // so the auth gate sees user=null and routes to /login.
   useEffect(() => {
-    hydrate();
+    (async () => {
+      try {
+        const initialUrl = await Linking.getInitialURL();
+        if (initialUrl) {
+          const parsed = Linking.parse(initialUrl);
+          const reset = parsed.queryParams?.reset;
+          if (reset === "1" || reset === "true") {
+            await useAuthStore.getState().signOut();
+          }
+        }
+      } catch (err) {
+        if (__DEV__) console.warn("[Memora] reset-via-deeplink check failed", err);
+      }
+      hydrate();
+    })();
   }, [hydrate]);
 
   // Listen to Supabase auth state changes (token refresh / global sign-out)
