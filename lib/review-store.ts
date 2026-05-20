@@ -136,13 +136,22 @@ type ReviewState = {
 };
 
 /**
+ * Monotonic id for in-flight startReviewSession requests. Lets the resolve
+ * handler tell its own request apart from a newer one — without this, two
+ * rapid start()/advanceToLayer() calls could either drop the newer session
+ * id (if we naively check sessionId === null) or accept a stale one.
+ */
+let openSessionSeq = 0;
+
+/**
  * Open a new review_sessions row for `layer` and tag the store with its id.
  * Centralized so start(), advanceToLayer() and ensureSession() share the
  * same wire-up. While the request is in flight we flag
  * `pendingSessionLayer` so ensureSession() can tell the difference between
  * "no session yet because nobody asked" and "no session yet because the
- * handoff hasn't resolved". Late responses are dropped if the layer or
- * index has moved on by the time the promise resolves.
+ * handoff hasn't resolved". A stale response (one whose sequence has been
+ * superseded by a newer start/advance/ensure) is dropped without touching
+ * state.
  */
 function openSessionFor(
   layer: LayerKey,
@@ -151,20 +160,26 @@ function openSessionFor(
 ) {
   const userId = useAuthStore.getState().user?.id;
   if (!userId) return;
+  const myId = ++openSessionSeq;
   set({ pendingSessionLayer: layer });
   startReviewSession(userId, layer)
     .then((session) => {
+      // Newer request superseded this one — let that one own the state.
+      if (myId !== openSessionSeq) return;
       const s = get();
-      if (s.layer === layer && s.index === 0) {
-        set({ sessionId: session.id, pendingSessionLayer: null });
-      } else if (s.pendingSessionLayer === layer) {
+      // Layer changed (advanceToLayer to a different layer, or reset/logout
+      // bumped the seq above already → handled by the seq check). Index
+      // intentionally NOT checked: rapid taps on the first card can bump
+      // index to 1 before this resolves, and we still want the session id
+      // attached so subsequent recordReviewItem calls land.
+      if (s.layer !== layer) {
         set({ pendingSessionLayer: null });
+        return;
       }
+      set({ sessionId: session.id, pendingSessionLayer: null });
     })
     .catch((e) => {
-      if (get().pendingSessionLayer === layer) {
-        set({ pendingSessionLayer: null });
-      }
+      if (myId === openSessionSeq) set({ pendingSessionLayer: null });
       if (__DEV__) console.warn("[review] startReviewSession failed", e);
     });
 }
