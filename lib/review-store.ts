@@ -123,6 +123,13 @@ type ReviewState = {
    * review_items row counts in sync with review_sessions.items_reviewed.
    */
   pendingItems: PendingItem[];
+  /**
+   * Set when recordAndAdvance finishes a layer before the session id arrived.
+   * openSessionFor flushes it once the id is in hand. Without this the
+   * review_sessions row would stay open with completed_at == NULL even
+   * though the user already finished the layer.
+   */
+  pendingSessionComplete: Counts | null;
   /** SRS state per card id — initialized lazily and updated in place. */
   srsByCard: Record<string, SrsState>;
   start: (layer: LayerKey, mode: "flow" | "single") => void;
@@ -156,61 +163,112 @@ type ReviewState = {
  */
 let openSessionSeq = 0;
 
+/** The newest in-flight session promise. Used to finalize an abandoned layer. */
+let currentSessionPromise: Promise<{ id: string } | null> | null = null;
+
+/**
+ * Fire-and-forget record of every queued answer against the now-known
+ * session id. Exported as a helper because both the normal "session id
+ * just arrived" path and the layer-handoff finalizer use it.
+ */
+function flushPendingItems(sessionId: string, items: PendingItem[]) {
+  for (const p of items) {
+    void recordReviewItem({
+      sessionId,
+      memoryId: p.memoryId,
+      userId: p.userId,
+      response: p.response,
+      reviewedAt: p.reviewedAt,
+    }).catch((e) => {
+      if (__DEV__) console.warn("[review] backfill recordReviewItem failed", e);
+    });
+  }
+}
+
 /**
  * Open a new review_sessions row for `layer` and tag the store with its id.
- * Centralized so start(), advanceToLayer() and ensureSession() share the
- * same wire-up. While the request is in flight we flag
- * `pendingSessionLayer` so ensureSession() can tell the difference between
- * "no session yet because nobody asked" and "no session yet because the
- * handoff hasn't resolved". A stale response (one whose sequence has been
- * superseded by a newer start/advance/ensure) is dropped without touching
- * state.
+ * Returns the promise so callers (advanceToLayer / reset) can chain a
+ * finalize step onto the previous layer's request if it was still in flight.
+ *
+ * While the request is in flight we flag `pendingSessionLayer` so
+ * ensureSession() can tell the difference between "no session yet because
+ * nobody asked" and "no session yet because the handoff hasn't resolved".
+ * A superseded response (newer start/advance/ensure ran in the meantime)
+ * is dropped without touching live state — but the returned promise still
+ * resolves with the session id, so finalizers can drain queued items into
+ * the abandoned session.
  */
 function openSessionFor(
   layer: LayerKey,
   set: (partial: Partial<ReviewState>) => void,
   get: () => ReviewState,
-) {
+): Promise<{ id: string } | null> {
   const userId = useAuthStore.getState().user?.id;
-  if (!userId) return;
+  if (!userId) {
+    currentSessionPromise = Promise.resolve(null);
+    return currentSessionPromise;
+  }
   const myId = ++openSessionSeq;
   set({ pendingSessionLayer: layer });
-  startReviewSession(userId, layer)
+  const p = startReviewSession(userId, layer)
     .then((session) => {
-      // Newer request superseded this one — let that one own the state.
-      if (myId !== openSessionSeq) return;
-      const s = get();
-      // Layer changed (advanceToLayer to a different layer, or reset/logout
-      // bumped the seq above already → handled by the seq check). Index
-      // intentionally NOT checked: rapid taps on the first card can bump
-      // index to 1 before this resolves, and we still want the session id
-      // attached so subsequent recordReviewItem calls land.
-      if (s.layer !== layer) {
-        set({ pendingSessionLayer: null });
-        return;
-      }
-      const pending = s.pendingItems;
-      set({ sessionId: session.id, pendingSessionLayer: null, pendingItems: [] });
-      // Backfill any answers the user gave before the session id arrived,
-      // so review_sessions.items_* and review_items rowcounts agree.
-      if (pending.length > 0) {
-        for (const p of pending) {
-          void recordReviewItem({
+      // Live-state update only when we're still the winning request.
+      if (myId === openSessionSeq) {
+        const s = get();
+        if (s.layer === layer) {
+          const pending = s.pendingItems;
+          set({
             sessionId: session.id,
-            memoryId: p.memoryId,
-            userId: p.userId,
-            response: p.response,
-            reviewedAt: p.reviewedAt,
-          }).catch((e) => {
-            if (__DEV__) console.warn("[review] backfill recordReviewItem failed", e);
+            pendingSessionLayer: null,
+            pendingItems: [],
           });
+          flushPendingItems(session.id, pending);
+          // If the layer was fully answered before the id arrived, close
+          // it out now with the locally-known counts.
+          if (s.pendingSessionComplete) {
+            const counts = s.pendingSessionComplete;
+            set({ pendingSessionComplete: null });
+            void completeReviewSession(session.id, counts).catch((e) => {
+              if (__DEV__) console.warn("[review] late completeReviewSession failed", e);
+            });
+          }
+        } else {
+          set({ pendingSessionLayer: null });
         }
       }
+      return { id: session.id };
     })
     .catch((e) => {
       if (myId === openSessionSeq) set({ pendingSessionLayer: null });
       if (__DEV__) console.warn("[review] startReviewSession failed", e);
+      return null;
     });
+  currentSessionPromise = p;
+  return p;
+}
+
+/**
+ * Finalize a layer whose session id is still in flight at the moment the
+ * user transitions away (advanceToLayer / reset). We can't block the UI,
+ * but we can chain the drain/complete onto the in-flight promise so the
+ * abandoned session lands consistent rows once the network catches up.
+ */
+function finalizeStaleSession(
+  oldPromise: Promise<{ id: string } | null> | null,
+  items: PendingItem[],
+  counts: Counts | null,
+) {
+  if (!oldPromise) return;
+  if (items.length === 0 && !counts) return;
+  void oldPromise.then((session) => {
+    if (!session) return;
+    if (items.length > 0) flushPendingItems(session.id, items);
+    if (counts) {
+      void completeReviewSession(session.id, counts).catch((e) => {
+        if (__DEV__) console.warn("[review] stale completeReviewSession failed", e);
+      });
+    }
+  });
 }
 
 export const useReviewStore = create<ReviewState>((set, get) => ({
@@ -222,6 +280,7 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
   sessionId: null,
   pendingSessionLayer: null,
   pendingItems: [],
+  pendingSessionComplete: null,
   srsByCard: {},
 
   /**
@@ -242,6 +301,7 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
       sessionId: null,
       pendingSessionLayer: null,
       pendingItems: [],
+      pendingSessionComplete: null,
     });
     openSessionFor(layer, set, get);
   },
@@ -250,14 +310,23 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
 
   advanceToLayer: (next) => {
     const state = get();
+    const layerCounts = state.layerTotals;
     // Close the previous layer's session with that layer's own counts so
     // analytics see one row per (layer, user) per flow — not a single
     // cross-layer roll-up under whichever layer we started on.
     if (state.sessionId) {
-      const layerCounts = state.layerTotals;
+      // Session id already known — flush any queued items (rare here, items
+      // queue only when sessionId was null) and complete now.
+      flushPendingItems(state.sessionId, state.pendingItems);
       void completeReviewSession(state.sessionId, layerCounts).catch((e) => {
         if (__DEV__) console.warn("[review] completeReviewSession failed", e);
       });
+    } else {
+      // Session id still in flight — chain the drain + complete onto the
+      // OLD layer's promise so the abandoned session lands consistent rows
+      // once the network catches up. We must do this BEFORE openSessionFor
+      // for `next` bumps openSessionSeq.
+      finalizeStaleSession(currentSessionPromise, state.pendingItems, layerCounts);
     }
     set({
       layer: next,
@@ -265,6 +334,7 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
       sessionId: null,
       pendingSessionLayer: null,
       pendingItems: [],
+      pendingSessionComplete: null,
       layerTotals: EMPTY_COUNTS,
       // Cumulative `totals`, `mode`, and `srsByCard` are preserved across
       // layers — mode in particular MUST survive so an ensureSession() race
@@ -350,11 +420,16 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
       return "handoff";
     }
     // End of session (single layer mode, or end of focus in flow mode).
+    const finalLayerCounts = layerTotals;
     if (state.sessionId) {
-      const finalLayerCounts = layerTotals;
       void completeReviewSession(state.sessionId, finalLayerCounts).catch((e) => {
         if (__DEV__) console.warn("[review] completeReviewSession failed", e);
       });
+    } else if (state.pendingSessionLayer === state.layer) {
+      // Session id still in flight — defer completion. openSessionFor
+      // resolves and reads this back to write completed_at + counters
+      // without leaving an open review_sessions row behind.
+      set({ pendingSessionComplete: finalLayerCounts });
     }
     return "done";
   },
@@ -376,11 +451,21 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
       sessionId: null,
       pendingSessionLayer: null,
       pendingItems: [],
+      pendingSessionComplete: null,
     });
     openSessionFor(layer, set, get);
   },
 
-  reset: () =>
+  reset: () => {
+    // Finalize whatever's in flight before we wipe — same chain trick as
+    // advanceToLayer so a "Back to Today" tap before the session id arrives
+    // doesn't leave an open row.
+    const state = get();
+    if (!state.sessionId && currentSessionPromise) {
+      const counts = state.pendingSessionComplete ?? state.layerTotals;
+      const hasContent = state.pendingItems.length > 0 || counts.reviewed > 0;
+      if (hasContent) finalizeStaleSession(currentSessionPromise, state.pendingItems, counts);
+    }
     set({
       mode: "single",
       layer: "scan",
@@ -390,6 +475,8 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
       sessionId: null,
       pendingSessionLayer: null,
       pendingItems: [],
+      pendingSessionComplete: null,
       srsByCard: {},
-    }),
+    });
+  },
 }));
