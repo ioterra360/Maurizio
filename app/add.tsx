@@ -9,7 +9,6 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { router } from "expo-router";
 
 import { TopBar } from "@/components/TopBar";
 import { PrimaryButton } from "@/components/PrimaryButton";
@@ -23,6 +22,7 @@ import {
 import { FONT, colors } from "@/theme/tokens";
 import type { FolderKind } from "@/lib/constants";
 import { useUIStore } from "@/lib/ui-store";
+import { safeBack } from "@/lib/safe-back";
 
 export default function AddScreen() {
   const folders = getAllFolderSeeds();
@@ -42,7 +42,8 @@ export default function AddScreen() {
 
   const preview = ADD_PREVIEW_BY_KIND[folder];
   const types = ITEM_TYPES_BY_KIND[folder];
-  const canSave = text.trim().length > 0 && dailyCount < dailyMax;
+  const dailyLimitReached = dailyCount >= dailyMax;
+  const canSave = text.trim().length > 0 && !dailyLimitReached;
 
   const doSave = (addAnother: boolean) => {
     if (!canSave) return;
@@ -51,16 +52,22 @@ export default function AddScreen() {
     showToast(`Saved to ${folderName} · first review tomorrow`);
     if (addAnother) {
       setText("");
+      // Keep the textarea focused for fast successive adds; no nav.
     } else {
       // Toast is rendered at the root layout — it survives this unmount.
-      router.back();
+      // safeBack dismisses the keyboard first to avoid an Android race that
+      // leaves the IME attached to the unmounted TextInput.
+      safeBack("/(app)/knowledge");
     }
   };
+
+  const handleBack = () => safeBack("/(app)/knowledge");
 
   return (
     <SafeAreaView className="flex-1 bg-warm-white" edges={["top"]}>
       <TopBar
         title="Add to memory"
+        onBack={handleBack}
         rightSlot={
           <Pressable
             onPress={() => doSave(false)}
@@ -86,12 +93,16 @@ export default function AddScreen() {
         }
       />
       <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        // Android needs "height" here, not undefined — without it the soft
+        // keyboard covers the pinned Save buttons and the screen feels
+        // frozen because the only visible action is unreachable.
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={{ flex: 1 }}
       >
         <ScrollView
           contentContainerStyle={{ paddingBottom: 200 }}
           keyboardShouldPersistTaps="handled"
+          keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
           showsVerticalScrollIndicator={false}
         >
           {/* Folder pills */}
@@ -319,16 +330,19 @@ export default function AddScreen() {
             style={{
               fontFamily: FONT.regular,
               fontSize: 12,
-              color: colors.midGrey,
+              color: dailyLimitReached ? colors.fading : colors.midGrey,
               fontVariant: ["tabular-nums"],
             }}
           >
-            {dailyCount} / {dailyMax} inputs today
+            {dailyLimitReached
+              ? `Daily limit reached · come back tomorrow`
+              : `${dailyCount} / ${dailyMax} inputs today`}
           </Text>
           <GhostButton
             label="Save & add another"
             variant="outline"
             onPress={() => doSave(true)}
+            disabled={!canSave}
           />
           <PrimaryButton label="Save & continue" onPress={() => doSave(false)} disabled={!canSave} />
         </View>

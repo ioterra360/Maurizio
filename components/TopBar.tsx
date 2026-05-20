@@ -1,7 +1,7 @@
 import { Pressable, Text, View } from "react-native";
 import { ChevronLeft } from "lucide-react-native";
-import { router } from "expo-router";
 import { FONT, colors } from "@/theme/tokens";
+import { safeBack } from "@/lib/safe-back";
 
 type Props = {
   title?: string;
@@ -13,11 +13,14 @@ type Props = {
 /**
  * Modal-style top bar: back chevron on the left, optional centered title,
  * optional right slot. Used on Add to memory and Folder detail.
+ *
+ * Default back behavior goes through safeBack so the keyboard is dismissed
+ * before navigation — see lib/safe-back.ts for the Android race this fixes.
  */
 export function TopBar({ title, onBack, rightSlot }: Props) {
   const handleBack = () => {
     if (onBack) onBack();
-    else if (router.canGoBack()) router.back();
+    else safeBack();
   };
   return (
     <View

@@ -6,19 +6,22 @@ type Props = {
   onPress?: () => void;
   /** "link" = mid-grey small text; "outline" = bordered button. */
   variant?: "link" | "outline";
+  disabled?: boolean;
   style?: StyleProp<ViewStyle>;
 };
 
 /**
  * Secondary CTAs — "Adjust today's flow", "Save & add another", etc.
  */
-export function GhostButton({ label, onPress, variant = "link", style }: Props) {
+export function GhostButton({ label, onPress, variant = "link", disabled, style }: Props) {
   if (variant === "outline") {
     return (
       <Pressable
         onPress={onPress}
+        disabled={disabled}
         accessibilityRole="button"
         accessibilityLabel={label}
+        accessibilityState={{ disabled: !!disabled }}
         className="w-full items-center justify-center rounded-cta"
         style={({ pressed }) => [
           {
@@ -26,7 +29,7 @@ export function GhostButton({ label, onPress, variant = "link", style }: Props) 
             backgroundColor: "transparent",
             borderWidth: 1,
             borderColor: colors.hairlineStrong,
-            opacity: pressed ? 0.7 : 1,
+            opacity: disabled ? 0.45 : pressed ? 0.7 : 1,
           },
           style,
         ]}
@@ -40,9 +43,11 @@ export function GhostButton({ label, onPress, variant = "link", style }: Props) 
   return (
     <Pressable
       onPress={onPress}
+      disabled={disabled}
       accessibilityRole="link"
       accessibilityLabel={label}
-      style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }, style]}
+      accessibilityState={{ disabled: !!disabled }}
+      style={({ pressed }) => [{ opacity: disabled ? 0.45 : pressed ? 0.6 : 1 }, style]}
     >
       <Text
         className="text-body text-mid-grey"
