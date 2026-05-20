@@ -15,6 +15,7 @@ import { SectionLabel } from "@/components/SectionLabel";
 import { FONT, colors } from "@/theme/tokens";
 import { FOLDER_KINDS, type FolderKind, type MemoryState } from "@/lib/constants";
 import { useFolderDetail } from "@/lib/use-folders";
+import { useReviewStore } from "@/lib/review-store";
 import { relativeReviewed } from "@/lib/format";
 import type { FolderItem } from "@/lib/folder-data";
 
@@ -24,6 +25,7 @@ export default function FolderDetailScreen() {
     ? (params.kind as FolderKind)
     : null;
   const { folder, items, loading, error, refetch } = useFolderDetail(kind);
+  const startSession = useReviewStore((s) => s.start);
   const [filter, setFilter] = useState<"all" | MemoryState>("all");
 
   // Memory (api/db model) → FolderItem (UI/display model) adapter. Kept
@@ -111,7 +113,13 @@ export default function FolderDetailScreen() {
 
   const data = folder;
 
-  const startReview = () => router.push("/review/scan");
+  // Folder-scoped "Review now" is intentionally a single-layer Scan, not
+  // the full Scan → Reinforcement → Focus flow. Initialize the store
+  // before navigating so the Scan screen's flow-default fallback no-ops.
+  const startReview = () => {
+    startSession("scan", "single");
+    router.push("/review/scan");
+  };
   const addItem = () => router.push("/add");
 
   return (
