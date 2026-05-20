@@ -56,6 +56,13 @@ export type Counts = {
 
 const EMPTY_COUNTS: Counts = { remembered: 0, struggled: 0, forgot: 0, reviewed: 0 };
 
+type PendingItem = {
+  memoryId: string;
+  userId: string;
+  response: ReviewResponse;
+  reviewedAt: string;
+};
+
 /**
  * Translate a Focus-screen response + the layer the card is currently on
  * into the LayerOutcome the scheduler understands.
@@ -110,6 +117,12 @@ type ReviewState = {
    * handoff is still awaiting the server" (must not reset to single mode).
    */
   pendingSessionLayer: LayerKey | null;
+  /**
+   * Answers recorded before the layer's session id arrived from the server.
+   * Flushed to recordReviewItem once openSessionFor resolves, keeping
+   * review_items row counts in sync with review_sessions.items_reviewed.
+   */
+  pendingItems: PendingItem[];
   /** SRS state per card id — initialized lazily and updated in place. */
   srsByCard: Record<string, SrsState>;
   start: (layer: LayerKey, mode: "flow" | "single") => void;
@@ -176,7 +189,23 @@ function openSessionFor(
         set({ pendingSessionLayer: null });
         return;
       }
-      set({ sessionId: session.id, pendingSessionLayer: null });
+      const pending = s.pendingItems;
+      set({ sessionId: session.id, pendingSessionLayer: null, pendingItems: [] });
+      // Backfill any answers the user gave before the session id arrived,
+      // so review_sessions.items_* and review_items rowcounts agree.
+      if (pending.length > 0) {
+        for (const p of pending) {
+          void recordReviewItem({
+            sessionId: session.id,
+            memoryId: p.memoryId,
+            userId: p.userId,
+            response: p.response,
+            reviewedAt: p.reviewedAt,
+          }).catch((e) => {
+            if (__DEV__) console.warn("[review] backfill recordReviewItem failed", e);
+          });
+        }
+      }
     })
     .catch((e) => {
       if (myId === openSessionSeq) set({ pendingSessionLayer: null });
@@ -192,6 +221,7 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
   layerTotals: EMPTY_COUNTS,
   sessionId: null,
   pendingSessionLayer: null,
+  pendingItems: [],
   srsByCard: {},
 
   /**
@@ -211,6 +241,7 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
       layerTotals: EMPTY_COUNTS,
       sessionId: null,
       pendingSessionLayer: null,
+      pendingItems: [],
     });
     openSessionFor(layer, set, get);
   },
@@ -233,6 +264,7 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
       index: 0,
       sessionId: null,
       pendingSessionLayer: null,
+      pendingItems: [],
       layerTotals: EMPTY_COUNTS,
       // Cumulative `totals`, `mode`, and `srsByCard` are preserved across
       // layers — mode in particular MUST survive so an ensureSession() race
@@ -275,18 +307,32 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
       // Only persist when we have a real memories row to point at. Static
       // demo decks would FK-violate; the persist guards are belt + braces
       // because demo mode also short-circuits inside the api layer.
-      if (userId && state.sessionId && isPersistableMemoryId(card.id)) {
-        void Promise.all([
-          recordReviewItem({
+      if (userId && isPersistableMemoryId(card.id)) {
+        // applyScheduledUpdate doesn't need a session id — fire it now.
+        void applyScheduledUpdate(card.id, updated).catch((e) => {
+          if (__DEV__) console.warn("[review] applyScheduledUpdate failed for", card.id, e);
+        });
+        if (state.sessionId) {
+          void recordReviewItem({
             sessionId: state.sessionId,
             memoryId: card.id,
             userId,
             response,
-          }),
-          applyScheduledUpdate(card.id, updated),
-        ]).catch((e) => {
-          if (__DEV__) console.warn("[review] persist failed for card", card.id, e);
-        });
+          }).catch((e) => {
+            if (__DEV__) console.warn("[review] recordReviewItem failed for", card.id, e);
+          });
+        } else if (state.pendingSessionLayer === state.layer) {
+          // Session id not back from the server yet — queue this answer to
+          // be flushed once openSessionFor resolves. Avoids the items/
+          // session-counter divergence Codex flagged.
+          const reviewedAt = new Date().toISOString();
+          set({
+            pendingItems: [
+              ...state.pendingItems,
+              { memoryId: card.id, userId, response, reviewedAt },
+            ],
+          });
+        }
       }
     }
 
@@ -329,6 +375,7 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
       layerTotals: EMPTY_COUNTS,
       sessionId: null,
       pendingSessionLayer: null,
+      pendingItems: [],
     });
     openSessionFor(layer, set, get);
   },
@@ -342,6 +389,7 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
       layerTotals: EMPTY_COUNTS,
       sessionId: null,
       pendingSessionLayer: null,
+      pendingItems: [],
       srsByCard: {},
     }),
 }));
