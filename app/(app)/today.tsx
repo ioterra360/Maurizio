@@ -9,6 +9,7 @@ import { LayerCard } from "@/components/LayerCard";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { GhostButton } from "@/components/GhostButton";
 import { useAuthStore } from "@/lib/auth-store";
+import { useReviewStore } from "@/lib/review-store";
 import { firstName, dateBadge, timeGreeting } from "@/lib/format";
 import { FONT, colors } from "@/theme/tokens";
 
@@ -32,9 +33,20 @@ export default function TodayScreen() {
   const greeting = timeGreeting();
   const dateLabel = useMemo(() => dateBadge(), []);
 
-  const startReview = () => router.push("/review/scan");
-  const startLayer = (path: "scan" | "reinforcement" | "focus") =>
+  const startSession = useReviewStore((s) => s.start);
+
+  // Initialize the review-store BEFORE navigating so the destination
+  // screen's useFocusEffect sees the right mode/session. Skipping this
+  // step let a same-layer pending request from an abandoned flow
+  // suppress the new direct-entry session (Codex P2 on 6b777ad).
+  const startReview = () => {
+    startSession("scan", "flow");
+    router.push("/review/scan");
+  };
+  const startLayer = (path: "scan" | "reinforcement" | "focus") => {
+    startSession(path, "single");
     router.push(`/review/${path}`);
+  };
 
   return (
     <SafeAreaView className="flex-1 bg-warm-white" edges={["top"]}>

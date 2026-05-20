@@ -9,7 +9,7 @@ import { useReviewStore } from "@/lib/review-store";
 import { FONT, colors, layerTint } from "@/theme/tokens";
 
 export default function ScanScreen() {
-  const start = useReviewStore((s) => s.start);
+  const ensureSession = useReviewStore((s) => s.ensureSession);
   const layerState = useReviewStore((s) => s.layer);
   const modeState = useReviewStore((s) => s.mode);
   const cards = useReviewStore((s) => s.cards());
@@ -17,16 +17,15 @@ export default function ScanScreen() {
   const recordAndAdvance = useReviewStore((s) => s.recordAndAdvance);
   const [revealed, setRevealed] = useState(false);
 
-  // Only start a new flow when we land on Scan from outside the review group
-  // — re-entering Scan via back gesture from a later layer must NOT reset
-  // the totals. Guard on layer + index.
+  // Today screens now call start(layer, mode) explicitly before navigating
+  // here, so this effect is the defensive fallback for unusual entry paths
+  // (deep links, back-gesture refocus). ensureSession no-ops when start() has
+  // already done its job.
   useFocusEffect(
     useCallback(() => {
-      if (layerState !== "scan" || index === 0) {
-        start("scan", "flow");
-      }
+      ensureSession("scan", modeState);
       setRevealed(false);
-    }, [start, layerState, index]),
+    }, [ensureSession, modeState]),
   );
 
   useEffect(() => {
