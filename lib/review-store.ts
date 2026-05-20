@@ -103,6 +103,13 @@ type ReviewState = {
   layerTotals: Counts;
   /** Server session id for the CURRENT layer (real or demo synthetic). */
   sessionId: string | null;
+  /**
+   * Layer for which startReviewSession is currently in flight. Used by
+   * ensureSession() to distinguish "no session yet because nobody opened
+   * one" (single-layer direct entry) from "no session yet because the flow
+   * handoff is still awaiting the server" (must not reset to single mode).
+   */
+  pendingSessionLayer: LayerKey | null;
   /** SRS state per card id — initialized lazily and updated in place. */
   srsByCard: Record<string, SrsState>;
   start: (layer: LayerKey, mode: "flow" | "single") => void;
@@ -130,9 +137,12 @@ type ReviewState = {
 
 /**
  * Open a new review_sessions row for `layer` and tag the store with its id.
- * Centralized so start() and advanceToLayer() use the same wire-up. Idempotent
- * if a faster transition happens — late responses are dropped when the layer
- * or index has moved on by the time the promise resolves.
+ * Centralized so start(), advanceToLayer() and ensureSession() share the
+ * same wire-up. While the request is in flight we flag
+ * `pendingSessionLayer` so ensureSession() can tell the difference between
+ * "no session yet because nobody asked" and "no session yet because the
+ * handoff hasn't resolved". Late responses are dropped if the layer or
+ * index has moved on by the time the promise resolves.
  */
 function openSessionFor(
   layer: LayerKey,
@@ -141,13 +151,20 @@ function openSessionFor(
 ) {
   const userId = useAuthStore.getState().user?.id;
   if (!userId) return;
+  set({ pendingSessionLayer: layer });
   startReviewSession(userId, layer)
     .then((session) => {
-      if (get().layer === layer && get().index === 0) {
-        set({ sessionId: session.id });
+      const s = get();
+      if (s.layer === layer && s.index === 0) {
+        set({ sessionId: session.id, pendingSessionLayer: null });
+      } else if (s.pendingSessionLayer === layer) {
+        set({ pendingSessionLayer: null });
       }
     })
     .catch((e) => {
+      if (get().pendingSessionLayer === layer) {
+        set({ pendingSessionLayer: null });
+      }
       if (__DEV__) console.warn("[review] startReviewSession failed", e);
     });
 }
@@ -159,6 +176,7 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
   totals: EMPTY_COUNTS,
   layerTotals: EMPTY_COUNTS,
   sessionId: null,
+  pendingSessionLayer: null,
   srsByCard: {},
 
   /**
@@ -177,6 +195,7 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
       totals: EMPTY_COUNTS,
       layerTotals: EMPTY_COUNTS,
       sessionId: null,
+      pendingSessionLayer: null,
     });
     openSessionFor(layer, set, get);
   },
@@ -198,8 +217,11 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
       layer: next,
       index: 0,
       sessionId: null,
+      pendingSessionLayer: null,
       layerTotals: EMPTY_COUNTS,
-      // Cumulative `totals` and `srsByCard` are preserved across layers.
+      // Cumulative `totals`, `mode`, and `srsByCard` are preserved across
+      // layers — mode in particular MUST survive so an ensureSession() race
+      // can't downgrade an in-progress flow to single.
     });
     openSessionFor(next, set, get);
   },
@@ -278,9 +300,12 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
 
   ensureSession: (layer, mode) => {
     const state = get();
-    if (state.sessionId && state.layer === layer) return;
-    // Same effect as start() but conditional. We don't wipe srsByCard so a
-    // single-layer entry can still see updates from earlier flow sessions.
+    // Open OR pending session for this layer — flow handoff in progress.
+    // Either way, do nothing: respect what advanceToLayer / start set up.
+    if (state.layer === layer && (state.sessionId || state.pendingSessionLayer === layer)) {
+      return;
+    }
+    // Genuine direct entry from Today — open a single-layer session.
     set({
       layer,
       mode,
@@ -288,6 +313,7 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
       totals: EMPTY_COUNTS,
       layerTotals: EMPTY_COUNTS,
       sessionId: null,
+      pendingSessionLayer: null,
     });
     openSessionFor(layer, set, get);
   },
@@ -300,6 +326,7 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
       totals: EMPTY_COUNTS,
       layerTotals: EMPTY_COUNTS,
       sessionId: null,
+      pendingSessionLayer: null,
       srsByCard: {},
     }),
 }));
