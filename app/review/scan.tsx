@@ -10,22 +10,23 @@ import { FONT, colors, layerTint } from "@/theme/tokens";
 
 export default function ScanScreen() {
   const ensureSession = useReviewStore((s) => s.ensureSession);
-  const layerState = useReviewStore((s) => s.layer);
-  const modeState = useReviewStore((s) => s.mode);
   const cards = useReviewStore((s) => s.cards());
   const index = useReviewStore((s) => s.index);
   const recordAndAdvance = useReviewStore((s) => s.recordAndAdvance);
   const [revealed, setRevealed] = useState(false);
 
-  // Today screens now call start(layer, mode) explicitly before navigating
-  // here, so this effect is the defensive fallback for unusual entry paths
-  // (deep links, back-gesture refocus). ensureSession no-ops when start() has
-  // already done its job.
+  // Today calls start(layer, mode) explicitly before navigating here, so
+  // this effect is the defensive fallback for unusual entry paths (deep
+  // links, app restore on this route, back-gesture refocus). Scan is the
+  // documented entry point of the full Scan → Reinforcement → Focus flow,
+  // so the fallback opens flow mode — Today's prior start("scan","single")
+  // is preserved because ensureSession no-ops once it sees an open or
+  // pending session for the same layer.
   useFocusEffect(
     useCallback(() => {
-      ensureSession("scan", modeState);
+      ensureSession("scan", "flow");
       setRevealed(false);
-    }, [ensureSession, modeState]),
+    }, [ensureSession]),
   );
 
   useEffect(() => {
