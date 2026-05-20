@@ -11,7 +11,7 @@ import { FONT, colors, layer as layerTokens, type LayerKey } from "@/theme/token
 
 export default function ReviewHandoffScreen() {
   const layer = useReviewStore((s) => s.layer);
-  const setLayer = useReviewStore((s) => s.setLayer);
+  const advanceToLayer = useReviewStore((s) => s.advanceToLayer);
 
   // The store's `layer` still holds the layer we just finished.
   const nextLayer: LayerKey | null =
@@ -29,10 +29,13 @@ export default function ReviewHandoffScreen() {
   const goNext = useCallback(() => {
     if (ranRef.current || !nextLayer) return;
     ranRef.current = true;
-    setLayer(nextLayer);
+    // advanceToLayer closes the previous layer's review_sessions row with
+    // its own counts and opens a fresh session for the next layer — this
+    // is what setLayer used to do silently, losing per-layer analytics.
+    advanceToLayer(nextLayer);
     if (nextLayer === "reinforcement") router.replace("/review/reinforcement");
     else router.replace("/review/focus");
-  }, [setLayer, nextLayer]);
+  }, [advanceToLayer, nextLayer]);
 
   if (!nextLayer) return null;
 

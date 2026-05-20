@@ -10,15 +10,17 @@ import { useReviewStore } from "@/lib/review-store";
 import { FONT, colors } from "@/theme/tokens";
 
 export default function FocusScreen() {
-  const setLayer = useReviewStore((s) => s.setLayer);
+  const ensureSession = useReviewStore((s) => s.ensureSession);
   const cards = useReviewStore((s) => s.cards());
   const index = useReviewStore((s) => s.index);
   const recordAndAdvance = useReviewStore((s) => s.recordAndAdvance);
 
   useFocusEffect(
     useCallback(() => {
-      setLayer("focus");
-    }, [setLayer]),
+      // No-op when arriving from a flow handoff; opens a single-layer
+      // session when Today routed us here directly.
+      ensureSession("focus", "single");
+    }, [ensureSession]),
   );
 
   const card = cards[index];

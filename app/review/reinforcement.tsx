@@ -12,7 +12,7 @@ import { FONT, colors } from "@/theme/tokens";
 type Stage = "pre" | "hint" | "answer";
 
 export default function ReinforcementScreen() {
-  const setLayer = useReviewStore((s) => s.setLayer);
+  const ensureSession = useReviewStore((s) => s.ensureSession);
   const cards = useReviewStore((s) => s.cards());
   const index = useReviewStore((s) => s.index);
   const recordAndAdvance = useReviewStore((s) => s.recordAndAdvance);
@@ -20,9 +20,11 @@ export default function ReinforcementScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      setLayer("reinforcement");
+      // No-op when arriving from a flow handoff (sessionId is already open);
+      // opens a single-layer session when Today routed us here directly.
+      ensureSession("reinforcement", "single");
       setStage("pre");
-    }, [setLayer]),
+    }, [ensureSession]),
   );
 
   useEffect(() => {
