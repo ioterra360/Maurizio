@@ -128,7 +128,10 @@ export default function TodayScreen() {
         }}
       >
         <PrimaryButton label="Start Today's Review" onPress={startReview} />
-        <GhostButton label="Adjust today's flow" onPress={() => {}} />
+        <GhostButton
+          label="Adjust today's flow"
+          onPress={() => router.push("/settings")}
+        />
       </View>
     </SafeAreaView>
   );
