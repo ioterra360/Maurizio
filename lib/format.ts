@@ -33,3 +33,32 @@ export function timeGreeting(date: Date = new Date()): string {
   if (h < 18) return "Good afternoon,";
   return "Good evening,";
 }
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Human-friendly relative timestamp for the "Reviewed …" footer on memory
+ * rows. Bucketed coarsely (today / yesterday / N days / N weeks / N months)
+ * to match the editorial calm of the design — we don't need minute-level
+ * precision on a list of flashcards.
+ */
+export function relativeReviewed(
+  iso: string | null,
+  now: Date = new Date(),
+): string {
+  if (!iso) return "Never reviewed";
+  const then = new Date(iso).getTime();
+  if (Number.isNaN(then)) return "Never reviewed";
+  const diff = now.getTime() - then;
+  if (diff < 0) return "Just now";
+  const days = Math.floor(diff / DAY_MS);
+  if (days === 0) return "Today";
+  if (days === 1) return "Yesterday";
+  if (days < 7) return `${days} days ago`;
+  if (days < 30) {
+    const w = Math.floor(days / 7);
+    return w === 1 ? "1 week ago" : `${w} weeks ago`;
+  }
+  const m = Math.floor(days / 30);
+  return m === 1 ? "1 month ago" : `${m} months ago`;
+}

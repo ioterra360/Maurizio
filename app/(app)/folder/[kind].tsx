@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { ActivityIndicator, Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Plus, Repeat } from "lucide-react-native";
 import { router, useLocalSearchParams } from "expo-router";
@@ -12,35 +12,50 @@ import { ActionPill } from "@/components/ActionPill";
 import { FilterChip } from "@/components/FilterChip";
 import { ItemRow } from "@/components/ItemRow";
 import { SectionLabel } from "@/components/SectionLabel";
-import { getFolderSeed } from "@/lib/folder-data";
 import { FONT, colors } from "@/theme/tokens";
 import { FOLDER_KINDS, type FolderKind, type MemoryState } from "@/lib/constants";
+import { useFolderDetail } from "@/lib/use-folders";
+import { relativeReviewed } from "@/lib/format";
+import type { FolderItem } from "@/lib/folder-data";
 
 export default function FolderDetailScreen() {
   const params = useLocalSearchParams<{ kind: string }>();
   const kind = (FOLDER_KINDS as readonly string[]).includes(params.kind ?? "")
     ? (params.kind as FolderKind)
     : null;
-  const data = kind ? getFolderSeed(kind) : null;
+  const { folder, items, loading, error, refetch } = useFolderDetail(kind);
   const [filter, setFilter] = useState<"all" | MemoryState>("all");
 
+  // Memory (api/db model) → FolderItem (UI/display model) adapter. Kept
+  // inline so we can rip it out when ItemRow accepts Memory directly.
+  const displayItems = useMemo<FolderItem[]>(
+    () =>
+      items.map((m) => ({
+        front: m.term,
+        reading: m.reading ?? undefined,
+        back: m.definition,
+        state: m.state,
+        reviewed: relativeReviewed(m.lastReviewedAt),
+      })),
+    [items],
+  );
+
   const filtered = useMemo(() => {
-    if (!data) return [];
-    if (filter === "all") return data.items;
-    return data.items.filter((i) => i.state === filter);
-  }, [filter, data]);
+    if (filter === "all") return displayItems;
+    return displayItems.filter((i) => i.state === filter);
+  }, [filter, displayItems]);
 
-  const counts = useMemo(() => {
-    if (!data) return { all: 0, active: 0, fading: 0, archived: 0 };
-    return {
-      all: data.items.length,
-      active: data.items.filter((i) => i.state === "active").length,
-      fading: data.items.filter((i) => i.state === "fading").length,
-      archived: data.items.filter((i) => i.state === "archived").length,
-    };
-  }, [data]);
+  const counts = useMemo(
+    () => ({
+      all: displayItems.length,
+      active: displayItems.filter((i) => i.state === "active").length,
+      fading: displayItems.filter((i) => i.state === "fading").length,
+      archived: displayItems.filter((i) => i.state === "archived").length,
+    }),
+    [displayItems],
+  );
 
-  if (!data || !kind) {
+  if (!kind) {
     return (
       <SafeAreaView className="flex-1 bg-warm-white" edges={["top"]}>
         <TopBar />
@@ -52,6 +67,49 @@ export default function FolderDetailScreen() {
       </SafeAreaView>
     );
   }
+
+  if (loading && !folder) {
+    return (
+      <SafeAreaView className="flex-1 bg-warm-white" edges={["top"]}>
+        <TopBar />
+        <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+          <ActivityIndicator color={colors.navy} />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (error || !folder) {
+    return (
+      <SafeAreaView className="flex-1 bg-warm-white" edges={["top"]}>
+        <TopBar />
+        <View style={{ padding: 24, gap: 12 }}>
+          <Text style={{ fontFamily: FONT.semibold, fontSize: 18, color: colors.navy }}>
+            We couldn't load this folder.
+          </Text>
+          <Pressable
+            onPress={refetch}
+            accessibilityRole="button"
+            accessibilityLabel="Retry loading folder"
+            style={({ pressed }) => ({
+              alignSelf: "flex-start",
+              paddingHorizontal: 14,
+              paddingVertical: 8,
+              borderRadius: 999,
+              backgroundColor: colors.navy,
+              opacity: pressed ? 0.85 : 1,
+            })}
+          >
+            <Text style={{ fontFamily: FONT.semibold, fontSize: 13, color: "#fff" }}>
+              Retry
+            </Text>
+          </Pressable>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  const data = folder;
 
   const startReview = () => router.push("/review/scan");
   const addItem = () => router.push("/add");

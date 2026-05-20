@@ -102,6 +102,26 @@ export function mapFolder(row: FolderRow): Folder {
   };
 }
 
+/**
+ * Folder + aggregate retention stats. Used by the Knowledge list, Today
+ * recommendations, and the folder detail header. The stats are server-side
+ * aggregates in Phase 3 (one round-trip per render of these screens) and
+ * derived from the demo seed when running offline.
+ *
+ * Percentages are normalized 0-100 and round to integers in the mapper so
+ * the UI never has to think about float drift.
+ */
+export type FolderWithStats = Folder & {
+  count: number;
+  /** Active items as a percentage of `count`, integer 0-100. */
+  active: number;
+  /** Fading items as a percentage of `count`, integer 0-100. */
+  fading: number;
+  /** Archived items as a percentage of `count`, integer 0-100. */
+  archived: number;
+  addedThisWeek: number;
+};
+
 // ============================================================================
 // Memory
 // ============================================================================

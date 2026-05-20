@@ -20,6 +20,7 @@ import { supabase, isDemoMode } from "./supabase";
 import {
   type Folder,
   type FolderRow,
+  type FolderWithStats,
   type Memory,
   type MemoryRow,
   type Profile,
@@ -28,7 +29,8 @@ import {
   mapMemory,
   mapProfile,
 } from "./mappers";
-import { FOLDER_DEFAULTS } from "./constants";
+import { FOLDER_DEFAULTS, type FolderKind } from "./constants";
+import { getAllFolderSeeds, getFolderSeed, type FolderSeed } from "./folder-data";
 
 // ---------------------------------------------------------------------------
 // Profile
@@ -137,4 +139,122 @@ export async function fetchDueMemories(userId: string, limit = 50): Promise<Memo
     .returns<MemoryRow[]>();
   if (error) throw error;
   return (data ?? []).map(mapMemory);
+}
+
+// ---------------------------------------------------------------------------
+// Folder + stats (Knowledge / Today / Folder detail headers)
+// ---------------------------------------------------------------------------
+
+/**
+ * Build a FolderWithStats from a demo-mode FolderSeed. Centralized here so
+ * the Knowledge list, the Today recommendation copy, and the folder detail
+ * hero all start from the same numbers — no per-component duplication of
+ * "how do I roll up these counts".
+ */
+function seedToFolderWithStats(userId: string, s: FolderSeed): FolderWithStats {
+  return {
+    id: `demo-folder-${s.kind}`,
+    userId,
+    kind: s.kind,
+    name: s.name,
+    priority: s.priority,
+    color: null,
+    icon: null,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    count: s.count,
+    active: s.active,
+    fading: s.fading,
+    archived: s.archived,
+    addedThisWeek: s.addedThisWeek,
+  };
+}
+
+function pctRound(part: number, whole: number): number {
+  if (whole <= 0) return 0;
+  return Math.round((part / whole) * 100);
+}
+
+/**
+ * Folders + per-folder retention stats. The hot read for Knowledge, Today,
+ * and the folder detail hero. Returns folders ordered by `priority`.
+ *
+ * Demo mode reads from the shared folder-data seed so the offline UI shows
+ * the same numbers as the rest of the design contract. Remote mode joins
+ * folders against memories and rolls up `state` counts in JS — that's one
+ * folders query + N memories queries; cheap at 4 default folders, and we
+ * will replace it with a server-side view in Phase 3 step C.
+ */
+export async function fetchFoldersWithStats(userId: string): Promise<FolderWithStats[]> {
+  if (isDemoMode) {
+    return getAllFolderSeeds().map((s) => seedToFolderWithStats(userId, s));
+  }
+
+  const folders = await fetchFolders(userId);
+  const enriched = await Promise.all(
+    folders.map(async (folder) => {
+      const items = await fetchMemoriesForFolder(folder.id);
+      const count = items.length;
+      const active = items.filter((m) => m.state === "active").length;
+      const fading = items.filter((m) => m.state === "fading").length;
+      const archived = items.filter((m) => m.state === "archived").length;
+      const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+      const addedThisWeek = items.filter(
+        (m) => new Date(m.createdAt).getTime() >= weekAgo,
+      ).length;
+      return {
+        ...folder,
+        count,
+        active: pctRound(active, count),
+        fading: pctRound(fading, count),
+        archived: pctRound(archived, count),
+        addedThisWeek,
+      } satisfies FolderWithStats;
+    }),
+  );
+  return enriched.sort((a, b) => a.priority - b.priority);
+}
+
+/**
+ * The data the folder detail screen needs in one round-trip: the folder
+ * itself (with stats) and its items list. Demo mode reuses the seed; remote
+ * fetches both in parallel.
+ */
+export async function fetchFolderDetail(
+  userId: string,
+  kind: FolderKind,
+): Promise<{ folder: FolderWithStats; items: Memory[] } | null> {
+  if (isDemoMode) {
+    const seed = getFolderSeed(kind);
+    if (!seed) return null;
+    const folder = seedToFolderWithStats(userId, seed);
+    // Demo items are not full Memory rows — they don't carry srs/ids. The
+    // folder detail screen tolerates that, but the wider app treats Memory
+    // as authoritative. We synthesize the minimum shape per item so callers
+    // can rely on the contract. Real Memory rows arrive from Supabase in
+    // remote mode.
+    const items: Memory[] = seed.items.map((it, i) => ({
+      id: `demo-${kind}-${i}`,
+      userId,
+      folderId: folder.id,
+      term: it.front,
+      reading: it.reading ?? null,
+      definition: it.back,
+      example: null,
+      itemType: null,
+      state: it.state,
+      srs: { intervalDays: 0, easeFactor: 2.5, repetitions: 0 },
+      lastReviewedAt: null,
+      nextReviewAt: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    }));
+    return { folder, items };
+  }
+
+  const folders = await fetchFoldersWithStats(userId);
+  const folder = folders.find((f) => f.kind === kind);
+  if (!folder) return null;
+  const items = await fetchMemoriesForFolder(folder.id);
+  return { folder, items };
 }

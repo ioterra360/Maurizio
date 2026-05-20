@@ -1,15 +1,16 @@
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { ActivityIndicator, Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Plus } from "lucide-react-native";
 import { router } from "expo-router";
 
 import { HeaderHero } from "@/components/HeaderHero";
 import { FolderRow } from "@/components/FolderRow";
-import { getAllFolderSeeds } from "@/lib/folder-data";
-import { colors } from "@/theme/tokens";
+import { useFoldersWithStats } from "@/lib/use-folders";
+import { FONT, colors } from "@/theme/tokens";
+import type { FolderKind } from "@/lib/constants";
 
 export default function KnowledgeScreen() {
-  const folders = getAllFolderSeeds();
+  const { folders, loading, error, refetch } = useFoldersWithStats();
 
   return (
     <SafeAreaView className="flex-1 bg-warm-white" edges={["top"]}>
@@ -19,23 +20,90 @@ export default function KnowledgeScreen() {
       >
         <HeaderHero
           title="Your knowledge"
-          subtitle={`${folders.length} active folders · adjust priorities anytime`}
+          subtitle={
+            loading
+              ? "Loading your folders…"
+              : `${folders.length} active folders · adjust priorities anytime`
+          }
         />
 
         <View style={{ paddingHorizontal: 16, gap: 8 }}>
-          {folders.map((f) => (
-            <FolderRow
-              key={f.kind}
-              kind={f.kind}
-              name={f.name}
-              priority={f.priority}
-              count={f.count}
-              active={f.active}
-              fading={f.fading}
-              archived={f.archived}
-              onPress={() => router.push({ pathname: "/folder/[kind]", params: { kind: f.kind } })}
-            />
-          ))}
+          {loading && folders.length === 0 ? (
+            <View style={{ paddingVertical: 48, alignItems: "center" }}>
+              <ActivityIndicator color={colors.navy} />
+            </View>
+          ) : error ? (
+            <View
+              className="rounded-card bg-surface"
+              style={{
+                padding: 18,
+                borderWidth: 1,
+                borderColor: colors.hairline,
+                alignItems: "center",
+                gap: 10,
+              }}
+            >
+              <Text
+                style={{
+                  fontFamily: FONT.semibold,
+                  fontSize: 14,
+                  color: colors.navy,
+                  textAlign: "center",
+                }}
+              >
+                We couldn't load your folders.
+              </Text>
+              <Text
+                style={{
+                  fontFamily: FONT.regular,
+                  fontSize: 12.5,
+                  color: colors.midGrey,
+                  textAlign: "center",
+                }}
+              >
+                Check your connection and try again.
+              </Text>
+              <Pressable
+                onPress={refetch}
+                accessibilityRole="button"
+                accessibilityLabel="Retry loading folders"
+                style={({ pressed }) => ({
+                  marginTop: 4,
+                  paddingHorizontal: 14,
+                  paddingVertical: 8,
+                  borderRadius: 999,
+                  backgroundColor: colors.navy,
+                  opacity: pressed ? 0.85 : 1,
+                })}
+              >
+                <Text
+                  style={{
+                    fontFamily: FONT.semibold,
+                    fontSize: 13,
+                    color: "#fff",
+                  }}
+                >
+                  Retry
+                </Text>
+              </Pressable>
+            </View>
+          ) : (
+            folders.map((f) => (
+              <FolderRow
+                key={f.kind}
+                kind={f.kind as FolderKind}
+                name={f.name}
+                priority={f.priority}
+                count={f.count}
+                active={f.active}
+                fading={f.fading}
+                archived={f.archived}
+                onPress={() =>
+                  router.push({ pathname: "/folder/[kind]", params: { kind: f.kind } })
+                }
+              />
+            ))
+          )}
         </View>
       </ScrollView>
 
