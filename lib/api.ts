@@ -25,13 +25,21 @@ import {
   type MemoryRow,
   type Profile,
   type ProfileRow,
+  type ReviewItem,
+  type ReviewItemRow,
+  type ReviewSession,
+  type ReviewSessionRow,
   mapFolder,
   mapMemory,
   mapProfile,
+  mapReviewItem,
+  mapReviewSession,
 } from "./mappers";
-import { FOLDER_DEFAULTS, type FolderKind } from "./constants";
+import { FOLDER_DEFAULTS, type FolderKind, type ReviewResponse } from "./constants";
 import { getAllFolderSeeds, getFolderSeed, type FolderSeed } from "./folder-data";
 import { isoFromRelativeLabel } from "./format";
+import type { LayerKey } from "@/theme/tokens";
+import type { UpdatedSrs } from "@/features/srs/types";
 
 // ---------------------------------------------------------------------------
 // Profile
@@ -263,4 +271,149 @@ export async function fetchFolderDetail(
   if (!folder) return null;
   const items = await fetchMemoriesForFolder(folder.id);
   return { folder, items };
+}
+
+// ---------------------------------------------------------------------------
+// Review sessions + items + scheduled-update persistence (Phase 3 step C)
+// ---------------------------------------------------------------------------
+
+/**
+ * Start a review session and return the persisted row (with id). In demo
+ * mode we return a synthetic local row so the rest of the flow gets the
+ * same shape — the review store will use the id as a stable token to tag
+ * subsequent recordReviewItem calls.
+ */
+export async function startReviewSession(
+  userId: string,
+  layer: LayerKey,
+): Promise<ReviewSession> {
+  const startedAt = new Date().toISOString();
+  if (isDemoMode) {
+    return {
+      id: `demo-session-${layer}-${Date.now()}`,
+      userId,
+      layer,
+      startedAt,
+      completedAt: null,
+      counts: { reviewed: 0, remembered: 0, struggled: 0, forgot: 0 },
+    };
+  }
+  const { data, error } = await supabase
+    .from("review_sessions")
+    .insert({ user_id: userId, layer, started_at: startedAt })
+    .select("*")
+    .single<ReviewSessionRow>();
+  if (error) throw error;
+  return mapReviewSession(data);
+}
+
+/**
+ * Record one card recall in the active session. Fire-and-forget from the
+ * caller's perspective — we still throw on remote errors so the store can
+ * surface a toast, but we don't block the UI on the round-trip.
+ */
+export async function recordReviewItem(opts: {
+  sessionId: string;
+  memoryId: string;
+  userId: string;
+  response: ReviewResponse;
+  reviewedAt?: string;
+}): Promise<ReviewItem | null> {
+  if (isDemoMode) return null;
+  const { data, error } = await supabase
+    .from("review_items")
+    .insert({
+      session_id: opts.sessionId,
+      memory_id: opts.memoryId,
+      user_id: opts.userId,
+      response: opts.response,
+      reviewed_at: opts.reviewedAt ?? new Date().toISOString(),
+    })
+    .select("*")
+    .single<ReviewItemRow>();
+  if (error) throw error;
+  return mapReviewItem(data);
+}
+
+/**
+ * Close out a review session with the final counts. Demo no-ops.
+ */
+export async function completeReviewSession(
+  sessionId: string,
+  counts: { reviewed: number; remembered: number; struggled: number; forgot: number },
+): Promise<void> {
+  if (isDemoMode) return;
+  const { error } = await supabase
+    .from("review_sessions")
+    .update({
+      completed_at: new Date().toISOString(),
+      items_reviewed: counts.reviewed,
+      items_remembered: counts.remembered,
+      items_struggled: counts.struggled,
+      items_forgot: counts.forgot,
+    })
+    .eq("id", sessionId);
+  if (error) throw error;
+}
+
+/**
+ * Persist the scheduler's UpdatedSrs back to the memories row. Demo no-ops.
+ * The mapping is straightforward — UpdatedSrs already lines up 1:1 with the
+ * srs_* columns plus the lifecycle state.
+ */
+export async function applyScheduledUpdate(
+  memoryId: string,
+  srs: UpdatedSrs,
+): Promise<void> {
+  if (isDemoMode) return;
+  const { error } = await supabase
+    .from("memories")
+    .update({
+      srs_interval_days: srs.intervalDays,
+      srs_ease_factor: srs.easeFactor,
+      srs_repetitions: srs.repetitions,
+      last_reviewed_at: srs.lastReviewedAt,
+      next_review_at: srs.nextReviewAt,
+      state: srs.state,
+    })
+    .eq("id", memoryId);
+  if (error) throw error;
+}
+
+/**
+ * Due memories sliced by layer, per docs/SRS.md:
+ *   - scan          : due now, srs_repetitions < 3
+ *   - reinforcement : due now, 3 <= srs_repetitions < 8, OR state='fading'
+ *   - focus         : due now, srs_repetitions >= 8
+ *
+ * Demo mode returns an empty list — the review store falls through to its
+ * static decks for offline UAT. Phase 3D will replace the static decks
+ * with this query.
+ */
+export async function fetchDueMemoriesByLayer(
+  userId: string,
+  layer: LayerKey,
+  limit = 30,
+): Promise<Memory[]> {
+  if (isDemoMode) return [];
+  const nowIso = new Date().toISOString();
+  let query = supabase
+    .from("memories")
+    .select("*")
+    .eq("user_id", userId)
+    .neq("state", "archived")
+    .lte("next_review_at", nowIso);
+
+  if (layer === "scan") query = query.lt("srs_repetitions", 3);
+  else if (layer === "reinforcement") {
+    // Either in the reinforcement repetition window OR explicitly fading.
+    query = query.or("and(srs_repetitions.gte.3,srs_repetitions.lt.8),state.eq.fading");
+  } else query = query.gte("srs_repetitions", 8);
+
+  const { data, error } = await query
+    .order("next_review_at")
+    .limit(limit)
+    .returns<MemoryRow[]>();
+  if (error) throw error;
+  return (data ?? []).map(mapMemory);
 }
