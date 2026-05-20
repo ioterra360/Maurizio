@@ -31,6 +31,7 @@ import {
 } from "./mappers";
 import { FOLDER_DEFAULTS, type FolderKind } from "./constants";
 import { getAllFolderSeeds, getFolderSeed, type FolderSeed } from "./folder-data";
+import { isoFromRelativeLabel } from "./format";
 
 // ---------------------------------------------------------------------------
 // Profile
@@ -233,6 +234,7 @@ export async function fetchFolderDetail(
     // as authoritative. We synthesize the minimum shape per item so callers
     // can rely on the contract. Real Memory rows arrive from Supabase in
     // remote mode.
+    const now = new Date();
     const items: Memory[] = seed.items.map((it, i) => ({
       id: `demo-${kind}-${i}`,
       userId,
@@ -244,10 +246,14 @@ export async function fetchFolderDetail(
       itemType: null,
       state: it.state,
       srs: { intervalDays: 0, easeFactor: 2.5, repetitions: 0 },
-      lastReviewedAt: null,
-      nextReviewAt: new Date().toISOString(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      // The seed stores the already-formatted label ("2 days ago"). Round-
+      // trip it through isoFromRelativeLabel so relativeReviewed in the UI
+      // reproduces the same label — otherwise demo rows would all show
+      // "Never reviewed" once the adapter swaps to lastReviewedAt.
+      lastReviewedAt: isoFromRelativeLabel(it.reviewed, now),
+      nextReviewAt: now.toISOString(),
+      createdAt: now.toISOString(),
+      updatedAt: now.toISOString(),
     }));
     return { folder, items };
   }

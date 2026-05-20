@@ -11,7 +11,7 @@
  * the api layer, so `loading` is `true` for one render at most.
  */
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import {
   fetchFolderDetail,
@@ -33,22 +33,30 @@ export function useFoldersWithStats(): FoldersResult {
   const [folders, setFolders] = useState<FolderWithStats[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  // Monotonic request id — only the latest request is allowed to commit
+  // results, so a slow first fetch can't overwrite a faster second one.
+  const requestSeq = useRef(0);
 
   const load = useCallback(async (uid: string) => {
+    const myId = ++requestSeq.current;
     setLoading(true);
     setError(null);
     try {
       const next = await fetchFoldersWithStats(uid);
+      if (myId !== requestSeq.current) return;
       setFolders(next);
     } catch (e) {
+      if (myId !== requestSeq.current) return;
       setError(e instanceof Error ? e : new Error(String(e)));
     } finally {
-      setLoading(false);
+      if (myId === requestSeq.current) setLoading(false);
     }
   }, []);
 
   useEffect(() => {
     if (!userId) {
+      // Bump the seq so any in-flight load() is discarded on logout.
+      requestSeq.current++;
       setFolders([]);
       setLoading(false);
       return;
@@ -77,23 +85,30 @@ export function useFolderDetail(kind: FolderKind | null): FolderDetailResult {
   const [items, setItems] = useState<Memory[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  // Same race guard as useFoldersWithStats — protects against the user
+  // switching folders rapidly while a slower previous fetch is in flight.
+  const requestSeq = useRef(0);
 
   const load = useCallback(async (uid: string, k: FolderKind) => {
+    const myId = ++requestSeq.current;
     setLoading(true);
     setError(null);
     try {
       const result = await fetchFolderDetail(uid, k);
+      if (myId !== requestSeq.current) return;
       setFolder(result?.folder ?? null);
       setItems(result?.items ?? []);
     } catch (e) {
+      if (myId !== requestSeq.current) return;
       setError(e instanceof Error ? e : new Error(String(e)));
     } finally {
-      setLoading(false);
+      if (myId === requestSeq.current) setLoading(false);
     }
   }, []);
 
   useEffect(() => {
     if (!userId || !kind) {
+      requestSeq.current++;
       setFolder(null);
       setItems([]);
       setLoading(false);

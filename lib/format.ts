@@ -62,3 +62,43 @@ export function relativeReviewed(
   const m = Math.floor(days / 30);
   return m === 1 ? "1 month ago" : `${m} months ago`;
 }
+
+/**
+ * Inverse of relativeReviewed for the demo seed only — turn a display
+ * string ("Yesterday", "3 days ago", "2 months ago") back into an ISO
+ * timestamp so we can feed it to a Memory.lastReviewedAt field and have
+ * relativeReviewed reproduce the original label.
+ *
+ * This exists because folder-data.ts stores seed timestamps as the
+ * already-formatted string. Without it, demo memories would render
+ * "Never reviewed" everywhere. Real Memory rows from Supabase will not
+ * go through this path — they already carry ISO timestamps.
+ *
+ * Returns null for anything we can't confidently parse — caller should
+ * fall through to "Never reviewed".
+ */
+export function isoFromRelativeLabel(
+  label: string,
+  now: Date = new Date(),
+): string | null {
+  const s = label.trim().toLowerCase();
+  if (!s) return null;
+  if (s === "today" || s === "just now") return now.toISOString();
+  if (s === "yesterday") return new Date(now.getTime() - DAY_MS).toISOString();
+  const daysMatch = /^(\d+)\s+days?\s+ago$/.exec(s);
+  if (daysMatch) {
+    const n = Number(daysMatch[1]);
+    return new Date(now.getTime() - n * DAY_MS).toISOString();
+  }
+  const weeksMatch = /^(\d+)\s+weeks?\s+ago$/.exec(s);
+  if (weeksMatch) {
+    const n = Number(weeksMatch[1]);
+    return new Date(now.getTime() - n * 7 * DAY_MS).toISOString();
+  }
+  const monthsMatch = /^(\d+)\s+months?\s+ago$/.exec(s);
+  if (monthsMatch) {
+    const n = Number(monthsMatch[1]);
+    return new Date(now.getTime() - n * 30 * DAY_MS).toISOString();
+  }
+  return null;
+}
