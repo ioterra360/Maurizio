@@ -404,11 +404,18 @@ export async function fetchDueMemoriesByLayer(
     .neq("state", "archived")
     .lte("next_review_at", nowIso);
 
-  if (layer === "scan") query = query.lt("srs_repetitions", 3);
-  else if (layer === "reinforcement") {
+  // The layer predicates MUST be mutually exclusive so that during the full
+  // Scan → Reinforcement → Focus flow no memory shows up twice. Per
+  // docs/SRS.md fading items belong to Reinforcement only; Scan and Focus
+  // exclude them explicitly.
+  if (layer === "scan") {
+    query = query.lt("srs_repetitions", 3).neq("state", "fading");
+  } else if (layer === "reinforcement") {
     // Either in the reinforcement repetition window OR explicitly fading.
     query = query.or("and(srs_repetitions.gte.3,srs_repetitions.lt.8),state.eq.fading");
-  } else query = query.gte("srs_repetitions", 8);
+  } else {
+    query = query.gte("srs_repetitions", 8).neq("state", "fading");
+  }
 
   const { data, error } = await query
     .order("next_review_at")

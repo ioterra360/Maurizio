@@ -36,7 +36,12 @@ export default function ScanScreen() {
   const card = cards[index];
 
   const handleRemember = () => {
-    const result = recordAndAdvance("remembered");
+    // If the user already revealed the answer, this card needed a hint —
+    // log it as "struggled" so the store/scheduler treats it as a soft
+    // forget (Scan "show me" → SM-2 quality 2 per docs/SRS.md). A pure
+    // "remembered" tap (no reveal) keeps full quality 4.
+    const response = revealed ? "struggled" : "remembered";
+    const result = recordAndAdvance(response);
     if (result === "handoff") router.replace("/review/handoff");
     else if (result === "done") router.replace("/review/complete");
   };
