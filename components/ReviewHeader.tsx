@@ -1,7 +1,7 @@
 import { Pressable, Text, View } from "react-native";
 import { ChevronLeft, Radar, Repeat, Target, type LucideIcon } from "lucide-react-native";
-import { router } from "expo-router";
 import { FONT, colors, layer as layerTokens, type LayerKey } from "@/theme/tokens";
+import { safeBack } from "@/lib/safe-back";
 
 const ICONS: Record<LayerKey, LucideIcon> = {
   scan: Radar,
@@ -29,7 +29,7 @@ export function ReviewHeader({ layerKey, index, total }: Props) {
       style={{ paddingHorizontal: 18, paddingTop: 18, paddingBottom: 4 }}
     >
       <Pressable
-        onPress={() => router.back()}
+        onPress={() => safeBack("/(app)/today")}
         accessibilityRole="button"
         accessibilityLabel="Exit review"
         style={({ pressed }) => ({

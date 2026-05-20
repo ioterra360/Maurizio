@@ -1,7 +1,7 @@
 import { Pressable, Text, View } from "react-native";
 import { ChevronLeft } from "lucide-react-native";
-import { router } from "expo-router";
 import { FONT, colors } from "@/theme/tokens";
+import { safeBack } from "@/lib/safe-back";
 
 type Props = {
   title: string;
@@ -22,7 +22,7 @@ type Props = {
 export function AdminTopBar({ title, subtitle, rightSlot, onBack }: Props) {
   const handleBack = () => {
     if (typeof onBack === "function") onBack();
-    else if (router.canGoBack()) router.back();
+    else safeBack();
   };
 
   return (

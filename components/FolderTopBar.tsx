@@ -1,10 +1,10 @@
 import { Pressable, Text, View } from "react-native";
 import { ChevronLeft, Settings as SettingsIcon } from "lucide-react-native";
-import { router } from "expo-router";
 
 import { FolderTile } from "@/components/FolderTile";
 import { FONT, colors } from "@/theme/tokens";
 import type { FolderKind } from "@/lib/constants";
+import { safeBack } from "@/lib/safe-back";
 
 type Props = {
   kind: FolderKind;
@@ -31,7 +31,7 @@ export function FolderTopBar({ kind, name, priority }: Props) {
       }}
     >
       <Pressable
-        onPress={() => (router.canGoBack() ? router.back() : router.replace("/(app)/knowledge"))}
+        onPress={() => safeBack("/(app)/knowledge")}
         accessibilityRole="button"
         accessibilityLabel="Back to knowledge"
         style={({ pressed }) => ({
