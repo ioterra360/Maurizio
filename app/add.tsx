@@ -9,6 +9,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Redirect } from "expo-router";
 
 import { TopBar } from "@/components/TopBar";
 import { PrimaryButton } from "@/components/PrimaryButton";
@@ -21,10 +22,17 @@ import {
 } from "@/lib/folder-data";
 import { FONT, colors } from "@/theme/tokens";
 import type { FolderKind } from "@/lib/constants";
+import { useAuthStore } from "@/lib/auth-store";
 import { useUIStore } from "@/lib/ui-store";
 import { safeBack } from "@/lib/safe-back";
 
 export default function AddScreen() {
+  // Add is a root-level modal (declared in app/_layout.tsx so it can slide
+  // up over the tab bar), so it sits OUTSIDE the (app) auth gate. Guard
+  // here explicitly — without this, a not-yet-logged-in user could land
+  // on Add via state restoration or a deep link and never see /login.
+  const user = useAuthStore((s) => s.user);
+  const hydrated = useAuthStore((s) => s.hydrated);
   const folders = getAllFolderSeeds();
   const [folder, setFolder] = useState<FolderKind>("jp");
   const [type, setType] = useState<string>(ITEM_TYPES_BY_KIND.jp[0] ?? "Word");
@@ -32,6 +40,9 @@ export default function AddScreen() {
   const [dailyCount, setDailyCount] = useState(12);
   const dailyMax = 20;
   const showToast = useUIStore((s) => s.showToast);
+
+  if (!hydrated) return null;
+  if (!user) return <Redirect href="/(auth)/login" />;
 
   // Reset type when folder changes if current type isn't valid for the new folder
   useEffect(() => {

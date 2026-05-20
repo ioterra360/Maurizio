@@ -56,9 +56,12 @@ export default function RootLayout() {
       try {
         const initialUrl = await Linking.getInitialURL();
         if (initialUrl) {
-          const parsed = Linking.parse(initialUrl);
-          const reset = parsed.queryParams?.reset;
-          if (reset === "1" || reset === "true") {
+          // Regex over the raw URL is more robust than Linking.parse on the
+          // shapes Expo Go produces (exp://host:port/--/?reset=1 has empty
+          // path which Linking.parse doesn't always pick query params from).
+          const reset = /[?&]reset=(1|true)(?:&|$)/.test(initialUrl);
+          if (reset) {
+            if (__DEV__) console.log("[Memora] reset=1 deep-link — signing out");
             await useAuthStore.getState().signOut();
           }
         }
