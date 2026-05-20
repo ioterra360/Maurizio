@@ -55,15 +55,18 @@ export default function TodayScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* Editorial hero — single two-line title at 32/700, NOT a kicker + name split */}
-        <View style={{ paddingHorizontal: 28, paddingTop: 14 }}>
+        <View style={{ paddingHorizontal: 28, paddingTop: 22 }}>
           <Text
             accessibilityRole="header"
             style={{
               fontFamily: FONT.bold,
               fontSize: 32,
               color: colors.navy,
-              lineHeight: 35,
+              // 42 ≈ 1.31× font-size — gives descenders ("g", "y" in
+              // "Angelo"/"Maurizio") room without breaking the layout.
+              lineHeight: 42,
               letterSpacing: -1,
+              paddingBottom: 2,
             }}
           >
             {greeting}

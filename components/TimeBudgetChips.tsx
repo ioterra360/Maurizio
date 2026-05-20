@@ -17,18 +17,31 @@ export function TimeBudgetChips({ value, onChange }: Props) {
     <View
       className="rounded-card bg-surface"
       style={{
-        padding: 16,
+        paddingHorizontal: 20,
+        paddingTop: 18,
+        paddingBottom: 20,
         borderWidth: 1,
         borderColor: colors.hairline,
+        shadowColor: colors.navy,
+        shadowOpacity: 0.04,
+        shadowOffset: { width: 0, height: 4 },
+        shadowRadius: 16,
+        elevation: 1,
       }}
     >
       <Text
-        className="mb-3 text-body text-mid-grey"
-        style={{ fontFamily: FONT.medium }}
+        style={{
+          fontFamily: FONT.semibold,
+          fontSize: 11,
+          color: colors.midGrey,
+          letterSpacing: 1.1,
+          textTransform: "uppercase",
+          marginBottom: 12,
+        }}
       >
         How long do you have today?
       </Text>
-      <View className="flex-row" style={{ gap: 6 }}>
+      <View className="flex-row" style={{ gap: 10 }}>
         {TIME_BUDGETS.map((b) => {
           const on = value === b.minutes;
           return (
@@ -40,22 +53,41 @@ export function TimeBudgetChips({ value, onChange }: Props) {
               accessibilityState={{ selected: on }}
               className="flex-1 items-center justify-center rounded-chip"
               style={({ pressed }) => ({
-                height: 36,
-                backgroundColor: on ? colors.navy : "transparent",
+                paddingVertical: 14,
+                backgroundColor: on ? colors.navy : "#FBFAF6",
                 borderWidth: on ? 0 : 1,
-                borderColor: colors.hairlineStrong,
-                opacity: pressed && !on ? 0.6 : 1,
+                borderColor: colors.hairline,
+                opacity: pressed && !on ? 0.7 : 1,
+                shadowColor: on ? colors.navy : "transparent",
+                shadowOpacity: on ? 0.18 : 0,
+                shadowOffset: { width: 0, height: 4 },
+                shadowRadius: 10,
+                elevation: on ? 2 : 0,
               })}
             >
               <Text
                 style={{
-                  fontFamily: on ? FONT.semibold : FONT.medium,
-                  fontSize: 13,
+                  fontFamily: on ? FONT.bold : FONT.semibold,
+                  fontSize: 15,
                   color: on ? "#fff" : colors.navy,
-                  letterSpacing: -0.07,
+                  letterSpacing: -0.2,
+                  fontVariant: ["tabular-nums"],
                 }}
               >
                 {b.label}
+              </Text>
+              <Text
+                style={{
+                  marginTop: 3,
+                  fontFamily: FONT.medium,
+                  fontSize: 10.5,
+                  color: on ? "rgba(255,255,255,0.7)" : colors.midGrey,
+                  letterSpacing: 0.4,
+                  textTransform: "uppercase",
+                  fontVariant: ["tabular-nums"],
+                }}
+              >
+                {b.estItems} items
               </Text>
             </Pressable>
           );

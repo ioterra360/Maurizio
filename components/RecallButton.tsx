@@ -13,7 +13,10 @@ const META: Record<
   Recall,
   { label: string; icon: LucideIcon; bg: string; border: string; text: string; iconColor: string; shadow?: boolean }
 > = {
-  remembered: { label: "Remembered", icon: Check, bg: colors.active, border: colors.active, text: "#fff", iconColor: "#fff", shadow: true },
+  // Filled primary uses navy (matches "Start Today's Review" and the other
+  // review CTAs) instead of the layer-local accent — Angelo's call: a
+  // consistent dark-blue family across all confirm actions.
+  remembered: { label: "Remembered", icon: Check, bg: colors.navy, border: colors.navy, text: "#fff", iconColor: "#fff", shadow: true },
   struggled:  { label: "Struggled",  icon: TriangleAlert, bg: "transparent", border: colors.hairlineStrong, text: colors.navy, iconColor: colors.navy },
   forgot:     { label: "Forgot",     icon: X, bg: "transparent", border: colors.fading, text: colors.fading, iconColor: colors.fading },
 };
@@ -38,8 +41,8 @@ export function RecallButton({ variant, onPress }: Props) {
         borderColor: m.border,
         opacity: pressed ? 0.85 : 1,
         gap: 10,
-        shadowColor: m.shadow ? colors.active : "transparent",
-        shadowOpacity: m.shadow ? 0.5 : 0,
+        shadowColor: m.shadow ? colors.navy : "transparent",
+        shadowOpacity: m.shadow ? 0.32 : 0,
         shadowOffset: { width: 0, height: 6 },
         shadowRadius: 18,
         elevation: m.shadow ? 4 : 0,

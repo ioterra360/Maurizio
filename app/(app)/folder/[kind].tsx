@@ -252,7 +252,7 @@ export default function FolderDetailScreen() {
         </ScrollView>
 
         {/* Item list */}
-        <View style={{ paddingHorizontal: 16, gap: 6 }}>
+        <View style={{ paddingHorizontal: 16, gap: 10 }}>
           {filtered.length === 0 ? (
             <Text
               style={{

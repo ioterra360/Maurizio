@@ -141,11 +141,11 @@ export default function ScanScreen() {
           accessibilityLabel="I remember this"
           className="items-center justify-center rounded-cta"
           style={({ pressed }) => ({
-            height: 54,
-            backgroundColor: colors.scan,
+            height: 56,
+            backgroundColor: colors.navy,
             opacity: pressed ? 0.88 : 1,
-            shadowColor: colors.scan,
-            shadowOpacity: 0.4,
+            shadowColor: colors.navy,
+            shadowOpacity: 0.32,
             shadowOffset: { width: 0, height: 6 },
             shadowRadius: 18,
             elevation: 4,

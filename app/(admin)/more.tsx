@@ -58,7 +58,7 @@ export default function AdminMoreScreen() {
         <View style={{ paddingHorizontal: 22, paddingBottom: 8 }}>
           <SectionLabel>Operations</SectionLabel>
         </View>
-        <View style={{ paddingHorizontal: 16, gap: 8 }}>
+        <View style={{ paddingHorizontal: 16, gap: 10 }}>
           {operations.map((s) => (
             <SubRow key={s.label} sub={s} />
           ))}
@@ -179,9 +179,9 @@ function SubRow({ sub }: { sub: Sub }) {
       accessibilityLabel={sub.label}
       className="flex-row items-center rounded-chip bg-surface"
       style={({ pressed }) => ({
-        paddingHorizontal: 14,
-        paddingVertical: 12,
-        gap: 12,
+        paddingHorizontal: 16,
+        paddingVertical: 16,
+        gap: 14,
         borderWidth: 1,
         borderColor: colors.hairline,
         opacity: pressed ? 0.85 : 1,
@@ -189,9 +189,9 @@ function SubRow({ sub }: { sub: Sub }) {
     >
       <View
         style={{
-          width: 34,
-          height: 34,
-          borderRadius: 9,
+          width: 38,
+          height: 38,
+          borderRadius: 10,
           backgroundColor: colors.tagUserBg,
           alignItems: "center",
           justifyContent: "center",

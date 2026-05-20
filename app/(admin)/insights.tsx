@@ -23,11 +23,11 @@ export default function AdminInsightsScreen() {
           <View
             className="rounded-card bg-surface"
             style={{
-              paddingHorizontal: 16,
-              paddingVertical: 16,
+              paddingHorizontal: 18,
+              paddingVertical: 20,
               borderWidth: 1,
               borderColor: colors.hairline,
-              gap: 8,
+              gap: 12,
             }}
           >
             {FUNNEL.map((step, i) => {
@@ -108,15 +108,15 @@ export default function AdminInsightsScreen() {
         </View>
 
         {/* D7 → D30 callout */}
-        <View style={{ paddingHorizontal: 16, paddingTop: 14 }}>
+        <View style={{ paddingHorizontal: 16, paddingTop: 18 }}>
           <View
             className="rounded-card bg-surface"
             style={{
-              paddingHorizontal: 16,
-              paddingVertical: 14,
+              paddingHorizontal: 18,
+              paddingVertical: 18,
               borderWidth: 1,
               borderColor: colors.hairline,
-              borderLeftWidth: 2.5,
+              borderLeftWidth: 3,
               borderLeftColor: colors.reinforcement,
             }}
           >
@@ -140,14 +140,14 @@ export default function AdminInsightsScreen() {
         <View style={{ paddingHorizontal: 22, paddingTop: 22, paddingBottom: 8 }}>
           <SectionLabel>Recall accuracy by folder</SectionLabel>
         </View>
-        <View style={{ paddingHorizontal: 16, gap: 8 }}>
+        <View style={{ paddingHorizontal: 16, gap: 10 }}>
           {RECALL.map((row) => (
             <View
               key={row.folder}
               className="rounded-chip bg-surface"
               style={{
-                paddingHorizontal: 14,
-                paddingVertical: 12,
+                paddingHorizontal: 16,
+                paddingVertical: 14,
                 borderWidth: 1,
                 borderColor: colors.hairline,
               }}
@@ -199,7 +199,7 @@ export default function AdminInsightsScreen() {
         <View style={{ paddingHorizontal: 22, paddingTop: 22, paddingBottom: 8 }}>
           <SectionLabel>Review layer adoption · 14d</SectionLabel>
         </View>
-        <View style={{ paddingHorizontal: 16, gap: 8 }}>
+        <View style={{ paddingHorizontal: 16, gap: 10 }}>
           <LayerAdoption color={colors.scan} label="Scan" sessions={42_810} share={0.48} />
           <LayerAdoption color={colors.reinforcement} label="Reinforcement" sessions={28_410} share={0.32} />
           <LayerAdoption color={colors.focus} label="Focus" sessions={17_840} share={0.20} />
@@ -224,8 +224,8 @@ function LayerAdoption({
     <View
       className="rounded-chip bg-surface"
       style={{
-        paddingHorizontal: 14,
-        paddingVertical: 12,
+        paddingHorizontal: 16,
+        paddingVertical: 14,
         borderWidth: 1,
         borderColor: colors.hairline,
       }}

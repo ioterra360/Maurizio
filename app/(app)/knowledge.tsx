@@ -27,7 +27,7 @@ export default function KnowledgeScreen() {
           }
         />
 
-        <View style={{ paddingHorizontal: 16, gap: 8 }}>
+        <View style={{ paddingHorizontal: 16, gap: 12 }}>
           {loading && folders.length === 0 ? (
             <View style={{ paddingVertical: 48, alignItems: "center" }}>
               <ActivityIndicator color={colors.navy} />

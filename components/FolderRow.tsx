@@ -37,10 +37,10 @@ export function FolderRow({
       accessibilityLabel={`${name} folder, priority ${priority}, ${count} items`}
       className="flex-row items-center rounded-card bg-surface"
       style={({ pressed }) => ({
-        paddingVertical: 12,
-        paddingLeft: 14,
-        paddingRight: 12,
-        gap: 12,
+        paddingVertical: 18,
+        paddingLeft: 16,
+        paddingRight: 14,
+        gap: 14,
         borderWidth: 1,
         borderColor: colors.hairline,
         opacity: pressed ? 0.88 : 1,

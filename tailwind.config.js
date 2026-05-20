@@ -48,9 +48,11 @@ module.exports = {
         body: ["13.5px", { lineHeight: "20px" }],
         "body-lg": ["14.5px", { lineHeight: "22px" }],
         cta: ["16px", { lineHeight: "22px", letterSpacing: "-0.01em" }],
-        h2: ["19px", { lineHeight: "24px", letterSpacing: "-0.02em" }],
-        h1: ["30px", { lineHeight: "33px", letterSpacing: "-0.03em" }],
-        display: ["44px", { lineHeight: "48px", letterSpacing: "-0.035em" }],
+        // Line heights bumped to ≥1.25× font-size so descenders (g, y, p)
+        // don't clip on the editorial-style hero headers.
+        h2: ["19px", { lineHeight: "26px", letterSpacing: "-0.02em" }],
+        h1: ["30px", { lineHeight: "38px", letterSpacing: "-0.03em" }],
+        display: ["44px", { lineHeight: "54px", letterSpacing: "-0.035em" }],
       },
       borderRadius: {
         tag: "6px",

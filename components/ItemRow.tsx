@@ -30,9 +30,9 @@ export function ItemRow({ item }: Props) {
     <View
       className="flex-row items-start rounded-input bg-surface"
       style={{
-        paddingHorizontal: 14,
-        paddingVertical: 13,
-        gap: 12,
+        paddingHorizontal: 16,
+        paddingVertical: 17,
+        gap: 14,
         borderWidth: 1,
         borderColor: colors.hairline,
       }}

@@ -121,14 +121,11 @@ export default function ReviewHandoffScreen() {
       </View>
 
       <View style={{ paddingHorizontal: 22, paddingBottom: 32 }}>
-        <PrimaryButton
-          label={`Start ${next.label}`}
-          onPress={goNext}
-          style={{
-            backgroundColor: next.color,
-            shadowColor: next.color,
-          }}
-        />
+        {/* CTA stays in the unified navy family — same dark blue as
+            "Start Today's Review" and the in-review Remember/Continue
+            buttons. The next-layer color identity is already carried by
+            the LayerCard preview + the "ON TO X" header above. */}
+        <PrimaryButton label={`Start ${next.label}`} onPress={goNext} />
       </View>
     </SafeAreaView>
   );

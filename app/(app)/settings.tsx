@@ -87,7 +87,7 @@ export default function SettingsScreen() {
         <View style={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 8 }}>
           <SectionLabel>Schedule</SectionLabel>
         </View>
-        <View style={{ paddingHorizontal: 16, gap: 8 }}>
+        <View style={{ paddingHorizontal: 16, gap: 10 }}>
           <SettingsRow label="Morning review" value="8:00 AM" onPress={() => {}} />
           <SettingsRow label="Evening review" value="9:30 PM" onPress={() => {}} />
         </View>
@@ -96,7 +96,7 @@ export default function SettingsScreen() {
         <View style={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 8 }}>
           <SectionLabel>Limits</SectionLabel>
         </View>
-        <View style={{ paddingHorizontal: 16, gap: 8 }}>
+        <View style={{ paddingHorizontal: 16, gap: 10 }}>
           <SettingsRow
             label="Daily input cap"
             hint="Max new memories you can add per day. Keeps load sustainable."
@@ -109,7 +109,7 @@ export default function SettingsScreen() {
         <View style={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 8 }}>
           <SectionLabel>Notifications</SectionLabel>
         </View>
-        <View style={{ paddingHorizontal: 16, gap: 8 }}>
+        <View style={{ paddingHorizontal: 16, gap: 10 }}>
           <SettingsToggle
             label="Calm mode"
             hint="No badges. Only the morning nudge."
@@ -125,7 +125,7 @@ export default function SettingsScreen() {
         <View style={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 8 }}>
           <SectionLabel>About</SectionLabel>
         </View>
-        <View style={{ paddingHorizontal: 16, gap: 8 }}>
+        <View style={{ paddingHorizontal: 16, gap: 10 }}>
           <SettingsRow label="Version" value="0.1.0" />
           <SettingsRow label="Privacy" value="On-device first" />
         </View>
@@ -144,7 +144,7 @@ export default function SettingsScreen() {
             Danger zone
           </Text>
         </View>
-        <View style={{ paddingHorizontal: 16, gap: 8 }}>
+        <View style={{ paddingHorizontal: 16, gap: 10 }}>
           <Pressable
             onPress={handleSignOut}
             className="rounded-input bg-surface"

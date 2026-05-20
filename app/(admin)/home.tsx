@@ -74,28 +74,28 @@ export default function AdminHomeScreen() {
         />
 
         {/* 2x2 KPI grid */}
-        <View style={{ paddingHorizontal: 16, paddingTop: 6 }}>
-          <View className="flex-row" style={{ gap: 10 }}>
+        <View style={{ paddingHorizontal: 16, paddingTop: 10 }}>
+          <View className="flex-row" style={{ gap: 12 }}>
             <KpiCard kpi={KPIS[0]} />
             <KpiCard kpi={KPIS[1]} />
           </View>
-          <View className="flex-row" style={{ gap: 10, marginTop: 10 }}>
+          <View className="flex-row" style={{ gap: 12, marginTop: 12 }}>
             <KpiCard kpi={KPIS[2]} />
             <KpiCard kpi={KPIS[3]} />
           </View>
         </View>
 
         {/* Moderation alert callout */}
-        <View style={{ paddingHorizontal: 16, paddingTop: 14 }}>
+        <View style={{ paddingHorizontal: 16, paddingTop: 18 }}>
           <Pressable
             onPress={() => router.push("/(admin)/moderation")}
             accessibilityRole="button"
             accessibilityLabel="Open moderation queue"
             className="flex-row items-center rounded-card bg-surface"
             style={({ pressed }) => ({
-              paddingHorizontal: 14,
-              paddingVertical: 13,
-              gap: 10,
+              paddingHorizontal: 16,
+              paddingVertical: 16,
+              gap: 12,
               borderWidth: 1,
               borderColor: colors.hairline,
               borderLeftWidth: 3,
@@ -130,12 +130,12 @@ export default function AdminHomeScreen() {
         </View>
 
         {/* Retention chart */}
-        <View style={{ paddingHorizontal: 16, paddingTop: 14 }}>
+        <View style={{ paddingHorizontal: 16, paddingTop: 18 }}>
           <View
             className="rounded-card bg-surface"
             style={{
-              paddingHorizontal: 16,
-              paddingVertical: 16,
+              paddingHorizontal: 18,
+              paddingVertical: 20,
               borderWidth: 1,
               borderColor: colors.hairline,
             }}
@@ -168,7 +168,7 @@ export default function AdminHomeScreen() {
         <View style={{ paddingHorizontal: 22, paddingTop: 22, paddingBottom: 8 }}>
           <SectionLabel size="lg">Activity</SectionLabel>
         </View>
-        <View style={{ paddingHorizontal: 16, gap: 6 }}>
+        <View style={{ paddingHorizontal: 16, gap: 10 }}>
           {ACTIVITY.map((a, i) => {
             const Icon = ICONS[a.iconKind];
             return (
@@ -176,9 +176,9 @@ export default function AdminHomeScreen() {
                 key={i}
                 className="flex-row items-center rounded-chip bg-surface"
                 style={{
-                  paddingHorizontal: 14,
-                  paddingVertical: 11,
-                  gap: 12,
+                  paddingHorizontal: 16,
+                  paddingVertical: 14,
+                  gap: 14,
                   borderWidth: 1,
                   borderColor: colors.hairline,
                 }}
@@ -242,8 +242,8 @@ function KpiCard({ kpi }: { kpi: KPI }) {
     <View
       className="flex-1 overflow-hidden rounded-chip bg-surface"
       style={{
-        paddingHorizontal: 14,
-        paddingVertical: 13,
+        paddingHorizontal: 16,
+        paddingVertical: 16,
         borderWidth: 1,
         borderColor: colors.hairline,
         position: "relative",

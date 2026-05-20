@@ -40,7 +40,7 @@ export default function AdminModerationScreen() {
       </View>
 
       <ScrollView
-        contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 14, paddingBottom: 120, gap: 8 }}
+        contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 140, gap: 12 }}
         showsVerticalScrollIndicator={false}
       >
         {tab === "queue"
@@ -57,14 +57,14 @@ function FlagCard({ flag }: { flag: FlagItem }) {
     <View
       className="rounded-card bg-surface"
       style={{
-        paddingHorizontal: 14,
-        paddingVertical: 12,
+        paddingHorizontal: 16,
+        paddingVertical: 16,
         borderWidth: 1,
         borderColor: colors.hairline,
-        gap: 10,
+        gap: 12,
       }}
     >
-      <View className="flex-row items-center" style={{ gap: 6, flexWrap: "wrap" }}>
+      <View className="flex-row items-center" style={{ gap: 8, flexWrap: "wrap" }}>
         <View
           className="rounded-tag"
           style={{ backgroundColor: tint.bg, paddingHorizontal: 6, paddingVertical: 2 }}
@@ -241,9 +241,9 @@ function RuleRow({
     <View
       className="flex-row items-center rounded-chip bg-surface"
       style={{
-        paddingHorizontal: 14,
-        paddingVertical: 12,
-        gap: 12,
+        paddingHorizontal: 16,
+        paddingVertical: 16,
+        gap: 14,
         borderWidth: 1,
         borderColor: colors.hairline,
       }}

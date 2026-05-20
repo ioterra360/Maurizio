@@ -72,6 +72,10 @@ export default function AppLayout() {
           tabBarIcon: ({ color }) => <SettingsIcon size={22} color={color} strokeWidth={1.75} />,
         }}
       />
+      {/* Folder detail is reached by pushing /folder/[kind] from Knowledge,
+          not by tapping a tab. Hide it from the tab bar — without this,
+          Expo Router would auto-mount it as a 5th, empty-titled tab. */}
+      <Tabs.Screen name="folder/[kind]" options={{ href: null }} />
     </Tabs>
   );
 }

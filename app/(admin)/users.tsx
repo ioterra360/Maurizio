@@ -86,7 +86,7 @@ export default function AdminUsersScreen() {
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: 16, gap: 6 }}
+        contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}
       >
         <FilterChip
           label="All"
@@ -119,7 +119,7 @@ export default function AdminUsersScreen() {
 
       {/* List */}
       <ScrollView
-        contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 12, paddingBottom: 120, gap: 6 }}
+        contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 140, gap: 10 }}
         showsVerticalScrollIndicator={false}
       >
         {filtered.length === 0 ? (
@@ -155,15 +155,15 @@ function UserRow({ user }: { user: AdminUser }) {
       accessibilityLabel={`Open ${user.name} details`}
       className="flex-row items-center rounded-chip bg-surface"
       style={({ pressed }) => ({
-        paddingHorizontal: 12,
-        paddingVertical: 11,
-        gap: 12,
+        paddingHorizontal: 16,
+        paddingVertical: 15,
+        gap: 14,
         borderWidth: 1,
         borderColor: colors.hairline,
         opacity: pressed ? 0.85 : 1,
       })}
     >
-      <InitialsAvatar initials={user.initials} size={36} variant="user" />
+      <InitialsAvatar initials={user.initials} size={40} variant="user" />
       <View style={{ flex: 1, minWidth: 0 }}>
         <View className="flex-row items-center" style={{ gap: 6 }}>
           <Text
