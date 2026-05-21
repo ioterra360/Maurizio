@@ -45,8 +45,8 @@ export function FilterChip({ label, count, active, dot, onPress }: Props) {
       <Text
         style={{
           fontFamily: active ? FONT.semibold : FONT.medium,
-          fontSize: 13,
-          color: active ? "#fff" : colors.navy,
+          fontSize: 13.5,
+          color: active ? colors.warmWhite : colors.navy,
           letterSpacing: -0.07,
         }}
       >
@@ -55,8 +55,8 @@ export function FilterChip({ label, count, active, dot, onPress }: Props) {
       <Text
         style={{
           fontFamily: FONT.semibold,
-          fontSize: 11.5,
-          color: active ? "rgba(255,255,255,0.7)" : colors.midGrey,
+          fontSize: 12,
+          color: active ? "rgba(250,248,244,0.78)" : colors.midGrey,
           fontVariant: ["tabular-nums"],
         }}
       >

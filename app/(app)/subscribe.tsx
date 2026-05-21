@@ -16,6 +16,7 @@ import {
   Radar,
 } from "lucide-react-native";
 
+import { Mascot } from "@/components/Mascot";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { GhostButton } from "@/components/GhostButton";
 import { useAuthStore } from "@/lib/auth-store";
@@ -89,7 +90,12 @@ export default function SubscribeScreen() {
           </Pressable>
         </View>
 
-        {/* Hero — navy panel, white inside (high contrast) */}
+        {/* Announce mascot — premium pitch lead */}
+        <View style={{ alignItems: "center", marginTop: 4, marginBottom: -8 }}>
+          <Mascot variant="announce" size={108} withShadow={false} />
+        </View>
+
+        {/* Hero — navy panel, warm-white inside (high contrast) */}
         <View
           style={{
             marginHorizontal: 20,

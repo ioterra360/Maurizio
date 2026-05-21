@@ -235,8 +235,8 @@ function SubRow({ sub }: { sub: Sub }) {
           <Text
             style={{
               fontFamily: FONT.bold,
-              fontSize: 11,
-              color: "#fff",
+              fontSize: 11.5,
+              color: colors.navy,
               fontVariant: ["tabular-nums"],
             }}
           >

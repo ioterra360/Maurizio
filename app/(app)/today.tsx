@@ -9,6 +9,7 @@ import { LayerCard } from "@/components/LayerCard";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { GhostButton } from "@/components/GhostButton";
 import { CoachTip } from "@/components/CoachTip";
+import { Mascot } from "@/components/Mascot";
 import { useAuthStore } from "@/lib/auth-store";
 import { useReviewStore } from "@/lib/review-store";
 import { firstName, dateBadge, timeGreeting } from "@/lib/format";
@@ -62,36 +63,40 @@ export default function TodayScreen() {
         contentContainerStyle={{ paddingBottom: 240 }}
         showsVerticalScrollIndicator={false}
       >
-        {/* Editorial hero — single two-line title at 32/700, NOT a kicker + name split */}
-        <View style={{ paddingHorizontal: 28, paddingTop: 22 }}>
-          <Text
-            accessibilityRole="header"
-            style={{
-              fontFamily: FONT.bold,
-              fontSize: 32,
-              color: colors.navy,
-              // 42 ≈ 1.31× font-size — gives descenders ("g", "y" in
-              // "Angelo"/"Maurizio") room without breaking the layout.
-              lineHeight: 42,
-              letterSpacing: -1,
-              paddingBottom: 2,
-            }}
-          >
-            {greeting}
-            {"\n"}
-            {display}
-          </Text>
-          <Text
-            style={{
-              fontFamily: FONT.semibold,
-              fontSize: 12,
-              color: colors.midGrey,
-              letterSpacing: 1.68, // 0.14em on 12px
-              marginTop: 12,
-            }}
-          >
-            {dateLabel}
-          </Text>
+        {/* Editorial hero with mascot peek — single two-line title + a small
+            coach mascot floating top-right to keep brand presence */}
+        <View style={{ paddingHorizontal: 28, paddingTop: 22, flexDirection: "row" }}>
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <Text
+              accessibilityRole="header"
+              style={{
+                fontFamily: FONT.bold,
+                fontSize: 32,
+                color: colors.navy,
+                lineHeight: 42,
+                letterSpacing: -1,
+                paddingBottom: 2,
+              }}
+            >
+              {greeting}
+              {"\n"}
+              {display}
+            </Text>
+            <Text
+              style={{
+                fontFamily: FONT.semibold,
+                fontSize: 12.5,
+                color: colors.midGrey,
+                letterSpacing: 1.68,
+                marginTop: 12,
+              }}
+            >
+              {dateLabel}
+            </Text>
+          </View>
+          <View style={{ marginLeft: 8, marginTop: 4 }}>
+            <Mascot variant="idea" size={72} withShadow={false} />
+          </View>
         </View>
 
         {/* Time budget card */}

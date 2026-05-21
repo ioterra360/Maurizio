@@ -27,7 +27,7 @@ export function RingChart({
   segments,
   centerValue,
   centerLabel,
-  textColor = "#fff",
+  textColor = colors.warmWhite,
 }: Props) {
   const r = size / 2 - strokeWidth;
   const C = 2 * Math.PI * r;
@@ -46,7 +46,7 @@ export function RingChart({
           cx={size / 2}
           cy={size / 2}
           r={r}
-          stroke="rgba(255,255,255,0.06)"
+          stroke="rgba(250,248,244,0.14)"
           strokeWidth={strokeWidth}
           fill="none"
         />
@@ -125,8 +125,8 @@ export function RingChart({
 type LegendDotProps = { color: string; label: string; pct: string; onDark?: boolean };
 
 export function LegendDot({ color, label, pct, onDark = true }: LegendDotProps) {
-  const textColor = onDark ? "rgba(255,255,255,0.78)" : colors.midGrey;
-  const pctColor = onDark ? "#fff" : colors.navy;
+  const textColor = onDark ? "rgba(250,248,244,0.82)" : colors.midGrey;
+  const pctColor = onDark ? colors.warmWhite : colors.navy;
   return (
     <View className="flex-row items-center" style={{ gap: 6 }}>
       <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: color }} />

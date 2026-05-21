@@ -10,8 +10,9 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Link, router } from "expo-router";
-import { ChevronLeft, Mail } from "lucide-react-native";
+import { ChevronLeft } from "lucide-react-native";
 
+import { Mascot } from "@/components/Mascot";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { isDemoMode, supabase } from "@/lib/supabase";
 import { authErrorMessage } from "@/lib/auth-errors";
@@ -92,22 +93,9 @@ export default function ForgotPasswordScreen() {
             </Pressable>
           </View>
 
-          {/* Hero */}
-          <View className="items-center" style={{ paddingTop: 16, paddingBottom: 36 }}>
-            <View
-              style={{
-                width: 76,
-                height: 76,
-                borderRadius: 999,
-                backgroundColor: colors.warmWhite,
-                alignItems: "center",
-                justifyContent: "center",
-                borderWidth: 1,
-                borderColor: colors.hairline,
-              }}
-            >
-              <Mail size={32} color={colors.navy} strokeWidth={1.75} />
-            </View>
+          {/* Hero — investigate mascot illustrates "looking for your password" */}
+          <View className="items-center" style={{ paddingTop: 12, paddingBottom: 30 }}>
+            <Mascot variant="investigate" size={140} withShadow={false} />
             <Text
               style={{
                 marginTop: 22,

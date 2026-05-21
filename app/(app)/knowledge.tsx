@@ -6,6 +6,7 @@ import { router } from "expo-router";
 
 import { HeaderHero } from "@/components/HeaderHero";
 import { FolderRow } from "@/components/FolderRow";
+import { Mascot } from "@/components/Mascot";
 import { useFoldersWithStats } from "@/lib/use-folders";
 import { applyFolderOrder, useFolderOrderStore } from "@/lib/folder-order-store";
 import { FONT, colors } from "@/theme/tokens";
@@ -33,14 +34,21 @@ export default function KnowledgeScreen() {
         contentContainerStyle={{ paddingBottom: 140 }}
         showsVerticalScrollIndicator={false}
       >
-        <HeaderHero
-          title="Your knowledge"
-          subtitle={
-            loading
-              ? "Caricamento delle tue cartelle…"
-              : `${folders.length} cartelle attive · riordinale con le frecce`
-          }
-        />
+        <View style={{ flexDirection: "row", alignItems: "flex-start" }}>
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <HeaderHero
+              title="Le tue cartelle"
+              subtitle={
+                loading
+                  ? "Caricamento delle tue cartelle…"
+                  : `${folders.length} cartelle attive · riordinale con le frecce`
+              }
+            />
+          </View>
+          <View style={{ paddingTop: 18, paddingRight: 22 }}>
+            <Mascot variant="checklist" size={72} withShadow={false} />
+          </View>
+        </View>
 
         <View style={{ paddingHorizontal: 16, gap: 12 }}>
           {loading && folders.length === 0 ? (

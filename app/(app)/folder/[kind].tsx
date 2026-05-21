@@ -94,13 +94,15 @@ export default function FolderDetailScreen() {
           <Pressable
             onPress={refetch}
             accessibilityRole="button"
-            accessibilityLabel="Retry loading folder"
+            accessibilityLabel="Riprova a caricare la cartella"
             style={({ pressed }) => ({
               alignSelf: "flex-start",
-              paddingHorizontal: 14,
-              paddingVertical: 8,
+              paddingHorizontal: 18,
+              paddingVertical: 10,
               borderRadius: 999,
-              backgroundColor: colors.navy,
+              backgroundColor: colors.warmWhite,
+              borderWidth: 1.5,
+              borderColor: colors.navy,
               opacity: pressed ? 0.85 : 1,
             })}
           >

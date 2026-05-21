@@ -107,9 +107,9 @@ export default function AdminHomeScreen() {
               <Text
                 style={{
                   fontFamily: FONT.semibold,
-                  fontSize: 12.5,
+                  fontSize: 14.5,
                   color: colors.navy,
-                  letterSpacing: -0.05,
+                  letterSpacing: -0.1,
                 }}
               >
                 <Text style={{ fontFamily: FONT.bold }}>5 items</Text> in moderation queue
@@ -117,9 +117,9 @@ export default function AdminHomeScreen() {
               <Text
                 style={{
                   fontFamily: FONT.regular,
-                  fontSize: 11.5,
+                  fontSize: 12.5,
                   color: colors.midGrey,
-                  marginTop: 2,
+                  marginTop: 3,
                 }}
               >
                 3 high severity · oldest 4h ago

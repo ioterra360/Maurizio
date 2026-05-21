@@ -22,17 +22,22 @@ export function ActionPill({ icon: Icon, label, color = colors.navy, onPress }: 
       accessibilityLabel={label}
       className="flex-1 flex-row items-center justify-center rounded-chip bg-surface"
       style={({ pressed }) => ({
-        height: 44,
-        gap: 8,
-        borderWidth: 1,
-        borderColor: colors.hairline,
+        height: 50,
+        gap: 10,
+        borderWidth: 1.2,
+        borderColor: colors.hairlineStrong,
         opacity: pressed ? 0.85 : 1,
+        shadowColor: colors.navy,
+        shadowOpacity: 0.06,
+        shadowOffset: { width: 0, height: 4 },
+        shadowRadius: 10,
+        elevation: 1,
       })}
     >
-      <Icon size={16} color={color} strokeWidth={2} />
+      <Icon size={18} color={color} strokeWidth={2} />
       <Text
         className="text-navy"
-        style={{ fontFamily: FONT.semibold, fontSize: 13.5, letterSpacing: -0.07 }}
+        style={{ fontFamily: FONT.semibold, fontSize: 15, letterSpacing: -0.1 }}
       >
         {label}
       </Text>

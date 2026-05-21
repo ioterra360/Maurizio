@@ -16,9 +16,9 @@ const META: Record<
   // Filled primary uses navy (matches "Start Today's Review" and the other
   // review CTAs) instead of the layer-local accent — Angelo's call: a
   // consistent dark-blue family across all confirm actions.
-  remembered: { label: "Remembered", icon: Check, bg: colors.navy, border: colors.navy, text: "#fff", iconColor: "#fff", shadow: true },
-  struggled:  { label: "Struggled",  icon: TriangleAlert, bg: "transparent", border: colors.hairlineStrong, text: colors.navy, iconColor: colors.navy },
-  forgot:     { label: "Forgot",     icon: X, bg: "transparent", border: colors.fading, text: colors.fading, iconColor: colors.fading },
+  remembered: { label: "Ricordato",  icon: Check,         bg: colors.warmWhite, border: colors.navy,           text: colors.navy,   iconColor: colors.navy,   shadow: true },
+  struggled:  { label: "Faticoso",   icon: TriangleAlert, bg: "transparent",     border: colors.hairlineStrong, text: colors.navy,   iconColor: colors.navy },
+  forgot:     { label: "Dimenticato",icon: X,             bg: "transparent",     border: colors.fading,         text: colors.fading, iconColor: colors.fading },
 };
 
 /**
@@ -35,24 +35,24 @@ export function RecallButton({ variant, onPress }: Props) {
       accessibilityLabel={m.label}
       className="w-full flex-row items-center justify-center rounded-card"
       style={({ pressed }) => ({
-        height: 56,
+        height: 60,
         backgroundColor: m.bg,
-        borderWidth: m.bg === "transparent" ? 1.5 : 0,
+        borderWidth: 1.5,
         borderColor: m.border,
         opacity: pressed ? 0.85 : 1,
         gap: 10,
         shadowColor: m.shadow ? colors.navy : "transparent",
-        shadowOpacity: m.shadow ? 0.32 : 0,
+        shadowOpacity: m.shadow ? 0.22 : 0,
         shadowOffset: { width: 0, height: 6 },
         shadowRadius: 18,
-        elevation: m.shadow ? 4 : 0,
+        elevation: m.shadow ? 3 : 0,
       })}
     >
-      <Icon size={18} color={m.iconColor} strokeWidth={2.1} />
+      <Icon size={20} color={m.iconColor} strokeWidth={2.1} />
       <Text
         style={{
-          fontFamily: FONT.semibold,
-          fontSize: 16,
+          fontFamily: FONT.bold,
+          fontSize: 18,
           color: m.text,
           letterSpacing: -0.1,
         }}

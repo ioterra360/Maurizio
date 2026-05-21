@@ -84,21 +84,26 @@ export default function AddScreen() {
             onPress={() => doSave(false)}
             disabled={!canSave}
             accessibilityRole="button"
-            accessibilityLabel="Save"
+            accessibilityLabel="Salva"
             style={({ pressed }) => ({
-              paddingHorizontal: 10,
-              opacity: !canSave ? 0.4 : pressed ? 0.6 : 1,
+              paddingHorizontal: 16,
+              paddingVertical: 8,
+              borderRadius: 999,
+              backgroundColor: colors.warmWhite,
+              borderWidth: 1.5,
+              borderColor: colors.navy,
+              opacity: !canSave ? 0.35 : pressed ? 0.78 : 1,
             })}
           >
             <Text
               style={{
-                fontFamily: FONT.semibold,
-                fontSize: 15,
+                fontFamily: FONT.bold,
+                fontSize: 14,
                 color: colors.navy,
-                letterSpacing: -0.15,
+                letterSpacing: -0.1,
               }}
             >
-              Save
+              Salva
             </Text>
           </Pressable>
         }
@@ -144,8 +149,8 @@ export default function AddScreen() {
                   <Text
                     style={{
                       fontFamily: on ? FONT.semibold : FONT.medium,
-                      fontSize: 13,
-                      color: on ? "#fff" : colors.navy,
+                      fontSize: 14,
+                      color: on ? colors.warmWhite : colors.navy,
                       letterSpacing: -0.07,
                     }}
                   >
@@ -154,8 +159,8 @@ export default function AddScreen() {
                   <Text
                     style={{
                       fontFamily: FONT.medium,
-                      fontSize: 11.5,
-                      color: on ? "rgba(255,255,255,0.65)" : colors.midGrey,
+                      fontSize: 12,
+                      color: on ? "rgba(250,248,244,0.72)" : colors.midGrey,
                       fontVariant: ["tabular-nums"],
                     }}
                   >
@@ -216,8 +221,8 @@ export default function AddScreen() {
                   <Text
                     style={{
                       fontFamily: on ? FONT.semibold : FONT.medium,
-                      fontSize: 12.5,
-                      color: on ? "#fff" : colors.navy,
+                      fontSize: 13,
+                      color: on ? colors.warmWhite : colors.navy,
                       letterSpacing: -0.04,
                     }}
                   >

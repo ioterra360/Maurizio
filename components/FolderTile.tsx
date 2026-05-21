@@ -90,7 +90,7 @@ export function InitialsAvatar({
         style={{
           fontFamily: FONT.semibold,
           fontSize: size * 0.36,
-          color: isAdmin ? "#fff" : colors.navy,
+          color: isAdmin ? colors.warmWhite : colors.navy,
           letterSpacing: 0.4,
         }}
       >
