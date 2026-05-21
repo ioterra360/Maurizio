@@ -13,10 +13,12 @@ import { FilterChip } from "@/components/FilterChip";
 import { ItemRow } from "@/components/ItemRow";
 import { SectionLabel } from "@/components/SectionLabel";
 import { FONT, colors } from "@/theme/tokens";
+import { CoachTip } from "@/components/CoachTip";
 import { FOLDER_KINDS, type FolderKind, type MemoryState } from "@/lib/constants";
 import { useFolderDetail } from "@/lib/use-folders";
 import { useReviewStore } from "@/lib/review-store";
 import { relativeReviewed } from "@/lib/format";
+import { pickCategoryTip } from "@/lib/coach-tips";
 import type { FolderItem } from "@/lib/folder-data";
 
 export default function FolderDetailScreen() {
@@ -122,6 +124,15 @@ export default function FolderDetailScreen() {
   };
   const addItem = () => router.push("/add");
 
+  // Tip rotated per-day so re-entering the folder shows fresh advice but
+  // not a new tip on every render.
+  const folderTip = useMemo(() => {
+    const now = new Date();
+    const start = new Date(now.getFullYear(), 0, 0);
+    const dayOfYear = Math.floor((now.getTime() - start.getTime()) / 86400000);
+    return pickCategoryTip(kind, dayOfYear);
+  }, [kind]);
+
   return (
     <SafeAreaView className="flex-1 bg-warm-white" edges={["top"]}>
       <FolderTopBar kind={kind} name={data.name} priority={data.priority} />
@@ -197,6 +208,11 @@ export default function FolderDetailScreen() {
               />
             </View>
           </View>
+        </View>
+
+        {/* Category-specific coach tip (e.g. languages tip for jp/es) */}
+        <View style={{ paddingHorizontal: 16, paddingTop: 14 }}>
+          <CoachTip tip={folderTip} persistDismiss={false} />
         </View>
 
         {/* Quick actions */}

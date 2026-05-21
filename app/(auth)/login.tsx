@@ -1,6 +1,5 @@
 import { useState } from "react";
 import {
-  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -10,9 +9,10 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { router } from "expo-router";
+import { Link } from "expo-router";
 
 import { Mascot } from "@/components/Mascot";
+import { PrimaryButton } from "@/components/PrimaryButton";
 import { useAuthStore, DEMO_ACCOUNTS, type DemoAccount } from "@/lib/auth-store";
 import { isDemoMode } from "@/lib/supabase";
 import { authErrorMessage } from "@/lib/auth-errors";
@@ -30,7 +30,7 @@ export default function LoginScreen() {
   const handleSubmit = async () => {
     setError(null);
     if (!email.trim() || !password) {
-      setError("Enter your email and password.");
+      setError("Inserisci email e password.");
       return;
     }
     try {
@@ -49,29 +49,62 @@ export default function LoginScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-canvas">
+    <SafeAreaView className="flex-1 bg-canvas" edges={["top", "bottom"]}>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         style={{ flex: 1 }}
       >
         <ScrollView
-          contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 24, paddingBottom: 32 }}
+          contentContainerStyle={{
+            flexGrow: 1,
+            paddingHorizontal: 28,
+            paddingBottom: 40,
+          }}
           keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
         >
-          {/* Hero */}
-          <View className="items-center pt-12 pb-8">
-            <Mascot size={96} />
+          {/* Hero — mascot floats above a soft warm wash */}
+          <View className="items-center" style={{ paddingTop: 32, paddingBottom: 36 }}>
+            <View
+              style={{
+                width: 132,
+                height: 132,
+                borderRadius: 999,
+                backgroundColor: colors.warmWhite,
+                alignItems: "center",
+                justifyContent: "center",
+                shadowColor: colors.navy,
+                shadowOpacity: 0.06,
+                shadowOffset: { width: 0, height: 10 },
+                shadowRadius: 22,
+                elevation: 2,
+              }}
+            >
+              <Mascot size={104} />
+            </View>
             <Text
-              className="mt-4 text-h1 text-navy"
-              style={{ fontFamily: FONT.bold }}
+              style={{
+                marginTop: 24,
+                fontFamily: FONT.bold,
+                fontSize: 32,
+                lineHeight: 38,
+                letterSpacing: -0.4,
+                color: colors.navy,
+              }}
             >
               Memora
             </Text>
             <Text
-              className="mt-2 text-body text-mid-grey"
-              style={{ fontFamily: FONT.regular }}
+              style={{
+                marginTop: 8,
+                fontFamily: FONT.regular,
+                fontSize: 15,
+                lineHeight: 22,
+                color: colors.midGrey,
+                textAlign: "center",
+              }}
             >
-              Sign in to your account
+              Your memory, well taken care of
             </Text>
           </View>
 
@@ -86,11 +119,11 @@ export default function LoginScreen() {
             autoCorrect={false}
             autoComplete="email"
             keyboardType="email-address"
-            placeholder="you@example.com"
+            placeholder="tu@esempio.com"
             placeholderTextColor={colors.placeholder}
             className="rounded-input bg-surface px-4 text-body-lg text-navy"
             style={{
-              height: 50,
+              height: 56,
               fontFamily: FONT.medium,
               borderWidth: 1.5,
               borderColor: focused === "email" ? colors.navy : colors.hairline,
@@ -98,7 +131,26 @@ export default function LoginScreen() {
           />
 
           {/* Password */}
-          <FieldLabel className="mt-4">Password</FieldLabel>
+          <View
+            className="mt-5 flex-row items-end justify-between"
+            style={{ marginBottom: 8 }}
+          >
+            <FieldLabel className="mb-0">Password</FieldLabel>
+            <Link href={"/(auth)/forgot-password" as never} asChild>
+              <Pressable hitSlop={8} accessibilityRole="link">
+                <Text
+                  style={{
+                    fontFamily: FONT.semibold,
+                    fontSize: 12,
+                    color: colors.navy,
+                    letterSpacing: -0.06,
+                  }}
+                >
+                  Password dimenticata?
+                </Text>
+              </Pressable>
+            </Link>
+          </View>
           <TextInput
             value={password}
             onChangeText={setPassword}
@@ -110,22 +162,26 @@ export default function LoginScreen() {
             placeholderTextColor={colors.placeholder}
             className="rounded-input bg-surface px-4 text-body-lg text-navy"
             style={{
-              height: 50,
+              height: 56,
               fontFamily: FONT.medium,
               borderWidth: 1.5,
               borderColor: focused === "password" ? colors.navy : colors.hairline,
             }}
           />
 
-          {/* Error pill — matches mockup style (soft red bg, danger text) */}
+          {/* Error pill */}
           {error ? (
             <View
-              className="mt-3 self-start rounded-chip px-3 py-2"
+              className="mt-4 self-start rounded-chip px-3 py-2"
               style={{ backgroundColor: colors.dangerSoft }}
             >
               <Text
                 className="text-caption"
-                style={{ fontFamily: FONT.medium, color: colors.danger, letterSpacing: -0.06 }}
+                style={{
+                  fontFamily: FONT.medium,
+                  color: colors.danger,
+                  letterSpacing: -0.06,
+                }}
               >
                 {error}
               </Text>
@@ -133,44 +189,68 @@ export default function LoginScreen() {
           ) : null}
 
           {/* Submit */}
-          <Pressable
-            onPress={handleSubmit}
-            disabled={loading}
-            accessibilityRole="button"
-            accessibilityLabel="Sign in"
-            className="mt-6 items-center justify-center rounded-cta bg-navy"
-            style={({ pressed }) => ({
-              height: 50,
-              opacity: pressed || loading ? 0.85 : 1,
-              shadowColor: colors.navy,
-              shadowOpacity: 0.4,
-              shadowOffset: { width: 0, height: 6 },
-              shadowRadius: 18,
-              elevation: 4,
-            })}
-          >
-            {loading ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text className="text-cta text-surface" style={{ fontFamily: FONT.semibold }}>
-                Sign in
-              </Text>
-            )}
-          </Pressable>
+          <View style={{ marginTop: 28 }}>
+            <PrimaryButton label="Accedi" onPress={handleSubmit} loading={loading} />
+          </View>
 
-          {/* Demo accounts section — bracketed by hairlines (editorial pattern) */}
-          <View className="mt-10 flex-row items-center" style={{ gap: 10 }}>
-            <View className="h-px flex-1" style={{ backgroundColor: colors.divider }} />
+          {/* Sign up prompt */}
+          <View
+            style={{
+              marginTop: 18,
+              flexDirection: "row",
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+          >
             <Text
-              className="text-xs-tight text-mid-grey"
-              style={{ fontFamily: FONT.bold, textTransform: "uppercase" }}
+              style={{
+                fontFamily: FONT.regular,
+                fontSize: 14,
+                color: colors.midGrey,
+              }}
+            >
+              Non hai un account?{" "}
+            </Text>
+            <Link href={"/(auth)/signup" as never} asChild>
+              <Pressable hitSlop={8} accessibilityRole="link">
+                <Text
+                  style={{
+                    fontFamily: FONT.semibold,
+                    fontSize: 14,
+                    color: colors.navy,
+                  }}
+                >
+                  Registrati
+                </Text>
+              </Pressable>
+            </Link>
+          </View>
+
+          {/* Demo accounts — bracketed by hairlines */}
+          <View
+            style={{
+              marginTop: 36,
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 12,
+            }}
+          >
+            <View style={{ flex: 1, height: 1, backgroundColor: colors.divider }} />
+            <Text
+              style={{
+                fontFamily: FONT.bold,
+                fontSize: 10.5,
+                letterSpacing: 1.6,
+                textTransform: "uppercase",
+                color: colors.midGrey,
+              }}
             >
               Demo accounts
             </Text>
-            <View className="h-px flex-1" style={{ backgroundColor: colors.divider }} />
+            <View style={{ flex: 1, height: 1, backgroundColor: colors.divider }} />
           </View>
 
-          <View className="mt-4" style={{ gap: 8 }}>
+          <View style={{ marginTop: 18, gap: 12 }}>
             {DEMO_ACCOUNTS.map((acct) => (
               <DemoCard key={acct.email} account={acct} onPress={() => fillDemo(acct)} />
             ))}
@@ -178,13 +258,19 @@ export default function LoginScreen() {
 
           {isDemoMode && (
             <Text
-              className="mt-3 text-micro text-mid-grey"
-              style={{ fontFamily: FONT.regular, lineHeight: 16 }}
+              style={{
+                marginTop: 16,
+                fontFamily: FONT.regular,
+                fontSize: 12,
+                lineHeight: 18,
+                color: colors.midGrey,
+              }}
             >
-              Demo mode is active. Sign in with any of the two seed accounts above —
-              passwords are accepted as-is. Disable{" "}
-              <Text style={{ fontFamily: FONT.semibold }}>EXPO_PUBLIC_DEMO_MODE</Text> in{" "}
-              <Text style={{ fontFamily: FONT.semibold }}>.env</Text> to switch to real auth.
+              Demo mode attivo. Accedi con uno dei due account sopra — le password
+              vengono accettate senza verifica. Disattiva{" "}
+              <Text style={{ fontFamily: FONT.semibold }}>EXPO_PUBLIC_DEMO_MODE</Text>{" "}
+              in <Text style={{ fontFamily: FONT.semibold }}>.env</Text> per attivare
+              l'auth reale.
             </Text>
           )}
         </ScrollView>
@@ -202,11 +288,14 @@ function FieldLabel({
 }) {
   return (
     <Text
-      className={`mb-2 text-micro text-mid-grey ${className}`}
+      className={className}
       style={{
+        marginBottom: 8,
         fontFamily: FONT.semibold,
+        fontSize: 11,
         letterSpacing: 1.3,
         textTransform: "uppercase",
+        color: colors.midGrey,
       }}
     >
       {children}
@@ -226,25 +315,32 @@ function DemoCard({
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={`Use demo account ${account.name}, ${isAdmin ? "admin" : "user"}`}
-      className="flex-row items-center rounded-card bg-surface px-3 py-3"
+      accessibilityLabel={`Usa account demo ${account.name}, ${isAdmin ? "admin" : "utente"}`}
+      className="flex-row items-center rounded-card bg-surface"
       style={({ pressed }) => ({
+        paddingVertical: 16,
+        paddingHorizontal: 16,
         opacity: pressed ? 0.85 : 1,
         borderWidth: 1,
         borderColor: colors.hairline,
-        gap: 12,
+        gap: 14,
       })}
     >
-      {/* Initials avatar — navy bg for admin, soft-blue bg for user */}
       <View
-        className="h-9 w-9 items-center justify-center rounded-pill"
-        style={{ backgroundColor: isAdmin ? colors.navy : colors.tagUserBg }}
+        style={{
+          width: 44,
+          height: 44,
+          borderRadius: 999,
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: isAdmin ? colors.navy : colors.tagUserBg,
+        }}
       >
         <Text
           style={{
             color: isAdmin ? "#fff" : colors.navy,
             fontFamily: FONT.semibold,
-            fontSize: 12.5,
+            fontSize: 14,
             letterSpacing: 0.4,
           }}
         >
@@ -252,26 +348,35 @@ function DemoCard({
         </Text>
       </View>
 
-      <View className="flex-1">
-        <Text className="text-body text-navy" style={{ fontFamily: FONT.semibold }}>
+      <View style={{ flex: 1 }}>
+        <Text style={{ fontFamily: FONT.semibold, fontSize: 15, color: colors.navy }}>
           {account.name}
         </Text>
         <Text
-          className="mt-0.5 text-caption text-mid-grey"
-          style={{ fontFamily: FONT.regular }}
+          style={{
+            marginTop: 2,
+            fontFamily: FONT.regular,
+            fontSize: 12.5,
+            color: colors.midGrey,
+          }}
         >
           {account.email}
         </Text>
       </View>
 
       <View
-        className="rounded-tag px-2 py-0.5"
-        style={{ backgroundColor: isAdmin ? colors.navy : colors.tagUserBg }}
+        className="rounded-tag"
+        style={{
+          paddingHorizontal: 8,
+          paddingVertical: 3,
+          backgroundColor: isAdmin ? colors.navy : colors.tagUserBg,
+        }}
       >
         <Text
-          className="text-xs-tag"
           style={{
             fontFamily: FONT.bold,
+            fontSize: 9.5,
+            letterSpacing: 0.6,
             color: isAdmin ? "#fff" : colors.navy,
           }}
         >

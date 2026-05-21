@@ -1,4 +1,5 @@
 import { Pressable, Text, View } from "react-native";
+import { Clock3, Coffee, BookOpen, Flame } from "lucide-react-native";
 import { FONT, colors } from "@/theme/tokens";
 import { TIME_BUDGETS } from "@/lib/constants";
 
@@ -7,19 +8,27 @@ type Props = {
   onChange: (minutes: number) => void;
 };
 
+const ICONS = {
+  5: Clock3,
+  15: Coffee,
+  30: BookOpen,
+  60: Flame,
+} as const;
+
 /**
- * The "How long do you have today?" chip row on the Today screen.
- * 5 / 15 / 30 / 1 hr. The active chip is navy filled; others are
- * hairline-bordered transparent.
+ * The "Quanto tempo hai oggi?" selector on the Today screen.
+ * Four large buttons laid out in a 2×2 grid; the active one is navy-filled
+ * with white text, others are surface-white with a hairline border and
+ * navy text. Each card shows minutes, mood label and est. item count.
  */
 export function TimeBudgetChips({ value, onChange }: Props) {
   return (
     <View
       className="rounded-card bg-surface"
       style={{
-        paddingHorizontal: 20,
+        paddingHorizontal: 18,
         paddingTop: 18,
-        paddingBottom: 20,
+        paddingBottom: 18,
         borderWidth: 1,
         borderColor: colors.hairline,
         shadowColor: colors.navy,
@@ -36,41 +45,82 @@ export function TimeBudgetChips({ value, onChange }: Props) {
           color: colors.midGrey,
           letterSpacing: 1.1,
           textTransform: "uppercase",
-          marginBottom: 12,
+          marginBottom: 14,
         }}
       >
-        How long do you have today?
+        Quanto tempo hai oggi?
       </Text>
-      <View className="flex-row" style={{ gap: 10 }}>
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
         {TIME_BUDGETS.map((b) => {
           const on = value === b.minutes;
+          const Icon = ICONS[b.minutes as keyof typeof ICONS] ?? Clock3;
           return (
             <Pressable
               key={b.minutes}
               onPress={() => onChange(b.minutes)}
               accessibilityRole="button"
-              accessibilityLabel={`Set time budget to ${b.label}`}
+              accessibilityLabel={`Imposta tempo di studio a ${b.label}`}
               accessibilityState={{ selected: on }}
-              className="flex-1 items-center justify-center rounded-chip"
+              className="rounded-chip"
               style={({ pressed }) => ({
-                paddingVertical: 14,
-                backgroundColor: on ? colors.navy : "#FBFAF6",
+                // 2 per row: (containerWidth - gap) / 2
+                // We rely on flexBasis to keep it responsive across widths.
+                flexBasis: "48%",
+                flexGrow: 1,
+                paddingVertical: 16,
+                paddingHorizontal: 14,
+                backgroundColor: on ? colors.navy : colors.warmWhite,
                 borderWidth: on ? 0 : 1,
                 borderColor: colors.hairline,
-                opacity: pressed && !on ? 0.7 : 1,
+                opacity: pressed && !on ? 0.75 : 1,
                 shadowColor: on ? colors.navy : "transparent",
-                shadowOpacity: on ? 0.18 : 0,
-                shadowOffset: { width: 0, height: 4 },
-                shadowRadius: 10,
-                elevation: on ? 2 : 0,
+                shadowOpacity: on ? 0.22 : 0,
+                shadowOffset: { width: 0, height: 6 },
+                shadowRadius: 14,
+                elevation: on ? 3 : 0,
               })}
             >
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                }}
+              >
+                <Icon
+                  size={18}
+                  strokeWidth={1.75}
+                  color={on ? "#fff" : colors.navy}
+                />
+                {on && (
+                  <View
+                    style={{
+                      width: 18,
+                      height: 18,
+                      borderRadius: 999,
+                      backgroundColor: "rgba(255,255,255,0.18)",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <View
+                      style={{
+                        width: 6,
+                        height: 6,
+                        borderRadius: 999,
+                        backgroundColor: "#fff",
+                      }}
+                    />
+                  </View>
+                )}
+              </View>
               <Text
                 style={{
-                  fontFamily: on ? FONT.bold : FONT.semibold,
-                  fontSize: 15,
+                  marginTop: 12,
+                  fontFamily: FONT.bold,
+                  fontSize: 18,
                   color: on ? "#fff" : colors.navy,
-                  letterSpacing: -0.2,
+                  letterSpacing: -0.3,
                   fontVariant: ["tabular-nums"],
                 }}
               >
@@ -78,16 +128,26 @@ export function TimeBudgetChips({ value, onChange }: Props) {
               </Text>
               <Text
                 style={{
-                  marginTop: 3,
-                  fontFamily: FONT.medium,
-                  fontSize: 10.5,
-                  color: on ? "rgba(255,255,255,0.7)" : colors.midGrey,
-                  letterSpacing: 0.4,
+                  marginTop: 2,
+                  fontFamily: FONT.semibold,
+                  fontSize: 11,
+                  color: on ? "rgba(255,255,255,0.78)" : colors.midGrey,
+                  letterSpacing: 0.6,
                   textTransform: "uppercase",
+                }}
+              >
+                {b.sublabel}
+              </Text>
+              <Text
+                style={{
+                  marginTop: 8,
+                  fontFamily: FONT.medium,
+                  fontSize: 11.5,
+                  color: on ? "rgba(255,255,255,0.7)" : colors.midGrey,
                   fontVariant: ["tabular-nums"],
                 }}
               >
-                {b.estItems} items
+                ≈ {b.estItems} ricordi
               </Text>
             </Pressable>
           );

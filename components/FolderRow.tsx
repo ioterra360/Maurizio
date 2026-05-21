@@ -1,5 +1,5 @@
 import { Pressable, Text, View } from "react-native";
-import { GripVertical } from "lucide-react-native";
+import { ChevronUp, ChevronDown } from "lucide-react-native";
 import { FONT, colors } from "@/theme/tokens";
 import { FolderTile } from "./FolderTile";
 import { RetentionBar } from "./RetentionBar";
@@ -14,11 +14,17 @@ type Props = {
   fading: number;
   archived: number;
   onPress?: () => void;
+  /** When provided, shows reorder controls. Disable arrows at list edges. */
+  onMoveUp?: () => void;
+  onMoveDown?: () => void;
+  canMoveUp?: boolean;
+  canMoveDown?: boolean;
 };
 
 /**
  * A folder line item in the Knowledge screen: tile + name + priority chip
- * + sub-line + retention bar + drag handle.
+ * + sub-line + retention bar + reorder arrows. Card has a soft drop shadow
+ * to stand off the warm-white canvas.
  */
 export function FolderRow({
   kind,
@@ -29,7 +35,13 @@ export function FolderRow({
   fading,
   archived,
   onPress,
+  onMoveUp,
+  onMoveDown,
+  canMoveUp,
+  canMoveDown,
 }: Props) {
+  const showReorder = !!(onMoveUp || onMoveDown);
+
   return (
     <Pressable
       onPress={onPress}
@@ -39,11 +51,18 @@ export function FolderRow({
       style={({ pressed }) => ({
         paddingVertical: 18,
         paddingLeft: 16,
-        paddingRight: 14,
+        paddingRight: showReorder ? 6 : 14,
         gap: 14,
         borderWidth: 1,
         borderColor: colors.hairline,
-        opacity: pressed ? 0.88 : 1,
+        opacity: pressed ? 0.92 : 1,
+        // Soft elevated shadow to separate the card from the warm-white
+        // canvas behind it. Subtle enough to keep the editorial calm look.
+        shadowColor: colors.navy,
+        shadowOpacity: 0.08,
+        shadowOffset: { width: 0, height: 6 },
+        shadowRadius: 18,
+        elevation: 2,
       })}
     >
       <FolderTile kind={kind} />
@@ -84,8 +103,58 @@ export function FolderRow({
         </Text>
       </View>
 
-      <RetentionBar active={active} fading={fading} archived={archived} width={72} height={6} />
-      <GripVertical size={16} color="#C5C3BE" strokeWidth={1.6} />
+      <RetentionBar active={active} fading={fading} archived={archived} width={64} height={6} />
+
+      {showReorder ? (
+        <View style={{ marginLeft: 4, flexDirection: "column", gap: 2 }}>
+          <ReorderButton
+            direction="up"
+            disabled={!canMoveUp}
+            onPress={onMoveUp}
+          />
+          <ReorderButton
+            direction="down"
+            disabled={!canMoveDown}
+            onPress={onMoveDown}
+          />
+        </View>
+      ) : null}
+    </Pressable>
+  );
+}
+
+function ReorderButton({
+  direction,
+  onPress,
+  disabled,
+}: {
+  direction: "up" | "down";
+  onPress?: () => void;
+  disabled?: boolean;
+}) {
+  const Icon = direction === "up" ? ChevronUp : ChevronDown;
+  return (
+    <Pressable
+      onPress={(e) => {
+        // Stop the press from propagating to the card's onPress.
+        e.stopPropagation();
+        onPress?.();
+      }}
+      disabled={disabled}
+      accessibilityRole="button"
+      accessibilityLabel={`Sposta ${direction === "up" ? "su" : "giù"}`}
+      hitSlop={6}
+      style={({ pressed }) => ({
+        width: 32,
+        height: 22,
+        borderRadius: 6,
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: disabled ? "transparent" : colors.tagUserBg,
+        opacity: disabled ? 0.3 : pressed ? 0.6 : 1,
+      })}
+    >
+      <Icon size={16} color={colors.navy} strokeWidth={2} />
     </Pressable>
   );
 }

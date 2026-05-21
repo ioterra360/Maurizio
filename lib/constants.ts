@@ -30,12 +30,12 @@ export const REVIEW_LAYERS: ReadonlyArray<LayerKey> = ["scan", "reinforcement", 
 export const REVIEW_RESPONSES = ["remembered", "struggled", "forgot", "skipped"] as const;
 export type ReviewResponse = (typeof REVIEW_RESPONSES)[number];
 
-/** Time-budget chips on Today (Phase 2). */
+/** Time-budget options on Today. Four cards: 5 / 15 / 30 / 60+ minutes. */
 export const TIME_BUDGETS = [
-  { label: "5 min", minutes: 5,  estItems: 8   },
-  { label: "15 min", minutes: 15, estItems: 28  },
-  { label: "30 min", minutes: 30, estItems: 55  },
-  { label: "1 hr",   minutes: 60, estItems: 110 },
+  { label: "5 min",   sublabel: "Veloce",     minutes: 5,  estItems: 8   },
+  { label: "15 min",  sublabel: "Standard",   minutes: 15, estItems: 28  },
+  { label: "30 min",  sublabel: "Approfondita", minutes: 30, estItems: 55  },
+  { label: "1+ ora",  sublabel: "Maratona",   minutes: 60, estItems: 110 },
 ] as const;
 
 export const DAILY_INPUT_CAP_DEFAULT = 20;

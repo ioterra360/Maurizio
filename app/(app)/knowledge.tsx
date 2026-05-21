@@ -1,3 +1,4 @@
+import { useEffect, useMemo } from "react";
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Plus } from "lucide-react-native";
@@ -6,11 +7,25 @@ import { router } from "expo-router";
 import { HeaderHero } from "@/components/HeaderHero";
 import { FolderRow } from "@/components/FolderRow";
 import { useFoldersWithStats } from "@/lib/use-folders";
+import { applyFolderOrder, useFolderOrderStore } from "@/lib/folder-order-store";
 import { FONT, colors } from "@/theme/tokens";
 import type { FolderKind } from "@/lib/constants";
 
 export default function KnowledgeScreen() {
   const { folders, loading, error, refetch } = useFoldersWithStats();
+  const order = useFolderOrderStore((s) => s.order);
+  const hydrated = useFolderOrderStore((s) => s.hydrated);
+  const hydrateOrder = useFolderOrderStore((s) => s.hydrate);
+  const moveFolder = useFolderOrderStore((s) => s.move);
+
+  useEffect(() => {
+    if (!hydrated) void hydrateOrder();
+  }, [hydrated, hydrateOrder]);
+
+  const orderedFolders = useMemo(
+    () => applyFolderOrder(folders, order),
+    [folders, order],
+  );
 
   return (
     <SafeAreaView className="flex-1 bg-warm-white" edges={["top"]}>
@@ -22,8 +37,8 @@ export default function KnowledgeScreen() {
           title="Your knowledge"
           subtitle={
             loading
-              ? "Loading your folders…"
-              : `${folders.length} active folders · adjust priorities anytime`
+              ? "Caricamento delle tue cartelle…"
+              : `${folders.length} cartelle attive · riordinale con le frecce`
           }
         />
 
@@ -88,12 +103,12 @@ export default function KnowledgeScreen() {
               </Pressable>
             </View>
           ) : (
-            folders.map((f) => (
+            orderedFolders.map((f, i) => (
               <FolderRow
                 key={f.kind}
                 kind={f.kind as FolderKind}
                 name={f.name}
-                priority={f.priority}
+                priority={i + 1}
                 count={f.count}
                 active={f.active}
                 fading={f.fading}
@@ -101,6 +116,10 @@ export default function KnowledgeScreen() {
                 onPress={() =>
                   router.push({ pathname: "/folder/[kind]", params: { kind: f.kind } })
                 }
+                onMoveUp={() => moveFolder(f.kind as FolderKind, "up")}
+                onMoveDown={() => moveFolder(f.kind as FolderKind, "down")}
+                canMoveUp={i > 0}
+                canMoveDown={i < orderedFolders.length - 1}
               />
             ))
           )}

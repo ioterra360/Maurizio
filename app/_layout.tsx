@@ -4,6 +4,7 @@ import "../global.css";
 
 import { useCallback, useEffect } from "react";
 import { View } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
@@ -35,6 +36,16 @@ SplashScreen.setOptions({ fade: true, duration: 220 });
  */
 const BOOTSTRAP_TIMEOUT_MS = 15_000;
 
+/**
+ * AsyncStorage key for the last consumed reset token. Reset deep-links use the
+ * shape `?reset=<token>` (e.g. `?reset=1`); when we see one, we sign out only
+ * if its token differs from the stored one, then persist the new token. This
+ * makes Expo Go bundle reloads (which keep firing the same initial URL) a
+ * no-op after the first apply, so refreshing no longer kicks the user back
+ * to login on every fast-reload.
+ */
+const RESET_TOKEN_KEY = "memora.reset-token";
+
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({
     Inter_400Regular,
@@ -57,12 +68,20 @@ export default function RootLayout() {
         const initialUrl = await Linking.getInitialURL();
         if (initialUrl) {
           // Regex over the raw URL is more robust than Linking.parse on the
-          // shapes Expo Go produces (exp://host:port/--/?reset=1 has empty
-          // path which Linking.parse doesn't always pick query params from).
-          const reset = /[?&]reset=(1|true)(?:&|$)/.test(initialUrl);
-          if (reset) {
-            if (__DEV__) console.log("[Memora] reset=1 deep-link — signing out");
-            await useAuthStore.getState().signOut();
+          // shapes Expo Go produces (exp://host:port/--/?reset=<token> has
+          // empty path which Linking.parse doesn't always pick query params
+          // from).
+          const m = initialUrl.match(/[?&]reset=([^&#]+)/);
+          if (m) {
+            const token = decodeURIComponent(m[1]);
+            const lastSeen = await AsyncStorage.getItem(RESET_TOKEN_KEY).catch(() => null);
+            if (token !== lastSeen) {
+              if (__DEV__) console.log(`[Memora] reset=${token} deep-link — signing out (new token)`);
+              await useAuthStore.getState().signOut();
+              await AsyncStorage.setItem(RESET_TOKEN_KEY, token).catch(() => {});
+            } else if (__DEV__) {
+              console.log(`[Memora] reset=${token} deep-link — already consumed, skipping`);
+            }
           }
         }
       } catch (err) {

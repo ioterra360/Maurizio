@@ -8,9 +8,11 @@ import { SectionLabel } from "@/components/SectionLabel";
 import { LayerCard } from "@/components/LayerCard";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { GhostButton } from "@/components/GhostButton";
+import { CoachTip } from "@/components/CoachTip";
 import { useAuthStore } from "@/lib/auth-store";
 import { useReviewStore } from "@/lib/review-store";
 import { firstName, dateBadge, timeGreeting } from "@/lib/format";
+import { pickTip } from "@/lib/coach-tips";
 import { FONT, colors } from "@/theme/tokens";
 
 type LayerPlan = { items: number; subtitle: string };
@@ -32,6 +34,12 @@ export default function TodayScreen() {
   // doesn't leave a stale "MON · MAY 18" header.
   const greeting = timeGreeting();
   const dateLabel = useMemo(() => dateBadge(), []);
+  const dayOfYear = useMemo(() => {
+    const now = new Date();
+    const start = new Date(now.getFullYear(), 0, 0);
+    return Math.floor((now.getTime() - start.getTime()) / 86400000);
+  }, []);
+  const todayTip = useMemo(() => pickTip("today", dayOfYear), [dayOfYear]);
 
   const startSession = useReviewStore((s) => s.start);
 
@@ -89,6 +97,11 @@ export default function TodayScreen() {
         {/* Time budget card */}
         <View style={{ paddingHorizontal: 20, marginTop: 22 }}>
           <TimeBudgetChips value={budget} onChange={setBudget} />
+        </View>
+
+        {/* Coach tip — rotates daily so the user sees fresh advice */}
+        <View style={{ paddingHorizontal: 20, marginTop: 18 }}>
+          <CoachTip tip={todayTip} persistDismiss={false} />
         </View>
 
         {/* Recommended flow */}
