@@ -63,39 +63,42 @@ export default function TodayScreen() {
         contentContainerStyle={{ paddingBottom: 240 }}
         showsVerticalScrollIndicator={false}
       >
-        {/* Editorial hero with mascot peek — single two-line title + a small
-            coach mascot floating top-right to keep brand presence */}
-        <View style={{ paddingHorizontal: 28, paddingTop: 22, flexDirection: "row" }}>
-          <View style={{ flex: 1, minWidth: 0 }}>
-            <Text
-              accessibilityRole="header"
-              style={{
-                fontFamily: FONT.bold,
-                fontSize: 32,
-                color: colors.navy,
-                lineHeight: 42,
-                letterSpacing: -1,
-                paddingBottom: 2,
-              }}
-            >
-              {greeting}
-              {"\n"}
-              {display}
-            </Text>
-            <Text
-              style={{
-                fontFamily: FONT.semibold,
-                fontSize: 12.5,
-                color: colors.midGrey,
-                letterSpacing: 1.68,
-                marginTop: 12,
-              }}
-            >
-              {dateLabel}
-            </Text>
-          </View>
-          <View style={{ marginLeft: 8, marginTop: 4 }}>
-            <Mascot variant="idea" size={72} withShadow={false} />
+        {/* Editorial hero with mascot peek — mascot is absolutely positioned
+            so the 32pt heading keeps the full width on narrow phones (e.g.
+            iPhone SE) rather than wrapping prematurely. */}
+        <View style={{ paddingHorizontal: 28, paddingTop: 22, position: "relative" }}>
+          <Text
+            accessibilityRole="header"
+            style={{
+              fontFamily: FONT.bold,
+              fontSize: 32,
+              color: colors.navy,
+              lineHeight: 42,
+              letterSpacing: -1,
+              paddingBottom: 2,
+              paddingRight: 60,
+            }}
+          >
+            {greeting}
+            {"\n"}
+            {display}
+          </Text>
+          <Text
+            style={{
+              fontFamily: FONT.semibold,
+              fontSize: 12.5,
+              color: colors.midGrey,
+              letterSpacing: 1.68,
+              marginTop: 12,
+            }}
+          >
+            {dateLabel}
+          </Text>
+          <View
+            pointerEvents="none"
+            style={{ position: "absolute", top: 12, right: 16 }}
+          >
+            <Mascot variant="idea" size={64} withShadow={false} />
           </View>
         </View>
 

@@ -34,19 +34,20 @@ export default function KnowledgeScreen() {
         contentContainerStyle={{ paddingBottom: 140 }}
         showsVerticalScrollIndicator={false}
       >
-        <View style={{ flexDirection: "row", alignItems: "flex-start" }}>
-          <View style={{ flex: 1, minWidth: 0 }}>
-            <HeaderHero
-              title="Le tue cartelle"
-              subtitle={
-                loading
-                  ? "Caricamento delle tue cartelle…"
-                  : `${folders.length} cartelle attive · riordinale con le frecce`
-              }
-            />
-          </View>
-          <View style={{ paddingTop: 18, paddingRight: 22 }}>
-            <Mascot variant="checklist" size={72} withShadow={false} />
+        <View style={{ position: "relative" }}>
+          <HeaderHero
+            title="Le tue cartelle"
+            subtitle={
+              loading
+                ? "Caricamento delle tue cartelle…"
+                : `${folders.length} cartelle attive · riordinale con le frecce`
+            }
+          />
+          <View
+            pointerEvents="none"
+            style={{ position: "absolute", top: 14, right: 18 }}
+          >
+            <Mascot variant="checklist" size={64} withShadow={false} />
           </View>
         </View>
 

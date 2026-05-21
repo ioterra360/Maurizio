@@ -10,9 +10,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
-import { Radar, Repeat, Target } from "lucide-react-native";
-
-import { Mascot } from "@/components/Mascot";
+import { Mascot, type MascotVariant } from "@/components/Mascot";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { GhostButton } from "@/components/GhostButton";
 import { colors, FONT, layerTint } from "@/theme/tokens";
@@ -21,8 +19,8 @@ const { width: SCREEN_W } = Dimensions.get("window");
 
 type Step = {
   key: string;
-  icon: React.ReactNode;
-  iconBg: string;
+  mascot: MascotVariant;
+  haloBg: string;
   title: string;
   body: string;
 };
@@ -30,29 +28,29 @@ type Step = {
 const STEPS: Step[] = [
   {
     key: "welcome",
-    icon: null,
-    iconBg: colors.warmWhite,
+    mascot: "default",
+    haloBg: colors.warmWhite,
     title: "Benvenuto in Memika",
     body: "La tua memoria, ben curata. Tre ritmi di ripasso che lavorano insieme per te.",
   },
   {
     key: "scan",
-    icon: <Radar size={36} color={colors.scan} strokeWidth={1.75} />,
-    iconBg: layerTint.scan,
+    mascot: "investigate",
+    haloBg: layerTint.scan,
     title: "Scan",
     body: "Una rapida occhiata ai ricordi più vecchi: pochi secondi, tanta consapevolezza.",
   },
   {
     key: "reinforcement",
-    icon: <Repeat size={36} color={colors.reinforcement} strokeWidth={1.75} />,
-    iconBg: layerTint.reinforcement,
+    mascot: "checklist",
+    haloBg: layerTint.reinforcement,
     title: "Reinforcement",
     body: "Consolidi quello che hai visto negli ultimi giorni. Più rifletti, più si fissa.",
   },
   {
     key: "focus",
-    icon: <Target size={36} color={colors.focus} strokeWidth={1.75} />,
-    iconBg: layerTint.focus,
+    mascot: "idea",
+    haloBg: layerTint.focus,
     title: "Focus",
     body: "Lavoro profondo sui ricordi di ieri. Qui la memoria diventa duratura.",
   },
@@ -117,7 +115,7 @@ export default function OnboardingScreen() {
         scrollEventThrottle={16}
         style={{ flex: 1 }}
       >
-        {STEPS.map((s, i) => (
+        {STEPS.map((s) => (
           <View
             key={s.key}
             style={{
@@ -127,23 +125,18 @@ export default function OnboardingScreen() {
               justifyContent: "center",
             }}
           >
-            {/* Hero icon — mascot for the welcome step, layer icon for the rest */}
+            {/* Soft halo behind the mascot — layer-tinted to telegraph the step */}
             <View
               style={{
-                width: 132,
-                height: 132,
+                width: 200,
+                height: 200,
                 borderRadius: 999,
-                backgroundColor: s.iconBg,
+                backgroundColor: s.haloBg,
                 alignItems: "center",
                 justifyContent: "center",
-                shadowColor: colors.navy,
-                shadowOpacity: 0.08,
-                shadowOffset: { width: 0, height: 10 },
-                shadowRadius: 24,
-                elevation: 3,
               }}
             >
-              {i === 0 ? <Mascot size={92} withShadow={false} /> : s.icon}
+              <Mascot variant={s.mascot} size={170} withShadow={false} />
             </View>
 
             <Text
