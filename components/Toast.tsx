@@ -5,7 +5,7 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
-import { FONT } from "@/theme/tokens";
+import { FONT, colors } from "@/theme/tokens";
 
 type Props = {
   message: string | null;
@@ -74,7 +74,7 @@ export function Toast({ message, onDismiss, durationMs = 1800 }: Props) {
     >
       <Text
         style={{
-          color: "#fff",
+          color: colors.warmWhite,
           fontFamily: FONT.medium,
           fontSize: 13,
           letterSpacing: -0.07,

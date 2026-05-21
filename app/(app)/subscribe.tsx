@@ -117,17 +117,17 @@ export default function SubscribeScreen() {
               marginBottom: 18,
             }}
           >
-            <Sparkles size={12} color="#fff" strokeWidth={2} />
+            <Sparkles size={12} color={colors.warmWhite} strokeWidth={2} />
             <Text
               style={{
                 fontFamily: FONT.bold,
                 fontSize: 10.5,
-                color: "#fff",
+                color: colors.warmWhite,
                 letterSpacing: 0.8,
                 textTransform: "uppercase",
               }}
             >
-              Memora Premium
+              Memika Premium
             </Text>
           </View>
           <Text
@@ -136,7 +136,7 @@ export default function SubscribeScreen() {
               fontSize: 26,
               lineHeight: 32,
               letterSpacing: -0.4,
-              color: "#fff",
+              color: colors.warmWhite,
             }}
           >
             Sblocca la tua memoria,{"\n"}senza compromessi.
@@ -165,7 +165,7 @@ export default function SubscribeScreen() {
               style={{
                 fontFamily: FONT.bold,
                 fontSize: 36,
-                color: "#fff",
+                color: colors.warmWhite,
                 letterSpacing: -0.8,
               }}
             >
@@ -247,7 +247,7 @@ export default function SubscribeScreen() {
         {/* CTA */}
         <View style={{ marginTop: 32, paddingHorizontal: 20, gap: 12 }}>
           <PrimaryButton
-            label="Continua su memora.app"
+            label="Continua sul sito"
             loading={opening}
             onPress={openCheckout}
           />

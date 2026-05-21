@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Modal, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
+import { LogOut, Trash2, AlertTriangle } from "lucide-react-native";
 
 import { HeaderHero } from "@/components/HeaderHero";
 import { InitialsAvatar } from "@/components/FolderTile";
@@ -10,6 +11,7 @@ import { SettingsRow, SettingsToggle } from "@/components/SettingsRow";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { GhostButton } from "@/components/GhostButton";
 import { useAuthStore } from "@/lib/auth-store";
+import { tap, error as errorFeedback } from "@/lib/feedback";
 import { FONT, colors } from "@/theme/tokens";
 
 export default function SettingsScreen() {
@@ -130,89 +132,47 @@ export default function SettingsScreen() {
           <SettingsRow label="Privacy" value="On-device first" />
         </View>
 
-        {/* Danger zone */}
-        <View style={{ paddingHorizontal: 24, paddingTop: 32, paddingBottom: 8 }}>
-          <Text
-            style={{
-              fontFamily: FONT.bold,
-              fontSize: 10.5,
-              color: colors.fading,
-              letterSpacing: 1.05, // 0.1em on 10.5px (was 1.4 = too wide)
-              textTransform: "uppercase",
-            }}
-          >
-            Danger zone
-          </Text>
-        </View>
-        <View style={{ paddingHorizontal: 16, gap: 10 }}>
-          <Pressable
-            onPress={handleSignOut}
-            className="rounded-input bg-surface"
-            style={({ pressed }) => ({
-              paddingHorizontal: 16,
-              paddingVertical: 14,
-              borderWidth: 1,
-              borderColor: colors.hairlineStrong,
-              opacity: pressed ? 0.85 : 1,
-            })}
-          >
+        {/* Danger zone — premium: warning header + two icon-led cards */}
+        <View style={{ paddingHorizontal: 24, paddingTop: 32, paddingBottom: 10 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+            <AlertTriangle size={14} color={colors.danger} strokeWidth={2} />
             <Text
               style={{
-                fontFamily: FONT.semibold,
-                fontSize: 14,
-                color: colors.navy,
-                letterSpacing: -0.07,
-              }}
-            >
-              Sign out
-            </Text>
-            <Text
-              style={{
-                fontFamily: FONT.regular,
-                fontSize: 12,
-                color: colors.midGrey,
-                marginTop: 2,
-                lineHeight: 17,
-              }}
-            >
-              You&apos;ll need your email and password to sign back in.
-            </Text>
-          </Pressable>
-
-          <Pressable
-            onPress={() => setConfirmDelete(true)}
-            className="rounded-input bg-surface"
-            style={({ pressed }) => ({
-              paddingHorizontal: 16,
-              paddingVertical: 14,
-              borderWidth: 1,
-              borderColor: colors.fading,
-              opacity: pressed ? 0.85 : 1,
-            })}
-          >
-            <Text
-              style={{
-                fontFamily: FONT.semibold,
-                fontSize: 14,
+                fontFamily: FONT.bold,
+                fontSize: 11,
                 color: colors.danger,
-                letterSpacing: -0.07,
+                letterSpacing: 1.4,
+                textTransform: "uppercase",
               }}
             >
-              Delete account
+              Zona pericolosa
             </Text>
-            <Text
-              style={{
-                fontFamily: FONT.regular,
-                fontSize: 12,
-                color: colors.midGrey,
-                marginTop: 2,
-                lineHeight: 17,
-              }}
-            >
-              Permanently remove all memories, folders, and review history.
-              This can&apos;t be undone.
-            </Text>
-          </Pressable>
+          </View>
+        </View>
+        <View style={{ paddingHorizontal: 16, gap: 12 }}>
+          <DangerCard
+            icon={LogOut}
+            iconColor={colors.navy}
+            iconBg={colors.tagUserBg}
+            title="Esci dall'account"
+            body="Servirà email e password per rientrare."
+            onPress={() => {
+              tap();
+              handleSignOut();
+            }}
+          />
+          <DangerCard
+            icon={Trash2}
+            iconColor={colors.danger}
+            iconBg={colors.dangerSoft}
+            title="Elimina account"
+            body="Cancella tutti i ricordi, le cartelle e la cronologia. Non recuperabile."
+            danger
+            onPress={() => {
+              errorFeedback();
+              setConfirmDelete(true);
+            }}
+          />
         </View>
       </ScrollView>
 
@@ -269,34 +229,37 @@ export default function SettingsScreen() {
             <Text
               style={{
                 fontFamily: FONT.bold,
-                fontSize: 19,
+                fontSize: 22,
                 color: colors.navy,
-                lineHeight: 23,
+                lineHeight: 26,
                 letterSpacing: -0.4,
               }}
             >
-              Delete your Memora account?
+              Eliminare il tuo account Memika?
             </Text>
             <Text
               style={{
                 fontFamily: FONT.regular,
-                fontSize: 13.5,
+                fontSize: 15,
                 color: colors.midGrey,
-                marginTop: 8,
-                lineHeight: 19,
+                marginTop: 10,
+                lineHeight: 22,
               }}
             >
-              779 memories across 4 folders will be permanently deleted.
-              You&apos;ll be signed out on every device.
+              779 ricordi in 4 cartelle saranno eliminati per sempre.
+              Verrai disconnesso da ogni dispositivo.
             </Text>
-            <View style={{ marginTop: 20, gap: 10 }}>
+            <View style={{ marginTop: 22, gap: 10 }}>
               <PrimaryButton
-                label="Yes, delete everything"
+                label="Sì, elimina tutto"
                 onPress={() => setConfirmDelete(false)}
-                style={{ backgroundColor: colors.danger }}
+                style={{
+                  backgroundColor: colors.dangerSoft,
+                  borderColor: colors.danger,
+                }}
               />
               <GhostButton
-                label="Cancel"
+                label="Annulla"
                 onPress={() => setConfirmDelete(false)}
                 variant="link"
               />
@@ -305,5 +268,84 @@ export default function SettingsScreen() {
         </View>
       </Modal>
     </SafeAreaView>
+  );
+}
+
+function DangerCard({
+  icon: Icon,
+  iconColor,
+  iconBg,
+  title,
+  body,
+  danger,
+  onPress,
+}: {
+  icon: typeof LogOut;
+  iconColor: string;
+  iconBg: string;
+  title: string;
+  body: string;
+  danger?: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={title}
+      className="rounded-card bg-surface"
+      style={({ pressed }) => ({
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 14,
+        paddingHorizontal: 16,
+        paddingVertical: 16,
+        borderWidth: 1,
+        borderColor: danger ? colors.danger : colors.hairlineStrong,
+        backgroundColor: colors.surface,
+        opacity: pressed ? 0.92 : 1,
+        shadowColor: danger ? colors.danger : colors.navy,
+        shadowOpacity: danger ? 0.1 : 0.06,
+        shadowOffset: { width: 0, height: 6 },
+        shadowRadius: 16,
+        elevation: 2,
+      })}
+    >
+      <View
+        style={{
+          width: 44,
+          height: 44,
+          borderRadius: 999,
+          backgroundColor: iconBg,
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <Icon size={20} color={iconColor} strokeWidth={1.9} />
+      </View>
+      <View style={{ flex: 1, minWidth: 0 }}>
+        <Text
+          style={{
+            fontFamily: FONT.bold,
+            fontSize: 15,
+            color: danger ? colors.danger : colors.navy,
+            letterSpacing: -0.15,
+          }}
+        >
+          {title}
+        </Text>
+        <Text
+          style={{
+            marginTop: 3,
+            fontFamily: FONT.regular,
+            fontSize: 13,
+            lineHeight: 19,
+            color: colors.midGrey,
+          }}
+        >
+          {body}
+        </Text>
+      </View>
+    </Pressable>
   );
 }

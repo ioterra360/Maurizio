@@ -87,7 +87,7 @@ export function AdminTopBar({ title, subtitle, rightSlot, onBack }: Props) {
                 style={{
                   fontFamily: FONT.bold,
                   fontSize: 9.5,
-                  color: "#fff",
+                  color: colors.warmWhite,
                   letterSpacing: 0.95, // 0.1em on 9.5px
                   textTransform: "uppercase",
                 }}

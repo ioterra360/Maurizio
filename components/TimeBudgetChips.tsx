@@ -1,7 +1,8 @@
 import { Pressable, Text, View } from "react-native";
-import { Clock3, Coffee, BookOpen, Flame } from "lucide-react-native";
+import { Clock3, Coffee, BookOpen, Flame, Check } from "lucide-react-native";
 import { FONT, colors } from "@/theme/tokens";
 import { TIME_BUDGETS } from "@/lib/constants";
+import { tap } from "@/lib/feedback";
 
 type Props = {
   value: number;
@@ -16,10 +17,10 @@ const ICONS = {
 } as const;
 
 /**
- * The "Quanto tempo hai oggi?" selector on the Today screen.
- * Four large buttons laid out in a 2×2 grid; the active one is navy-filled
- * with white text, others are surface-white with a hairline border and
- * navy text. Each card shows minutes, mood label and est. item count.
+ * "Quanto tempo hai oggi?" — four large buttons laid out in a 2×2 grid.
+ * Active chip: warm-tint background, navy border 2px + bold navy text +
+ * a navy check pip. Inactive: warm-white with hairline. No white text
+ * anywhere.
  */
 export function TimeBudgetChips({ value, onChange }: Props) {
   return (
@@ -32,18 +33,18 @@ export function TimeBudgetChips({ value, onChange }: Props) {
         borderWidth: 1,
         borderColor: colors.hairline,
         shadowColor: colors.navy,
-        shadowOpacity: 0.04,
-        shadowOffset: { width: 0, height: 4 },
-        shadowRadius: 16,
-        elevation: 1,
+        shadowOpacity: 0.08,
+        shadowOffset: { width: 0, height: 8 },
+        shadowRadius: 20,
+        elevation: 2,
       }}
     >
       <Text
         style={{
           fontFamily: FONT.semibold,
-          fontSize: 11,
+          fontSize: 12,
           color: colors.midGrey,
-          letterSpacing: 1.1,
+          letterSpacing: 1.2,
           textTransform: "uppercase",
           marginBottom: 14,
         }}
@@ -57,27 +58,27 @@ export function TimeBudgetChips({ value, onChange }: Props) {
           return (
             <Pressable
               key={b.minutes}
-              onPress={() => onChange(b.minutes)}
+              onPress={() => {
+                tap();
+                onChange(b.minutes);
+              }}
               accessibilityRole="button"
               accessibilityLabel={`Imposta tempo di studio a ${b.label}`}
               accessibilityState={{ selected: on }}
               className="rounded-chip"
               style={({ pressed }) => ({
-                // 2 per row: (containerWidth - gap) / 2
-                // We rely on flexBasis to keep it responsive across widths.
-                flexBasis: "48%",
-                flexGrow: 1,
+                width: "48%",
                 paddingVertical: 16,
                 paddingHorizontal: 14,
-                backgroundColor: on ? colors.navy : colors.warmWhite,
-                borderWidth: on ? 0 : 1,
-                borderColor: colors.hairline,
+                backgroundColor: on ? colors.tagUserBg : colors.warmWhite,
+                borderWidth: on ? 2 : 1,
+                borderColor: on ? colors.navy : colors.hairline,
                 opacity: pressed && !on ? 0.75 : 1,
                 shadowColor: on ? colors.navy : "transparent",
-                shadowOpacity: on ? 0.22 : 0,
+                shadowOpacity: on ? 0.18 : 0,
                 shadowOffset: { width: 0, height: 6 },
-                shadowRadius: 14,
-                elevation: on ? 3 : 0,
+                shadowRadius: 12,
+                elevation: on ? 2 : 0,
               })}
             >
               <View
@@ -87,40 +88,29 @@ export function TimeBudgetChips({ value, onChange }: Props) {
                   justifyContent: "space-between",
                 }}
               >
-                <Icon
-                  size={18}
-                  strokeWidth={1.75}
-                  color={on ? "#fff" : colors.navy}
-                />
-                {on && (
+                <Icon size={20} strokeWidth={1.75} color={colors.navy} />
+                {on ? (
                   <View
                     style={{
-                      width: 18,
-                      height: 18,
+                      width: 22,
+                      height: 22,
                       borderRadius: 999,
-                      backgroundColor: "rgba(255,255,255,0.18)",
+                      backgroundColor: colors.navy,
                       alignItems: "center",
                       justifyContent: "center",
                     }}
                   >
-                    <View
-                      style={{
-                        width: 6,
-                        height: 6,
-                        borderRadius: 999,
-                        backgroundColor: "#fff",
-                      }}
-                    />
+                    <Check size={12} color={colors.warmWhite} strokeWidth={3} />
                   </View>
-                )}
+                ) : null}
               </View>
               <Text
                 style={{
-                  marginTop: 12,
+                  marginTop: 14,
                   fontFamily: FONT.bold,
-                  fontSize: 18,
-                  color: on ? "#fff" : colors.navy,
-                  letterSpacing: -0.3,
+                  fontSize: 20,
+                  color: colors.navy,
+                  letterSpacing: -0.4,
                   fontVariant: ["tabular-nums"],
                 }}
               >
@@ -128,10 +118,10 @@ export function TimeBudgetChips({ value, onChange }: Props) {
               </Text>
               <Text
                 style={{
-                  marginTop: 2,
+                  marginTop: 3,
                   fontFamily: FONT.semibold,
-                  fontSize: 11,
-                  color: on ? "rgba(255,255,255,0.78)" : colors.midGrey,
+                  fontSize: 11.5,
+                  color: colors.midGrey,
                   letterSpacing: 0.6,
                   textTransform: "uppercase",
                 }}
@@ -140,10 +130,10 @@ export function TimeBudgetChips({ value, onChange }: Props) {
               </Text>
               <Text
                 style={{
-                  marginTop: 8,
+                  marginTop: 10,
                   fontFamily: FONT.medium,
-                  fontSize: 11.5,
-                  color: on ? "rgba(255,255,255,0.7)" : colors.midGrey,
+                  fontSize: 12.5,
+                  color: colors.midGrey,
                   fontVariant: ["tabular-nums"],
                 }}
               >

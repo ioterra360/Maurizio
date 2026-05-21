@@ -81,24 +81,26 @@ export default function KnowledgeScreen() {
               <Pressable
                 onPress={refetch}
                 accessibilityRole="button"
-                accessibilityLabel="Retry loading folders"
+                accessibilityLabel="Riprova a caricare le cartelle"
                 style={({ pressed }) => ({
                   marginTop: 4,
-                  paddingHorizontal: 14,
-                  paddingVertical: 8,
+                  paddingHorizontal: 18,
+                  paddingVertical: 10,
                   borderRadius: 999,
-                  backgroundColor: colors.navy,
+                  backgroundColor: colors.warmWhite,
+                  borderWidth: 1.5,
+                  borderColor: colors.navy,
                   opacity: pressed ? 0.85 : 1,
                 })}
               >
                 <Text
                   style={{
                     fontFamily: FONT.semibold,
-                    fontSize: 13,
-                    color: "#fff",
+                    fontSize: 14,
+                    color: colors.navy,
                   }}
                 >
-                  Retry
+                  Riprova
                 </Text>
               </Pressable>
             </View>
@@ -149,7 +151,7 @@ export default function KnowledgeScreen() {
           transform: [{ scale: pressed ? 0.96 : 1 }],
         })}
       >
-        <Plus size={24} color="#fff" strokeWidth={2.2} />
+        <Plus size={24} color={colors.warmWhite} strokeWidth={2.2} />
       </Pressable>
     </SafeAreaView>
   );

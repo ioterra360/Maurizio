@@ -7,6 +7,7 @@ import { Sparkles } from "lucide-react-native";
 import { ReviewHeader } from "@/components/ReviewHeader";
 import { FolderPill } from "@/components/FolderPill";
 import { useReviewStore } from "@/lib/review-store";
+import { success, error, tap } from "@/lib/feedback";
 import { FONT, colors } from "@/theme/tokens";
 
 type Stage = "pre" | "hint" | "answer";
@@ -35,9 +36,16 @@ export default function ReinforcementScreen() {
   if (!card) return null;
 
   const advance = (response: "remembered" | "struggled") => {
+    if (response === "remembered") success();
+    else error();
     const result = recordAndAdvance(response);
     if (result === "handoff") router.replace("/review/handoff");
     else if (result === "done") router.replace("/review/complete");
+  };
+
+  const reveal = (next: Stage) => {
+    tap();
+    setStage(next);
   };
 
   // Derive hint as the first sense in a multi-sense back string.
@@ -139,38 +147,41 @@ export default function ReinforcementScreen() {
         {stage === "pre" ? (
           <>
             <Pressable
-              onPress={() => setStage("hint")}
+              onPress={() => reveal("hint")}
               accessibilityRole="button"
               accessibilityLabel="Need a hint"
               className="items-center justify-center rounded-cta"
               style={({ pressed }) => ({
-                height: 50,
+                height: 56,
                 borderWidth: 1.5,
                 borderColor: colors.hairlineStrong,
+                backgroundColor: colors.warmWhite,
                 opacity: pressed ? 0.85 : 1,
               })}
             >
-              <Text style={{ fontFamily: FONT.semibold, fontSize: 15, color: colors.navy }}>
+              <Text style={{ fontFamily: FONT.semibold, fontSize: 17, color: colors.navy }}>
                 Need a hint
               </Text>
             </Pressable>
             <Pressable
-              onPress={() => setStage("answer")}
+              onPress={() => reveal("answer")}
               accessibilityRole="button"
               accessibilityLabel="Show answer"
               className="items-center justify-center rounded-cta"
               style={({ pressed }) => ({
-                height: 56,
-                backgroundColor: colors.navy,
+                height: 60,
+                backgroundColor: colors.warmWhite,
+                borderWidth: 1.5,
+                borderColor: colors.navy,
                 opacity: pressed ? 0.88 : 1,
                 shadowColor: colors.navy,
-                shadowOpacity: 0.32,
+                shadowOpacity: 0.18,
                 shadowOffset: { width: 0, height: 6 },
                 shadowRadius: 18,
-                elevation: 4,
+                elevation: 3,
               })}
             >
-              <Text style={{ fontFamily: FONT.semibold, fontSize: 16, color: "#fff" }}>
+              <Text style={{ fontFamily: FONT.bold, fontSize: 19, color: colors.navy, letterSpacing: -0.16 }}>
                 Show answer
               </Text>
             </Pressable>
@@ -179,22 +190,24 @@ export default function ReinforcementScreen() {
 
         {stage === "hint" ? (
           <Pressable
-            onPress={() => setStage("answer")}
+            onPress={() => reveal("answer")}
             accessibilityRole="button"
-            accessibilityLabel="Show answer"
+            accessibilityLabel="Mostra risposta"
             className="items-center justify-center rounded-cta"
             style={({ pressed }) => ({
-              height: 56,
-              backgroundColor: colors.navy,
+              height: 60,
+              backgroundColor: colors.warmWhite,
+              borderWidth: 1.5,
+              borderColor: colors.navy,
               opacity: pressed ? 0.88 : 1,
               shadowColor: colors.navy,
-              shadowOpacity: 0.32,
+              shadowOpacity: 0.18,
               shadowOffset: { width: 0, height: 6 },
               shadowRadius: 18,
-              elevation: 4,
+              elevation: 3,
             })}
           >
-            <Text style={{ fontFamily: FONT.semibold, fontSize: 16, color: "#fff" }}>
+            <Text style={{ fontFamily: FONT.bold, fontSize: 19, color: colors.navy, letterSpacing: -0.16 }}>
               Show answer
             </Text>
           </Pressable>
@@ -208,13 +221,14 @@ export default function ReinforcementScreen() {
               accessibilityLabel="Review this again"
               className="items-center justify-center rounded-cta"
               style={({ pressed }) => ({
-                height: 50,
+                height: 56,
                 borderWidth: 1.5,
                 borderColor: colors.fading,
+                backgroundColor: colors.warmWhite,
                 opacity: pressed ? 0.85 : 1,
               })}
             >
-              <Text style={{ fontFamily: FONT.semibold, fontSize: 15, color: colors.fading }}>
+              <Text style={{ fontFamily: FONT.semibold, fontSize: 17, color: colors.fading }}>
                 Review this again
               </Text>
             </Pressable>
@@ -224,17 +238,19 @@ export default function ReinforcementScreen() {
               accessibilityLabel="Continue"
               className="items-center justify-center rounded-cta"
               style={({ pressed }) => ({
-                height: 56,
-                backgroundColor: colors.navy,
+                height: 60,
+                backgroundColor: colors.warmWhite,
+                borderWidth: 1.5,
+                borderColor: colors.navy,
                 opacity: pressed ? 0.88 : 1,
                 shadowColor: colors.navy,
-                shadowOpacity: 0.32,
+                shadowOpacity: 0.18,
                 shadowOffset: { width: 0, height: 6 },
                 shadowRadius: 18,
-                elevation: 4,
+                elevation: 3,
               })}
             >
-              <Text style={{ fontFamily: FONT.semibold, fontSize: 16, color: "#fff" }}>
+              <Text style={{ fontFamily: FONT.bold, fontSize: 19, color: colors.navy, letterSpacing: -0.16 }}>
                 Continue
               </Text>
             </Pressable>

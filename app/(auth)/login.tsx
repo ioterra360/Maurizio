@@ -13,6 +13,7 @@ import { Link } from "expo-router";
 
 import { Mascot } from "@/components/Mascot";
 import { PrimaryButton } from "@/components/PrimaryButton";
+import { GhostButton } from "@/components/GhostButton";
 import { useAuthStore, DEMO_ACCOUNTS, type DemoAccount } from "@/lib/auth-store";
 import { isDemoMode } from "@/lib/supabase";
 import { authErrorMessage } from "@/lib/auth-errors";
@@ -63,48 +64,32 @@ export default function LoginScreen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          {/* Hero — mascot floats above a soft warm wash */}
-          <View className="items-center" style={{ paddingTop: 32, paddingBottom: 36 }}>
-            <View
-              style={{
-                width: 132,
-                height: 132,
-                borderRadius: 999,
-                backgroundColor: colors.warmWhite,
-                alignItems: "center",
-                justifyContent: "center",
-                shadowColor: colors.navy,
-                shadowOpacity: 0.06,
-                shadowOffset: { width: 0, height: 10 },
-                shadowRadius: 22,
-                elevation: 2,
-              }}
-            >
-              <Mascot size={104} />
-            </View>
+          {/* Hero — mascot displayed at full size, no cropping disc */}
+          <View className="items-center" style={{ paddingTop: 28, paddingBottom: 32 }}>
+            <Mascot variant="idea" size={160} withShadow={false} />
             <Text
               style={{
-                marginTop: 24,
+                marginTop: 14,
                 fontFamily: FONT.bold,
-                fontSize: 32,
-                lineHeight: 38,
-                letterSpacing: -0.4,
+                fontSize: 36,
+                lineHeight: 42,
+                letterSpacing: -0.6,
                 color: colors.navy,
               }}
             >
-              Memora
+              Memika
             </Text>
             <Text
               style={{
                 marginTop: 8,
                 fontFamily: FONT.regular,
-                fontSize: 15,
-                lineHeight: 22,
+                fontSize: 16,
+                lineHeight: 24,
                 color: colors.midGrey,
                 textAlign: "center",
               }}
             >
-              Your memory, well taken care of
+              La tua memoria, ben curata
             </Text>
           </View>
 
@@ -188,40 +173,14 @@ export default function LoginScreen() {
             </View>
           ) : null}
 
-          {/* Submit */}
-          <View style={{ marginTop: 28 }}>
+          {/* CTAs — Accedi (primary outlined) + Registrati (outline secondary) */}
+          <View style={{ marginTop: 26, gap: 12 }}>
             <PrimaryButton label="Accedi" onPress={handleSubmit} loading={loading} />
-          </View>
-
-          {/* Sign up prompt */}
-          <View
-            style={{
-              marginTop: 18,
-              flexDirection: "row",
-              justifyContent: "center",
-              alignItems: "center",
-            }}
-          >
-            <Text
-              style={{
-                fontFamily: FONT.regular,
-                fontSize: 14,
-                color: colors.midGrey,
-              }}
-            >
-              Non hai un account?{" "}
-            </Text>
             <Link href={"/(auth)/signup" as never} asChild>
-              <Pressable hitSlop={8} accessibilityRole="link">
-                <Text
-                  style={{
-                    fontFamily: FONT.semibold,
-                    fontSize: 14,
-                    color: colors.navy,
-                  }}
-                >
-                  Registrati
-                </Text>
+              <Pressable accessibilityRole="link">
+                <View pointerEvents="none">
+                  <GhostButton label="Crea un nuovo account" variant="outline" />
+                </View>
               </Pressable>
             </Link>
           </View>
@@ -328,20 +287,22 @@ function DemoCard({
     >
       <View
         style={{
-          width: 44,
-          height: 44,
+          width: 48,
+          height: 48,
           borderRadius: 999,
           alignItems: "center",
           justifyContent: "center",
-          backgroundColor: isAdmin ? colors.navy : colors.tagUserBg,
+          backgroundColor: colors.tagUserBg,
+          borderWidth: isAdmin ? 2 : 0,
+          borderColor: colors.navy,
         }}
       >
         <Text
           style={{
-            color: isAdmin ? "#fff" : colors.navy,
-            fontFamily: FONT.semibold,
-            fontSize: 14,
-            letterSpacing: 0.4,
+            color: colors.navy,
+            fontFamily: FONT.bold,
+            fontSize: 16,
+            letterSpacing: 0.3,
           }}
         >
           {account.initials}
@@ -349,14 +310,14 @@ function DemoCard({
       </View>
 
       <View style={{ flex: 1 }}>
-        <Text style={{ fontFamily: FONT.semibold, fontSize: 15, color: colors.navy }}>
+        <Text style={{ fontFamily: FONT.semibold, fontSize: 16, color: colors.navy }}>
           {account.name}
         </Text>
         <Text
           style={{
-            marginTop: 2,
+            marginTop: 3,
             fontFamily: FONT.regular,
-            fontSize: 12.5,
+            fontSize: 13.5,
             color: colors.midGrey,
           }}
         >
@@ -367,17 +328,19 @@ function DemoCard({
       <View
         className="rounded-tag"
         style={{
-          paddingHorizontal: 8,
-          paddingVertical: 3,
-          backgroundColor: isAdmin ? colors.navy : colors.tagUserBg,
+          paddingHorizontal: 9,
+          paddingVertical: 4,
+          backgroundColor: colors.tagUserBg,
+          borderWidth: isAdmin ? 1 : 0,
+          borderColor: colors.navy,
         }}
       >
         <Text
           style={{
             fontFamily: FONT.bold,
-            fontSize: 9.5,
+            fontSize: 10.5,
             letterSpacing: 0.6,
-            color: isAdmin ? "#fff" : colors.navy,
+            color: colors.navy,
           }}
         >
           {isAdmin ? "ADMIN" : "USER"}

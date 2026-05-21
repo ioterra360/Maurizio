@@ -104,8 +104,8 @@ export default function FolderDetailScreen() {
               opacity: pressed ? 0.85 : 1,
             })}
           >
-            <Text style={{ fontFamily: FONT.semibold, fontSize: 13, color: "#fff" }}>
-              Retry
+            <Text style={{ fontFamily: FONT.semibold, fontSize: 14, color: colors.navy }}>
+              Riprova
             </Text>
           </Pressable>
         </View>
@@ -311,7 +311,7 @@ export default function FolderDetailScreen() {
           transform: [{ scale: pressed ? 0.96 : 1 }],
         })}
       >
-        <Plus size={24} color="#fff" strokeWidth={2.2} />
+        <Plus size={24} color={colors.warmWhite} strokeWidth={2.2} />
       </Pressable>
     </SafeAreaView>
   );

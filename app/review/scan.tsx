@@ -6,6 +6,7 @@ import { router, useFocusEffect } from "expo-router";
 import { ReviewHeader } from "@/components/ReviewHeader";
 import { FolderPill } from "@/components/FolderPill";
 import { useReviewStore } from "@/lib/review-store";
+import { success, error, tap } from "@/lib/feedback";
 import { FONT, colors, layerTint } from "@/theme/tokens";
 
 export default function ScanScreen() {
@@ -41,12 +42,17 @@ export default function ScanScreen() {
     // forget (Scan "show me" → SM-2 quality 2 per docs/SRS.md). A pure
     // "remembered" tap (no reveal) keeps full quality 4.
     const response = revealed ? "struggled" : "remembered";
+    if (revealed) error();
+    else success();
     const result = recordAndAdvance(response);
     if (result === "handoff") router.replace("/review/handoff");
     else if (result === "done") router.replace("/review/complete");
   };
 
-  const handleShowMe = () => setRevealed(true);
+  const handleShowMe = () => {
+    tap();
+    setRevealed(true);
+  };
 
   if (!card) return null;
 
@@ -74,7 +80,7 @@ export default function ScanScreen() {
           <Text
             style={{
               fontFamily: FONT.medium,
-              fontSize: 17,
+              fontSize: 21,
               color: colors.midGrey,
               marginTop: 14,
               letterSpacing: 0.2,
@@ -98,9 +104,9 @@ export default function ScanScreen() {
             <Text
               style={{
                 fontFamily: FONT.medium,
-                fontSize: 16,
+                fontSize: 19,
                 color: colors.navy,
-                lineHeight: 22,
+                lineHeight: 26,
                 letterSpacing: -0.1,
               }}
             >
@@ -111,55 +117,58 @@ export default function ScanScreen() {
       </View>
 
       {/* Actions */}
-      <View style={{ paddingHorizontal: 22, paddingBottom: 32, gap: 10 }}>
+      <View style={{ paddingHorizontal: 22, paddingBottom: 32, gap: 12 }}>
         <Pressable
           onPress={handleShowMe}
           accessibilityRole="button"
-          accessibilityLabel="Show me the meaning"
+          accessibilityLabel="Mostrami il significato"
           className="items-center justify-center rounded-cta"
           style={({ pressed }) => ({
-            height: 50,
+            height: 56,
             borderWidth: 1.5,
             borderColor: colors.scan,
+            backgroundColor: colors.warmWhite,
             opacity: pressed ? 0.85 : 1,
           })}
         >
           <Text
             style={{
               fontFamily: FONT.semibold,
-              fontSize: 15,
+              fontSize: 18,
               color: colors.scan,
               letterSpacing: -0.1,
             }}
           >
-            Show me
+            Mostrami
           </Text>
         </Pressable>
         <Pressable
           onPress={handleRemember}
           accessibilityRole="button"
-          accessibilityLabel="I remember this"
+          accessibilityLabel="Lo ricordo"
           className="items-center justify-center rounded-cta"
           style={({ pressed }) => ({
-            height: 56,
-            backgroundColor: colors.navy,
+            height: 60,
+            backgroundColor: colors.warmWhite,
+            borderWidth: 1.5,
+            borderColor: colors.navy,
             opacity: pressed ? 0.88 : 1,
             shadowColor: colors.navy,
-            shadowOpacity: 0.32,
+            shadowOpacity: 0.18,
             shadowOffset: { width: 0, height: 6 },
             shadowRadius: 18,
-            elevation: 4,
+            elevation: 3,
           })}
         >
           <Text
             style={{
-              fontFamily: FONT.semibold,
-              fontSize: 16,
-              color: "#fff",
+              fontFamily: FONT.bold,
+              fontSize: 19,
+              color: colors.navy,
               letterSpacing: -0.16,
             }}
           >
-            Remember
+            Lo ricordo
           </Text>
         </Pressable>
       </View>

@@ -113,13 +113,13 @@ export default function AdminMoreScreen() {
                   </Text>
                   <View
                     className="rounded-tag"
-                    style={{ backgroundColor: colors.navy, paddingHorizontal: 6, paddingVertical: 1 }}
+                    style={{ backgroundColor: colors.tagUserBg, paddingHorizontal: 6, paddingVertical: 1 }}
                   >
                     <Text
                       style={{
                         fontFamily: FONT.bold,
-                        fontSize: 9,
-                        color: "#fff",
+                        fontSize: 10,
+                        color: colors.navy,
                         letterSpacing: 0.7,
                       }}
                     >

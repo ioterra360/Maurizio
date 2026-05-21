@@ -154,7 +154,7 @@ function FlagCard({ flag }: { flag: FlagItem }) {
             opacity: pressed ? 0.85 : 1,
           })}
         >
-          <Text style={{ fontFamily: FONT.semibold, fontSize: 12.5, color: "#fff" }}>
+          <Text style={{ fontFamily: FONT.semibold, fontSize: 13, color: colors.navy }}>
             Approve
           </Text>
         </Pressable>
@@ -167,7 +167,7 @@ function FlagCard({ flag }: { flag: FlagItem }) {
             opacity: pressed ? 0.85 : 1,
           })}
         >
-          <Text style={{ fontFamily: FONT.semibold, fontSize: 12.5, color: "#fff" }}>
+          <Text style={{ fontFamily: FONT.semibold, fontSize: 13, color: colors.navy }}>
             Remove
           </Text>
         </Pressable>

@@ -1,16 +1,23 @@
+import { useEffect } from "react";
 import { Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Check } from "lucide-react-native";
 import { router } from "expo-router";
 
+import { Mascot } from "@/components/Mascot";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { useReviewStore } from "@/lib/review-store";
+import { success } from "@/lib/feedback";
 import { FONT, colors } from "@/theme/tokens";
 
 export default function CompleteScreen() {
   const totals = useReviewStore((s) => s.totals);
   const reset = useReviewStore((s) => s.reset);
   const total = totals.reviewed || totals.remembered + totals.struggled + totals.forgot;
+
+  // Celebratory cue on landing — once per mount.
+  useEffect(() => {
+    success();
+  }, []);
 
   const goHome = () => {
     reset();
@@ -27,51 +34,35 @@ export default function CompleteScreen() {
           paddingHorizontal: 28,
         }}
       >
-        {/* Check badge */}
-        <View
-          style={{
-            width: 84,
-            height: 84,
-            borderRadius: 42,
-            backgroundColor: "#E7F5EE",
-            alignItems: "center",
-            justifyContent: "center",
-            marginBottom: 28,
-            shadowColor: colors.active,
-            shadowOpacity: 0.18,
-            shadowOffset: { width: 0, height: 12 },
-            shadowRadius: 24,
-            elevation: 4,
-          }}
-        >
-          <Check size={36} color={colors.active} strokeWidth={2.4} />
-        </View>
+        {/* Celebratory mascot — checklist variant (job done) */}
+        <Mascot variant="checklist" size={160} withShadow={false} />
 
         <Text
           style={{
             fontFamily: FONT.bold,
-            fontSize: 28,
+            fontSize: 30,
             color: colors.navy,
             letterSpacing: -0.9,
             textAlign: "center",
-            lineHeight: 32,
+            lineHeight: 36,
+            marginTop: 12,
           }}
         >
-          Today&apos;s review is done.
+          Ripasso di oggi completato!
         </Text>
         <Text
           style={{
             fontFamily: FONT.regular,
-            fontSize: 15,
+            fontSize: 16,
             color: colors.midGrey,
             marginTop: 14,
-            lineHeight: 22,
-            maxWidth: 300,
+            lineHeight: 24,
+            maxWidth: 320,
             textAlign: "center",
           }}
         >
-          You moved {total || 18} items closer to long-term memory. The next nudges
-          will surface tomorrow.
+          Hai avvicinato {total || 18} ricordi alla memoria di lungo termine.
+          I prossimi spunti torneranno domani.
         </Text>
 
         {/* Stat row */}
@@ -86,14 +77,14 @@ export default function CompleteScreen() {
             borderColor: colors.hairline,
           }}
         >
-          <Stat label="Remembered" value={totals.remembered} color={colors.active} />
-          <Stat label="Struggled" value={totals.struggled} color={colors.navy} />
-          <Stat label="Forgot" value={totals.forgot} color={colors.fading} />
+          <Stat label="Ricordati" value={totals.remembered} color={colors.active} />
+          <Stat label="Difficili" value={totals.struggled} color={colors.navy} />
+          <Stat label="Dimenticati" value={totals.forgot} color={colors.fading} />
         </View>
       </View>
 
       <View style={{ paddingHorizontal: 22, paddingBottom: 36 }}>
-        <PrimaryButton label="Back to Today" onPress={goHome} />
+        <PrimaryButton label="Torna a Oggi" onPress={goHome} />
       </View>
     </SafeAreaView>
   );

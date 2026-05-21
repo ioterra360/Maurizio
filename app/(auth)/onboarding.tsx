@@ -32,7 +32,7 @@ const STEPS: Step[] = [
     key: "welcome",
     icon: null,
     iconBg: colors.warmWhite,
-    title: "Benvenuto in Memora",
+    title: "Benvenuto in Memika",
     body: "La tua memoria, ben curata. Tre ritmi di ripasso che lavorano insieme per te.",
   },
   {
