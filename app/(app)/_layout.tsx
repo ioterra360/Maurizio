@@ -47,28 +47,28 @@ export default function AppLayout() {
       <Tabs.Screen
         name="today"
         options={{
-          title: "Today",
+          title: "Oggi",
           tabBarIcon: ({ color }) => <Home size={22} color={color} strokeWidth={1.75} />,
         }}
       />
       <Tabs.Screen
         name="knowledge"
         options={{
-          title: "Knowledge",
+          title: "Cartelle",
           tabBarIcon: ({ color }) => <Folder size={22} color={color} strokeWidth={1.75} />,
         }}
       />
       <Tabs.Screen
         name="health"
         options={{
-          title: "Progress",
+          title: "Progressi",
           tabBarIcon: ({ color }) => <BarChart3 size={22} color={color} strokeWidth={1.75} />,
         }}
       />
       <Tabs.Screen
         name="settings"
         options={{
-          title: "Settings",
+          title: "Impostazioni",
           tabBarIcon: ({ color }) => <SettingsIcon size={22} color={color} strokeWidth={1.75} />,
         }}
       />

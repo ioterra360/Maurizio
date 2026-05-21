@@ -3,9 +3,9 @@ import { FONT, colors } from "@/theme/tokens";
 import type { FolderItem } from "@/lib/folder-data";
 
 const STATE_META = {
-  active:   { dot: colors.active,   bg: "#E7F5EE", text: "#1F8552", label: "Active" },
-  fading:   { dot: colors.fading,   bg: "#FDEEEA", text: "#A65B4A", label: "Fading" },
-  archived: { dot: "#9C9C95",       bg: "#EFEDE7", text: "#7A7975", label: "Archived" },
+  active:   { dot: colors.active,    bg: "#E7F5EE", text: "#1F8552", label: "Stabile" },
+  fading:   { dot: colors.fading,    bg: "#FDEEEA", text: "#A65B4A", label: "In dissolvenza" },
+  archived: { dot: colors.archived,  bg: "#EFEDE7", text: "#7A7975", label: "Archiviato" },
 } as const;
 
 // CJK detection: Hiragana (3040-309F), Katakana (30A0-30FF), CJK Unified
@@ -93,7 +93,7 @@ export function ItemRow({ item }: Props) {
             fontVariant: ["tabular-nums"],
           }}
         >
-          Reviewed {item.reviewed}
+          Ripassato {item.reviewed}
         </Text>
       </View>
 

@@ -89,7 +89,7 @@ export default function FolderDetailScreen() {
         <TopBar />
         <View style={{ padding: 24, gap: 12 }}>
           <Text style={{ fontFamily: FONT.semibold, fontSize: 18, color: colors.navy }}>
-            We couldn't load this folder.
+            Non siamo riusciti a caricare questa cartella.
           </Text>
           <Pressable
             onPress={refetch}
@@ -166,7 +166,7 @@ export default function FolderDetailScreen() {
               fontVariant: ["tabular-nums"],
             }}
           >
-            {data.count} items · added {data.addedThisWeek} this week
+            {data.count} ricordi · {data.addedThisWeek} aggiunti questa settimana
           </Text>
         </View>
 
@@ -192,19 +192,19 @@ export default function FolderDetailScreen() {
             <View className="mt-4 flex-row" style={{ justifyContent: "space-between" }}>
               <StatBlock
                 dot={colors.active}
-                label="Active"
+                label="Stabili"
                 pct={data.active}
                 count={Math.round((data.count * data.active) / 100)}
               />
               <StatBlock
                 dot={colors.fading}
-                label="Fading"
+                label="In dissolvenza"
                 pct={data.fading}
                 count={Math.round((data.count * data.fading) / 100)}
               />
               <StatBlock
                 dot={colors.archived}
-                label="Archived"
+                label="Archiviati"
                 pct={data.archived}
                 count={Math.round((data.count * data.archived) / 100)}
               />
@@ -224,16 +224,16 @@ export default function FolderDetailScreen() {
         >
           <ActionPill
             icon={Repeat}
-            label="Review now"
+            label="Ripassa ora"
             color={colors.reinforcement}
             onPress={startReview}
           />
-          <ActionPill icon={Plus} label="Add item" color={colors.navy} onPress={addItem} />
+          <ActionPill icon={Plus} label="Aggiungi" color={colors.navy} onPress={addItem} />
         </View>
 
         {/* Filters */}
         <View style={{ paddingHorizontal: 22, paddingTop: 20, paddingBottom: 10 }}>
-          <SectionLabel>Items</SectionLabel>
+          <SectionLabel>Ricordi</SectionLabel>
         </View>
         <ScrollView
           horizontal
@@ -241,27 +241,27 @@ export default function FolderDetailScreen() {
           contentContainerStyle={{ paddingHorizontal: 16, gap: 6, paddingBottom: 12 }}
         >
           <FilterChip
-            label="All"
+            label="Tutti"
             count={counts.all}
             active={filter === "all"}
             onPress={() => setFilter("all")}
           />
           <FilterChip
-            label="Active"
+            label="Stabili"
             count={counts.active}
             active={filter === "active"}
             dot={colors.active}
             onPress={() => setFilter("active")}
           />
           <FilterChip
-            label="Fading"
+            label="In dissolvenza"
             count={counts.fading}
             active={filter === "fading"}
             dot={colors.fading}
             onPress={() => setFilter("fading")}
           />
           <FilterChip
-            label="Archived"
+            label="Archiviati"
             count={counts.archived}
             active={filter === "archived"}
             dot={colors.archived}
@@ -282,7 +282,7 @@ export default function FolderDetailScreen() {
                 paddingVertical: 32,
               }}
             >
-              Nothing in this state.
+              Nessun ricordo in questo stato.
             </Text>
           ) : (
             filtered.map((item, i) => <ItemRow key={item.front + i} item={item} />)

@@ -31,7 +31,7 @@ export function ReviewHeader({ layerKey, index, total }: Props) {
       <Pressable
         onPress={() => safeBack("/(app)/today")}
         accessibilityRole="button"
-        accessibilityLabel="Exit review"
+        accessibilityLabel="Esci dal ripasso"
         style={({ pressed }) => ({
           width: 36,
           height: 36,

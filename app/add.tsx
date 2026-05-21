@@ -60,7 +60,7 @@ export default function AddScreen() {
     if (!canSave) return;
     setDailyCount((c) => Math.min(c + 1, dailyMax));
     const folderName = folders.find((f) => f.kind === folder)?.name ?? folder;
-    showToast(`Saved to ${folderName} · first review tomorrow`);
+    showToast(`Salvato in ${folderName} · primo ripasso domani`);
     if (addAnother) {
       setText("");
       // Keep the textarea focused for fast successive adds; no nav.
@@ -77,7 +77,7 @@ export default function AddScreen() {
   return (
     <SafeAreaView className="flex-1 bg-warm-white" edges={["top"]}>
       <TopBar
-        title="Add to memory"
+        title="Nuovo ricordo"
         onBack={handleBack}
         rightSlot={
           <Pressable
@@ -176,7 +176,7 @@ export default function AddScreen() {
             <TextInput
               value={text}
               onChangeText={setText}
-              placeholder="What do you want to remember?"
+              placeholder="Cosa vuoi ricordare?"
               placeholderTextColor={colors.placeholder}
               multiline
               textAlignVertical="top"

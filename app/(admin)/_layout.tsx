@@ -57,28 +57,28 @@ export default function AdminLayout() {
       <Tabs.Screen
         name="users"
         options={{
-          title: "Users",
+          title: "Utenti",
           tabBarIcon: ({ color }) => <Users size={22} color={color} strokeWidth={1.75} />,
         }}
       />
       <Tabs.Screen
         name="moderation"
         options={{
-          title: "Moderation",
+          title: "Moderazione",
           tabBarIcon: ({ color }) => <ShieldAlert size={22} color={color} strokeWidth={1.75} />,
         }}
       />
       <Tabs.Screen
         name="insights"
         options={{
-          title: "Insights",
+          title: "Insight",
           tabBarIcon: ({ color }) => <BarChart3 size={22} color={color} strokeWidth={1.75} />,
         }}
       />
       <Tabs.Screen
         name="more"
         options={{
-          title: "More",
+          title: "Altro",
           tabBarIcon: ({ color }) => <MoreHorizontal size={22} color={color} strokeWidth={1.75} />,
         }}
       />

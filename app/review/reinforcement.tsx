@@ -149,7 +149,7 @@ export default function ReinforcementScreen() {
             <Pressable
               onPress={() => reveal("hint")}
               accessibilityRole="button"
-              accessibilityLabel="Need a hint"
+              accessibilityLabel="Dammi un indizio"
               className="items-center justify-center rounded-cta"
               style={({ pressed }) => ({
                 height: 56,
@@ -160,7 +160,7 @@ export default function ReinforcementScreen() {
               })}
             >
               <Text style={{ fontFamily: FONT.semibold, fontSize: 17, color: colors.navy }}>
-                Need a hint
+                Dammi un indizio
               </Text>
             </Pressable>
             <Pressable
@@ -182,7 +182,7 @@ export default function ReinforcementScreen() {
               })}
             >
               <Text style={{ fontFamily: FONT.bold, fontSize: 19, color: colors.navy, letterSpacing: -0.16 }}>
-                Show answer
+                Mostra risposta
               </Text>
             </Pressable>
           </>
@@ -218,7 +218,7 @@ export default function ReinforcementScreen() {
             <Pressable
               onPress={() => advance("struggled")}
               accessibilityRole="button"
-              accessibilityLabel="Review this again"
+              accessibilityLabel="Ripassa di nuovo"
               className="items-center justify-center rounded-cta"
               style={({ pressed }) => ({
                 height: 56,
@@ -229,13 +229,13 @@ export default function ReinforcementScreen() {
               })}
             >
               <Text style={{ fontFamily: FONT.semibold, fontSize: 17, color: colors.fading }}>
-                Review this again
+                Ripassa di nuovo
               </Text>
             </Pressable>
             <Pressable
               onPress={() => advance("remembered")}
               accessibilityRole="button"
-              accessibilityLabel="Continue"
+              accessibilityLabel="Continua"
               className="items-center justify-center rounded-cta"
               style={({ pressed }) => ({
                 height: 60,
@@ -251,7 +251,7 @@ export default function ReinforcementScreen() {
               })}
             >
               <Text style={{ fontFamily: FONT.bold, fontSize: 19, color: colors.navy, letterSpacing: -0.16 }}>
-                Continue
+                Continua
               </Text>
             </Pressable>
           </>

@@ -71,22 +71,22 @@ export default function KnowledgeScreen() {
               <Text
                 style={{
                   fontFamily: FONT.semibold,
-                  fontSize: 14,
+                  fontSize: 15,
                   color: colors.navy,
                   textAlign: "center",
                 }}
               >
-                We couldn't load your folders.
+                Non siamo riusciti a caricare le tue cartelle.
               </Text>
               <Text
                 style={{
                   fontFamily: FONT.regular,
-                  fontSize: 12.5,
+                  fontSize: 13.5,
                   color: colors.midGrey,
                   textAlign: "center",
                 }}
               >
-                Check your connection and try again.
+                Controlla la connessione e riprova.
               </Text>
               <Pressable
                 onPress={refetch}
