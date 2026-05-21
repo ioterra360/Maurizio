@@ -14,7 +14,8 @@ import { ChevronLeft, CheckCircle2 } from "lucide-react-native";
 
 import { Mascot } from "@/components/Mascot";
 import { PrimaryButton } from "@/components/PrimaryButton";
-import { isDemoMode } from "@/lib/supabase";
+import { isDemoMode, supabase } from "@/lib/supabase";
+import { authErrorMessage } from "@/lib/auth-errors";
 import { colors, FONT } from "@/theme/tokens";
 
 export default function SignupScreen() {
@@ -54,10 +55,20 @@ export default function SignupScreen() {
     }
     setSubmitting(true);
     try {
-      // Real Supabase signup will land here in Phase 4 (auth.signUp).
-      // For now we leave the wiring placeholder so the screen is usable
-      // and demos the full UI flow.
+      const { error: signUpError } = await supabase.auth.signUp({
+        email: email.trim().toLowerCase(),
+        password,
+        options: {
+          data: { name: name.trim() },
+        },
+      });
+      if (signUpError) {
+        setError(authErrorMessage(signUpError));
+        return;
+      }
       router.replace("/(auth)/onboarding" as never);
+    } catch (e) {
+      setError(authErrorMessage(e));
     } finally {
       setSubmitting(false);
     }

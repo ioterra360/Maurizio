@@ -13,7 +13,8 @@ import { Link, router } from "expo-router";
 import { ChevronLeft, Mail } from "lucide-react-native";
 
 import { PrimaryButton } from "@/components/PrimaryButton";
-import { isDemoMode } from "@/lib/supabase";
+import { isDemoMode, supabase } from "@/lib/supabase";
+import { authErrorMessage } from "@/lib/auth-errors";
 import { colors, FONT } from "@/theme/tokens";
 
 export default function ForgotPasswordScreen() {
@@ -37,10 +38,20 @@ export default function ForgotPasswordScreen() {
     }
     setSubmitting(true);
     try {
-      // Real Supabase password reset will land here in Phase 4
-      // (supabase.auth.resetPasswordForEmail). For now mark as sent
-      // to demo the flow.
+      // Always show the success view regardless of whether the email is
+      // registered — this is the standard "no enumeration" UX. Errors that
+      // are NOT enumeration leaks (network down, malformed input) still
+      // surface so the user can retry.
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(
+        email.trim().toLowerCase(),
+      );
+      if (resetError && /network|fetch|timeout/i.test(resetError.message)) {
+        setError(authErrorMessage(resetError));
+        return;
+      }
       setSent(true);
+    } catch (e) {
+      setError(authErrorMessage(e));
     } finally {
       setSubmitting(false);
     }
