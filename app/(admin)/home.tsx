@@ -14,6 +14,7 @@ import { router } from "expo-router";
 import { AdminTopBar } from "@/components/AdminTopBar";
 import { SectionLabel } from "@/components/SectionLabel";
 import { RetentionCurves } from "@/components/RetentionCurves";
+import { Mascot } from "@/components/Mascot";
 import { useAuthStore } from "@/lib/auth-store";
 import { ACTIVITY, KPIS, type KPI } from "@/lib/admin-data";
 import { firstName } from "@/lib/format";
@@ -37,12 +38,12 @@ export default function AdminHomeScreen() {
         showsVerticalScrollIndicator={false}
       >
         <AdminTopBar
-          title={`Hi, ${display}`}
-          subtitle="Production · MON · MAY 19"
+          title={`Ciao, ${display}`}
+          subtitle="Produzione · LUN · 19 MAG"
           rightSlot={
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Open alerts"
+              accessibilityLabel="Apri avvisi"
               style={({ pressed }) => ({
                 width: 38,
                 height: 38,

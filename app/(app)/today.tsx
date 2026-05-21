@@ -35,6 +35,12 @@ export default function TodayScreen() {
   // doesn't leave a stale "MON · MAY 18" header.
   const greeting = timeGreeting();
   const dateLabel = useMemo(() => dateBadge(), []);
+  // Recommended flow subtitle pulled out so we can localize cleanly.
+  const PLAN_LABELS = {
+    scan:          "Ricordi più vecchi · ~3 min",
+    reinforcement: "Ultimi 3–7 giorni · ~6 min",
+    focus:         "Ricordi di ieri · ~6 min",
+  } as const;
   const dayOfYear = useMemo(() => {
     const now = new Date();
     const start = new Date(now.getFullYear(), 0, 0);
@@ -114,25 +120,25 @@ export default function TodayScreen() {
 
         {/* Recommended flow */}
         <View style={{ paddingHorizontal: 28, paddingTop: 24, paddingBottom: 8 }}>
-          <SectionLabel>Recommended flow</SectionLabel>
+          <SectionLabel>Flusso consigliato</SectionLabel>
         </View>
         <View style={{ paddingHorizontal: 20, gap: 10 }}>
           <LayerCard
             layerKey="scan"
             items={PLAN.scan.items}
-            subtitle={PLAN.scan.subtitle}
+            subtitle={PLAN_LABELS.scan}
             onPress={() => startLayer("scan")}
           />
           <LayerCard
             layerKey="reinforcement"
             items={PLAN.reinforcement.items}
-            subtitle={PLAN.reinforcement.subtitle}
+            subtitle={PLAN_LABELS.reinforcement}
             onPress={() => startLayer("reinforcement")}
           />
           <LayerCard
             layerKey="focus"
             items={PLAN.focus.items}
-            subtitle={PLAN.focus.subtitle}
+            subtitle={PLAN_LABELS.focus}
             onPress={() => startLayer("focus")}
           />
         </View>
@@ -141,13 +147,13 @@ export default function TodayScreen() {
           style={{
             textAlign: "center",
             fontFamily: FONT.regular,
-            fontSize: 13,
+            fontSize: 13.5,
             color: colors.midGrey,
             paddingTop: 18,
             fontVariant: ["tabular-nums"],
           }}
         >
-          Total · {TOTAL_ITEMS} items · about {budget} min
+          Totale · {TOTAL_ITEMS} ricordi · circa {budget} min
         </Text>
       </ScrollView>
 
@@ -163,9 +169,9 @@ export default function TodayScreen() {
           gap: 12,
         }}
       >
-        <PrimaryButton label="Start Today's Review" onPress={startReview} />
+        <PrimaryButton label="Inizia il ripasso di oggi" onPress={startReview} />
         <GhostButton
-          label="Adjust today's flow"
+          label="Aggiusta il flusso di oggi"
           onPress={() => router.push("/settings")}
         />
       </View>

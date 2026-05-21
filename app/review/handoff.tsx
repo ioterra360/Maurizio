@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useRef } from "react";
 import { Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Check } from "lucide-react-native";
 import { router } from "expo-router";
 
+import { Mascot } from "@/components/Mascot";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { LayerCard } from "@/components/LayerCard";
 import { useReviewStore } from "@/lib/review-store";
+import { success } from "@/lib/feedback";
 import { FONT, colors, layer as layerTokens, type LayerKey } from "@/theme/tokens";
 
 export default function ReviewHandoffScreen() {
@@ -18,6 +19,11 @@ export default function ReviewHandoffScreen() {
     layer === "scan" ? "reinforcement" :
     layer === "reinforcement" ? "focus" :
     null;
+
+  // Celebratory cue on landing — once per mount.
+  useEffect(() => {
+    success();
+  }, []);
 
   // Defensive: if we somehow land here on focus, go straight to complete.
   // (Don't pretend "next layer is focus" when we just finished focus.)
@@ -46,86 +52,66 @@ export default function ReviewHandoffScreen() {
   return (
     <SafeAreaView className="flex-1 bg-warm-white" edges={["top"]}>
       <View style={{ flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 26 }}>
-        {/* Green check badge */}
-        <View
-          style={{
-            width: 64,
-            height: 64,
-            borderRadius: 32,
-            backgroundColor: "#E7F5EE",
-            alignItems: "center",
-            justifyContent: "center",
-            shadowColor: colors.active,
-            shadowOpacity: 0.18,
-            shadowOffset: { width: 0, height: 10 },
-            shadowRadius: 20,
-            elevation: 3,
-          }}
-        >
-          <Check size={28} color={colors.active} strokeWidth={2.4} />
-        </View>
+        {/* Checklist mascot — handoff is a "done step" moment */}
+        <Mascot variant="checklist" size={140} withShadow={false} />
 
         {/* Outgoing layer done caption */}
         <Text
           style={{
-            marginTop: 24,
+            marginTop: 14,
             fontFamily: FONT.bold,
-            fontSize: 11,
+            fontSize: 12,
             color: outgoingColor,
-            letterSpacing: 1.32,
+            letterSpacing: 1.4,
             textTransform: "uppercase",
           }}
         >
-          {finishedLabel} done
+          {finishedLabel} completato
         </Text>
 
         {/* Next title */}
         <Text
           style={{
-            marginTop: 8,
+            marginTop: 10,
             fontFamily: FONT.bold,
-            fontSize: 24,
+            fontSize: 26,
             color: colors.navy,
             letterSpacing: -0.6,
-            lineHeight: 28,
+            lineHeight: 30,
             textAlign: "center",
           }}
         >
-          On to {next.label}
+          Avanti con {next.label}
         </Text>
         <Text
           style={{
-            marginTop: 6,
+            marginTop: 8,
             fontFamily: FONT.regular,
-            fontSize: 14,
+            fontSize: 15,
             color: colors.midGrey,
-            lineHeight: 20,
+            lineHeight: 22,
             textAlign: "center",
-            maxWidth: 280,
+            maxWidth: 300,
           }}
         >
           {nextLayer === "reinforcement"
-            ? "Guided recall — last 3–7 days, with hints when you need them."
-            : "Deep review — yesterday's items, three-way recall."}
+            ? "Richiamo guidato — ultimi 3–7 giorni, con suggerimenti quando servono."
+            : "Ripasso profondo — ricordi di ieri, valutazione su tre livelli."}
         </Text>
 
         {/* Layer preview card */}
-        <View style={{ alignSelf: "stretch", marginTop: 28 }}>
+        <View style={{ alignSelf: "stretch", marginTop: 26 }}>
           <LayerCard
             layerKey={nextLayer}
             items={nextLayer === "reinforcement" ? 6 : 4}
-            subtitle={nextLayer === "reinforcement" ? "Last 3–7 days · ~6 min" : "From yesterday · ~6 min"}
+            subtitle={nextLayer === "reinforcement" ? "Ultimi 3–7 giorni · ~6 min" : "Ricordi di ieri · ~6 min"}
             onPress={goNext}
           />
         </View>
       </View>
 
       <View style={{ paddingHorizontal: 22, paddingBottom: 32 }}>
-        {/* CTA stays in the unified navy family — same dark blue as
-            "Start Today's Review" and the in-review Remember/Continue
-            buttons. The next-layer color identity is already carried by
-            the LayerCard preview + the "ON TO X" header above. */}
-        <PrimaryButton label={`Start ${next.label}`} onPress={goNext} />
+        <PrimaryButton label={`Inizia ${next.label}`} onPress={goNext} />
       </View>
     </SafeAreaView>
   );

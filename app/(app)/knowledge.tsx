@@ -42,6 +42,7 @@ export default function KnowledgeScreen() {
                 ? "Caricamento delle tue cartelle…"
                 : `${folders.length} cartelle attive · riordinale con le frecce`
             }
+            reservedRight={80}
           />
           <View
             pointerEvents="none"

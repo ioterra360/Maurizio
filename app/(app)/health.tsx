@@ -6,6 +6,7 @@ import { SectionLabel } from "@/components/SectionLabel";
 import { RingChart, LegendDot } from "@/components/RingChart";
 import { HealthRow } from "@/components/HealthRow";
 import { CognitiveLoadBar } from "@/components/CognitiveLoadBar";
+import { Mascot } from "@/components/Mascot";
 import { FONT, colors } from "@/theme/tokens";
 
 export default function HealthScreen() {
@@ -15,7 +16,15 @@ export default function HealthScreen() {
         contentContainerStyle={{ paddingBottom: 140 }}
         showsVerticalScrollIndicator={false}
       >
-        <HeaderHero title="Memory Health" />
+        <View style={{ position: "relative" }}>
+          <HeaderHero title="Salute della memoria" reservedRight={80} />
+          <View
+            pointerEvents="none"
+            style={{ position: "absolute", top: 14, right: 18 }}
+          >
+            <Mascot variant="investigate" size={64} withShadow={false} />
+          </View>
+        </View>
 
         {/* Hero ring on navy panel */}
         <View style={{ paddingHorizontal: 16 }}>
@@ -51,28 +60,28 @@ export default function HealthScreen() {
                 marginTop: 14,
                 fontFamily: FONT.medium,
                 fontSize: 13,
-                color: "rgba(255,255,255,0.78)",
+                color: "rgba(250,248,244,0.82)",
                 letterSpacing: 0.52, // 0.04em on 13px (was 1.2 = too wide)
                 textTransform: "uppercase",
                 fontVariant: ["tabular-nums"],
               }}
             >
-              779 items tracked
+              779 ricordi monitorati
             </Text>
             <View
               className="flex-row justify-center"
               style={{ marginTop: 14, gap: 14 }}
             >
-              <LegendDot color={colors.active} label="Stable" pct="62%" />
-              <LegendDot color={colors.fading} label="Fading" pct="24%" />
-              <LegendDot color={colors.archived} label="Archived" pct="14%" />
+              <LegendDot color={colors.active} label="Stabili" pct="62%" />
+              <LegendDot color={colors.fading} label="In dissolvenza" pct="24%" />
+              <LegendDot color={colors.archived} label="Archiviati" pct="14%" />
             </View>
           </View>
         </View>
 
         {/* Folder breakdown */}
         <View style={{ paddingHorizontal: 24, paddingTop: 22, paddingBottom: 8 }}>
-          <SectionLabel>By folder</SectionLabel>
+          <SectionLabel>Per cartella</SectionLabel>
         </View>
         <View style={{ paddingHorizontal: 16, gap: 8 }}>
           <HealthRow name="Japanese" active={84} fading={12} archived={4}  chip="High" />
@@ -103,8 +112,8 @@ export default function HealthScreen() {
                 letterSpacing: -0.05,
               }}
             >
-              Japanese is your #1 priority, but only 35% of your review time went
-              there this week.
+              Japanese è la tua priorità #1, ma solo il 35% del tempo di ripasso
+              di questa settimana è andato lì.
             </Text>
             <Text
               style={{
@@ -116,14 +125,14 @@ export default function HealthScreen() {
                 letterSpacing: -0.05,
               }}
             >
-              Rebalance this week →
+              Riequilibra questa settimana →
             </Text>
           </View>
         </View>
 
         {/* Cognitive load */}
         <View style={{ paddingHorizontal: 24, paddingTop: 22, paddingBottom: 8 }}>
-          <SectionLabel>Cognitive load</SectionLabel>
+          <SectionLabel>Carico cognitivo</SectionLabel>
         </View>
         <View style={{ paddingHorizontal: 24 }}>
           <CognitiveLoadBar pct={62} />

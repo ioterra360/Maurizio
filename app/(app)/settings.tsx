@@ -10,6 +10,7 @@ import { SectionLabel } from "@/components/SectionLabel";
 import { SettingsRow, SettingsToggle } from "@/components/SettingsRow";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { GhostButton } from "@/components/GhostButton";
+import { Mascot } from "@/components/Mascot";
 import { useAuthStore } from "@/lib/auth-store";
 import { tap, error as errorFeedback } from "@/lib/feedback";
 import { FONT, colors } from "@/theme/tokens";
@@ -38,7 +39,15 @@ export default function SettingsScreen() {
         contentContainerStyle={{ paddingBottom: 140 }}
         showsVerticalScrollIndicator={false}
       >
-        <HeaderHero title="Settings" />
+        <View style={{ position: "relative" }}>
+          <HeaderHero title="Impostazioni" reservedRight={80} />
+          <View
+            pointerEvents="none"
+            style={{ position: "absolute", top: 14, right: 18 }}
+          >
+            <Mascot variant="announce" size={64} withShadow={false} />
+          </View>
+        </View>
 
         {/* Profile card */}
         <View style={{ paddingHorizontal: 16 }}>
@@ -61,7 +70,7 @@ export default function SettingsScreen() {
               <TextInput
                 value={name}
                 onChangeText={setName}
-                placeholder="Your name"
+                placeholder="Il tuo nome"
                 placeholderTextColor={colors.placeholder}
                 style={{
                   fontFamily: FONT.semibold,
@@ -79,7 +88,7 @@ export default function SettingsScreen() {
                   marginTop: 2,
                 }}
               >
-                Daily reviewer · since Mar 2026
+                Studente quotidiano · da marzo 2026
               </Text>
             </View>
           </View>
@@ -87,21 +96,21 @@ export default function SettingsScreen() {
 
         {/* Schedule */}
         <View style={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 8 }}>
-          <SectionLabel>Schedule</SectionLabel>
+          <SectionLabel>Orari</SectionLabel>
         </View>
         <View style={{ paddingHorizontal: 16, gap: 10 }}>
-          <SettingsRow label="Morning review" value="8:00 AM" onPress={() => {}} />
-          <SettingsRow label="Evening review" value="9:30 PM" onPress={() => {}} />
+          <SettingsRow label="Ripasso mattutino" value="08:00" onPress={() => {}} />
+          <SettingsRow label="Ripasso serale"    value="21:30" onPress={() => {}} />
         </View>
 
         {/* Limits */}
         <View style={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 8 }}>
-          <SectionLabel>Limits</SectionLabel>
+          <SectionLabel>Limiti</SectionLabel>
         </View>
         <View style={{ paddingHorizontal: 16, gap: 10 }}>
           <SettingsRow
-            label="Daily input cap"
-            hint="Max new memories you can add per day. Keeps load sustainable."
+            label="Limite giornaliero"
+            hint="Numero massimo di nuovi ricordi da aggiungere al giorno. Mantiene il carico sostenibile."
             value="20"
             onPress={() => {}}
           />
@@ -109,27 +118,40 @@ export default function SettingsScreen() {
 
         {/* Notifications */}
         <View style={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 8 }}>
-          <SectionLabel>Notifications</SectionLabel>
+          <SectionLabel>Notifiche</SectionLabel>
         </View>
         <View style={{ paddingHorizontal: 16, gap: 10 }}>
           <SettingsToggle
-            label="Calm mode"
-            hint="No badges. Only the morning nudge."
+            label="Modalità calma"
+            hint="Niente badge. Solo la spinta del mattino."
             defaultOn
           />
           <SettingsToggle
-            label="Weekly digest"
-            hint="A Sunday summary of what consolidated, what's fading, where to focus."
+            label="Riepilogo settimanale"
+            hint="La domenica un riassunto di ciò che si è consolidato, cosa sta sfumando, dove concentrarti."
+          />
+        </View>
+
+        {/* Premium */}
+        <View style={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 8 }}>
+          <SectionLabel>Abbonamento</SectionLabel>
+        </View>
+        <View style={{ paddingHorizontal: 16, gap: 10 }}>
+          <SettingsRow
+            label="Memika Premium"
+            hint="Sblocca ricordi illimitati e insight personalizzati."
+            value="Scopri"
+            onPress={() => router.push("/(app)/subscribe" as never)}
           />
         </View>
 
         {/* About */}
         <View style={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 8 }}>
-          <SectionLabel>About</SectionLabel>
+          <SectionLabel>Informazioni</SectionLabel>
         </View>
         <View style={{ paddingHorizontal: 16, gap: 10 }}>
-          <SettingsRow label="Version" value="0.1.0" />
-          <SettingsRow label="Privacy" value="On-device first" />
+          <SettingsRow label="Versione" value="0.1.0" />
+          <SettingsRow label="Privacy"  value="Locale, sempre" />
         </View>
 
         {/* Danger zone — premium: warning header + two icon-led cards */}
