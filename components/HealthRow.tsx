@@ -1,8 +1,8 @@
 import { Text, View } from "react-native";
-import { FONT, colors } from "@/theme/tokens";
+import { FONT, colors, statusTint } from "@/theme/tokens";
 import { RetentionBar } from "./RetentionBar";
 
-type Health = "High" | "Medium" | "Low";
+type Health = "Alta" | "Media" | "Bassa";
 
 type Props = {
   name: string;
@@ -13,9 +13,9 @@ type Props = {
 };
 
 const CHIP_STYLES: Record<Health, { bg: string; text: string }> = {
-  High:   { bg: "#E7F5EE", text: "#1F8552" },
-  Medium: { bg: "#FDEEEA", text: "#A65B4A" },
-  Low:    { bg: "#FBE3DD", text: "#9A3F2F" },
+  Alta:  statusTint.active,
+  Media: statusTint.fading,
+  Bassa: { bg: "#FBE3DD", text: "#9A3F2F" },
 };
 
 /**

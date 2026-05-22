@@ -1,11 +1,11 @@
 import { Text, View } from "react-native";
-import { FONT, colors } from "@/theme/tokens";
+import { FONT, colors, statusTint } from "@/theme/tokens";
 import type { FolderItem } from "@/lib/folder-data";
 
 const STATE_META = {
-  active:   { dot: colors.active,    bg: "#E7F5EE", text: "#1F8552", label: "Stabile" },
-  fading:   { dot: colors.fading,    bg: "#FDEEEA", text: "#A65B4A", label: "In dissolvenza" },
-  archived: { dot: colors.archived,  bg: "#EFEDE7", text: "#7A7975", label: "Archiviato" },
+  active:   { dot: colors.active,   ...statusTint.active,   label: "Stabile" },
+  fading:   { dot: colors.fading,   ...statusTint.fading,   label: "In dissolvenza" },
+  archived: { dot: colors.archived, ...statusTint.archived, label: "Archiviato" },
 } as const;
 
 // CJK detection: Hiragana (3040-309F), Katakana (30A0-30FF), CJK Unified
@@ -88,7 +88,7 @@ export function ItemRow({ item }: Props) {
           style={{
             fontFamily: FONT.regular,
             fontSize: 11.5,
-            color: "#B0AFAA",
+            color: colors.placeholder,
             marginTop: 5,
             fontVariant: ["tabular-nums"],
           }}

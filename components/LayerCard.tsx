@@ -27,7 +27,7 @@ export function LayerCard({ layerKey, items, subtitle, onPress }: Props) {
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={`${label} layer, ${items} items, ${subtitle}`}
+      accessibilityLabel={`${label}, ${items} ricordi, ${subtitle}`}
       className="flex-row items-center overflow-hidden rounded-card bg-surface"
       style={({ pressed }) => ({
         borderWidth: 1,
@@ -59,7 +59,7 @@ export function LayerCard({ layerKey, items, subtitle, onPress }: Props) {
               className="text-caption text-mid-grey"
               style={{ fontFamily: FONT.regular, fontVariant: ["tabular-nums"] }}
             >
-              {items} items
+              {items} ricordi
             </Text>
           </View>
           <Text
@@ -69,7 +69,7 @@ export function LayerCard({ layerKey, items, subtitle, onPress }: Props) {
             {subtitle}
           </Text>
         </View>
-        <ChevronRight size={18} color="#C0BEB8" strokeWidth={1.9} />
+        <ChevronRight size={18} color={colors.placeholder} strokeWidth={1.9} />
       </View>
     </Pressable>
   );

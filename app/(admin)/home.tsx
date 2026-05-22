@@ -126,7 +126,7 @@ export default function AdminHomeScreen() {
                 3 high severity · oldest 4h ago
               </Text>
             </View>
-            <ChevronRight size={18} color="#C0BEB8" strokeWidth={1.8} />
+            <ChevronRight size={18} color={colors.placeholder} strokeWidth={1.8} />
           </Pressable>
         </View>
 

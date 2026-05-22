@@ -84,10 +84,10 @@ export default function HealthScreen() {
           <SectionLabel>Per cartella</SectionLabel>
         </View>
         <View style={{ paddingHorizontal: 16, gap: 8 }}>
-          <HealthRow name="Japanese" active={84} fading={12} archived={4}  chip="High" />
-          <HealthRow name="Medicine" active={78} fading={15} archived={7}  chip="High" />
-          <HealthRow name="Spanish"  active={55} fading={32} archived={13} chip="Medium" />
-          <HealthRow name="Law"      active={38} fading={42} archived={20} chip="Low" />
+          <HealthRow name="Japanese" active={84} fading={12} archived={4}  chip="Alta" />
+          <HealthRow name="Medicine" active={78} fading={15} archived={7}  chip="Alta" />
+          <HealthRow name="Spanish"  active={55} fading={32} archived={13} chip="Media" />
+          <HealthRow name="Law"      active={38} fading={42} archived={20} chip="Bassa" />
         </View>
 
         {/* Insight card */}

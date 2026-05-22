@@ -244,7 +244,7 @@ function SubRow({ sub }: { sub: Sub }) {
           </Text>
         </View>
       ) : null}
-      <ChevronRight size={18} color="#C0BEB8" strokeWidth={1.8} />
+      <ChevronRight size={18} color={colors.placeholder} strokeWidth={1.8} />
     </Pressable>
   );
 }

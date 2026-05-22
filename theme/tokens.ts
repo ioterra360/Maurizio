@@ -75,6 +75,18 @@ export const layerTint = {
   scanReveal: "#EDF4FB",
 } as const;
 
+/**
+ * Memory lifecycle status tints — used by ItemRow, HealthRow and any
+ * pill/chip that visualises an active/fading/archived state. Centralizing
+ * the bg/text pair prevents the three palettes from drifting across
+ * surfaces.
+ */
+export const statusTint = {
+  active:   { bg: "#E7F5EE", text: "#1F8552" },
+  fading:   { bg: "#FDEEEA", text: "#A65B4A" },
+  archived: { bg: "#EFEDE7", text: "#7A7975" },
+} as const;
+
 export const layer = {
   scan: { color: colors.scan, label: "Scan", icon: "Radar" },
   reinforcement: { color: colors.reinforcement, label: "Reinforcement", icon: "Repeat" },
