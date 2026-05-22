@@ -91,11 +91,11 @@ export const RULES: ModerationRule[] = [
 export type FunnelStep = { label: string; value: number; pct: string };
 
 export const FUNNEL: FunnelStep[] = [
-  { label: "Sign-up",        value: 14_320, pct: "100%" },
-  { label: "Onboarding done", value: 11_847, pct: "82.7%" },
-  { label: "First memory",   value: 9_438,  pct: "65.9%" },
-  { label: "Day 7 retained", value: 6_204,  pct: "43.3%" },
-  { label: "Day 30 retained", value: 3_892, pct: "27.2%" },
+  { label: "Registrazione",       value: 14_320, pct: "100%" },
+  { label: "Onboarding completato", value: 11_847, pct: "82.7%" },
+  { label: "Primo ricordo",       value: 9_438,  pct: "65.9%" },
+  { label: "Ritenzione giorno 7", value: 6_204,  pct: "43.3%" },
+  { label: "Ritenzione giorno 30", value: 3_892, pct: "27.2%" },
 ];
 
 export type RecallByFolder = { folder: string; accuracy: number; color: string };

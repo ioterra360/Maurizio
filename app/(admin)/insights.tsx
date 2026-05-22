@@ -13,11 +13,11 @@ export default function AdminInsightsScreen() {
         contentContainerStyle={{ paddingBottom: 120 }}
         showsVerticalScrollIndicator={false}
       >
-        <AdminTopBar title="Insights" subtitle="14d window · cohort May 12" />
+        <AdminTopBar title="Insight" subtitle="Finestra 14g · coorte 12 maggio" />
 
         {/* Onboarding funnel */}
         <View style={{ paddingHorizontal: 22, paddingBottom: 8 }}>
-          <SectionLabel>Onboarding funnel</SectionLabel>
+          <SectionLabel>Funnel di onboarding</SectionLabel>
         </View>
         <View style={{ paddingHorizontal: 16 }}>
           <View
@@ -91,14 +91,14 @@ export default function AdminInsightsScreen() {
                     <Text
                       style={{
                         fontFamily: FONT.regular,
-                        fontSize: 11.5,
+                        fontSize: 12.5,
                         color: colors.midGrey,
-                        marginTop: 3,
+                        marginTop: 4,
                         fontVariant: ["tabular-nums"],
                       }}
                     >
-                      {step.value.toLocaleString()}
-                      {drop !== null ? ` · drop ${drop.toLocaleString()}` : ""}
+                      {step.value.toLocaleString("it-IT")}
+                      {drop !== null ? ` · -${drop.toLocaleString("it-IT")}` : ""}
                     </Text>
                   </View>
                 </View>
@@ -129,16 +129,16 @@ export default function AdminInsightsScreen() {
                 letterSpacing: -0.04,
               }}
             >
-              <Text style={{ fontFamily: FONT.bold }}>D7 → D30 leakage is 37%.</Text> The
-              cohort that added 3+ memories in week 1 retains 78% at D30 vs 22% baseline.
-              Push first-week add behavior.
+              <Text style={{ fontFamily: FONT.bold }}>La perdita D7 → D30 è del 37%.</Text> La
+              coorte che ha aggiunto 3+ ricordi nella prima settimana mantiene il 78% al D30
+              contro il 22% di base. Spingere il primo add nella settimana 1.
             </Text>
           </View>
         </View>
 
         {/* Recall accuracy by folder */}
         <View style={{ paddingHorizontal: 22, paddingTop: 22, paddingBottom: 8 }}>
-          <SectionLabel>Recall accuracy by folder</SectionLabel>
+          <SectionLabel>Accuratezza del richiamo per cartella</SectionLabel>
         </View>
         <View style={{ paddingHorizontal: 16, gap: 10 }}>
           {RECALL.map((row) => (
@@ -197,7 +197,7 @@ export default function AdminInsightsScreen() {
 
         {/* Review layer adoption */}
         <View style={{ paddingHorizontal: 22, paddingTop: 22, paddingBottom: 8 }}>
-          <SectionLabel>Review layer adoption · 14d</SectionLabel>
+          <SectionLabel>Adozione layer di ripasso · 14g</SectionLabel>
         </View>
         <View style={{ paddingHorizontal: 16, gap: 10 }}>
           <LayerAdoption color={colors.scan} label="Scan" sessions={42_810} share={0.48} />
@@ -275,13 +275,13 @@ function LayerAdoption({
       <Text
         style={{
           fontFamily: FONT.regular,
-          fontSize: 11.5,
+          fontSize: 12.5,
           color: colors.midGrey,
-          marginTop: 4,
+          marginTop: 5,
           fontVariant: ["tabular-nums"],
         }}
       >
-        {sessions.toLocaleString()} sessions
+        {sessions.toLocaleString("it-IT")} sessioni
       </Text>
     </View>
   );
