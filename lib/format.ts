@@ -91,17 +91,19 @@ export function isoFromRelativeLabel(
   if (s === "yesterday" || s === "ieri") {
     return new Date(now.getTime() - DAY_MS).toISOString();
   }
-  const daysMatch = /^(\d+)\s+(days?\s+ago|giorni?\s+fa)$/.exec(s);
+  // Italian singular/plural don't share a stem (settimana/settimane,
+  // giorno/giorni, mese/mesi), so each alternation needs both forms.
+  const daysMatch = /^(\d+)\s+(days?\s+ago|giorno\s+fa|giorni\s+fa)$/.exec(s);
   if (daysMatch) {
     const n = Number(daysMatch[1]);
     return new Date(now.getTime() - n * DAY_MS).toISOString();
   }
-  const weeksMatch = /^(\d+)\s+(weeks?\s+ago|settimane?\s+fa)$/.exec(s);
+  const weeksMatch = /^(\d+)\s+(weeks?\s+ago|settimana\s+fa|settimane\s+fa)$/.exec(s);
   if (weeksMatch) {
     const n = Number(weeksMatch[1]);
     return new Date(now.getTime() - n * 7 * DAY_MS).toISOString();
   }
-  const monthsMatch = /^(\d+)\s+(months?\s+ago|mesi?\s+fa|mese\s+fa)$/.exec(s);
+  const monthsMatch = /^(\d+)\s+(months?\s+ago|mese\s+fa|mesi\s+fa)$/.exec(s);
   if (monthsMatch) {
     const n = Number(monthsMatch[1]);
     return new Date(now.getTime() - n * 30 * DAY_MS).toISOString();
