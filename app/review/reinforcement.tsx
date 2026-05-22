@@ -166,7 +166,7 @@ export default function ReinforcementScreen() {
             <Pressable
               onPress={() => reveal("answer")}
               accessibilityRole="button"
-              accessibilityLabel="Show answer"
+              accessibilityLabel="Mostra risposta"
               className="items-center justify-center rounded-cta"
               style={({ pressed }) => ({
                 height: 60,
@@ -208,7 +208,7 @@ export default function ReinforcementScreen() {
             })}
           >
             <Text style={{ fontFamily: FONT.bold, fontSize: 19, color: colors.navy, letterSpacing: -0.16 }}>
-              Show answer
+              Mostra risposta
             </Text>
           </Pressable>
         ) : null}

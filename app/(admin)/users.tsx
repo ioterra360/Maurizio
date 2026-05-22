@@ -89,7 +89,7 @@ export default function AdminUsersScreen() {
         contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}
       >
         <FilterChip
-          label="All"
+          label="Tutti"
           count={counts.all}
           active={filter === "all"}
           onPress={() => setFilter("all")}
@@ -105,11 +105,11 @@ export default function AdminUsersScreen() {
           label="Free"
           count={counts.Free}
           active={filter === "Free"}
-          dot="#9C9C95"
+          dot={colors.archived}
           onPress={() => setFilter("Free")}
         />
         <FilterChip
-          label="At risk"
+          label="A rischio"
           count={counts.atRisk}
           active={filter === "At risk"}
           dot={colors.fading}

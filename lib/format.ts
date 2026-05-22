@@ -16,22 +16,22 @@ export function initials(fullName: string | undefined | null, fallback = "M"): s
   return parts.map((p) => p.charAt(0).toUpperCase()).join("");
 }
 
-const DAY_SHORT = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"] as const;
+const DAY_SHORT = ["DOM", "LUN", "MAR", "MER", "GIO", "VEN", "SAB"] as const;
 const MONTH_SHORT = [
-  "JAN", "FEB", "MAR", "APR", "MAY", "JUN",
-  "JUL", "AUG", "SEP", "OCT", "NOV", "DEC",
+  "GEN", "FEB", "MAR", "APR", "MAG", "GIU",
+  "LUG", "AGO", "SET", "OTT", "NOV", "DIC",
 ] as const;
 
-/** "MON · MAY 19" — used as a date kicker badge on Today and Admin Home. */
+/** "LUN · 19 MAG" — used as a date kicker badge on Today and Admin Home. */
 export function dateBadge(date: Date = new Date()): string {
-  return `${DAY_SHORT[date.getDay()]} · ${MONTH_SHORT[date.getMonth()]} ${date.getDate()}`;
+  return `${DAY_SHORT[date.getDay()]} · ${date.getDate()} ${MONTH_SHORT[date.getMonth()]}`;
 }
 
 export function timeGreeting(date: Date = new Date()): string {
   const h = date.getHours();
-  if (h < 12) return "Good morning,";
-  if (h < 18) return "Good afternoon,";
-  return "Good evening,";
+  if (h < 12) return "Buongiorno,";
+  if (h < 18) return "Buon pomeriggio,";
+  return "Buonasera,";
 }
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -46,21 +46,21 @@ export function relativeReviewed(
   iso: string | null,
   now: Date = new Date(),
 ): string {
-  if (!iso) return "Never reviewed";
+  if (!iso) return "Mai ripassato";
   const then = new Date(iso).getTime();
-  if (Number.isNaN(then)) return "Never reviewed";
+  if (Number.isNaN(then)) return "Mai ripassato";
   const diff = now.getTime() - then;
-  if (diff < 0) return "Just now";
+  if (diff < 0) return "Adesso";
   const days = Math.floor(diff / DAY_MS);
-  if (days === 0) return "Today";
-  if (days === 1) return "Yesterday";
-  if (days < 7) return `${days} days ago`;
+  if (days === 0) return "Oggi";
+  if (days === 1) return "Ieri";
+  if (days < 7) return `${days} giorni fa`;
   if (days < 30) {
     const w = Math.floor(days / 7);
-    return w === 1 ? "1 week ago" : `${w} weeks ago`;
+    return w === 1 ? "1 settimana fa" : `${w} settimane fa`;
   }
   const m = Math.floor(days / 30);
-  return m === 1 ? "1 month ago" : `${m} months ago`;
+  return m === 1 ? "1 mese fa" : `${m} mesi fa`;
 }
 
 /**
@@ -83,19 +83,25 @@ export function isoFromRelativeLabel(
 ): string | null {
   const s = label.trim().toLowerCase();
   if (!s) return null;
-  if (s === "today" || s === "just now") return now.toISOString();
-  if (s === "yesterday") return new Date(now.getTime() - DAY_MS).toISOString();
-  const daysMatch = /^(\d+)\s+days?\s+ago$/.exec(s);
+  // Match both English (legacy demo seeds) and Italian forms so the
+  // pre-localized labels in folder-data.ts still parse.
+  if (s === "today" || s === "just now" || s === "oggi" || s === "adesso") {
+    return now.toISOString();
+  }
+  if (s === "yesterday" || s === "ieri") {
+    return new Date(now.getTime() - DAY_MS).toISOString();
+  }
+  const daysMatch = /^(\d+)\s+(days?\s+ago|giorni?\s+fa)$/.exec(s);
   if (daysMatch) {
     const n = Number(daysMatch[1]);
     return new Date(now.getTime() - n * DAY_MS).toISOString();
   }
-  const weeksMatch = /^(\d+)\s+weeks?\s+ago$/.exec(s);
+  const weeksMatch = /^(\d+)\s+(weeks?\s+ago|settimane?\s+fa)$/.exec(s);
   if (weeksMatch) {
     const n = Number(weeksMatch[1]);
     return new Date(now.getTime() - n * 7 * DAY_MS).toISOString();
   }
-  const monthsMatch = /^(\d+)\s+months?\s+ago$/.exec(s);
+  const monthsMatch = /^(\d+)\s+(months?\s+ago|mesi?\s+fa|mese\s+fa)$/.exec(s);
   if (monthsMatch) {
     const n = Number(monthsMatch[1]);
     return new Date(now.getTime() - n * 30 * DAY_MS).toISOString();

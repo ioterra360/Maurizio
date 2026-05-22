@@ -355,7 +355,7 @@ export default function AddScreen() {
               : `${dailyCount} / ${dailyMax} inputs today`}
           </Text>
           <GhostButton
-            label="Save & add another"
+            label="Salva e aggiungi un altro"
             variant="outline"
             onPress={() => doSave(true)}
             disabled={!canSave}

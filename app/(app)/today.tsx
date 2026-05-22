@@ -28,7 +28,7 @@ const TOTAL_ITEMS = PLAN.scan.items + PLAN.reinforcement.items + PLAN.focus.item
 
 export default function TodayScreen() {
   const name = useAuthStore((s) => s.user?.name ?? "");
-  const display = firstName(name, "Welcome");
+  const display = firstName(name, "Benvenuto");
   const [budget, setBudget] = useState(15);
 
   // Recompute date label each render so a day rollover during a long session
