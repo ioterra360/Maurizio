@@ -9,10 +9,10 @@ import { colors } from "@/theme/tokens";
 export type KPI = { label: string; value: string; delta: string; accent: string };
 
 export const KPIS: KPI[] = [
-  { label: "Daily active",  value: "12.8K", delta: "+8.4%",  accent: colors.navy },
-  { label: "Memories",      value: "2.41M", delta: "+3.1%",  accent: colors.active },
-  { label: "Retention",     value: "68%",   delta: "+1.2pt", accent: colors.reinforcement },
-  { label: "MRR",           value: "$24.3K", delta: "+12%",  accent: colors.scan },
+  { label: "Attivi al giorno", value: "12.8K", delta: "+8.4%",  accent: colors.navy },
+  { label: "Ricordi",          value: "2.41M", delta: "+3.1%",  accent: colors.active },
+  { label: "Ritenzione",       value: "68%",   delta: "+1.2pt", accent: colors.reinforcement },
+  { label: "MRR",              value: "€24.3K", delta: "+12%",  accent: colors.scan },
 ];
 
 export type ActivityItem = {
@@ -24,10 +24,10 @@ export type ActivityItem = {
 };
 
 export const ACTIVITY: ActivityItem[] = [
-  { iconKind: "folder", color: colors.active, title: "Mara Bianchi", body: "upgraded to Pro Annual", time: "3m" },
-  { iconKind: "warn", color: colors.fading, title: "2 cards flagged", body: "Medicine · auto-quarantine", time: "14m" },
-  { iconKind: "sparkle", color: colors.reinforcement, title: "Weekly digest", body: "sent to 10,238 users", time: "2h" },
-  { iconKind: "check", color: colors.navy, title: "Cohort May 12", body: "87% W1 retention", time: "1d" },
+  { iconKind: "folder", color: colors.active, title: "Mara Bianchi", body: "è passata a Pro Annuale", time: "3m" },
+  { iconKind: "warn", color: colors.fading, title: "2 carte segnalate", body: "Medicine · auto-quarantena", time: "14m" },
+  { iconKind: "sparkle", color: colors.reinforcement, title: "Riepilogo settimanale", body: "inviato a 10.238 utenti", time: "2h" },
+  { iconKind: "check", color: colors.navy, title: "Coorte 12 maggio", body: "87% ritenzione W1", time: "1d" },
 ];
 
 export type AdminUser = {
