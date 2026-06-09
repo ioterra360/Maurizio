@@ -22,7 +22,7 @@ import { GhostButton } from "@/components/GhostButton";
 import { useAuthStore } from "@/lib/auth-store";
 import { colors, FONT } from "@/theme/tokens";
 
-const CHECKOUT_URL = "https://memora.app/subscribe";
+const CHECKOUT_URL = "https://memika.app/subscribe";
 
 const BENEFITS = [
   {

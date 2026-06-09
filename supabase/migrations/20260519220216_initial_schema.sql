@@ -1,4 +1,4 @@
--- Memora — initial schema
+-- Memika — initial schema
 --
 -- Domain: spaced-repetition app. Users own folders; folders contain memories;
 -- memories progress through Scan → Reinforcement → Focus review layers with an
@@ -154,7 +154,7 @@ create trigger memories_set_updated_at before update on public.memories
 
 -- ============================================================================
 -- Profile auto-creation: every new auth.users gets a public.profiles row.
--- Role inferred from email shape (admin if ends with @memora.app or contains 'admin').
+-- Role inferred from email shape (admin if ends with @memika.app or contains 'admin').
 -- ============================================================================
 
 create or replace function public.handle_new_user()
@@ -167,7 +167,7 @@ declare
   user_role public.user_role;
   display_name text;
 begin
-  if new.email ilike '%admin%' or new.email ilike '%@memora.app' then
+  if new.email ilike '%admin%' or new.email ilike '%@memika.app' then
     user_role := 'admin';
   else
     user_role := 'user';

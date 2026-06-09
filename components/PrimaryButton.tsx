@@ -8,31 +8,54 @@ type Props = {
   loading?: boolean;
   disabled?: boolean;
   /**
-   * "fill" (default) = light surface CTA with navy text + navy border. The
-   * previous filled-navy variant was reverted on 2026-05-22 because the
-   * white text on navy was illegible on Angelo's device.
+   * "fill" (default) = filled navy + white text + drop shadow. The visual
+   * contract from Claude Design — confident, dominant primary action.
+   * "outline" = warm-white surface + navy text + navy 1.5-px border. Used
+   *   when an outlined-only treatment is intentional (cancel-style).
    * "tonal" = soft tag-blue background, navy text (low emphasis).
-   * "solidNavy" = the classic filled-navy CTA, kept for places where a
-   *   dark surface is design-intentional (e.g. inside the subscribe hero).
+   * "danger" = filled red with white text + red glow (destructive ops).
    */
-  variant?: "fill" | "tonal" | "solidNavy";
+  variant?: "fill" | "outline" | "tonal" | "danger";
+  /**
+   * Optional fill-color override (e.g. a layer color on the review handoff).
+   * Applies to the "fill" variant only: replaces the navy background and the
+   * shadow tint with this color, keeping white text. Mirrors the design's
+   * `background: toData.color` handoff button in reviews.jsx.
+   */
+  color?: string;
   style?: StyleProp<ViewStyle>;
 };
 
 /**
  * The primary call-to-action used across the app — Accedi, Crea account,
- * Save, Continua. Cream surface with strong navy text + border so the
- * label is unambiguously legible on any device.
+ * Save, Continua. Default is filled-navy per the design contract.
  */
-export function PrimaryButton({ label, onPress, loading, disabled, variant = "fill", style }: Props) {
+export function PrimaryButton({ label, onPress, loading, disabled, variant = "fill", color, style }: Props) {
   const isDisabled = disabled || loading;
-  const solid = variant === "solidNavy";
-  const tonal = variant === "tonal";
 
-  const bg = solid ? colors.navy : tonal ? colors.tagUserBg : colors.warmWhite;
-  const textColor = solid ? colors.warmWhite : colors.navy;
-  const borderColor = solid ? "transparent" : colors.navy;
-  const borderWidth = solid ? 0 : 1.5;
+  // A color override only makes sense on the filled treatment.
+  const fillColor = variant === "fill" && color ? color : colors.navy;
+
+  const bg =
+    variant === "fill"
+      ? fillColor
+      : variant === "danger"
+        ? colors.danger
+        : variant === "tonal"
+          ? colors.tagUserBg
+          : colors.warmWhite;
+
+  const textColor =
+    variant === "fill" || variant === "danger" ? colors.warmWhite : colors.navy;
+
+  const borderColor = variant === "outline" ? colors.navy : "transparent";
+  const borderWidth = variant === "outline" ? 1.5 : 0;
+
+  const shadowTint =
+    variant === "danger" ? colors.danger : variant === "fill" ? fillColor : colors.navy;
+  const shadowOpacity =
+    variant === "fill" || variant === "danger" ? 0.32 : variant === "outline" ? 0.12 : 0.08;
+  const elevation = variant === "fill" || variant === "danger" ? 4 : variant === "outline" ? 2 : 1;
 
   return (
     <Pressable
@@ -53,11 +76,11 @@ export function PrimaryButton({ label, onPress, loading, disabled, variant = "fi
           borderColor,
           borderWidth,
           opacity: isDisabled ? 0.55 : pressed ? 0.88 : 1,
-          shadowColor: colors.navy,
-          shadowOpacity: solid ? 0.32 : 0.16,
+          shadowColor: shadowTint,
+          shadowOpacity,
           shadowOffset: { width: 0, height: 6 },
           shadowRadius: 18,
-          elevation: solid ? 4 : 2,
+          elevation,
         },
         style,
       ]}

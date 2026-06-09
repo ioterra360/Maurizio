@@ -11,14 +11,13 @@ type Props = {
 
 const META: Record<
   Recall,
-  { label: string; icon: LucideIcon; bg: string; border: string; text: string; iconColor: string; shadow?: boolean }
+  { label: string; icon: LucideIcon; bg: string; border: string; text: string; iconColor: string; shadowColor?: string }
 > = {
-  // Filled primary uses navy (matches "Start Today's Review" and the other
-  // review CTAs) instead of the layer-local accent — Angelo's call: a
-  // consistent dark-blue family across all confirm actions.
-  remembered: { label: "Ricordato",  icon: Check,         bg: colors.warmWhite, border: colors.navy,           text: colors.navy,   iconColor: colors.navy,   shadow: true },
-  struggled:  { label: "Faticoso",   icon: TriangleAlert, bg: "transparent",     border: colors.hairlineStrong, text: colors.navy,   iconColor: colors.navy },
-  forgot:     { label: "Dimenticato",icon: X,             bg: "transparent",     border: colors.fading,         text: colors.fading, iconColor: colors.fading },
+  // Per the Claude Design contract (reviews.jsx:410): the primary confirm
+  // is filled GREEN with a green glow shadow. Layer-local color, not navy.
+  remembered: { label: "Ricordato",  icon: Check,         bg: colors.active,    border: colors.active,         text: colors.warmWhite, iconColor: colors.warmWhite, shadowColor: colors.active },
+  struggled:  { label: "Faticoso",   icon: TriangleAlert, bg: "transparent",    border: colors.hairlineStrong, text: colors.navy,      iconColor: colors.navy },
+  forgot:     { label: "Dimenticato",icon: X,             bg: "transparent",    border: colors.fading,         text: colors.fading,    iconColor: colors.fading },
 };
 
 /**
@@ -41,11 +40,11 @@ export function RecallButton({ variant, onPress }: Props) {
         borderColor: m.border,
         opacity: pressed ? 0.85 : 1,
         gap: 10,
-        shadowColor: m.shadow ? colors.navy : "transparent",
-        shadowOpacity: m.shadow ? 0.22 : 0,
-        shadowOffset: { width: 0, height: 6 },
-        shadowRadius: 18,
-        elevation: m.shadow ? 3 : 0,
+        shadowColor: m.shadowColor ?? "transparent",
+        shadowOpacity: m.shadowColor ? 0.45 : 0,
+        shadowOffset: { width: 0, height: 8 },
+        shadowRadius: 20,
+        elevation: m.shadowColor ? 4 : 0,
       })}
     >
       <Icon size={20} color={m.iconColor} strokeWidth={2.1} />

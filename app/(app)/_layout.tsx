@@ -40,7 +40,7 @@ export default function AppLayout() {
           fontFamily: "Inter_600SemiBold",
           fontSize: 11,
           letterSpacing: -0.05,
-          marginTop: 4,
+          marginTop: 3,
         },
       }}
     >

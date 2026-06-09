@@ -22,7 +22,7 @@ type AuthState = {
   subscribeAuthChanges: () => () => void;
 };
 
-const DEMO_STORAGE_KEY = "memora.demo-auth";
+const DEMO_STORAGE_KEY = "memika.demo-auth";
 
 /**
  * Single source of truth for the two demo accounts used during development.
@@ -38,7 +38,7 @@ export const DEMO_ACCOUNTS = [
     initials: "AC",
   },
   {
-    email: "maurizio.cocco@memora.app",
+    email: "maurizio.cocco@memika.app",
     name: "Maurizio Cocco",
     role: "admin" as const,
     initials: "MC",
@@ -54,7 +54,7 @@ function deriveName(email: string): string {
     .filter(Boolean)
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(" ");
-  return cleaned || "Memora user";
+  return cleaned || "Memika user";
 }
 
 function safeMetaName(metadata: unknown): string | null {
@@ -82,7 +82,7 @@ async function buildAuthUserFromSession(
     .maybeSingle();
 
   if (error && __DEV__) {
-    console.warn("[Memora] profile lookup failed", error.message);
+    console.warn("[Memika] profile lookup failed", error.message);
   }
 
   const role: UserRole = profile?.role === "admin" ? "admin" : "user";
@@ -116,7 +116,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         }
       }
     } catch (err) {
-      if (__DEV__) console.warn("[Memora] auth hydrate failed", err);
+      if (__DEV__) console.warn("[Memika] auth hydrate failed", err);
     } finally {
       set({ hydrated: true });
     }
@@ -181,7 +181,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       try {
         await supabase.auth.signOut({ scope: "global" });
       } catch (err) {
-        if (__DEV__) console.warn("[Memora] supabase.signOut failed", err);
+        if (__DEV__) console.warn("[Memika] supabase.signOut failed", err);
       }
     }
     await AsyncStorage.removeItem(DEMO_STORAGE_KEY).catch(() => {});

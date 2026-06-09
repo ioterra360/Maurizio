@@ -2,14 +2,15 @@ import { create } from "zustand";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { FOLDER_KINDS, type FolderKind } from "./constants";
 
-const STORAGE_KEY = "memora.folder-order.v1";
+const STORAGE_KEY = "memika.folder-order.v1";
 
 type State = {
   /** User-defined order. Null until hydrated; defaults to FOLDER_KINDS. */
   order: FolderKind[] | null;
   hydrated: boolean;
   hydrate: () => Promise<void>;
-  move: (kind: FolderKind, dir: "up" | "down") => void;
+  /** Replace the whole order at once — used by drag-to-reorder. */
+  setOrder: (next: FolderKind[]) => void;
   reset: () => Promise<void>;
 };
 
@@ -34,7 +35,7 @@ async function persist(order: FolderKind[]) {
   }
 }
 
-export const useFolderOrderStore = create<State>((set, get) => ({
+export const useFolderOrderStore = create<State>((set) => ({
   order: null,
   hydrated: false,
 
@@ -48,16 +49,11 @@ export const useFolderOrderStore = create<State>((set, get) => ({
     }
   },
 
-  move: (kind, dir) => {
-    const current = get().order ?? [...FOLDER_KINDS];
-    const idx = current.indexOf(kind);
-    if (idx < 0) return;
-    const target = dir === "up" ? idx - 1 : idx + 1;
-    if (target < 0 || target >= current.length) return;
-    const next = [...current];
-    [next[idx], next[target]] = [next[target], next[idx]];
-    set({ order: next });
-    void persist(next);
+  setOrder: (next) => {
+    const cleaned = clean(next);
+    if (!cleaned) return;
+    set({ order: cleaned });
+    void persist(cleaned);
   },
 
   reset: async () => {

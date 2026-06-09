@@ -95,7 +95,7 @@ export default function ForgotPasswordScreen() {
 
           {/* Hero — investigate mascot illustrates "looking for your password" */}
           <View className="items-center" style={{ paddingTop: 12, paddingBottom: 30 }}>
-            <Mascot variant="investigate" size={140} withShadow={false} />
+            <Mascot variant="investigate" size={92} withShadow={false} />
             <Text
               style={{
                 marginTop: 22,

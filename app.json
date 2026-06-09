@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "Memora",
-    "slug": "memora",
+    "name": "Memika",
+    "slug": "memika",
     "version": "0.1.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "scheme": "memora",
+    "scheme": "memika",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
@@ -15,10 +15,10 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "studio.tailor.memora"
+      "bundleIdentifier": "studio.tailor.memika"
     },
     "android": {
-      "package": "studio.tailor.memora",
+      "package": "studio.tailor.memika",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#F5F3EF"

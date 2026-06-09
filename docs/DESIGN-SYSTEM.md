@@ -1,6 +1,6 @@
 # Design system
 
-> The visual rules. Source of truth: `_design_drop/memora/project/Memora App.html`
+> The visual rules. Source of truth: `_design_drop/memika/project/Memika App.html`
 > ("Editorial" direction). Where this doc and that HTML disagree, the HTML wins
 > (and this doc gets updated).
 

@@ -8,12 +8,10 @@ import { SectionLabel } from "@/components/SectionLabel";
 import { LayerCard } from "@/components/LayerCard";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { GhostButton } from "@/components/GhostButton";
-import { CoachTip } from "@/components/CoachTip";
 import { Mascot } from "@/components/Mascot";
 import { useAuthStore } from "@/lib/auth-store";
 import { useReviewStore } from "@/lib/review-store";
 import { firstName, dateBadge, timeGreeting } from "@/lib/format";
-import { pickTip } from "@/lib/coach-tips";
 import { FONT, colors } from "@/theme/tokens";
 
 type LayerPlan = { items: number; subtitle: string };
@@ -41,13 +39,6 @@ export default function TodayScreen() {
     reinforcement: "Ultimi 3–7 giorni · ~6 min",
     focus:         "Ricordi di ieri · ~6 min",
   } as const;
-  const dayOfYear = useMemo(() => {
-    const now = new Date();
-    const start = new Date(now.getFullYear(), 0, 0);
-    return Math.floor((now.getTime() - start.getTime()) / 86400000);
-  }, []);
-  const todayTip = useMemo(() => pickTip("today", dayOfYear), [dayOfYear]);
-
   const startSession = useReviewStore((s) => s.start);
 
   // Initialize the review-store BEFORE navigating so the destination
@@ -66,7 +57,7 @@ export default function TodayScreen() {
   return (
     <SafeAreaView className="flex-1 bg-warm-white" edges={["top"]}>
       <ScrollView
-        contentContainerStyle={{ paddingBottom: 240 }}
+        contentContainerStyle={{ paddingBottom: 200 }}
         showsVerticalScrollIndicator={false}
       >
         {/* Editorial hero with mascot peek — mascot is absolutely positioned
@@ -108,18 +99,13 @@ export default function TodayScreen() {
           </View>
         </View>
 
-        {/* Time budget card */}
+        {/* Time budget chips */}
         <View style={{ paddingHorizontal: 20, marginTop: 22 }}>
           <TimeBudgetChips value={budget} onChange={setBudget} />
         </View>
 
-        {/* Coach tip — rotates daily so the user sees fresh advice */}
-        <View style={{ paddingHorizontal: 20, marginTop: 18 }}>
-          <CoachTip tip={todayTip} persistDismiss={false} />
-        </View>
-
         {/* Recommended flow */}
-        <View style={{ paddingHorizontal: 28, paddingTop: 24, paddingBottom: 8 }}>
+        <View style={{ paddingHorizontal: 28, paddingTop: 28, paddingBottom: 8 }}>
           <SectionLabel>Flusso consigliato</SectionLabel>
         </View>
         <View style={{ paddingHorizontal: 20, gap: 10 }}>

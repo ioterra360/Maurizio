@@ -41,14 +41,17 @@ export default function FocusScreen() {
         </View>
 
         <Text
+          adjustsFontSizeToFit
+          numberOfLines={2}
           style={{
             fontFamily: FONT.bold,
-            fontSize: 56,
+            fontSize: card.front.length > 10 ? 44 : 80,
             color: colors.navy,
-            letterSpacing: -2,
+            letterSpacing: -2.2,
             textAlign: "center",
-            lineHeight: 60,
-            marginTop: 20,
+            lineHeight: card.front.length > 10 ? 52 : 88,
+            marginTop: 24,
+            paddingHorizontal: 8,
           }}
         >
           {card.front}

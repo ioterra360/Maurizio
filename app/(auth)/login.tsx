@@ -64,16 +64,16 @@ export default function LoginScreen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          {/* Hero — mascot displayed at full size, no cropping disc */}
-          <View className="items-center" style={{ paddingTop: 28, paddingBottom: 32 }}>
-            <Mascot variant="idea" size={160} withShadow={false} />
+          {/* Hero — mascot displayed at editorial scale per design contract */}
+          <View className="items-center" style={{ paddingTop: 20, paddingBottom: 24 }}>
+            <Mascot variant="idea" size={92} withShadow={false} />
             <Text
               style={{
-                marginTop: 14,
+                marginTop: 12,
                 fontFamily: FONT.bold,
-                fontSize: 36,
-                lineHeight: 42,
-                letterSpacing: -0.6,
+                fontSize: 28,
+                lineHeight: 34,
+                letterSpacing: -0.5,
                 color: colors.navy,
               }}
             >
@@ -81,10 +81,10 @@ export default function LoginScreen() {
             </Text>
             <Text
               style={{
-                marginTop: 8,
+                marginTop: 6,
                 fontFamily: FONT.regular,
-                fontSize: 16,
-                lineHeight: 24,
+                fontSize: 14.5,
+                lineHeight: 22,
                 color: colors.midGrey,
                 textAlign: "center",
               }}
@@ -108,7 +108,7 @@ export default function LoginScreen() {
             placeholderTextColor={colors.placeholder}
             className="rounded-input bg-surface px-4 text-body-lg text-navy"
             style={{
-              height: 56,
+              height: 50,
               fontFamily: FONT.medium,
               borderWidth: 1.5,
               borderColor: focused === "email" ? colors.navy : colors.hairline,
@@ -147,7 +147,7 @@ export default function LoginScreen() {
             placeholderTextColor={colors.placeholder}
             className="rounded-input bg-surface px-4 text-body-lg text-navy"
             style={{
-              height: 56,
+              height: 50,
               fontFamily: FONT.medium,
               borderWidth: 1.5,
               borderColor: focused === "password" ? colors.navy : colors.hairline,

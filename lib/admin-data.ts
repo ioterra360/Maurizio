@@ -150,9 +150,9 @@ export type TeamMember = {
 };
 
 export const TEAM: TeamMember[] = [
-  { id: "u1", name: "Maurizio Cocco",  email: "maurizio.cocco@memora.app",  role: "Owner",    initials: "MC" },
+  { id: "u1", name: "Maurizio Cocco",  email: "maurizio.cocco@memika.app",  role: "Owner",    initials: "MC" },
   { id: "u2", name: "Angelo Casula",   email: "angelo.casula@gmail.com",    role: "Engineer", initials: "AC" },
-  { id: "u3", name: "Elena Akeyama",   email: "elena.akeyama@memora.app",   role: "Admin",    initials: "EA" },
-  { id: "u4", name: "Marco Rossi",     email: "marco.rossi@memora.app",     role: "Editor",   initials: "MR" },
-  { id: "u5", name: "Sofia Conti",     email: "sofia@memora.app",           role: "Support",  initials: "SC" },
+  { id: "u3", name: "Elena Akeyama",   email: "elena.akeyama@memika.app",   role: "Admin",    initials: "EA" },
+  { id: "u4", name: "Marco Rossi",     email: "marco.rossi@memika.app",     role: "Editor",   initials: "MR" },
+  { id: "u5", name: "Sofia Conti",     email: "sofia@memika.app",           role: "Support",  initials: "SC" },
 ];

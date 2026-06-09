@@ -4,7 +4,7 @@
 
 ## Codename
 
-The app is referred to internally as **Memora**. This is a **codename** — the
+The app is referred to internally as **Memika**. This is a **codename** — the
 final consumer-facing name has not been chosen yet (decision deferred until
 shortly before soft-launch). When the real name is picked:
 
@@ -55,7 +55,7 @@ not a content commitment — we do not edit user folders.
 - ❌ Not a course / curriculum. We do not teach. We protect existing learning.
 - ❌ Not a flashcard import tool. We are not Anki. We design our own intake.
 - ❌ Not gamified. No streaks, no XP, no leaderboards. Editorial calm.
-- ❌ Not social. No sharing, follows, comments. Memora is a quiet place.
+- ❌ Not social. No sharing, follows, comments. Memika is a quiet place.
 - ❌ Not free forever. Subscription model from day one (Wix Payments).
 
 ## Value proposition
@@ -68,7 +68,7 @@ belong. If it surfaces *what is fading*, it does.
 
 ## Mascot
 
-Memora has a brand mascot (see `assets/brand/mascot.png`). It is not decorative
+Memika has a brand mascot (see `assets/brand/mascot.png`). It is not decorative
 — it is the personality of the app. It appears as:
 
 - The hero of onboarding (animated)
@@ -81,7 +81,7 @@ slightly Studio-Ghibli-via-Stripe. See `docs/DESIGN-SYSTEM.md` for visual specs.
 ## Subscription model
 
 Single tier at launch. Pricing TBD. Payment runs entirely on Wix Payments
-(Maurizio's Italian P.IVA, then later Memora SRL). The app never embeds a
+(Maurizio's Italian P.IVA, then later Memika SRL). The app never embeds a
 payment SDK — it asks the user to subscribe on the web, then a Wix webhook
 flips a flag on the user's Supabase profile.
 

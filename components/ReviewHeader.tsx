@@ -32,6 +32,7 @@ export function ReviewHeader({ layerKey, index, total }: Props) {
         onPress={() => safeBack("/(app)/today")}
         accessibilityRole="button"
         accessibilityLabel="Esci dal ripasso"
+        hitSlop={10}
         style={({ pressed }) => ({
           width: 36,
           height: 36,
@@ -57,9 +58,10 @@ export function ReviewHeader({ layerKey, index, total }: Props) {
         ))}
       </View>
 
-      <View className="flex-row items-center" style={{ gap: 6, width: 110, justifyContent: "flex-end" }}>
+      <View className="flex-row items-center" style={{ gap: 6, flexShrink: 0 }}>
         <Icon size={14} color={color} strokeWidth={2.1} />
         <Text
+          numberOfLines={1}
           style={{
             fontFamily: FONT.semibold,
             fontSize: 12.5,

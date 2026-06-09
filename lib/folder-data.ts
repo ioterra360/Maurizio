@@ -1,6 +1,6 @@
 /**
  * Phase-2 mock content for the four seed folders.
- * Mirrors the design contract in _design_drop/memora/project/folder-screen.jsx.
+ * Mirrors the design contract in _design_drop/memika/project/folder-screen.jsx.
  *
  * Once the real Supabase data starts flowing (Phase 3), this file is replaced
  * with a Zustand store backed by lib/api.ts. Until then it keeps the UI honest.

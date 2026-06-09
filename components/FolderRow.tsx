@@ -1,5 +1,5 @@
 import { Pressable, Text, View } from "react-native";
-import { ChevronUp, ChevronDown } from "lucide-react-native";
+import { GripVertical } from "lucide-react-native";
 import { FONT, colors } from "@/theme/tokens";
 import { FolderTile } from "./FolderTile";
 import { RetentionBar } from "./RetentionBar";
@@ -14,17 +14,21 @@ type Props = {
   fading: number;
   archived: number;
   onPress?: () => void;
-  /** When provided, shows reorder controls. Disable arrows at list edges. */
-  onMoveUp?: () => void;
-  onMoveDown?: () => void;
-  canMoveUp?: boolean;
-  canMoveDown?: boolean;
+  /**
+   * Drag-to-reorder activator (from DraggableFlatList's renderItem). When
+   * provided, the GripVertical handle on the right starts a drag on long
+   * press — matching the design contract's drag affordance.
+   */
+  onDrag?: () => void;
+  /** True while this row is the one being dragged — lifts it off the canvas. */
+  isActive?: boolean;
 };
 
 /**
- * A folder line item in the Knowledge screen: tile + name + priority chip
- * + sub-line + retention bar + reorder arrows. Card has a soft drop shadow
- * to stand off the warm-white canvas.
+ * Knowledge-tab folder row. Mirrors screens.jsx:113 — surface bg, 1px
+ * hairline border, `padding: 12 12 12 14`, gap 12, drag-handle icon on the
+ * right. A very subtle elevation keeps the card from looking pasted-on the
+ * warm-white canvas without breaking the editorial-flat feel.
  */
 export function FolderRow({
   kind,
@@ -35,34 +39,37 @@ export function FolderRow({
   fading,
   archived,
   onPress,
-  onMoveUp,
-  onMoveDown,
-  canMoveUp,
-  canMoveDown,
+  onDrag,
+  isActive,
 }: Props) {
-  const showReorder = !!(onMoveUp || onMoveDown);
+  const showReorder = !!onDrag;
 
   return (
     <Pressable
       onPress={onPress}
+      disabled={isActive}
       accessibilityRole="button"
-      accessibilityLabel={`${name} folder, priority ${priority}, ${count} items`}
+      accessibilityLabel={`${name}, priorità ${priority}, ${count} ricordi`}
+      accessibilityHint={showReorder ? "Tieni premuta la maniglia per riordinare" : undefined}
       className="flex-row items-center rounded-card bg-surface"
       style={({ pressed }) => ({
-        paddingVertical: 18,
-        paddingLeft: 16,
-        paddingRight: showReorder ? 6 : 14,
-        gap: 14,
+        paddingTop: 12,
+        paddingBottom: 12,
+        paddingLeft: 14,
+        paddingRight: 12,
+        gap: 12,
         borderWidth: 1,
-        borderColor: colors.hairline,
-        opacity: pressed ? 0.92 : 1,
-        // Soft elevated shadow to separate the card from the warm-white
-        // canvas behind it. Subtle enough to keep the editorial calm look.
+        borderColor: isActive ? colors.hairlineStrong : colors.hairline,
+        opacity: pressed && !isActive ? 0.94 : 1,
+        // Subtle baseline elevation — keeps the card readable on the warm
+        // canvas. While dragging, the card lifts with a stronger shadow so it
+        // visibly floats above the list.
         shadowColor: colors.navy,
-        shadowOpacity: 0.08,
-        shadowOffset: { width: 0, height: 6 },
-        shadowRadius: 18,
-        elevation: 2,
+        shadowOpacity: isActive ? 0.18 : 0.04,
+        shadowOffset: { width: 0, height: isActive ? 8 : 1 },
+        shadowRadius: isActive ? 16 : 2,
+        elevation: isActive ? 8 : 1,
+        transform: [{ scale: isActive ? 1.02 : 1 }],
       })}
     >
       <FolderTile kind={kind} />
@@ -70,21 +77,32 @@ export function FolderRow({
       <View className="flex-1" style={{ minWidth: 0 }}>
         <View className="flex-row items-center" style={{ gap: 8 }}>
           <Text
-            className="text-navy"
-            style={{ fontFamily: FONT.semibold, fontSize: 15, letterSpacing: -0.15 }}
+            numberOfLines={1}
+            style={{
+              fontFamily: FONT.semibold,
+              fontSize: 15,
+              color: colors.navy,
+              letterSpacing: -0.15,
+              flexShrink: 1,
+            }}
           >
             {name}
           </Text>
           <View
-            className="rounded-tag"
-            style={{ paddingHorizontal: 7, paddingVertical: 2, backgroundColor: colors.divider }}
+            style={{
+              paddingHorizontal: 7,
+              paddingVertical: 2,
+              borderRadius: 7,
+              backgroundColor: colors.divider,
+              flexShrink: 0,
+            }}
           >
             <Text
               style={{
                 fontFamily: FONT.semibold,
                 fontSize: 11,
                 color: colors.midGrey,
-                letterSpacing: 0.2,
+                letterSpacing: 0.1,
                 fontVariant: ["tabular-nums"],
               }}
             >
@@ -93,68 +111,39 @@ export function FolderRow({
           </View>
         </View>
         <Text
-          className="mt-1 text-caption text-mid-grey"
+          numberOfLines={1}
           style={{
             fontFamily: FONT.regular,
+            fontSize: 12.5,
+            color: colors.midGrey,
+            marginTop: 3,
             fontVariant: ["tabular-nums"],
           }}
         >
-          {count} items · {active}% active
+          {count} ricordi · {active}% attivi
         </Text>
       </View>
 
-      <RetentionBar active={active} fading={fading} archived={archived} width={64} height={6} />
+      <RetentionBar active={active} fading={fading} archived={archived} width={72} height={6} />
 
       {showReorder ? (
-        <View style={{ marginLeft: 4, flexDirection: "column", gap: 2 }}>
-          <ReorderButton
-            direction="up"
-            disabled={!canMoveUp}
-            onPress={onMoveUp}
-          />
-          <ReorderButton
-            direction="down"
-            disabled={!canMoveDown}
-            onPress={onMoveDown}
-          />
-        </View>
-      ) : null}
-    </Pressable>
-  );
-}
-
-function ReorderButton({
-  direction,
-  onPress,
-  disabled,
-}: {
-  direction: "up" | "down";
-  onPress?: () => void;
-  disabled?: boolean;
-}) {
-  const Icon = direction === "up" ? ChevronUp : ChevronDown;
-  return (
-    <Pressable
-      onPress={(e) => {
-        // Stop the press from propagating to the card's onPress.
-        e.stopPropagation();
-        onPress?.();
-      }}
-      disabled={disabled}
-      accessibilityRole="button"
-      accessibilityLabel={`Sposta ${direction === "up" ? "su" : "giù"}`}
-      hitSlop={6}
-      style={({ pressed }) => ({
-        width: 32,
-        height: 22,
-        borderRadius: 6,
-        alignItems: "center",
-        justifyContent: "center",
-        backgroundColor: disabled ? "transparent" : colors.tagUserBg,
-        opacity: disabled ? 0.3 : pressed ? 0.6 : 1,
-      })}
-    >
-      <Icon size={16} color={colors.navy} strokeWidth={2} />
+        <Pressable
+          onLongPress={onDrag}
+          delayLongPress={140}
+          accessibilityRole="button"
+          accessibilityLabel="Trascina per riordinare"
+          hitSlop={10}
+          style={({ pressed }) => ({
+            marginLeft: 2,
+            padding: 4,
+            opacity: pressed || isActive ? 0.55 : 1,
+          })}
+        >
+          <GripVertical size={16} color={colors.archived} strokeWidth={1.75} />
+        </Pressable>
+      ) : (
+        <GripVertical size={16} color={colors.archived} strokeWidth={1.75} />
+      )}
     </Pressable>
   );
 }

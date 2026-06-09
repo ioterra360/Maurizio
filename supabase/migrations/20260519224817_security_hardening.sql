@@ -1,4 +1,4 @@
--- Memora — security hardening (addresses Phase 1 review findings)
+-- Memika — security hardening (addresses Phase 1 review findings)
 --
 -- This migration locks down the role assignment model, makes the new-user
 -- trigger idempotent, restricts function execute privileges, adds length
@@ -10,7 +10,7 @@
 -- 1. Kill email-based admin promotion
 -- ============================================================================
 -- The initial trigger promoted to admin any email matching '%admin%' or
--- ending with '@memora.app'. Combined with self-serve signup, that meant
+-- ending with '@memika.app'. Combined with self-serve signup, that meant
 -- anyone could claim admin by registering admin@anywhere.com.
 --
 -- New rule: every signup creates a profile with role='user'. Admin status
@@ -33,7 +33,7 @@ alter table public.admin_emails enable row level security;
 
 -- Seed Maurizio as the sole admin (the codename product owner).
 insert into public.admin_emails (email, granted_by)
-values ('maurizio.cocco@memora.app', 'initial-seed')
+values ('maurizio.cocco@memika.app', 'initial-seed')
 on conflict (email) do nothing;
 
 -- ============================================================================
@@ -67,7 +67,7 @@ begin
   );
   display_name := regexp_replace(left(coalesce(raw_name, ''), 120), '[[:cntrl:]]', '', 'g');
   if display_name = '' then
-    display_name := 'Memora user';
+    display_name := 'Memika user';
   end if;
 
   -- Idempotent: a retried auth.users insert (replica replay, retried webhook,

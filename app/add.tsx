@@ -25,6 +25,7 @@ import type { FolderKind } from "@/lib/constants";
 import { useAuthStore } from "@/lib/auth-store";
 import { useUIStore } from "@/lib/ui-store";
 import { safeBack } from "@/lib/safe-back";
+import { consumeIntentionalAddOpen } from "@/lib/add-gate";
 
 export default function AddScreen() {
   // Add is a root-level modal (declared in app/_layout.tsx so it can slide
@@ -33,6 +34,11 @@ export default function AddScreen() {
   // on Add via state restoration or a deep link and never see /login.
   const user = useAuthStore((s) => s.user);
   const hydrated = useAuthStore((s) => s.hydrated);
+  // Single-shot gate: if the modal mounted from Expo Router's state
+  // restoration on a fast-refresh / shake-Reload (rather than from a user
+  // tap on a FAB), bounce out — the user shouldn't be dumped into "create
+  // memory" by reloading. See lib/add-gate.ts for the full rationale.
+  const [wasOpenedIntentionally] = useState(() => consumeIntentionalAddOpen());
   const folders = getAllFolderSeeds();
   const [folder, setFolder] = useState<FolderKind>("jp");
   const [type, setType] = useState<string>(ITEM_TYPES_BY_KIND.jp[0] ?? "Word");
@@ -43,6 +49,7 @@ export default function AddScreen() {
 
   if (!hydrated) return null;
   if (!user) return <Redirect href="/(auth)/login" />;
+  if (!wasOpenedIntentionally) return <Redirect href="/(app)/today" />;
 
   // Reset type when folder changes if current type isn't valid for the new folder
   useEffect(() => {
@@ -85,20 +92,17 @@ export default function AddScreen() {
             disabled={!canSave}
             accessibilityRole="button"
             accessibilityLabel="Salva"
+            hitSlop={10}
             style={({ pressed }) => ({
-              paddingHorizontal: 16,
+              paddingHorizontal: 8,
               paddingVertical: 8,
-              borderRadius: 999,
-              backgroundColor: colors.warmWhite,
-              borderWidth: 1.5,
-              borderColor: colors.navy,
-              opacity: !canSave ? 0.35 : pressed ? 0.78 : 1,
+              opacity: !canSave ? 0.35 : pressed ? 0.6 : 1,
             })}
           >
             <Text
               style={{
                 fontFamily: FONT.bold,
-                fontSize: 14,
+                fontSize: 15,
                 color: colors.navy,
                 letterSpacing: -0.1,
               }}
@@ -311,7 +315,7 @@ export default function AddScreen() {
                     fontVariant: ["tabular-nums"],
                   }}
                 >
-                  First review · tomorrow, 8:00 AM
+                  Primo ripasso · domani, 8:00
                 </Text>
               </View>
             </View>
@@ -327,7 +331,7 @@ export default function AddScreen() {
               lineHeight: 17,
             }}
           >
-            Try to use it in real life today — first review is tomorrow.
+            Prova a usarlo nella vita reale oggi — il primo ripasso è domani.
           </Text>
         </ScrollView>
 
@@ -351,8 +355,8 @@ export default function AddScreen() {
             }}
           >
             {dailyLimitReached
-              ? `Daily limit reached · come back tomorrow`
-              : `${dailyCount} / ${dailyMax} inputs today`}
+              ? `Limite giornaliero raggiunto · torna domani`
+              : `${dailyCount} / ${dailyMax} ricordi oggi`}
           </Text>
           <GhostButton
             label="Salva e aggiungi un altro"
@@ -360,7 +364,7 @@ export default function AddScreen() {
             onPress={() => doSave(true)}
             disabled={!canSave}
           />
-          <PrimaryButton label="Save & continue" onPress={() => doSave(false)} disabled={!canSave} />
+          <PrimaryButton label="Salva e continua" onPress={() => doSave(false)} disabled={!canSave} />
         </View>
       </KeyboardAvoidingView>
 

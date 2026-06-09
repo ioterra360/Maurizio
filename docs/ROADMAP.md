@@ -115,7 +115,7 @@ admin tools (Phase 4).
 **Done when:**
 - A new user can sign up in the app, get redirected to Wix Payments, complete
   a test purchase, and come back to a usable app
-- An admin (`maurizio.cocco@memora.app`) sees the admin shell on login and
+- An admin (`maurizio.cocco@memika.app`) sees the admin shell on login and
   can view the user table
 - Push notifications fire at the configured times
 - The Sentry dashboard receives a deliberate test event from a TestFlight build
@@ -142,7 +142,7 @@ Open backlog, not committed:
 
 ## How phases relate to the deal with Maurizio
 
-The deal terms (see memory: `[[memora-deal-terms]]`) include €490/month +
+The deal terms (see memory: `[[memika-deal-terms]]`) include €490/month +
 40% of revenue while Maurizio is on a forfettario VAT regime, then a 40%
 equity stake when an SRL is incorporated. None of those terms gate the
 phases above. The product engineering work and the legal/business work run

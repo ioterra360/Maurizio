@@ -1,5 +1,5 @@
 /**
- * Coach tips — short, evidence-based suggestions delivered by the Memora
+ * Coach tips — short, evidence-based suggestions delivered by the Memika
  * mascot in a speech bubble. Two pools:
  *
  *   - `general` : tips about memory science in general (study habits, sleep,
@@ -85,7 +85,7 @@ export const GENERAL_TIPS: CoachTip[] = [
 ];
 
 /**
- * Subject categories. Each Memora folder maps onto one of these — the
+ * Subject categories. Each Memika folder maps onto one of these — the
  * `categoryOfFolder` table at the bottom resolves a folder kind to its
  * category, falling back to "generic" if unknown.
  */
@@ -212,7 +212,7 @@ export const CATEGORY_TIPS: Record<StudyCategory, CoachTip[]> = {
       id: "law.cases",
       title: "Una sentenza, una storia",
       body:
-        "I casi memorabili sono quelli con dettagli umani. Cerca il fatto concreto dietro la massima giuridica.",
+        "I casi che restano impressi sono quelli con dettagli umani. Cerca il fatto concreto dietro la massima giuridica.",
     },
   ],
   science: [
@@ -263,7 +263,7 @@ export const CATEGORY_TIPS: Record<StudyCategory, CoachTip[]> = {
 };
 
 /**
- * Map between a Memora folder kind and a study category. Add new mappings
+ * Map between a Memika folder kind and a study category. Add new mappings
  * here when a new folder kind is introduced.
  */
 const FOLDER_TO_CATEGORY: Record<string, StudyCategory> = {

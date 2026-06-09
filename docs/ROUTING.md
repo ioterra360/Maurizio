@@ -64,11 +64,11 @@ If you see a typed-route error, the underlying cause is almost always:
 
 ## Deep links
 
-The Expo `scheme` is `memora` (in `app.json`). Once we have a real domain, we
-add universal links / app links in Phase 4. For now, only `memora://` works,
+The Expo `scheme` is `memika` (in `app.json`). Once we have a real domain, we
+add universal links / app links in Phase 4. For now, only `memika://` works,
 and the only deep link we care about is:
 
-- `memora://(app)/today` — entry after Wix Payments webhook confirms a
+- `memika://(app)/today` — entry after Wix Payments webhook confirms a
   subscription. (Phase 4 wires this.)
 
 ## Adding a new screen
@@ -112,7 +112,7 @@ Pattern:
 
 - **No `(public)` group** with a marketing landing inside the app. Marketing
   lives on Wix.
-- **No nested tab navigators.** Memora is shallow — one tab bar, push from
+- **No nested tab navigators.** Memika is shallow — one tab bar, push from
   there. If you find yourself needing a sub-tab bar, refactor the screen instead.
 - **No drawer.** The mockup uses a side panel for the screen-share demo only.
   Production app uses tabs + push.

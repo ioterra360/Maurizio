@@ -9,7 +9,7 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // Memora editorial palette (mirrors theme/tokens.ts).
+        // Memika editorial palette (mirrors theme/tokens.ts).
         navy: "#1A2C4F",
         canvas: "#F5F3EF",
         "warm-white": "#FAF8F4",
@@ -40,7 +40,7 @@ module.exports = {
         "inter-bold": ["Inter_700Bold"],
       },
       fontSize: {
-        // Type scale calibrated from Memora App.html.
+        // Type scale calibrated from Memika App.html.
         "xs-tight": ["10.5px", { lineHeight: "13px", letterSpacing: "0.14em" }],
         "xs-tag":   ["10.5px", { lineHeight: "13px", letterSpacing: "0.08em" }],
         micro: ["11px", { lineHeight: "15px" }],

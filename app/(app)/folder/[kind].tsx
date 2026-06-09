@@ -13,12 +13,11 @@ import { FilterChip } from "@/components/FilterChip";
 import { ItemRow } from "@/components/ItemRow";
 import { SectionLabel } from "@/components/SectionLabel";
 import { FONT, colors } from "@/theme/tokens";
-import { CoachTip } from "@/components/CoachTip";
 import { FOLDER_KINDS, type FolderKind, type MemoryState } from "@/lib/constants";
 import { useFolderDetail } from "@/lib/use-folders";
 import { useReviewStore } from "@/lib/review-store";
 import { relativeReviewed } from "@/lib/format";
-import { pickCategoryTip } from "@/lib/coach-tips";
+import { markAddOpenedIntentionally } from "@/lib/add-gate";
 import type { FolderItem } from "@/lib/folder-data";
 
 export default function FolderDetailScreen() {
@@ -124,16 +123,10 @@ export default function FolderDetailScreen() {
     startSession("scan", "single");
     router.push("/review/scan");
   };
-  const addItem = () => router.push("/add");
-
-  // Tip rotated per-day so re-entering the folder shows fresh advice but
-  // not a new tip on every render.
-  const folderTip = useMemo(() => {
-    const now = new Date();
-    const start = new Date(now.getFullYear(), 0, 0);
-    const dayOfYear = Math.floor((now.getTime() - start.getTime()) / 86400000);
-    return pickCategoryTip(kind, dayOfYear);
-  }, [kind]);
+  const addItem = () => {
+    markAddOpenedIntentionally();
+    router.push("/add");
+  };
 
   return (
     <SafeAreaView className="flex-1 bg-warm-white" edges={["top"]}>
@@ -212,11 +205,6 @@ export default function FolderDetailScreen() {
           </View>
         </View>
 
-        {/* Category-specific coach tip (e.g. languages tip for jp/es) */}
-        <View style={{ paddingHorizontal: 16, paddingTop: 14 }}>
-          <CoachTip tip={folderTip} persistDismiss={false} />
-        </View>
-
         {/* Quick actions */}
         <View
           className="flex-row"
@@ -270,7 +258,7 @@ export default function FolderDetailScreen() {
         </ScrollView>
 
         {/* Item list */}
-        <View style={{ paddingHorizontal: 16, gap: 10 }}>
+        <View style={{ paddingHorizontal: 16, gap: 6 }}>
           {filtered.length === 0 ? (
             <Text
               style={{
@@ -290,7 +278,7 @@ export default function FolderDetailScreen() {
         </View>
       </ScrollView>
 
-      {/* FAB — `bottom: 110` clears the absolute tab bar (~84 high). */}
+      {/* FAB — folder detail has no tab bar, so it sits low at the bottom. */}
       <Pressable
         onPress={addItem}
         accessibilityRole="button"
@@ -298,7 +286,7 @@ export default function FolderDetailScreen() {
         style={({ pressed }) => ({
           position: "absolute",
           right: 22,
-          bottom: 110,
+          bottom: 24,
           width: 56,
           height: 56,
           borderRadius: 28,

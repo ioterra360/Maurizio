@@ -1,7 +1,7 @@
 /**
- * Memora design tokens
+ * Memika design tokens
  *
- * Source of truth: _design_drop/memora/project/Memora App.html (editorial direction).
+ * Source of truth: _design_drop/memika/project/Memika App.html (editorial direction).
  * Mirrors tailwind.config.js so non-NativeWind consumers (e.g. SVG, Reanimated)
  * can reference identical values.
  */

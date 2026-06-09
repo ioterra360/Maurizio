@@ -1,11 +1,11 @@
-# Memora
+# Memika
 
 > Spaced repetition app — calm, editorial. Your memory, well taken care of.
 
-Memora helps you keep what you've already learned alive, in three rhythms:
+Memika helps you keep what you've already learned alive, in three rhythms:
 **Scan → Reinforcement → Focus**. A few minutes a day. No streaks. No noise.
 
-> **Naming note.** "Memora" is a working codename. The final consumer-facing
+> **Naming note.** "Memika" is a working codename. The final consumer-facing
 > name is not yet chosen. See [`docs/PRODUCT.md`](docs/PRODUCT.md).
 
 ## Stack
@@ -43,7 +43,7 @@ Open the QR code with **Expo Go** on iOS or Android.
 
 > Without a `.env`, the app boots in **offline demo mode**: the two demo accounts
 > from the login screen (`angelo.casula@gmail.com` user ·
-> `maurizio.cocco@memora.app` admin) work locally with any password. Set the
+> `maurizio.cocco@memika.app` admin) work locally with any password. Set the
 > Supabase env vars to switch to real auth. You can also force demo mode with
 > `EXPO_PUBLIC_DEMO_MODE=true` even when creds are present.
 

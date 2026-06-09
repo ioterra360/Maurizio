@@ -59,14 +59,17 @@ export default function ReinforcementScreen() {
         <FolderPill folder={card.folder} layerKey="reinforcement" />
 
         <Text
+          adjustsFontSizeToFit
+          numberOfLines={2}
           style={{
             fontFamily: FONT.bold,
-            fontSize: 56,
+            fontSize: card.front.length > 10 ? 48 : 72,
             color: colors.navy,
-            letterSpacing: -2,
+            letterSpacing: -2.2,
             textAlign: "center",
-            lineHeight: 60,
-            marginTop: 20,
+            lineHeight: card.front.length > 10 ? 54 : 80,
+            marginTop: 24,
+            paddingHorizontal: 8,
           }}
         >
           {card.front}
@@ -170,18 +173,17 @@ export default function ReinforcementScreen() {
               className="items-center justify-center rounded-cta"
               style={({ pressed }) => ({
                 height: 60,
-                backgroundColor: colors.warmWhite,
-                borderWidth: 1.5,
-                borderColor: colors.navy,
+                backgroundColor: colors.reinforcement,
+                borderWidth: 0,
                 opacity: pressed ? 0.88 : 1,
-                shadowColor: colors.navy,
-                shadowOpacity: 0.18,
-                shadowOffset: { width: 0, height: 6 },
-                shadowRadius: 18,
-                elevation: 3,
+                shadowColor: colors.reinforcement,
+                shadowOpacity: 0.5,
+                shadowOffset: { width: 0, height: 8 },
+                shadowRadius: 20,
+                elevation: 5,
               })}
             >
-              <Text style={{ fontFamily: FONT.bold, fontSize: 19, color: colors.navy, letterSpacing: -0.16 }}>
+              <Text style={{ fontFamily: FONT.bold, fontSize: 19, color: colors.warmWhite, letterSpacing: -0.16 }}>
                 Mostra risposta
               </Text>
             </Pressable>
@@ -196,18 +198,17 @@ export default function ReinforcementScreen() {
             className="items-center justify-center rounded-cta"
             style={({ pressed }) => ({
               height: 60,
-              backgroundColor: colors.warmWhite,
-              borderWidth: 1.5,
-              borderColor: colors.navy,
+              backgroundColor: colors.reinforcement,
+              borderWidth: 0,
               opacity: pressed ? 0.88 : 1,
-              shadowColor: colors.navy,
-              shadowOpacity: 0.18,
-              shadowOffset: { width: 0, height: 6 },
-              shadowRadius: 18,
-              elevation: 3,
+              shadowColor: colors.reinforcement,
+              shadowOpacity: 0.5,
+              shadowOffset: { width: 0, height: 8 },
+              shadowRadius: 20,
+              elevation: 5,
             })}
           >
-            <Text style={{ fontFamily: FONT.bold, fontSize: 19, color: colors.navy, letterSpacing: -0.16 }}>
+            <Text style={{ fontFamily: FONT.bold, fontSize: 19, color: colors.warmWhite, letterSpacing: -0.16 }}>
               Mostra risposta
             </Text>
           </Pressable>
@@ -239,18 +240,17 @@ export default function ReinforcementScreen() {
               className="items-center justify-center rounded-cta"
               style={({ pressed }) => ({
                 height: 60,
-                backgroundColor: colors.warmWhite,
-                borderWidth: 1.5,
-                borderColor: colors.navy,
+                backgroundColor: colors.reinforcement,
+                borderWidth: 0,
                 opacity: pressed ? 0.88 : 1,
-                shadowColor: colors.navy,
-                shadowOpacity: 0.18,
-                shadowOffset: { width: 0, height: 6 },
-                shadowRadius: 18,
-                elevation: 3,
+                shadowColor: colors.reinforcement,
+                shadowOpacity: 0.5,
+                shadowOffset: { width: 0, height: 8 },
+                shadowRadius: 20,
+                elevation: 5,
               })}
             >
-              <Text style={{ fontFamily: FONT.bold, fontSize: 19, color: colors.navy, letterSpacing: -0.16 }}>
+              <Text style={{ fontFamily: FONT.bold, fontSize: 19, color: colors.warmWhite, letterSpacing: -0.16 }}>
                 Continua
               </Text>
             </Pressable>

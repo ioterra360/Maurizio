@@ -7,7 +7,7 @@
 
 ## 1. What this project is
 
-**Memora** (codename — final name TBD) is a calm, editorial spaced-repetition
+**Memika** (codename — final name TBD) is a calm, editorial spaced-repetition
 mobile app. Three review rhythms in a fixed order: **Scan → Reinforcement →
 Focus**. It runs on Expo SDK 54 + React Native 0.81 + TypeScript with Supabase
 as the backend. Marketing site + payments live on Wix (Spotify-style pattern —
@@ -29,7 +29,7 @@ Order matters — each step assumes the previous.
 7. **`docs/CONTRIBUTING.md`** — branch/commit/PR conventions.
 8. **The specific doc for what you're touching** (SRS / DEPLOY / etc.).
 
-If the task involves UI, also read `_design_drop/memora/project/Memora App.html`
+If the task involves UI, also read `_design_drop/memika/project/Memika App.html`
 (it's a React/HTML mockup, not source — visual contract only).
 
 ## 3. Hard rules (do not break)
@@ -54,8 +54,8 @@ These exist because of past decisions documented elsewhere in `docs/`.
   `kind` slugs are `jp`, `medicine`, `es`, `law` (database) — these are the
   identifiers; UI labels can localize but slugs do not change.
 - **Demo accounts are: `angelo.casula@gmail.com` (user) and
-  `maurizio.cocco@memora.app` (admin).** Role inferred from email: admin if it
-  contains `admin` or ends with `@memora.app`. Server-side mirror of this logic
+  `maurizio.cocco@memika.app` (admin).** Role inferred from email: admin if it
+  contains `admin` or ends with `@memika.app`. Server-side mirror of this logic
   lives in the `handle_new_user()` trigger — change in both places or neither.
 - **`.env` is gitignored — including the un-suffixed form.** Never commit
   secrets. The PAT (`SUPABASE_ACCESS_TOKEN`) lives only there.
@@ -192,7 +192,7 @@ The `--legacy-peer-deps` flag is required because `lucide-react-native` over-dec
 - **Web-style `<div>` + CSS inline.** The mockup uses these. RN does not.
 - **`react-native-vector-icons`.** Use `lucide-react-native`. Same set as the
   mockup, no font registration step.
-- **A monorepo / Nx setup.** Memora is one app. Premature.
+- **A monorepo / Nx setup.** Memika is one app. Premature.
 - **In-app payments (IAP).** Spotify pattern is locked in. See `docs/PAYMENTS.md`.
 - **Server-side auth roles set from the client.** Roles come from the
   `handle_new_user` trigger, period.
@@ -205,7 +205,7 @@ Don't ask if you can grep or read the docs. Do ask when:
 
 - A task seems to contradict a hard rule above.
 - You'd need to spend tokens / hit external paid APIs to proceed.
-- The final product **name** is involved (currently codename Memora — see
+- The final product **name** is involved (currently codename Memika — see
   `docs/PRODUCT.md`).
 - You'd commit something that touches billing, payments, GDPR, or the deal
   terms with Maurizio.

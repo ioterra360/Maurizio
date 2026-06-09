@@ -42,8 +42,8 @@ Provisional (will change with the final product name — see `PRODUCT.md`):
 
 | Platform | Identifier |
 |---|---|
-| iOS | `studio.tailor.memora` |
-| Android | `studio.tailor.memora` |
+| iOS | `studio.tailor.memika` |
+| Android | `studio.tailor.memika` |
 
 Stored in `app.json` under `ios.bundleIdentifier` and `android.package`.
 
@@ -68,7 +68,7 @@ eas build --profile production --platform all
 ## Code signing
 
 iOS:
-- Apple Developer account needed (€99/year, registered under Tailor or Memora SRL)
+- Apple Developer account needed (€99/year, registered under Tailor or Memika SRL)
 - EAS handles certificate + provisioning profile generation
 - Distribution certificate stored in EAS Secrets
 

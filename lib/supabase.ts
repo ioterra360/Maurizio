@@ -22,11 +22,11 @@ export const isDemoMode = !isSupabaseConfigured;
 
 if (__DEV__) {
   if (!hasSupabaseCreds) {
-    console.warn("[Memora] Supabase env vars missing — running in offline demo mode.");
+    console.warn("[Memika] Supabase env vars missing — running in offline demo mode.");
   } else if (forceDemoMode) {
-    console.warn("[Memora] EXPO_PUBLIC_DEMO_MODE=true — Supabase creds present but bypassed.");
+    console.warn("[Memika] EXPO_PUBLIC_DEMO_MODE=true — Supabase creds present but bypassed.");
   } else {
-    console.log("[Memora] Supabase real auth enabled.");
+    console.log("[Memika] Supabase real auth enabled.");
   }
 }
 
@@ -39,7 +39,7 @@ if (__DEV__) {
  * AsyncStorage if a payload ever exceeds it. The token still stays on
  * Keychain/Keystore for normal-sized sessions.
  */
-const SECURE_KEY_PREFIX = "memora.";
+const SECURE_KEY_PREFIX = "memika.";
 
 const SecureStorageAdapter = {
   getItem: async (key: string): Promise<string | null> => {
@@ -47,7 +47,7 @@ const SecureStorageAdapter = {
     try {
       return await SecureStore.getItemAsync(SECURE_KEY_PREFIX + key);
     } catch (err) {
-      if (__DEV__) console.warn("[Memora] SecureStore.getItem failed, falling back", err);
+      if (__DEV__) console.warn("[Memika] SecureStore.getItem failed, falling back", err);
       return AsyncStorage.getItem(key);
     }
   },
@@ -56,7 +56,7 @@ const SecureStorageAdapter = {
     try {
       await SecureStore.setItemAsync(SECURE_KEY_PREFIX + key, value);
     } catch (err) {
-      if (__DEV__) console.warn("[Memora] SecureStore.setItem failed, falling back", err);
+      if (__DEV__) console.warn("[Memika] SecureStore.setItem failed, falling back", err);
       await AsyncStorage.setItem(key, value);
     }
   },

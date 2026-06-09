@@ -1,5 +1,5 @@
 /**
- * SM-2 scheduler — adapted to Memora's three-layer outcome model.
+ * SM-2 scheduler — adapted to Memika's three-layer outcome model.
  *
  * Pure function: same inputs → same output. No React, no Supabase, no I/O.
  * The persistence layer (lib/api.ts) and the review store call this and

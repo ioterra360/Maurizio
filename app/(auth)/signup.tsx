@@ -111,7 +111,7 @@ export default function SignupScreen() {
 
           {/* Hero */}
           <View className="items-center" style={{ paddingTop: 8, paddingBottom: 24 }}>
-            <Mascot variant="checklist" size={130} withShadow={false} />
+            <Mascot variant="checklist" size={92} withShadow={false} />
             <Text
               style={{
                 marginTop: 18,

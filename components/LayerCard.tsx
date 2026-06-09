@@ -39,30 +39,33 @@ export function LayerCard({ layerKey, items, subtitle, onPress }: Props) {
       <View
         className="flex-row items-center"
         style={{
-          paddingLeft: 8,
+          paddingLeft: 4,
           paddingRight: 14,
           paddingVertical: 16,
           flex: 1,
-          gap: 14,
+          gap: 12,
         }}
       >
         <Icon size={22} color={color} strokeWidth={1.9} />
         <View className="flex-1" style={{ minWidth: 0 }}>
           <View className="flex-row items-baseline" style={{ gap: 8 }}>
             <Text
+              numberOfLines={1}
               className="text-navy"
-              style={{ fontFamily: FONT.semibold, fontSize: 16, letterSpacing: -0.16 }}
+              style={{ fontFamily: FONT.semibold, fontSize: 16, letterSpacing: -0.16, flexShrink: 1 }}
             >
               {label}
             </Text>
             <Text
+              numberOfLines={1}
               className="text-caption text-mid-grey"
-              style={{ fontFamily: FONT.regular, fontVariant: ["tabular-nums"] }}
+              style={{ fontFamily: FONT.regular, fontVariant: ["tabular-nums"], flexShrink: 0 }}
             >
               {items} ricordi
             </Text>
           </View>
           <Text
+            numberOfLines={2}
             className="mt-0.5 text-caption text-mid-grey"
             style={{ fontFamily: FONT.regular }}
           >

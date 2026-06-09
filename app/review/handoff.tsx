@@ -111,7 +111,7 @@ export default function ReviewHandoffScreen() {
       </View>
 
       <View style={{ paddingHorizontal: 22, paddingBottom: 32 }}>
-        <PrimaryButton label={`Inizia ${next.label}`} onPress={goNext} />
+        <PrimaryButton label={`Inizia ${next.label}`} color={next.color} onPress={goNext} />
       </View>
     </SafeAreaView>
   );

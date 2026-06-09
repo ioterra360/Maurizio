@@ -11,7 +11,7 @@ type Props = {
  * Communicates which folder the card belongs to AND, via the color tint,
  * which layer the user is in. Mockup pattern:
  *
- *   _design_drop/memora/project/reviews.jsx — `Folder: Japanese` style pill
+ *   _design_drop/memika/project/reviews.jsx — `Folder: Japanese` style pill
  *
  * Per layer the tint changes:
  *   scan → #E6F0FA (pale blue)

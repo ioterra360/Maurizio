@@ -22,7 +22,7 @@
 ## Project layout
 
 ```
-memora-app/
+memika-app/
 ├── app/                Expo Router routes — file-based, typed
 │   ├── _layout.tsx     Root: fonts + splash + auth hydrate gate
 │   ├── index.tsx       Smart redirect (login / today / admin)
@@ -149,7 +149,7 @@ One helper function:
   and is the source of truth; the dashboard is a viewer.
 - **Apple App Store + Google Play listings** — created in Phase 4.
 - **Sentry project** — created in Phase 4.
-- **`_design_drop/memora/`** — the visual mockup from Claude Design. Sits at
+- **`_design_drop/memika/`** — the visual mockup from Claude Design. Sits at
   the repo root, ONE LEVEL UP from this app. It is reference material, not
   source — don't import from it.
 

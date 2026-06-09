@@ -44,7 +44,7 @@ const BOOTSTRAP_TIMEOUT_MS = 15_000;
  * no-op after the first apply, so refreshing no longer kicks the user back
  * to login on every fast-reload.
  */
-const RESET_TOKEN_KEY = "memora.reset-token";
+const RESET_TOKEN_KEY = "memika.reset-token";
 
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({
@@ -76,16 +76,16 @@ export default function RootLayout() {
             const token = decodeURIComponent(m[1]);
             const lastSeen = await AsyncStorage.getItem(RESET_TOKEN_KEY).catch(() => null);
             if (token !== lastSeen) {
-              if (__DEV__) console.log(`[Memora] reset=${token} deep-link — signing out (new token)`);
+              if (__DEV__) console.log(`[Memika] reset=${token} deep-link — signing out (new token)`);
               await useAuthStore.getState().signOut();
               await AsyncStorage.setItem(RESET_TOKEN_KEY, token).catch(() => {});
             } else if (__DEV__) {
-              console.log(`[Memora] reset=${token} deep-link — already consumed, skipping`);
+              console.log(`[Memika] reset=${token} deep-link — already consumed, skipping`);
             }
           }
         }
       } catch (err) {
-        if (__DEV__) console.warn("[Memora] reset-via-deeplink check failed", err);
+        if (__DEV__) console.warn("[Memika] reset-via-deeplink check failed", err);
       }
       hydrate();
     })();
@@ -103,7 +103,7 @@ export default function RootLayout() {
     if (hydrated) return;
     const timer = setTimeout(() => {
       if (!useAuthStore.getState().hydrated) {
-        if (__DEV__) console.warn("[Memora] bootstrap timeout — forcing hydrated=true");
+        if (__DEV__) console.warn("[Memika] bootstrap timeout — forcing hydrated=true");
         useAuthStore.setState({ hydrated: true });
       }
     }, BOOTSTRAP_TIMEOUT_MS);

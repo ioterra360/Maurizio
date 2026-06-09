@@ -78,7 +78,7 @@ Codify by aliasing `npm install` if it gets annoying. For now, type the flag.
 
 - Restart Metro after changing `.env` (env vars are read at bundle time).
 - Confirm the email matches exactly: `angelo.casula@gmail.com` (lowercase) or
-  `maurizio.cocco@memora.app` (lowercase). Trim leading/trailing whitespace.
+  `maurizio.cocco@memika.app` (lowercase). Trim leading/trailing whitespace.
 
 If `.env` says `EXPO_PUBLIC_DEMO_MODE=false`: you're in real-Supabase mode and
 those users don't exist in `auth.users` yet. Either:

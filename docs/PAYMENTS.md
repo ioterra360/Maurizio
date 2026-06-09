@@ -137,9 +137,9 @@ Important context Maurizio and Angelo both need to know:
   cash.
 - The 40% revenue share to Angelo (per the deal) is calculated on **gross
   Wix Total Sales** — the lordo, before any commission. Documented in
-  memory: `[[memora-deal-terms]]`.
-- Above €85k/year Maurizio must exit forfettario and incorporate Memora SRL.
-  Trigger documented in `[[memora-deal-terms]]`.
+  memory: `[[memika-deal-terms]]`.
+- Above €85k/year Maurizio must exit forfettario and incorporate Memika SRL.
+  Trigger documented in `[[memika-deal-terms]]`.
 
 This doc captures product engineering only — see the memory file for full
 business terms.

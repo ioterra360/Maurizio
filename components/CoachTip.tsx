@@ -7,7 +7,7 @@ import { Mascot } from "./Mascot";
 import { FONT, colors } from "@/theme/tokens";
 import type { CoachTip as Tip } from "@/lib/coach-tips";
 
-const DISMISSED_KEY_PREFIX = "memora.coachtip.dismissed.";
+const DISMISSED_KEY_PREFIX = "memika.coachtip.dismissed.";
 
 type Props = {
   tip: Tip;
@@ -18,7 +18,7 @@ type Props = {
 };
 
 /**
- * A speech-bubble tip from the Memora coach mascot. The bubble sits
+ * A speech-bubble tip from the Memika coach mascot. The bubble sits
  * alongside the mascot avatar and shows a short title + body + optional
  * source citation. A close button persists the dismissal so the same tip
  * doesn't re-appear (unless persistDismiss is false).

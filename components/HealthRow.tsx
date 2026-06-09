@@ -36,6 +36,7 @@ export function HealthRow({ name, active, fading, archived, chip }: Props) {
     >
       <Text
         className="text-navy"
+        numberOfLines={1}
         style={{ fontFamily: FONT.semibold, fontSize: 14, letterSpacing: -0.07, width: 78 }}
       >
         {name}

@@ -275,10 +275,7 @@ export default function SettingsScreen() {
               <PrimaryButton
                 label="Sì, elimina tutto"
                 onPress={() => setConfirmDelete(false)}
-                style={{
-                  backgroundColor: colors.dangerSoft,
-                  borderColor: colors.danger,
-                }}
+                variant="danger"
               />
               <GhostButton
                 label="Annulla"
