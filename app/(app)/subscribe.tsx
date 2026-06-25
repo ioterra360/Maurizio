@@ -42,8 +42,8 @@ const BENEFITS = [
   },
   {
     icon: ShieldCheck,
-    title: "Crittografia end-to-end",
-    body: "I tuoi ricordi sono al sicuro, sempre.",
+    title: "I tuoi ricordi al sicuro",
+    body: "Salvataggio sicuro nel cloud, sempre sotto il tuo controllo.",
   },
 ];
 
@@ -103,11 +103,6 @@ export default function SubscribeScreen() {
             borderRadius: 18,
             backgroundColor: colors.navy,
             padding: 24,
-            shadowColor: colors.navy,
-            shadowOpacity: 0.28,
-            shadowOffset: { width: 0, height: 14 },
-            shadowRadius: 30,
-            elevation: 8,
           }}
         >
           <View
@@ -204,11 +199,6 @@ export default function SubscribeScreen() {
                   backgroundColor: colors.surface,
                   borderWidth: 1,
                   borderColor: colors.hairline,
-                  shadowColor: colors.navy,
-                  shadowOpacity: 0.06,
-                  shadowOffset: { width: 0, height: 4 },
-                  shadowRadius: 14,
-                  elevation: 1,
                 }}
               >
                 <View

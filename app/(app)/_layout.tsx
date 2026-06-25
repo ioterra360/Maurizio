@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Tabs } from "expo-router";
 import { StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -5,11 +6,20 @@ import { BlurView } from "expo-blur";
 import { Home, Folder, BarChart3, Settings as SettingsIcon } from "lucide-react-native";
 
 import { useAuthGate } from "@/lib/auth-gate";
+import { useFolderOrderStore } from "@/lib/folder-order-store";
 import { colors } from "@/theme/tokens";
 
 export default function AppLayout() {
   const gate = useAuthGate("app");
   const insets = useSafeAreaInsets();
+  // Hydrate the persisted folder order once for every (app) surface, so
+  // folder detail (and anything else reading priorities) doesn't depend on
+  // Knowledge having mounted first.
+  const orderHydrated = useFolderOrderStore((s) => s.hydrated);
+  const hydrateOrder = useFolderOrderStore((s) => s.hydrate);
+  useEffect(() => {
+    if (!orderHydrated) void hydrateOrder();
+  }, [orderHydrated, hydrateOrder]);
   if (gate) return gate;
 
   // Mockup-faithful bar: paddingTop 10 + content (~44) + paddingBottom 22,
@@ -76,8 +86,13 @@ export default function AppLayout() {
           not by tapping a tab. Hide it from the tab bar — without this,
           Expo Router would auto-mount it as a 5th, empty-titled tab. */}
       <Tabs.Screen name="folder/[kind]" options={{ href: null }} />
-      {/* Subscribe is opened from a paywall CTA, never from the tab bar. */}
-      <Tabs.Screen name="subscribe" options={{ href: null }} />
+      {/* Subscribe is opened from a paywall CTA, never from the tab bar.
+          Also hide the floating bar itself on that screen — it would occlude
+          the legal footnote and let users tab away from the paywall. */}
+      <Tabs.Screen
+        name="subscribe"
+        options={{ href: null, tabBarStyle: { display: "none" } }}
+      />
     </Tabs>
   );
 }

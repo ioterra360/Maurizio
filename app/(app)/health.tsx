@@ -35,18 +35,13 @@ export default function HealthScreen() {
               paddingVertical: 24,
               paddingHorizontal: 20,
               overflow: "hidden",
-              shadowColor: colors.navy,
-              shadowOpacity: 0.18,
-              shadowOffset: { width: 0, height: 18 },
-              shadowRadius: 32,
-              elevation: 6,
             }}
           >
             <View style={{ alignItems: "center" }}>
               <RingChart
                 size={156}
                 centerValue="62"
-                centerLabel="Stable"
+                centerLabel="Stabili"
                 segments={[
                   { color: colors.active, pct: 62 },
                   { color: colors.fading, pct: 24 },

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   KeyboardAvoidingView,
   Platform,
@@ -9,7 +9,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Redirect } from "expo-router";
+import { Redirect, useLocalSearchParams } from "expo-router";
 
 import { TopBar } from "@/components/TopBar";
 import { PrimaryButton } from "@/components/PrimaryButton";
@@ -21,7 +21,8 @@ import {
   ITEM_TYPES_BY_KIND,
 } from "@/lib/folder-data";
 import { FONT, colors } from "@/theme/tokens";
-import type { FolderKind } from "@/lib/constants";
+import { FOLDER_KINDS, type FolderKind } from "@/lib/constants";
+import { applyFolderOrder, priorityOf, useFolderOrderStore } from "@/lib/folder-order-store";
 import { useAuthStore } from "@/lib/auth-store";
 import { useUIStore } from "@/lib/ui-store";
 import { safeBack } from "@/lib/safe-back";
@@ -39,9 +40,25 @@ export default function AddScreen() {
   // tap on a FAB), bounce out — the user shouldn't be dumped into "create
   // memory" by reloading. See lib/add-gate.ts for the full rationale.
   const [wasOpenedIntentionally] = useState(() => consumeIntentionalAddOpen());
-  const folders = getAllFolderSeeds();
-  const [folder, setFolder] = useState<FolderKind>("jp");
-  const [type, setType] = useState<string>(ITEM_TYPES_BY_KIND.jp[0] ?? "Word");
+  // Preselect the originating folder when pushed from folder detail;
+  // fall back to the first seed folder for paramless opens (Knowledge FAB).
+  const params = useLocalSearchParams<{ kind?: string }>();
+  const initialKind = (FOLDER_KINDS as readonly string[]).includes(params.kind ?? "")
+    ? (params.kind as FolderKind)
+    : "jp";
+  // Add lives outside the (app) group, so hydrate the persisted folder
+  // order here too — the pill row and #N suffixes must match Knowledge.
+  const order = useFolderOrderStore((s) => s.order);
+  const orderHydrated = useFolderOrderStore((s) => s.hydrated);
+  const hydrateOrder = useFolderOrderStore((s) => s.hydrate);
+  useEffect(() => {
+    if (!orderHydrated) void hydrateOrder();
+  }, [orderHydrated, hydrateOrder]);
+  const folders = useMemo(() => applyFolderOrder(getAllFolderSeeds(), order), [order]);
+  const [folder, setFolder] = useState<FolderKind>(initialKind);
+  const [type, setType] = useState<string>(
+    ITEM_TYPES_BY_KIND[initialKind][0]?.value ?? "word",
+  );
   const [text, setText] = useState("");
   const [dailyCount, setDailyCount] = useState(12);
   const dailyMax = 20;
@@ -50,13 +67,6 @@ export default function AddScreen() {
   if (!hydrated) return null;
   if (!user) return <Redirect href="/(auth)/login" />;
   if (!wasOpenedIntentionally) return <Redirect href="/(app)/today" />;
-
-  // Reset type when folder changes if current type isn't valid for the new folder
-  useEffect(() => {
-    if (!ITEM_TYPES_BY_KIND[folder].includes(type)) {
-      setType(ITEM_TYPES_BY_KIND[folder][0] ?? "Word");
-    }
-  }, [folder, type]);
 
   const preview = ADD_PREVIEW_BY_KIND[folder];
   const types = ITEM_TYPES_BY_KIND[folder];
@@ -136,7 +146,16 @@ export default function AddScreen() {
               return (
                 <Pressable
                   key={f.kind}
-                  onPress={() => setFolder(f.kind)}
+                  onPress={() => {
+                    setFolder(f.kind);
+                    // Reset the type if it isn't valid for the new folder —
+                    // done here (not in an effect) so both states update in
+                    // one batched render, with no invalid-type frame.
+                    const ts = ITEM_TYPES_BY_KIND[f.kind];
+                    if (!ts.some((t) => t.value === type)) {
+                      setType(ts[0]?.value ?? "word");
+                    }
+                  }}
                   accessibilityRole="button"
                   accessibilityState={{ selected: on }}
                   className="flex-row items-center rounded-chip"
@@ -168,7 +187,7 @@ export default function AddScreen() {
                       fontVariant: ["tabular-nums"],
                     }}
                   >
-                    · #{f.priority}
+                    · #{priorityOf(f.kind, order)}
                   </Text>
                 </Pressable>
               );
@@ -206,11 +225,11 @@ export default function AddScreen() {
             style={{ paddingHorizontal: 18, paddingTop: 14, gap: 6 }}
           >
             {types.map((t) => {
-              const on = type === t;
+              const on = type === t.value;
               return (
                 <Pressable
-                  key={t}
-                  onPress={() => setType(t)}
+                  key={t.value}
+                  onPress={() => setType(t.value)}
                   accessibilityRole="button"
                   accessibilityState={{ selected: on }}
                   className="flex-1 items-center justify-center rounded-chip"
@@ -230,7 +249,7 @@ export default function AddScreen() {
                       letterSpacing: -0.04,
                     }}
                   >
-                    {t}
+                    {t.label}
                   </Text>
                 </Pressable>
               );
@@ -257,7 +276,7 @@ export default function AddScreen() {
                     textTransform: "uppercase",
                   }}
                 >
-                  Front
+                  Fronte
                 </Text>
                 <Text
                   style={{
@@ -284,7 +303,7 @@ export default function AddScreen() {
                     textTransform: "uppercase",
                   }}
                 >
-                  Back
+                  Retro
                 </Text>
                 <Text
                   style={{
@@ -348,9 +367,9 @@ export default function AddScreen() {
         >
           <Text
             style={{
-              fontFamily: FONT.regular,
-              fontSize: 12,
-              color: dailyLimitReached ? colors.fading : colors.midGrey,
+              fontFamily: dailyLimitReached ? FONT.medium : FONT.regular,
+              fontSize: dailyLimitReached ? 12.5 : 12,
+              color: dailyLimitReached ? colors.danger : colors.midGrey,
               fontVariant: ["tabular-nums"],
             }}
           >

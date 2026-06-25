@@ -62,7 +62,11 @@ export default function KnowledgeScreen() {
         subtitle={
           loading
             ? "Caricamento delle tue cartelle…"
-            : `${folders.length} cartelle attive · trascina per cambiare priorità`
+            : folders.length === 0
+              ? "Nessuna cartella attiva"
+              : folders.length === 1
+                ? "1 cartella attiva"
+                : `${folders.length} cartelle attive · trascina per cambiare priorità`
         }
         reservedRight={80}
       />
@@ -135,7 +139,67 @@ export default function KnowledgeScreen() {
           </Pressable>
         </View>
       </View>
-    ) : null;
+    ) : (
+      <View style={{ paddingHorizontal: 16 }}>
+        <View
+          className="rounded-card bg-surface"
+          style={{
+            padding: 18,
+            borderWidth: 1,
+            borderColor: colors.hairline,
+            alignItems: "center",
+            gap: 10,
+          }}
+        >
+          <Mascot variant="investigate" size={56} withShadow={false} />
+          <Text
+            style={{
+              fontFamily: FONT.semibold,
+              fontSize: 15,
+              color: colors.navy,
+              textAlign: "center",
+            }}
+          >
+            Nessuna cartella, per ora.
+          </Text>
+          <Text
+            style={{
+              fontFamily: FONT.regular,
+              fontSize: 13.5,
+              color: colors.midGrey,
+              textAlign: "center",
+            }}
+          >
+            Non hai ancora nessuna cartella. Aggiungi il tuo primo ricordo per
+            iniziare.
+          </Text>
+          <Pressable
+            onPress={() => {
+              markAddOpenedIntentionally();
+              router.push("/add");
+            }}
+            accessibilityRole="button"
+            accessibilityLabel="Aggiungi un ricordo"
+            style={({ pressed }) => ({
+              marginTop: 4,
+              paddingHorizontal: 18,
+              paddingVertical: 10,
+              borderRadius: 999,
+              backgroundColor: colors.warmWhite,
+              borderWidth: 1.5,
+              borderColor: colors.navy,
+              opacity: pressed ? 0.85 : 1,
+            })}
+          >
+            <Text
+              style={{ fontFamily: FONT.semibold, fontSize: 14, color: colors.navy }}
+            >
+              Aggiungi un ricordo
+            </Text>
+          </Pressable>
+        </View>
+      </View>
+    );
 
   return (
     <SafeAreaView className="flex-1 bg-warm-white" edges={["top"]}>
@@ -158,7 +222,7 @@ export default function KnowledgeScreen() {
           router.push("/add");
         }}
         accessibilityRole="button"
-        accessibilityLabel="Add a new memory"
+        accessibilityLabel="Aggiungi un nuovo ricordo"
         style={({ pressed }) => ({
           position: "absolute",
           right: 22,
@@ -174,10 +238,10 @@ export default function KnowledgeScreen() {
           shadowOffset: { width: 0, height: 10 },
           shadowRadius: 24,
           elevation: 8,
-          transform: [{ scale: pressed ? 0.96 : 1 }],
+          opacity: pressed ? 0.85 : 1,
         })}
       >
-        <Plus size={24} color={colors.warmWhite} strokeWidth={2.2} />
+        <Plus size={22} color={colors.warmWhite} strokeWidth={2.2} />
       </Pressable>
     </SafeAreaView>
   );

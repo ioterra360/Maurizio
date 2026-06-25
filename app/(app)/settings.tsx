@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Modal, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
@@ -12,14 +12,46 @@ import { PrimaryButton } from "@/components/PrimaryButton";
 import { GhostButton } from "@/components/GhostButton";
 import { Mascot } from "@/components/Mascot";
 import { useAuthStore } from "@/lib/auth-store";
+import { useUIStore } from "@/lib/ui-store";
+import { fetchProfile, updateProfile } from "@/lib/api";
+import type { Profile } from "@/lib/mappers";
 import { tap, error as errorFeedback } from "@/lib/feedback";
 import { FONT, colors } from "@/theme/tokens";
 
 export default function SettingsScreen() {
   const user = useAuthStore((s) => s.user);
   const signOut = useAuthStore((s) => s.signOut);
+  const setUserName = useAuthStore((s) => s.setUserName);
+  const showToast = useUIStore((s) => s.showToast);
   const [name, setName] = useState(user?.name ?? "");
   const [confirmDelete, setConfirmDelete] = useState(false);
+  // Real profile (null in demo mode — the hardcoded literals below act as
+  // the fallback until pickers/persistence land for every field).
+  const [profile, setProfile] = useState<Profile | null>(null);
+
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    fetchProfile(user.id)
+      .then((p) => {
+        if (!cancelled && p) setProfile(p);
+      })
+      .catch((err) => {
+        if (__DEV__) console.warn("[Memika] settings profile load failed", err);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
+
+  const handleNameEndEditing = () => {
+    const trimmed = name.trim();
+    if (!user || !trimmed || trimmed === user.name) return;
+    setUserName(trimmed);
+    updateProfile(user.id, { name: trimmed }).catch((err) => {
+      if (__DEV__) console.warn("[Memika] name save failed", err);
+    });
+  };
 
   const initials = (name || "M")
     .split(" ")
@@ -70,6 +102,7 @@ export default function SettingsScreen() {
               <TextInput
                 value={name}
                 onChangeText={setName}
+                onEndEditing={handleNameEndEditing}
                 placeholder="Il tuo nome"
                 placeholderTextColor={colors.placeholder}
                 style={{
@@ -99,8 +132,10 @@ export default function SettingsScreen() {
           <SectionLabel>Orari</SectionLabel>
         </View>
         <View style={{ paddingHorizontal: 16, gap: 10 }}>
-          <SettingsRow label="Ripasso mattutino" value="08:00" onPress={() => {}} />
-          <SettingsRow label="Ripasso serale"    value="21:30" onPress={() => {}} />
+          {/* Time values are HH:MM:SS from Postgres — show HH:MM. Rows stay
+              non-interactive until real time pickers exist. */}
+          <SettingsRow label="Ripasso mattutino" value={(profile?.morningReviewAt ?? "08:00").slice(0, 5)} />
+          <SettingsRow label="Ripasso serale"    value={(profile?.eveningReviewAt ?? "21:30").slice(0, 5)} />
         </View>
 
         {/* Limits */}
@@ -111,8 +146,7 @@ export default function SettingsScreen() {
           <SettingsRow
             label="Limite giornaliero"
             hint="Numero massimo di nuovi ricordi da aggiungere al giorno. Mantiene il carico sostenibile."
-            value="20"
-            onPress={() => {}}
+            value={profile ? String(profile.dailyInputCap) : "20"}
           />
         </View>
 
@@ -121,14 +155,31 @@ export default function SettingsScreen() {
           <SectionLabel>Notifiche</SectionLabel>
         </View>
         <View style={{ paddingHorizontal: 16, gap: 10 }}>
+          {/* Toggles are uncontrolled — the key remounts them once the real
+              profile loads so defaultOn reflects the stored value. */}
           <SettingsToggle
+            key={profile ? `calm-${profile.calmMode}` : "calm"}
             label="Modalità calma"
             hint="Niente badge. Solo la spinta del mattino."
-            defaultOn
+            defaultOn={profile ? profile.calmMode : true}
+            onChange={(v) => {
+              if (!user) return;
+              updateProfile(user.id, { calmMode: v }).catch((err) => {
+                if (__DEV__) console.warn("[Memika] calm mode save failed", err);
+              });
+            }}
           />
           <SettingsToggle
+            key={profile ? `digest-${profile.weeklyDigest}` : "digest"}
             label="Riepilogo settimanale"
             hint="La domenica un riassunto di ciò che si è consolidato, cosa sta sfumando, dove concentrarti."
+            defaultOn={profile ? profile.weeklyDigest : false}
+            onChange={(v) => {
+              if (!user) return;
+              updateProfile(user.id, { weeklyDigest: v }).catch((err) => {
+                if (__DEV__) console.warn("[Memika] weekly digest save failed", err);
+              });
+            }}
           />
         </View>
 
@@ -272,9 +323,17 @@ export default function SettingsScreen() {
               Verrai disconnesso da ogni dispositivo.
             </Text>
             <View style={{ marginTop: 22, gap: 10 }}>
+              {/* Account deletion is not wired yet (needs an Edge Function —
+                  GDPR work requiring human sign-off). The sheet must close in
+                  the same press: the global toast renders below this native
+                  Modal and would be invisible on iOS while it stays open. */}
               <PrimaryButton
                 label="Sì, elimina tutto"
-                onPress={() => setConfirmDelete(false)}
+                onPress={() => {
+                  errorFeedback();
+                  setConfirmDelete(false);
+                  showToast("L'eliminazione dell'account non è ancora disponibile");
+                }}
                 variant="danger"
               />
               <GhostButton
@@ -323,11 +382,6 @@ function DangerCard({
         borderColor: danger ? colors.danger : colors.hairlineStrong,
         backgroundColor: colors.surface,
         opacity: pressed ? 0.92 : 1,
-        shadowColor: danger ? colors.danger : colors.navy,
-        shadowOpacity: danger ? 0.1 : 0.06,
-        shadowOffset: { width: 0, height: 6 },
-        shadowRadius: 16,
-        elevation: 2,
       })}
     >
       <View

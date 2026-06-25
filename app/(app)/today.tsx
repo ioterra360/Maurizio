@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
@@ -10,19 +10,22 @@ import { PrimaryButton } from "@/components/PrimaryButton";
 import { GhostButton } from "@/components/GhostButton";
 import { Mascot } from "@/components/Mascot";
 import { useAuthStore } from "@/lib/auth-store";
-import { useReviewStore } from "@/lib/review-store";
+import { DECK_SIZES, useReviewStore } from "@/lib/review-store";
 import { firstName, dateBadge, timeGreeting } from "@/lib/format";
 import { FONT, colors } from "@/theme/tokens";
 
-type LayerPlan = { items: number; subtitle: string };
-
-const PLAN: { scan: LayerPlan; reinforcement: LayerPlan; focus: LayerPlan } = {
-  scan:          { items: 8, subtitle: "Old memories · ~3 min" },
-  reinforcement: { items: 6, subtitle: "Last 3–7 days · ~6 min" },
-  focus:         { items: 4, subtitle: "From yesterday · ~6 min" },
-};
+// Item counts come from the review-store decks — the same decks the CTAs
+// actually launch — so the plan can never contradict the session it starts.
+// Minute estimates stay local until Phase 3D threads the time budget into
+// fetchDueMemoriesByLayer.
+const PLAN = {
+  scan:          { items: DECK_SIZES.scan,          minutes: 3 },
+  reinforcement: { items: DECK_SIZES.reinforcement, minutes: 6 },
+  focus:         { items: DECK_SIZES.focus,         minutes: 6 },
+} as const;
 
 const TOTAL_ITEMS = PLAN.scan.items + PLAN.reinforcement.items + PLAN.focus.items;
+const TOTAL_MINUTES = PLAN.scan.minutes + PLAN.reinforcement.minutes + PLAN.focus.minutes;
 
 export default function TodayScreen() {
   const name = useAuthStore((s) => s.user?.name ?? "");
@@ -32,12 +35,12 @@ export default function TodayScreen() {
   // Recompute date label each render so a day rollover during a long session
   // doesn't leave a stale "MON · MAY 18" header.
   const greeting = timeGreeting();
-  const dateLabel = useMemo(() => dateBadge(), []);
+  const dateLabel = dateBadge();
   // Recommended flow subtitle pulled out so we can localize cleanly.
   const PLAN_LABELS = {
-    scan:          "Ricordi più vecchi · ~3 min",
-    reinforcement: "Ultimi 3–7 giorni · ~6 min",
-    focus:         "Ricordi di ieri · ~6 min",
+    scan:          `Ricordi più vecchi · ~${PLAN.scan.minutes} min`,
+    reinforcement: `Ultimi 3–7 giorni · ~${PLAN.reinforcement.minutes} min`,
+    focus:         `Ricordi di ieri · ~${PLAN.focus.minutes} min`,
   } as const;
   const startSession = useReviewStore((s) => s.start);
 
@@ -139,7 +142,7 @@ export default function TodayScreen() {
             fontVariant: ["tabular-nums"],
           }}
         >
-          Totale · {TOTAL_ITEMS} ricordi · circa {budget} min
+          Totale · {TOTAL_ITEMS} ricordi · circa {TOTAL_MINUTES} min
         </Text>
       </ScrollView>
 

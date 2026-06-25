@@ -15,6 +15,7 @@ import { SectionLabel } from "@/components/SectionLabel";
 import { FONT, colors } from "@/theme/tokens";
 import { FOLDER_KINDS, type FolderKind, type MemoryState } from "@/lib/constants";
 import { useFolderDetail } from "@/lib/use-folders";
+import { priorityOf, useFolderOrderStore } from "@/lib/folder-order-store";
 import { useReviewStore } from "@/lib/review-store";
 import { relativeReviewed } from "@/lib/format";
 import { markAddOpenedIntentionally } from "@/lib/add-gate";
@@ -26,6 +27,7 @@ export default function FolderDetailScreen() {
     ? (params.kind as FolderKind)
     : null;
   const { folder, items, loading, error, refetch } = useFolderDetail(kind);
+  const order = useFolderOrderStore((s) => s.order);
   const startSession = useReviewStore((s) => s.start);
   const [filter, setFilter] = useState<"all" | MemoryState>("all");
 
@@ -64,7 +66,7 @@ export default function FolderDetailScreen() {
         <TopBar />
         <View style={{ padding: 24 }}>
           <Text style={{ fontFamily: FONT.semibold, fontSize: 18, color: colors.navy }}>
-            Folder not found.
+            Cartella non trovata.
           </Text>
         </View>
       </SafeAreaView>
@@ -120,17 +122,17 @@ export default function FolderDetailScreen() {
   // the full Scan → Reinforcement → Focus flow. Initialize the store
   // before navigating so the Scan screen's flow-default fallback no-ops.
   const startReview = () => {
-    startSession("scan", "single");
+    startSession("scan", "single", kind);
     router.push("/review/scan");
   };
   const addItem = () => {
     markAddOpenedIntentionally();
-    router.push("/add");
+    router.push({ pathname: "/add", params: { kind } });
   };
 
   return (
     <SafeAreaView className="flex-1 bg-warm-white" edges={["top"]}>
-      <FolderTopBar kind={kind} name={data.name} priority={data.priority} />
+      <FolderTopBar kind={kind} name={data.name} priority={priorityOf(kind, order)} />
 
       <ScrollView
         contentContainerStyle={{ paddingBottom: 200 }}
@@ -145,7 +147,8 @@ export default function FolderDetailScreen() {
               fontSize: 28,
               color: colors.navy,
               letterSpacing: -0.84,
-              lineHeight: 31,
+              // ≥1.25× font-size so descenders don't clip (see tailwind.config.js)
+              lineHeight: 35,
             }}
           >
             {data.name}
@@ -282,7 +285,7 @@ export default function FolderDetailScreen() {
       <Pressable
         onPress={addItem}
         accessibilityRole="button"
-        accessibilityLabel="Add a memory to this folder"
+        accessibilityLabel="Aggiungi un ricordo a questa cartella"
         style={({ pressed }) => ({
           position: "absolute",
           right: 22,
@@ -298,7 +301,7 @@ export default function FolderDetailScreen() {
           shadowOffset: { width: 0, height: 10 },
           shadowRadius: 24,
           elevation: 8,
-          transform: [{ scale: pressed ? 0.96 : 1 }],
+          opacity: pressed ? 0.85 : 1,
         })}
       >
         <Plus size={24} color={colors.warmWhite} strokeWidth={2.2} />

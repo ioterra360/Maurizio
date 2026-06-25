@@ -154,5 +154,5 @@ export default function RootLayout() {
 function GlobalToast() {
   const toast = useUIStore((s) => s.toast);
   const hideToast = useUIStore((s) => s.hideToast);
-  return <Toast message={toast} onDismiss={hideToast} />;
+  return <Toast message={toast?.message ?? null} nonce={toast?.id} onDismiss={hideToast} />;
 }
