@@ -22,12 +22,12 @@ All colors live in `tailwind.config.js` and are mirrored in `theme/tokens.ts`.
 | Token | Hex | Use |
 |---|---|---|
 | `canvas` | `#F5F3EF` | Page background — the "paper" |
-| `warm-white` | `#FBF9F4` | Card-adjacent surfaces, sticky headers |
+| `warm-white` | `#FAF8F4` | Card-adjacent surfaces, sticky headers |
 | `surface` | `#FFFFFF` | Card backgrounds, inputs |
 | `navy` | `#1A2C4F` | Primary text, primary CTA, Focus layer |
 | `mid-grey` | `#8A8A88` | Secondary text, captions, deactivated tabs |
 | `hairline` | `rgba(26,44,79,0.08)` | Default 1px border between surfaces |
-| `hairline-strong` | `rgba(26,44,79,0.16)` | Border that needs to read at a glance |
+| `hairline-strong` | `rgba(26,44,79,0.14)` | Border that needs to read at a glance |
 
 ### Layer colors
 
@@ -46,7 +46,7 @@ them for unrelated UI.
 |---|---|---|---|
 | Active | `active` | `#3EC07B` | Healthy, recall is strong |
 | Fading | `fading` | `#F5A89C` | Needs attention soon |
-| Archived | `archived` | `#C5C3BE` | Set aside intentionally |
+| Archived | `archived` | `#9C9C95` | Set aside intentionally |
 
 ### Semantic
 
@@ -71,7 +71,7 @@ Values calibrated from the HTML mockup. Use these instead of Tailwind defaults.
 
 | Token | Size / line-height / tracking | Use |
 |---|---|---|
-| `xs-tight` | 10.5 / 14 / 0.16em | ALL-CAPS micro labels ("DEMO ACCOUNTS") |
+| `xs-tight` | 10.5 / 13 / 0.14em | ALL-CAPS micro labels ("DEMO ACCOUNTS") |
 | `micro` | 11 / 15 | Side panel, hints |
 | `caption` | 12 / 16 | Secondary text under a value |
 | `body` | 13.5 / 20 | Default body |
@@ -118,6 +118,12 @@ Specific recurring values from the mockup:
   - `shadow-toast` — `0 16px 40px -12px rgba(26,44,79,0.4)` on toasts
 
 No drop shadow on default surfaces. Resist the temptation.
+
+**Mockup-sanctioned exception — the Knowledge FAB.** The add-folder FAB
+carries its own heavier shadow, taken from the mockup: `shadowOpacity 0.35`,
+offset `{0, 10}`, radius `24`, `elevation 8`; its plus icon uses stroke
+width **2.2** (not the default 1.75). Do not generalize these values to any
+other surface.
 
 ## Icons
 

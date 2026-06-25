@@ -8,6 +8,8 @@
 
 export const colors = {
   navy: "#1A2C4F",
+  /** Softened navy — example/secondary text in the review flow. */
+  navySoft: "#243C6B",
   canvas: "#F5F3EF",
   warmWhite: "#FAF8F4",
   surface: "#FFFFFF",
@@ -16,6 +18,10 @@ export const colors = {
   hairline: "rgba(26,44,79,0.08)",
   hairlineStrong: "rgba(26,44,79,0.14)",
   divider: "#EFEDE7",
+  /** Idle (unfilled) review progress-dot grey. */
+  dotIdle: "#DCDAD3",
+  /** Switch track in the OFF state (Settings, admin moderation). */
+  switchTrackOff: "#D9D7D1",
   // Layer colors (Scan → Reinforcement → Focus, locked order).
   scan: "#6DA8E5",
   reinforcement: "#9B8CE8",
@@ -34,6 +40,9 @@ export const colors = {
   dangerSoft: "#FDEEEA",
   // Cards: USER tag background + ADMIN tag background.
   tagUserBg: "#EDF0F6",
+  // "Pro" plan tag — violet pill (bg) and strong violet text/dot.
+  tagProBg: "#EEEAFB",
+  tagProText: "#5A4DB1",
 } as const;
 
 /**
@@ -76,6 +85,18 @@ export const layerTint = {
 } as const;
 
 /**
+ * Per-folder identity tints — from the mockup FolderGlyph
+ * (_design_drop/memika/project/ui.jsx). Keyed by folder kind slug.
+ * Also used by the admin recall-by-folder chart track.
+ */
+export const folderTint = {
+  jp: "#FCE9E9",
+  es: "#FDF1E0",
+  medicine: "#E8F5EE",
+  law: "#EEEAFB",
+} as const satisfies Record<"jp" | "es" | "medicine" | "law", string>;
+
+/**
  * Memory lifecycle status tints — used by ItemRow, HealthRow and any
  * pill/chip that visualises an active/fading/archived state. Centralizing
  * the bg/text pair prevents the three palettes from drifting across
@@ -85,6 +106,15 @@ export const statusTint = {
   active:   { bg: "#E7F5EE", text: "#1F8552" },
   fading:   { bg: "#FDEEEA", text: "#A65B4A" },
   archived: { bg: "#EFEDE7", text: "#7A7975" },
+} as const;
+
+/**
+ * Admin moderation severity tints. HIGH and LOW reuse statusTint.fading /
+ * statusTint.archived directly; MED is the mockup's pale-peach pair
+ * (mobile-admin.jsx), named here so it isn't re-hardcoded inline.
+ */
+export const severityTint = {
+  med: { bg: "#FDF2EA", text: "#A65B4A" },
 } as const;
 
 export const layer = {

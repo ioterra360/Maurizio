@@ -11,6 +11,7 @@ module.exports = {
       colors: {
         // Memika editorial palette (mirrors theme/tokens.ts).
         navy: "#1A2C4F",
+        "navy-soft": "#243C6B",
         canvas: "#F5F3EF",
         "warm-white": "#FAF8F4",
         surface: "#FFFFFF",
@@ -19,6 +20,7 @@ module.exports = {
         hairline: "rgba(26,44,79,0.08)",
         "hairline-strong": "rgba(26,44,79,0.14)",
         divider: "#EFEDE7",
+        "dot-idle": "#DCDAD3",
         // Layers (Scan → Reinforcement → Focus, locked order).
         scan: "#6DA8E5",
         reinforcement: "#9B8CE8",
@@ -26,12 +28,14 @@ module.exports = {
         // Memory states.
         active: "#3EC07B",
         fading: "#F5A89C",
-        archived: "#C5C3BE",
+        archived: "#9C9C95",
         // Semantic.
         danger: "#B04A38",
         "danger-soft": "#FDEEEA",
         // Tag chip backgrounds.
         "tag-user": "#EDF0F6",
+        "tag-pro": "#EEEAFB",
+        "tag-pro-text": "#5A4DB1",
       },
       fontFamily: {
         sans: ["Inter_400Regular", "system-ui", "sans-serif"],
