@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
@@ -16,9 +17,9 @@ import { SectionLabel } from "@/components/SectionLabel";
 import { RetentionCurves } from "@/components/RetentionCurves";
 import { Mascot } from "@/components/Mascot";
 import { useAuthStore } from "@/lib/auth-store";
-import { ACTIVITY, KPIS, type KPI } from "@/lib/admin-data";
-import { firstName } from "@/lib/format";
-import { FONT, colors } from "@/theme/tokens";
+import { ACTIVITY, FLAGS, KPIS, type KPI } from "@/lib/admin-data";
+import { dateBadge, firstName } from "@/lib/format";
+import { FONT, colors, layerTint, statusTint } from "@/theme/tokens";
 
 const ICONS: Record<"folder" | "warn" | "sparkle" | "check", LucideIcon> = {
   folder: Folder,
@@ -30,6 +31,11 @@ const ICONS: Record<"folder" | "warn" | "sparkle" | "check", LucideIcon> = {
 export default function AdminHomeScreen() {
   const user = useAuthStore((s) => s.user);
   const display = firstName(user?.name, "Admin");
+  const highCount = FLAGS.filter((f) => f.severity === "high").length;
+  // Reduce with a 0 seed avoids -Infinity on empty FLAGS.
+  const oldestHours = FLAGS.reduce((max, f) => Math.max(max, f.ageHours), 0);
+  // Measured card width so the retention chart fills the fluid card.
+  const [w, setW] = useState(0);
 
   return (
     <SafeAreaView className="flex-1 bg-warm-white" edges={["top"]}>
@@ -39,7 +45,7 @@ export default function AdminHomeScreen() {
       >
         <AdminTopBar
           title={`Ciao, ${display}`}
-          subtitle="Produzione · LUN · 19 MAG"
+          subtitle={`Produzione · ${dateBadge()}`}
           rightSlot={
             <Pressable
               accessibilityRole="button"
@@ -91,7 +97,7 @@ export default function AdminHomeScreen() {
           <Pressable
             onPress={() => router.push("/(admin)/moderation")}
             accessibilityRole="button"
-            accessibilityLabel="Open moderation queue"
+            accessibilityLabel="Apri la coda di moderazione"
             className="flex-row items-center rounded-card bg-surface"
             style={({ pressed }) => ({
               paddingHorizontal: 16,
@@ -113,7 +119,7 @@ export default function AdminHomeScreen() {
                   letterSpacing: -0.1,
                 }}
               >
-                <Text style={{ fontFamily: FONT.bold }}>5 items</Text> in moderation queue
+                <Text style={{ fontFamily: FONT.bold }}>{FLAGS.length} elementi</Text> in coda di moderazione
               </Text>
               <Text
                 style={{
@@ -123,7 +129,7 @@ export default function AdminHomeScreen() {
                   marginTop: 3,
                 }}
               >
-                3 high severity · oldest 4h ago
+                {`${highCount} ad alta gravità · la più vecchia ${oldestHours}h fa`}
               </Text>
             </View>
             <ChevronRight size={18} color={colors.placeholder} strokeWidth={1.8} />
@@ -142,7 +148,7 @@ export default function AdminHomeScreen() {
             }}
           >
             <View className="flex-row items-center justify-between">
-              <SectionLabel size="lg">Retention · 30d</SectionLabel>
+              <SectionLabel size="lg">Ritenzione · 30g</SectionLabel>
               <Text
                 style={{
                   fontFamily: FONT.regular,
@@ -151,23 +157,26 @@ export default function AdminHomeScreen() {
                   fontVariant: ["tabular-nums"],
                 }}
               >
-                survival by layer
+                sopravvivenza per layer
               </Text>
             </View>
-            <View style={{ marginTop: 12, alignItems: "stretch" }}>
-              <RetentionCurves width={320} height={90} />
+            <View
+              onLayout={(e) => setW(e.nativeEvent.layout.width)}
+              style={{ marginTop: 12, minHeight: 90 }}
+            >
+              {w > 0 && <RetentionCurves width={w} height={90} />}
             </View>
             <View className="mt-2 flex-row justify-between" style={{ marginTop: 10 }}>
-              <CompactLegend color={colors.focus} label="Focus" val="91%" />
-              <CompactLegend color={colors.reinforcement} label="Reinforce" val="74%" />
               <CompactLegend color={colors.scan} label="Scan" val="62%" />
+              <CompactLegend color={colors.reinforcement} label="Reinforcement" val="74%" />
+              <CompactLegend color={colors.focus} label="Focus" val="91%" />
             </View>
           </View>
         </View>
 
         {/* Activity feed */}
         <View style={{ paddingHorizontal: 22, paddingTop: 22, paddingBottom: 8 }}>
-          <SectionLabel size="lg">Activity</SectionLabel>
+          <SectionLabel size="lg">Attività</SectionLabel>
         </View>
         <View style={{ paddingHorizontal: 16, gap: 10 }}>
           {ACTIVITY.map((a, i) => {
@@ -291,7 +300,7 @@ function KpiCard({ kpi }: { kpi: KPI }) {
           style={{
             fontFamily: FONT.semibold,
             fontSize: 11.5,
-            color: up ? colors.active : colors.fading,
+            color: up ? statusTint.active.text : statusTint.fading.text,
             fontVariant: ["tabular-nums"],
           }}
         >
@@ -306,13 +315,13 @@ function CompactLegend({ color, label, val }: { color: string; label: string; va
   return (
     <View className="flex-row items-center" style={{ gap: 5 }}>
       <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: color }} />
-      <Text style={{ fontFamily: FONT.medium, fontSize: 11.5, color: colors.midGrey }}>
+      <Text style={{ fontFamily: FONT.medium, fontSize: 11, color: colors.midGrey }}>
         {label}
       </Text>
       <Text
         style={{
           fontFamily: FONT.semibold,
-          fontSize: 11.5,
+          fontSize: 11,
           color: colors.navy,
           fontVariant: ["tabular-nums"],
         }}
@@ -324,10 +333,10 @@ function CompactLegend({ color, label, val }: { color: string; label: string; va
 }
 
 function tintFor(color: string): string {
-  if (color === colors.active)        return "#E7F5EE";
-  if (color === colors.fading)        return "#FDEEEA";
-  if (color === colors.reinforcement) return "#F1EEFC";
-  if (color === colors.scan)          return "#E6F0FA";
-  if (color === colors.navy)          return "#EDF0F6";
-  return "#EFEDE7";
+  if (color === colors.active)        return statusTint.active.bg;
+  if (color === colors.fading)        return statusTint.fading.bg;
+  if (color === colors.reinforcement) return layerTint.reinforcement;
+  if (color === colors.scan)          return layerTint.scan;
+  if (color === colors.navy)          return layerTint.focus;
+  return colors.divider;
 }

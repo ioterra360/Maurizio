@@ -67,7 +67,7 @@ export default function AdminInsightsScreen() {
                           fontVariant: ["tabular-nums"],
                         }}
                       >
-                        {step.pct}
+                        {`${step.pct.toLocaleString("it-IT")}%`}
                       </Text>
                     </View>
                     <View
@@ -82,7 +82,7 @@ export default function AdminInsightsScreen() {
                       <View
                         style={{
                           height: "100%",
-                          width: step.pct as `${number}%`,
+                          width: `${step.pct}%`,
                           backgroundColor: colors.navy,
                           opacity: 1 - i * 0.13,
                         }}

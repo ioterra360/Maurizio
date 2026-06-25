@@ -7,20 +7,27 @@ import { AdminTopBar } from "@/components/AdminTopBar";
 import { InitialsAvatar } from "@/components/FolderTile";
 import { FilterChip } from "@/components/FilterChip";
 import { USERS, type AdminUser } from "@/lib/admin-data";
-import { FONT, colors } from "@/theme/tokens";
+import { FONT, colors, statusTint } from "@/theme/tokens";
 
 type PlanFilter = "all" | "Pro" | "Free" | "At risk";
 
 const PLAN_TINT: Record<AdminUser["plan"], { bg: string; text: string }> = {
-  Pro:          { bg: "#EEEAFB", text: "#5A4DB1" }, // violet — Pro identity
-  Free:         { bg: "#EFEDE7", text: "#7A7975" },
-  "At risk":    { bg: "#FDEEEA", text: "#A65B4A" },
+  Pro:          { bg: colors.tagProBg, text: colors.tagProText },
+  Free:         statusTint.archived,
+  "At risk":    statusTint.fading,
+};
+
+/** Display labels for the plan pill — plan union literals stay English (they key filters/tints). */
+const PLAN_LABEL: Record<AdminUser["plan"], string> = {
+  Pro: "PRO",
+  Free: "FREE",
+  "At risk": "A RISCHIO",
 };
 
 const RETENTION_PILL: Record<"high" | "med" | "low", { bg: string; text: string }> = {
-  high: { bg: "#E7F5EE", text: "#1F8552" },
-  med:  { bg: "#EFEDE7", text: "#5C5A55" },
-  low:  { bg: "#FDEEEA", text: "#A65B4A" },
+  high: statusTint.active,
+  med:  statusTint.archived,
+  low:  statusTint.fading,
 };
 
 export default function AdminUsersScreen() {
@@ -49,7 +56,7 @@ export default function AdminUsersScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-warm-white" edges={["top"]}>
-      <AdminTopBar title="Users" subtitle={`${counts.all} total · ${counts.atRisk} at risk`} />
+      <AdminTopBar title="Utenti" subtitle={`${counts.all} totali · ${counts.atRisk} a rischio`} />
 
       {/* Search */}
       <View style={{ paddingHorizontal: 16, paddingTop: 4, paddingBottom: 12 }}>
@@ -67,7 +74,7 @@ export default function AdminUsersScreen() {
           <TextInput
             value={query}
             onChangeText={setQuery}
-            placeholder="Search name or email"
+            placeholder="Cerca nome o email"
             placeholderTextColor={colors.placeholder}
             autoCapitalize="none"
             autoCorrect={false}
@@ -86,6 +93,7 @@ export default function AdminUsersScreen() {
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
+        className="grow-0 shrink-0"
         contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}
       >
         <FilterChip
@@ -98,7 +106,7 @@ export default function AdminUsersScreen() {
           label="Pro"
           count={counts.Pro}
           active={filter === "Pro"}
-          dot={colors.active}
+          dot={colors.tagProText}
           onPress={() => setFilter("Pro")}
         />
         <FilterChip
@@ -133,7 +141,7 @@ export default function AdminUsersScreen() {
               paddingVertical: 32,
             }}
           >
-            No users matching that.
+            Nessun utente trovato.
           </Text>
         ) : (
           filtered.map((u) => <UserRow key={u.id} user={u} />)
@@ -152,7 +160,7 @@ function UserRow({ user }: { user: AdminUser }) {
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`Open ${user.name} details`}
+      accessibilityLabel={`Apri i dettagli di ${user.name}`}
       className="flex-row items-center rounded-chip bg-surface"
       style={({ pressed }) => ({
         paddingHorizontal: 16,
@@ -193,7 +201,7 @@ function UserRow({ user }: { user: AdminUser }) {
                 letterSpacing: 0.3,
               }}
             >
-              {user.plan.toUpperCase()}
+              {PLAN_LABEL[user.plan]}
             </Text>
           </View>
         </View>

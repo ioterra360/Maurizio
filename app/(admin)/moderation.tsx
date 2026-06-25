@@ -4,35 +4,43 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { AdminTopBar } from "@/components/AdminTopBar";
 import { FLAGS, RULES, type FlagItem, type FlagSeverity } from "@/lib/admin-data";
-import { FONT, colors } from "@/theme/tokens";
+import { FONT, colors, palette, severityTint, statusTint } from "@/theme/tokens";
 
 const SEVERITY_TINT: Record<FlagSeverity, { bg: string; text: string; label: string }> = {
-  high: { bg: "#FDEEEA", text: "#A65B4A", label: "HIGH" },
-  med:  { bg: "#FFF3E0", text: "#8A5A2A", label: "MED" },
-  low:  { bg: "#EFEDE7", text: "#7A7975", label: "LOW" },
+  high: { bg: statusTint.fading.bg,   text: statusTint.fading.text,   label: "ALTA" },
+  med:  { bg: severityTint.med.bg,    text: severityTint.med.text,    label: "MEDIA" },
+  low:  { bg: statusTint.archived.bg, text: statusTint.archived.text, label: "BASSA" },
 };
 
 export default function AdminModerationScreen() {
   const [tab, setTab] = useState<"queue" | "rules">("queue");
-  const counts = { queue: FLAGS.length, resolved: 18, auto: RULES.filter((r) => r.enabled).length };
+  // Lifted rule-toggle state so switches survive Queue <-> Auto-rules tab switches.
+  const [enabled, setEnabled] = useState<Record<string, boolean>>(() =>
+    Object.fromEntries(RULES.map((r) => [r.id, r.enabled] as const)),
+  );
+  const counts = {
+    queue: FLAGS.length,
+    resolved: 18,
+    auto: Object.values(enabled).filter(Boolean).length,
+  };
 
   return (
     <SafeAreaView className="flex-1 bg-warm-white" edges={["top"]}>
       <AdminTopBar
-        title="Moderation"
-        subtitle={`${counts.queue} pending · ${counts.resolved} resolved this week`}
+        title="Moderazione"
+        subtitle={`${counts.queue} in coda · ${counts.resolved} risolte questa settimana`}
       />
 
       {/* Paired pill toggle (mockup pattern), embedded count badge per tab */}
       <View className="flex-row" style={{ marginHorizontal: 16, gap: 8 }}>
         <TabPill
-          label="Queue"
+          label="Coda"
           count={counts.queue}
           active={tab === "queue"}
           onPress={() => setTab("queue")}
         />
         <TabPill
-          label="Auto-rules"
+          label="Regole auto"
           count={counts.auto}
           active={tab === "rules"}
           onPress={() => setTab("rules")}
@@ -45,7 +53,15 @@ export default function AdminModerationScreen() {
       >
         {tab === "queue"
           ? FLAGS.map((f) => <FlagCard key={f.id} flag={f} />)
-          : RULES.map((r) => <RuleRow key={r.id} initial={r.enabled} label={r.label} hint={r.hint} />)}
+          : RULES.map((r) => (
+              <RuleRow
+                key={r.id}
+                label={r.label}
+                hint={r.hint}
+                value={enabled[r.id]}
+                onChange={(v) => setEnabled((prev) => ({ ...prev, [r.id]: v }))}
+              />
+            ))}
       </ScrollView>
     </SafeAreaView>
   );
@@ -106,7 +122,7 @@ function FlagCard({ flag }: { flag: FlagItem }) {
             fontVariant: ["tabular-nums"],
           }}
         >
-          {flag.ageHours}h ago
+          {flag.ageHours}h fa
         </Text>
       </View>
       <Text
@@ -142,7 +158,7 @@ function FlagCard({ flag }: { flag: FlagItem }) {
           })}
         >
           <Text style={{ fontFamily: FONT.semibold, fontSize: 12.5, color: colors.navy }}>
-            Review
+            Esamina
           </Text>
         </Pressable>
         <Pressable
@@ -155,7 +171,7 @@ function FlagCard({ flag }: { flag: FlagItem }) {
           })}
         >
           <Text style={{ fontFamily: FONT.semibold, fontSize: 13, color: colors.navy }}>
-            Approve
+            Approva
           </Text>
         </Pressable>
         <Pressable
@@ -163,12 +179,12 @@ function FlagCard({ flag }: { flag: FlagItem }) {
           className="flex-1 items-center justify-center rounded-chip"
           style={({ pressed }) => ({
             height: 34,
-            backgroundColor: colors.fading,
+            backgroundColor: palette.peach,
             opacity: pressed ? 0.85 : 1,
           })}
         >
-          <Text style={{ fontFamily: FONT.semibold, fontSize: 13, color: colors.navy }}>
-            Remove
+          <Text style={{ fontFamily: FONT.semibold, fontSize: 13, color: colors.warmWhite }}>
+            Rimuovi
           </Text>
         </Pressable>
       </View>
@@ -191,7 +207,7 @@ function TabPill({
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={`${label}, ${count} items`}
+      accessibilityLabel={`${label}, ${count} elementi`}
       accessibilityState={{ selected: active }}
       className="flex-1 flex-row items-center justify-center rounded-chip"
       style={({ pressed }) => ({
@@ -230,13 +246,14 @@ function TabPill({
 function RuleRow({
   label,
   hint,
-  initial,
+  value,
+  onChange,
 }: {
   label: string;
   hint: string;
-  initial: boolean;
+  value: boolean;
+  onChange: (v: boolean) => void;
 }) {
-  const [on, setOn] = useState(initial);
   return (
     <View
       className="flex-row items-center rounded-chip bg-surface"
@@ -257,11 +274,11 @@ function RuleRow({
         </Text>
       </View>
       <Switch
-        value={on}
-        onValueChange={setOn}
-        trackColor={{ false: "#D9D7D1", true: colors.active }}
-        thumbColor="#fff"
-        ios_backgroundColor="#D9D7D1"
+        value={value}
+        onValueChange={onChange}
+        trackColor={{ false: colors.switchTrackOff, true: colors.active }}
+        thumbColor={colors.surface}
+        ios_backgroundColor={colors.switchTrackOff}
       />
     </View>
   );

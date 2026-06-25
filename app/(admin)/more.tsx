@@ -36,15 +36,15 @@ export default function AdminMoreScreen() {
   };
 
   const operations: Sub[] = [
-    { icon: FileText, label: "Content templates", hint: "6 published · 2 drafts" },
-    { icon: Bell, label: "Notifications", hint: "Broadcasts · campaign scheduling" },
-    { icon: Server, label: "System health", hint: "1 service degraded", badge: 1 },
+    { icon: FileText, label: "Template contenuti", hint: "6 pubblicati · 2 bozze" },
+    { icon: Bell, label: "Notifiche", hint: "Broadcast · pianificazione campagne" },
+    { icon: Server, label: "Stato del sistema", hint: "1 servizio degradato", badge: 1 },
   ];
 
   const workspace: Sub[] = [
-    { icon: UsersIcon, label: "Team", hint: "5 members · 1 owner" },
-    { icon: CreditCard, label: "Billing", hint: "Growth plan · $349/mo" },
-    { icon: Activity, label: "API keys", hint: "2 active · last used 3h ago" },
+    { icon: UsersIcon, label: "Team", hint: "5 membri · 1 owner" },
+    { icon: CreditCard, label: "Fatturazione", hint: "Piano Growth · €349/mese" },
+    { icon: Activity, label: "Chiavi API", hint: "2 attive · ultimo uso 3h fa" },
   ];
 
   return (
@@ -53,10 +53,10 @@ export default function AdminMoreScreen() {
         contentContainerStyle={{ paddingBottom: 140 }}
         showsVerticalScrollIndicator={false}
       >
-        <AdminTopBar title="More" subtitle="Operations · workspace · account" />
+        <AdminTopBar title="Altro" subtitle="Operazioni · spazio di lavoro · account" />
 
         <View style={{ paddingHorizontal: 22, paddingBottom: 8 }}>
-          <SectionLabel>Operations</SectionLabel>
+          <SectionLabel>Operazioni</SectionLabel>
         </View>
         <View style={{ paddingHorizontal: 16, gap: 10 }}>
           {operations.map((s) => (
@@ -65,7 +65,7 @@ export default function AdminMoreScreen() {
         </View>
 
         <View style={{ paddingHorizontal: 22, paddingTop: 20, paddingBottom: 8 }}>
-          <SectionLabel>Workspace</SectionLabel>
+          <SectionLabel>Spazio di lavoro</SectionLabel>
         </View>
         <View style={{ paddingHorizontal: 16, gap: 8 }}>
           {workspace.map((s) => (
@@ -143,7 +143,7 @@ export default function AdminMoreScreen() {
             <Pressable
               onPress={handleSignOut}
               accessibilityRole="button"
-              accessibilityLabel="Sign out"
+              accessibilityLabel="Esci"
               className="items-center justify-center rounded-chip"
               style={({ pressed }) => ({
                 height: 40,
@@ -160,7 +160,7 @@ export default function AdminMoreScreen() {
                   letterSpacing: -0.05,
                 }}
               >
-                Sign out
+                Esci
               </Text>
             </Pressable>
           </View>
