@@ -7,6 +7,7 @@ import { ReviewHeader } from "@/components/ReviewHeader";
 import { FolderPill } from "@/components/FolderPill";
 import { RecallButton } from "@/components/RecallButton";
 import { useReviewStore } from "@/lib/review-store";
+import { success, error } from "@/lib/feedback";
 import { FONT, colors } from "@/theme/tokens";
 
 export default function FocusScreen() {
@@ -27,6 +28,10 @@ export default function FocusScreen() {
   if (!card) return null;
 
   const advance = (response: "remembered" | "struggled" | "forgot") => {
+    // Mirror scan/reinforcement: success on a clean recall, error otherwise
+    // (struggled is a soft forget per the SM-2 downgrade in review-store).
+    if (response === "remembered") success();
+    else error();
     const result = recordAndAdvance(response);
     if (result === "done") router.replace("/review/complete");
   };
@@ -98,7 +103,7 @@ export default function FocusScreen() {
                 fontFamily: FONT.regular,
                 fontSize: 14,
                 fontStyle: "italic",
-                color: "#243C6B",
+                color: colors.navySoft,
                 lineHeight: 20,
               }}
             >

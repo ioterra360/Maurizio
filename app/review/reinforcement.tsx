@@ -8,7 +8,7 @@ import { ReviewHeader } from "@/components/ReviewHeader";
 import { FolderPill } from "@/components/FolderPill";
 import { useReviewStore } from "@/lib/review-store";
 import { success, error, tap } from "@/lib/feedback";
-import { FONT, colors } from "@/theme/tokens";
+import { FONT, colors, statusTint } from "@/theme/tokens";
 
 type Stage = "pre" | "hint" | "answer";
 
@@ -48,14 +48,18 @@ export default function ReinforcementScreen() {
     setStage(next);
   };
 
-  // Derive hint as the first sense in a multi-sense back string.
-  const hint = card.back.split(" · ")[0] ?? card.back.slice(0, 22);
+  // Authored mnemonic hint when the card has one; otherwise derive the
+  // first sense of a multi-sense back (ellipsis baked in — only a prefix is
+  // a truncation). A single-sense back yields no hint at all, so the hint
+  // can never leak the full answer.
+  const senses = card.back.split(" · ");
+  const hint = card.hint ?? (senses.length > 1 ? `${senses[0]}…` : null);
 
   return (
     <SafeAreaView className="flex-1 bg-warm-white" edges={["top"]}>
       <ReviewHeader layerKey="reinforcement" index={index} total={cards.length} />
 
-      <View style={{ flex: 1, paddingHorizontal: 24, alignItems: "center", justifyContent: "center" }}>
+      <View style={{ flex: 1, paddingHorizontal: 24, alignItems: "center", paddingTop: 40 }}>
         <FolderPill folder={card.folder} layerKey="reinforcement" />
 
         <Text
@@ -114,7 +118,7 @@ export default function ReinforcementScreen() {
                 letterSpacing: -0.07,
               }}
             >
-              {hint}…
+              {hint}
             </Text>
           </View>
         ) : null}
@@ -149,23 +153,26 @@ export default function ReinforcementScreen() {
       <View style={{ paddingHorizontal: 22, paddingBottom: 32, gap: 10 }}>
         {stage === "pre" ? (
           <>
-            <Pressable
-              onPress={() => reveal("hint")}
-              accessibilityRole="button"
-              accessibilityLabel="Dammi un indizio"
-              className="items-center justify-center rounded-cta"
-              style={({ pressed }) => ({
-                height: 56,
-                borderWidth: 1.5,
-                borderColor: colors.hairlineStrong,
-                backgroundColor: colors.warmWhite,
-                opacity: pressed ? 0.85 : 1,
-              })}
-            >
-              <Text style={{ fontFamily: FONT.semibold, fontSize: 17, color: colors.navy }}>
-                Dammi un indizio
-              </Text>
-            </Pressable>
+            {/* No hint affordance when the card has nothing safe to show. */}
+            {hint != null ? (
+              <Pressable
+                onPress={() => reveal("hint")}
+                accessibilityRole="button"
+                accessibilityLabel="Dammi un indizio"
+                className="items-center justify-center rounded-cta"
+                style={({ pressed }) => ({
+                  height: 56,
+                  borderWidth: 1.5,
+                  borderColor: colors.hairlineStrong,
+                  backgroundColor: colors.warmWhite,
+                  opacity: pressed ? 0.85 : 1,
+                })}
+              >
+                <Text style={{ fontFamily: FONT.semibold, fontSize: 17, color: colors.navy }}>
+                  Dammi un indizio
+                </Text>
+              </Pressable>
+            ) : null}
             <Pressable
               onPress={() => reveal("answer")}
               accessibilityRole="button"
@@ -229,7 +236,7 @@ export default function ReinforcementScreen() {
                 opacity: pressed ? 0.85 : 1,
               })}
             >
-              <Text style={{ fontFamily: FONT.semibold, fontSize: 17, color: colors.fading }}>
+              <Text style={{ fontFamily: FONT.semibold, fontSize: 17, color: statusTint.fading.text }}>
                 Ripassa di nuovo
               </Text>
             </Pressable>

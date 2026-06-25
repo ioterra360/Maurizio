@@ -6,7 +6,7 @@ import { router } from "expo-router";
 import { Mascot } from "@/components/Mascot";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { LayerCard } from "@/components/LayerCard";
-import { useReviewStore } from "@/lib/review-store";
+import { useReviewStore, deckSizeFor } from "@/lib/review-store";
 import { success } from "@/lib/feedback";
 import { FONT, colors, layer as layerTokens, type LayerKey } from "@/theme/tokens";
 
@@ -103,8 +103,8 @@ export default function ReviewHandoffScreen() {
         <View style={{ alignSelf: "stretch", marginTop: 26 }}>
           <LayerCard
             layerKey={nextLayer}
-            items={nextLayer === "reinforcement" ? 6 : 4}
-            subtitle={nextLayer === "reinforcement" ? "Ultimi 3–7 giorni · ~6 min" : "Ricordi di ieri · ~6 min"}
+            items={deckSizeFor(nextLayer)}
+            subtitle={nextLayer === "reinforcement" ? "Ultimi 3–7 giorni" : "Ricordi di ieri"}
             onPress={goNext}
           />
         </View>

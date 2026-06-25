@@ -1,5 +1,6 @@
 import { Redirect, Stack } from "expo-router";
 import { useAuthStore } from "@/lib/auth-store";
+import { colors } from "@/theme/tokens";
 
 export default function ReviewLayout() {
   const user = useAuthStore((s) => s.user);
@@ -8,7 +9,7 @@ export default function ReviewLayout() {
     <Stack
       screenOptions={{
         headerShown: false,
-        contentStyle: { backgroundColor: "#FAF8F4" },
+        contentStyle: { backgroundColor: colors.warmWhite },
         animation: "fade",
       }}
     />
