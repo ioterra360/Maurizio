@@ -10,7 +10,7 @@ import {
 } from "./api";
 import { update as scheduleUpdate } from "@/features/srs/scheduler";
 import { initialSrsState, type LayerOutcome, type SrsState } from "@/features/srs/types";
-import type { ReviewResponse } from "./constants";
+import type { FolderKind, ReviewResponse } from "./constants";
 
 export type ReviewCard = {
   /** Stable id so persistence keeps SRS state per-card across reviews. */
@@ -19,26 +19,37 @@ export type ReviewCard = {
   reading?: string;
   back: string;
   example?: string;
+  /** Authored mnemonic cue for the Reinforcement hint stage — a memory hook, never an answer fragment. */
+  hint?: string;
   folder: string;
+  /** Folder kind slug — lets a folder-scoped session filter the deck. */
+  folderKind?: FolderKind;
+  /**
+   * Persisted SRS snapshot mapped from the memories row. Demo cards omit it.
+   * NOTE for the Phase 3D deck loader: SrsState also needs nextReviewAt and
+   * lastReviewedAt, which sit OUTSIDE memory.srs on the mapped Memory —
+   * build { ...memory.srs, nextReviewAt, lastReviewedAt }.
+   */
+  srs?: SrsState;
 };
 
 const SCAN_CARDS: ReviewCard[] = [
-  { id: "demo-scan-0", front: "biblioteca",   back: "Library",                             folder: "Spanish"  },
-  { id: "demo-scan-1", front: "Pruritus",     back: "Itching sensation",                   folder: "Medicine" },
-  { id: "demo-scan-2", front: "難しい", reading: "muzukashii", back: "Difficult · hard · challenging", folder: "Japanese" },
-  { id: "demo-scan-3", front: "Caveat emptor", back: "Let the buyer beware",               folder: "Law"      },
+  { id: "demo-scan-0", front: "biblioteca",   back: "Library",                             folder: "Spanish",  folderKind: "es" },
+  { id: "demo-scan-1", front: "Pruritus",     back: "Itching sensation",                   folder: "Medicine", folderKind: "medicine" },
+  { id: "demo-scan-2", front: "難しい", reading: "muzukashii", back: "Difficult · hard · challenging", folder: "Japanese", folderKind: "jp" },
+  { id: "demo-scan-3", front: "Caveat emptor", back: "Let the buyer beware",               folder: "Law",      folderKind: "law" },
 ];
 
 const REINF_CARDS: ReviewCard[] = [
-  { id: "demo-reinf-0", front: "amanecer", back: "Dawn · sunrise · daybreak",          folder: "Spanish"  },
-  { id: "demo-reinf-1", front: "Synapse",  back: "Junction between two neurons",       folder: "Medicine" },
-  { id: "demo-reinf-2", front: "希望", reading: "kibō", back: "Hope · wish · aspiration", folder: "Japanese" },
+  { id: "demo-reinf-0", front: "amanecer", back: "Dawn · sunrise · daybreak",          hint: "From 'mañana' — the day arriving",           folder: "Spanish",  folderKind: "es" },
+  { id: "demo-reinf-1", front: "Synapse",  back: "Junction between two neurons",       hint: "Greek: syn (together) + haptein (to clasp)", folder: "Medicine", folderKind: "medicine" },
+  { id: "demo-reinf-2", front: "希望", reading: "kibō", back: "Hope · wish · aspiration", hint: "Two kanji: wish + hope",                   folder: "Japanese", folderKind: "jp" },
 ];
 
 const FOCUS_CARDS: ReviewCard[] = [
-  { id: "demo-focus-0", front: "中心",   reading: "chūshin",  back: "Center · core · the middle",         example: "Memika は学習の中心です",                  folder: "Japanese" },
-  { id: "demo-focus-1", front: "完璧",   reading: "kanpeki", back: "Perfect · flawless · complete",       example: "完璧な仕事です",                             folder: "Japanese" },
-  { id: "demo-focus-2", front: "Estoppel", back: "Preclusion of contradiction in legal proceedings",      example: "The court invoked estoppel.",              folder: "Law" },
+  { id: "demo-focus-0", front: "中心",   reading: "chūshin",  back: "Center · core · the middle",         example: "Memika は学習の中心です",                  folder: "Japanese", folderKind: "jp" },
+  { id: "demo-focus-1", front: "完璧",   reading: "kanpeki", back: "Perfect · flawless · complete",       example: "完璧な仕事です",                             folder: "Japanese", folderKind: "jp" },
+  { id: "demo-focus-2", front: "Estoppel", back: "Preclusion of contradiction in legal proceedings",      example: "The court invoked estoppel.",              folder: "Law", folderKind: "law" },
 ];
 
 const DECKS: Record<LayerKey, ReviewCard[]> = {
@@ -46,6 +57,29 @@ const DECKS: Record<LayerKey, ReviewCard[]> = {
   reinforcement: REINF_CARDS,
   focus: FOCUS_CARDS,
 };
+
+/** Unscoped deck size — single source of truth for Today's plan counts and the handoff preview. */
+export const deckSizeFor = (layer: LayerKey): number => DECKS[layer].length;
+
+/** Deck sizes keyed by layer, derived from the same decks the review screens run. */
+export const DECK_SIZES: Record<LayerKey, number> = {
+  scan: deckSizeFor("scan"),
+  reinforcement: deckSizeFor("reinforcement"),
+  focus: deckSizeFor("focus"),
+};
+
+/**
+ * Deck for the current session — filtered to the active folder when the
+ * session was started from a folder's "Ripassa ora". Used by cards(),
+ * current() and recordAndAdvance so index/length stay consistent with what
+ * the screen renders. Phase 3D: when decks come from fetchDueMemoriesByLayer
+ * the folder scope must be passed through to the query (prefer folder_id
+ * over kind — kind only covers the four seed folders).
+ */
+function deckFor(s: ReviewState): ReviewCard[] {
+  const deck = DECKS[s.layer];
+  return s.folderKind ? deck.filter((c) => c.folderKind === s.folderKind) : deck;
+}
 
 export type Counts = {
   remembered: number;
@@ -103,6 +137,8 @@ type ReviewState = {
   /** "flow" = Scan → Reinforcement → Focus → Complete; "single" = one layer only. */
   mode: "flow" | "single";
   layer: LayerKey;
+  /** Folder scope for the session — null reviews every folder's cards. */
+  folderKind: FolderKind | null;
   index: number;
   /** Cumulative across all layers in the current flow — Complete screen reads this. */
   totals: Counts;
@@ -132,7 +168,7 @@ type ReviewState = {
   pendingSessionComplete: Counts | null;
   /** SRS state per card id — initialized lazily and updated in place. */
   srsByCard: Record<string, SrsState>;
-  start: (layer: LayerKey, mode: "flow" | "single") => void;
+  start: (layer: LayerKey, mode: "flow" | "single", folderKind?: FolderKind) => void;
   recordAndAdvance: (response: "remembered" | "struggled" | "forgot") => "next" | "handoff" | "done";
   cards: () => ReviewCard[];
   current: () => ReviewCard | undefined;
@@ -162,6 +198,9 @@ type ReviewState = {
  * id (if we naively check sessionId === null) or accept a stale one.
  */
 let openSessionSeq = 0;
+
+/** Last accepted answer timestamp — swallows double-taps before navigation unmounts the screen. */
+let lastRecordAt = 0;
 
 /** The newest in-flight session promise. Used to finalize an abandoned layer. */
 let currentSessionPromise: Promise<{ id: string } | null> | null = null;
@@ -274,6 +313,7 @@ function finalizeStaleSession(
 export const useReviewStore = create<ReviewState>((set, get) => ({
   mode: "single",
   layer: "scan",
+  folderKind: null,
   index: 0,
   totals: EMPTY_COUNTS,
   layerTotals: EMPTY_COUNTS,
@@ -291,10 +331,12 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
    * Synchronous on the surface — the server session id arrives on a follow-
    * up tick via the api layer (in demo mode this resolves immediately).
    */
-  start: (layer, mode) => {
+  start: (layer, mode, folderKind) => {
+    lastRecordAt = 0;
     set({
       layer,
       mode,
+      folderKind: folderKind ?? null,
       index: 0,
       totals: EMPTY_COUNTS,
       layerTotals: EMPTY_COUNTS,
@@ -309,6 +351,7 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
   setLayer: (layer) => set({ layer, index: 0 }),
 
   advanceToLayer: (next) => {
+    lastRecordAt = 0;
     const state = get();
     const layerCounts = state.layerTotals;
     // Close the previous layer's session with that layer's own counts so
@@ -330,6 +373,7 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
     }
     set({
       layer: next,
+      folderKind: null,
       index: 0,
       sessionId: null,
       pendingSessionLayer: null,
@@ -343,13 +387,21 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
     openSessionFor(next, set, get);
   },
 
-  cards: () => DECKS[get().layer],
-  current: () => DECKS[get().layer][get().index],
+  cards: () => deckFor(get()),
+  current: () => deckFor(get())[get().index],
 
   recordAndAdvance: (response) => {
     const state = get();
-    const cards = DECKS[state.layer];
+    const cards = deckFor(state);
     const card = cards[state.index];
+    // Re-entry guards: a tap landing after the deck is finished, or within
+    // the double-tap window, must not re-record. "next" is a no-op for all
+    // three review screens (they only navigate on "handoff"/"done", which
+    // the first tap already returned).
+    if (!card) return "next";
+    const now = Date.now();
+    if (now - lastRecordAt < 250) return "next";
+    lastRecordAt = now;
     const totals: Counts = {
       remembered: state.totals.remembered + (response === "remembered" ? 1 : 0),
       struggled: state.totals.struggled + (response === "struggled" ? 1 : 0),
@@ -367,42 +419,40 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
     // intentionally fire-and-forget — the UI advances on the synchronous
     // setState below and the persistence completes in the background. Any
     // failure is logged in __DEV__; production telemetry comes in Phase 4.
-    if (card) {
-      const userId = useAuthStore.getState().user?.id;
-      const prior = state.srsByCard[card.id] ?? initialSrsState();
-      const updated = scheduleUpdate(prior, toLayerOutcome(state.layer, response));
-      set({
-        srsByCard: { ...state.srsByCard, [card.id]: updated },
+    const userId = useAuthStore.getState().user?.id;
+    const prior = state.srsByCard[card.id] ?? card.srs ?? initialSrsState();
+    const updated = scheduleUpdate(prior, toLayerOutcome(state.layer, response));
+    set({
+      srsByCard: { ...state.srsByCard, [card.id]: updated },
+    });
+    // Only persist when we have a real memories row to point at. Static
+    // demo decks would FK-violate; the persist guards are belt + braces
+    // because demo mode also short-circuits inside the api layer.
+    if (userId && isPersistableMemoryId(card.id)) {
+      // applyScheduledUpdate doesn't need a session id — fire it now.
+      void applyScheduledUpdate(card.id, updated).catch((e) => {
+        if (__DEV__) console.warn("[review] applyScheduledUpdate failed for", card.id, e);
       });
-      // Only persist when we have a real memories row to point at. Static
-      // demo decks would FK-violate; the persist guards are belt + braces
-      // because demo mode also short-circuits inside the api layer.
-      if (userId && isPersistableMemoryId(card.id)) {
-        // applyScheduledUpdate doesn't need a session id — fire it now.
-        void applyScheduledUpdate(card.id, updated).catch((e) => {
-          if (__DEV__) console.warn("[review] applyScheduledUpdate failed for", card.id, e);
+      if (state.sessionId) {
+        void recordReviewItem({
+          sessionId: state.sessionId,
+          memoryId: card.id,
+          userId,
+          response,
+        }).catch((e) => {
+          if (__DEV__) console.warn("[review] recordReviewItem failed for", card.id, e);
         });
-        if (state.sessionId) {
-          void recordReviewItem({
-            sessionId: state.sessionId,
-            memoryId: card.id,
-            userId,
-            response,
-          }).catch((e) => {
-            if (__DEV__) console.warn("[review] recordReviewItem failed for", card.id, e);
-          });
-        } else if (state.pendingSessionLayer === state.layer) {
-          // Session id not back from the server yet — queue this answer to
-          // be flushed once openSessionFor resolves. Avoids the items/
-          // session-counter divergence Codex flagged.
-          const reviewedAt = new Date().toISOString();
-          set({
-            pendingItems: [
-              ...state.pendingItems,
-              { memoryId: card.id, userId, response, reviewedAt },
-            ],
-          });
-        }
+      } else if (state.pendingSessionLayer === state.layer) {
+        // Session id not back from the server yet — queue this answer to
+        // be flushed once openSessionFor resolves. Avoids the items/
+        // session-counter divergence Codex flagged.
+        const reviewedAt = new Date().toISOString();
+        set({
+          pendingItems: [
+            ...state.pendingItems,
+            { memoryId: card.id, userId, response, reviewedAt },
+          ],
+        });
       }
     }
 
@@ -412,8 +462,9 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
       return "next";
     }
 
-    // End of layer.
-    set({ totals, layerTotals });
+    // End of layer. Advance the index past the deck so any straggler tap
+    // hits the !card guard above instead of re-recording the last card.
+    set({ index: nextIndex, totals, layerTotals });
     if (state.mode === "flow" && (state.layer === "scan" || state.layer === "reinforcement")) {
       // Session close + new-session open is deferred to advanceToLayer(),
       // called by the handoff screen when the user picks the next layer.
@@ -445,6 +496,7 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
     set({
       layer,
       mode,
+      folderKind: null,
       index: 0,
       totals: EMPTY_COUNTS,
       layerTotals: EMPTY_COUNTS,
@@ -469,6 +521,7 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
     set({
       mode: "single",
       layer: "scan",
+      folderKind: null,
       index: 0,
       totals: EMPTY_COUNTS,
       layerTotals: EMPTY_COUNTS,

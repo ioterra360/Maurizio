@@ -15,6 +15,16 @@ type AuthState = {
   user: AuthUser | null;
   loading: boolean;
   hydrated: boolean;
+  /**
+   * True between a successful signup and onboarding completion. The auth
+   * gate skips its signed-in redirect while this is set so the brand-new
+   * user actually sees the onboarding carousel instead of being yanked
+   * straight to Today.
+   */
+  pendingOnboarding: boolean;
+  setPendingOnboarding: (pending: boolean) => void;
+  /** Updates the cached user name after a successful profile save. */
+  setUserName: (name: string) => void;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   hydrate: () => Promise<void>;
@@ -94,17 +104,40 @@ async function buildAuthUserFromSession(
   return { id: u.id, email, name, role };
 }
 
+/**
+ * Monotonic guard against stale async completions. Every auth transition
+ * bumps the epoch; any in-flight profile fetch captured under an older
+ * epoch discards its result instead of resurrecting a signed-out user.
+ */
+let authEpoch = 0;
+
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   loading: false,
   hydrated: false,
+  pendingOnboarding: false,
+
+  setPendingOnboarding: (pending) => set({ pendingOnboarding: pending }),
+
+  setUserName: (name) => {
+    const user = get().user;
+    if (!user) return;
+    const next = { ...user, name };
+    set({ user: next });
+    // Demo sessions live in AsyncStorage — keep the cached copy in sync so
+    // the rename survives a reload.
+    if (!isSupabaseConfigured) {
+      void AsyncStorage.setItem(DEMO_STORAGE_KEY, JSON.stringify(next)).catch(() => {});
+    }
+  },
 
   hydrate: async () => {
     try {
       if (isSupabaseConfigured) {
         const { data } = await supabase.auth.getSession();
+        const myEpoch = ++authEpoch;
         const user = await buildAuthUserFromSession(data.session);
-        set({ user });
+        if (myEpoch === authEpoch) set({ user });
       } else {
         const cached = await AsyncStorage.getItem(DEMO_STORAGE_KEY);
         if (cached) {
@@ -124,17 +157,31 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   subscribeAuthChanges: () => {
     if (!isSupabaseConfigured) return () => {};
-    const { data: sub } = supabase.auth.onAuthStateChange(async (event, session) => {
+    // The callback MUST stay synchronous: awaiting a PostgREST call inside
+    // it re-enters getSession while Supabase's auth lock is held (e.g. on
+    // TOKEN_REFRESHED) and deadlocks the whole client. The setTimeout
+    // defers the profile fetch until after the notify resolves and the
+    // lock releases — the pattern Supabase's own docs prescribe.
+    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
       // Token revoked, password reset on web, manual sign-out elsewhere —
       // any of these zero out the local user so the auth gate kicks them
       // back to login instead of leaving a half-broken state.
       if (event === "SIGNED_OUT" || !session) {
+        authEpoch += 1;
         set({ user: null });
         return;
       }
       if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED" || event === "USER_UPDATED") {
-        const user = await buildAuthUserFromSession(session);
-        set({ user });
+        const myEpoch = ++authEpoch;
+        setTimeout(() => {
+          void buildAuthUserFromSession(session)
+            .then((user) => {
+              if (myEpoch === authEpoch) set({ user });
+            })
+            .catch((err) => {
+              if (__DEV__) console.warn("[Memika] auth profile refresh failed", err);
+            });
+        }, 0);
       }
     });
     return () => {
@@ -149,8 +196,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       if (isSupabaseConfigured) {
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
+        const myEpoch = ++authEpoch;
         const user = await buildAuthUserFromSession(data.session);
-        set({ user });
+        if (myEpoch === authEpoch) set({ user });
       } else {
         // Demo mode is __DEV__-only (enforced in supabase.ts). Tighten further:
         // only the two seed accounts are valid. Arbitrary emails are rejected,
@@ -185,6 +233,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       }
     }
     await AsyncStorage.removeItem(DEMO_STORAGE_KEY).catch(() => {});
-    set({ user: null });
+    // Bump the epoch so any profile fetch started before sign-out is
+    // discarded instead of writing a dead user back into the store.
+    authEpoch += 1;
+    set({ user: null, pendingOnboarding: false });
   },
 }));

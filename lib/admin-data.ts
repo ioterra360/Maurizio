@@ -4,15 +4,15 @@
  * RPC functions backed by the is_admin() helper).
  */
 
-import { colors } from "@/theme/tokens";
+import { colors, folderTint } from "@/theme/tokens";
 
 export type KPI = { label: string; value: string; delta: string; accent: string };
 
 export const KPIS: KPI[] = [
-  { label: "Attivi al giorno", value: "12.8K", delta: "+8.4%",  accent: colors.navy },
-  { label: "Ricordi",          value: "2.41M", delta: "+3.1%",  accent: colors.active },
-  { label: "Ritenzione",       value: "68%",   delta: "+1.2pt", accent: colors.reinforcement },
-  { label: "MRR",              value: "€24.3K", delta: "+12%",  accent: colors.scan },
+  { label: "Attivi al giorno", value: "12,8K", delta: "+8,4%",  accent: colors.navy },
+  { label: "Ricordi",          value: "2,41M", delta: "+3,1%",  accent: colors.navy },
+  { label: "Ritenzione",       value: "68%",   delta: "+1,2pt", accent: colors.active },
+  { label: "MRR",              value: "€24,3K", delta: "+12%",  accent: colors.navy },
 ];
 
 export type ActivityItem = {
@@ -49,7 +49,7 @@ export const USERS: AdminUser[] = [
   { id: "5", name: "Tommaso Greco",  email: "tom.greco@duck.com",        plan: "Pro",     retention: 76, lastSeen: "32m", joined: "Mar 2026", initials: "TG" },
   { id: "6", name: "Sara Marini",    email: "sara@marini.studio",        plan: "Pro",     retention: 81, lastSeen: "2h",  joined: "Jan 2026", initials: "SM" },
   { id: "7", name: "Davide Conti",   email: "dconti@uni.it",             plan: "Free",    retention: 52, lastSeen: "3d",  joined: "Mar 2026", initials: "DC" },
-  { id: "8", name: "Elena Akeyama",  email: "elena.akeyama@gmail.com",   plan: "Pro",     retention: 95, lastSeen: "now", joined: "Feb 2026", initials: "EA" },
+  { id: "8", name: "Elena Akeyama",  email: "elena.akeyama@gmail.com",   plan: "Pro",     retention: 95, lastSeen: "ora", joined: "Feb 2026", initials: "EA" },
 ];
 
 export type FlagSeverity = "low" | "med" | "high";
@@ -66,11 +66,11 @@ export type FlagItem = {
 };
 
 export const FLAGS: FlagItem[] = [
-  { id: "f1", severity: "high", reason: "Possible copy from external source",   user: "Mara Bianchi",  folder: "Medicine", source: "auto", ageHours: 4, preview: "Wikipedia paraphrase, 90%+ overlap" },
-  { id: "f2", severity: "high", reason: "Personal identifier in card",          user: "Luca Vitti",    folder: "Japanese", source: "user", ageHours: 6, preview: "Phone number detected" },
-  { id: "f3", severity: "high", reason: "Hate-speech pattern",                  user: "Anonymous",     folder: "Law",      source: "auto", ageHours: 9, preview: "Slur in definition body" },
-  { id: "f4", severity: "med",  reason: "Outdated medical dosage",              user: "Sara Marini",   folder: "Medicine", source: "user", ageHours: 14, preview: "Antibiotic schedule pre-2020 guideline" },
-  { id: "f5", severity: "low",  reason: "Empty card body",                      user: "Tommaso Greco", folder: "Spanish",  source: "auto", ageHours: 22, preview: "Front filled, back blank" },
+  { id: "f1", severity: "high", reason: "Possibile copia da fonte esterna",     user: "Mara Bianchi",  folder: "Medicine", source: "auto", ageHours: 4, preview: "Parafrasi da Wikipedia, sovrapposizione >90%" },
+  { id: "f2", severity: "high", reason: "Identificatore personale nella carta", user: "Luca Vitti",    folder: "Japanese", source: "user", ageHours: 6, preview: "Numero di telefono rilevato" },
+  { id: "f3", severity: "high", reason: "Pattern di incitamento all'odio",      user: "Anonimo",       folder: "Law",      source: "auto", ageHours: 9, preview: "Insulto nel corpo della definizione" },
+  { id: "f4", severity: "med",  reason: "Dosaggio medico obsoleto",             user: "Sara Marini",   folder: "Medicine", source: "user", ageHours: 14, preview: "Schema antibiotico da linee guida pre-2020" },
+  { id: "f5", severity: "low",  reason: "Corpo della carta vuoto",              user: "Tommaso Greco", folder: "Spanish",  source: "auto", ageHours: 22, preview: "Fronte compilato, retro vuoto" },
 ];
 
 export type ModerationRule = {
@@ -81,30 +81,32 @@ export type ModerationRule = {
 };
 
 export const RULES: ModerationRule[] = [
-  { id: "r1", label: "Auto-quarantine PII",             hint: "Phone numbers, emails, SSNs in card text", enabled: true },
-  { id: "r2", label: "Block toxic language",            hint: "Slurs, hate speech, threats",              enabled: true },
-  { id: "r3", label: "Flag external-source overlap",    hint: ">85% match with Wikipedia / Wikiquote",    enabled: true },
-  { id: "r4", label: "Quarantine outdated medical",     hint: "Pre-2020 dosage / dx guidelines",          enabled: false },
-  { id: "r5", label: "Daily input cap override",        hint: "Allow Pro to exceed 20/day",               enabled: true },
+  { id: "r1", label: "Auto-quarantena PII",                  hint: "Numeri di telefono, email, codici fiscali nel testo", enabled: true },
+  { id: "r2", label: "Blocca linguaggio tossico",            hint: "Insulti, incitamento all'odio, minacce",              enabled: true },
+  { id: "r3", label: "Segnala sovrapposizioni esterne",      hint: "Corrispondenza >85% con Wikipedia / Wikiquote",       enabled: true },
+  { id: "r4", label: "Quarantena contenuti medici obsoleti", hint: "Linee guida dosaggi / diagnosi pre-2020",             enabled: false },
+  { id: "r5", label: "Deroga al limite giornaliero",         hint: "Consenti ai Pro di superare 20/giorno",               enabled: true },
 ];
 
-export type FunnelStep = { label: string; value: number; pct: string };
+// pct is numeric so screens can localize the label (it-IT comma) while the
+// raw value still drives the RN percentage bar width.
+export type FunnelStep = { label: string; value: number; pct: number };
 
 export const FUNNEL: FunnelStep[] = [
-  { label: "Registrazione",       value: 14_320, pct: "100%" },
-  { label: "Onboarding completato", value: 11_847, pct: "82.7%" },
-  { label: "Primo ricordo",       value: 9_438,  pct: "65.9%" },
-  { label: "Ritenzione giorno 7", value: 6_204,  pct: "43.3%" },
-  { label: "Ritenzione giorno 30", value: 3_892, pct: "27.2%" },
+  { label: "Registrazione",       value: 14_320, pct: 100 },
+  { label: "Onboarding completato", value: 11_847, pct: 82.7 },
+  { label: "Primo ricordo",       value: 9_438,  pct: 65.9 },
+  { label: "Ritenzione giorno 7", value: 6_204,  pct: 43.3 },
+  { label: "Ritenzione giorno 30", value: 3_892, pct: 27.2 },
 ];
 
 export type RecallByFolder = { folder: string; accuracy: number; color: string };
 
 export const RECALL: RecallByFolder[] = [
-  { folder: "Japanese", accuracy: 84, color: "#FCE9E9" },
-  { folder: "Medicine", accuracy: 78, color: "#E8F5EE" },
-  { folder: "Spanish",  accuracy: 72, color: "#FDF1E0" },
-  { folder: "Law",      accuracy: 65, color: "#EEEAFB" },
+  { folder: "Japanese", accuracy: 84, color: folderTint.jp },
+  { folder: "Medicine", accuracy: 78, color: folderTint.medicine },
+  { folder: "Spanish",  accuracy: 72, color: folderTint.es },
+  { folder: "Law",      accuracy: 65, color: folderTint.law },
 ];
 
 export type SystemService = {

@@ -124,12 +124,35 @@ export function getAllFolderSeeds(): FolderSeed[] {
   return [FOLDERS.jp, FOLDERS.medicine, FOLDERS.es, FOLDERS.law];
 }
 
+/** Item-type option: stable English slug (`value`) + Italian UI label. */
+export type ItemTypeOption = { value: string; label: string };
+
 /** Item-type chips per folder, used by the Add to Memory screen. */
-export const ITEM_TYPES_BY_KIND: Record<FolderKind, readonly string[]> = {
-  jp: ["Word", "Kanji", "Grammar", "Phrase"],
-  medicine: ["Term", "Concept", "Drug", "Fact"],
-  es: ["Word", "Verb", "Grammar", "Phrase"],
-  law: ["Doctrine", "Case", "Statute", "Term"],
+export const ITEM_TYPES_BY_KIND: Record<FolderKind, readonly ItemTypeOption[]> = {
+  jp: [
+    { value: "word", label: "Parola" },
+    { value: "kanji", label: "Kanji" },
+    { value: "grammar", label: "Grammatica" },
+    { value: "phrase", label: "Frase" },
+  ],
+  medicine: [
+    { value: "term", label: "Termine" },
+    { value: "concept", label: "Concetto" },
+    { value: "drug", label: "Farmaco" },
+    { value: "fact", label: "Nozione" },
+  ],
+  es: [
+    { value: "word", label: "Parola" },
+    { value: "verb", label: "Verbo" },
+    { value: "grammar", label: "Grammatica" },
+    { value: "phrase", label: "Frase" },
+  ],
+  law: [
+    { value: "doctrine", label: "Dottrina" },
+    { value: "case", label: "Caso" },
+    { value: "statute", label: "Norma" },
+    { value: "term", label: "Termine" },
+  ],
 };
 
 /** Preview cards used in the Add-to-Memory preview tile. */

@@ -185,6 +185,30 @@ function pctRound(part: number, whole: number): number {
 }
 
 /**
+ * Roll a folder's memories up into FolderWithStats. Shared by the Knowledge
+ * list (fetchFoldersWithStats) and the folder detail screen so the hero
+ * stats always come from the same read as the items they describe.
+ */
+function rollupStats(folder: Folder, items: Memory[]): FolderWithStats {
+  const count = items.length;
+  const active = items.filter((m) => m.state === "active").length;
+  const fading = items.filter((m) => m.state === "fading").length;
+  const archived = items.filter((m) => m.state === "archived").length;
+  const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+  const addedThisWeek = items.filter(
+    (m) => new Date(m.createdAt).getTime() >= weekAgo,
+  ).length;
+  return {
+    ...folder,
+    count,
+    active: pctRound(active, count),
+    fading: pctRound(fading, count),
+    archived: pctRound(archived, count),
+    addedThisWeek,
+  } satisfies FolderWithStats;
+}
+
+/**
  * Folders + per-folder retention stats. The hot read for Knowledge, Today,
  * and the folder detail hero. Returns folders ordered by `priority`.
  *
@@ -203,31 +227,17 @@ export async function fetchFoldersWithStats(userId: string): Promise<FolderWithS
   const enriched = await Promise.all(
     folders.map(async (folder) => {
       const items = await fetchMemoriesForFolder(folder.id);
-      const count = items.length;
-      const active = items.filter((m) => m.state === "active").length;
-      const fading = items.filter((m) => m.state === "fading").length;
-      const archived = items.filter((m) => m.state === "archived").length;
-      const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-      const addedThisWeek = items.filter(
-        (m) => new Date(m.createdAt).getTime() >= weekAgo,
-      ).length;
-      return {
-        ...folder,
-        count,
-        active: pctRound(active, count),
-        fading: pctRound(fading, count),
-        archived: pctRound(archived, count),
-        addedThisWeek,
-      } satisfies FolderWithStats;
+      return rollupStats(folder, items);
     }),
   );
   return enriched.sort((a, b) => a.priority - b.priority);
 }
 
 /**
- * The data the folder detail screen needs in one round-trip: the folder
- * itself (with stats) and its items list. Demo mode reuses the seed; remote
- * fetches both in parallel.
+ * The data the folder detail screen needs: the folder itself (with stats)
+ * and its items list. Demo mode reuses the seed; remote resolves the folder
+ * row, then fetches its items once and rolls up stats from that same read —
+ * 2 queries total, and the hero stats always match the visible rows.
  */
 export async function fetchFolderDetail(
   userId: string,
@@ -266,11 +276,11 @@ export async function fetchFolderDetail(
     return { folder, items };
   }
 
-  const folders = await fetchFoldersWithStats(userId);
+  const folders = await fetchFolders(userId);
   const folder = folders.find((f) => f.kind === kind);
   if (!folder) return null;
   const items = await fetchMemoriesForFolder(folder.id);
-  return { folder, items };
+  return { folder: rollupStats(folder, items), items };
 }
 
 // ---------------------------------------------------------------------------

@@ -17,12 +17,16 @@ type Surface = "auth" | "app" | "admin";
 export function useAuthGate(surface: Surface) {
   const user = useAuthStore((s) => s.user);
   const hydrated = useAuthStore((s) => s.hydrated);
+  const pendingOnboarding = useAuthStore((s) => s.pendingOnboarding);
 
   // The root layout already gates rendering on `hydrated`, but each group
   // re-checks defensively in case a future change to the root forgets to.
   if (!hydrated) return null;
 
   if (surface === "auth") {
+    // Freshly signed-up user is walking through onboarding — let the (auth)
+    // stack render instead of redirecting them to the app surface.
+    if (user && pendingOnboarding) return null;
     if (user?.role === "admin") return <Redirect href="/(admin)/home" />;
     if (user?.role === "user") return <Redirect href="/(app)/today" />;
     return null;

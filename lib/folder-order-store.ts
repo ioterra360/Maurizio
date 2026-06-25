@@ -35,7 +35,7 @@ async function persist(order: FolderKind[]) {
   }
 }
 
-export const useFolderOrderStore = create<State>((set) => ({
+export const useFolderOrderStore = create<State>((set, get) => ({
   order: null,
   hydrated: false,
 
@@ -43,9 +43,15 @@ export const useFolderOrderStore = create<State>((set) => ({
     try {
       const raw = await AsyncStorage.getItem(STORAGE_KEY);
       const parsed = raw ? clean(JSON.parse(raw)) : null;
+      // A drag completed while AsyncStorage was resolving already set (and
+      // persisted) a fresher order — don't clobber it with the stale snapshot.
+      if (get().order) {
+        set({ hydrated: true });
+        return;
+      }
       set({ order: parsed ?? [...FOLDER_KINDS], hydrated: true });
     } catch {
-      set({ order: [...FOLDER_KINDS], hydrated: true });
+      set((s) => ({ order: s.order ?? [...FOLDER_KINDS], hydrated: true }));
     }
   },
 
@@ -62,6 +68,17 @@ export const useFolderOrderStore = create<State>((set) => ({
     await persist(next);
   },
 }));
+
+/**
+ * Display priority (1-based) of a folder under the user's custom order.
+ * Falls back to the default FOLDER_KINDS order (which matches the seed
+ * priorities 1-4) until the store is hydrated.
+ */
+export function priorityOf(kind: FolderKind, order: FolderKind[] | null): number {
+  const src = order ?? FOLDER_KINDS;
+  const i = src.indexOf(kind);
+  return i === -1 ? FOLDER_KINDS.indexOf(kind) + 1 : i + 1;
+}
 
 /**
  * Sort a list of items keyed by `kind` according to the user's custom order.

@@ -34,10 +34,13 @@ if (__DEV__) {
  * SecureStore-backed storage adapter for Supabase auth tokens.
  *
  * SecureStore is unavailable on web (we don't ship web yet, but a future
- * `expo start --web` shouldn't crash), and has a 2 KB value limit per key
- * on iOS — Supabase sessions are typically ~1 KB, but we fall back to
- * AsyncStorage if a payload ever exceeds it. The token still stays on
- * Keychain/Keystore for normal-sized sessions.
+ * `expo start --web` shouldn't crash). On native, the AsyncStorage fallback
+ * covers Keychain/Keystore runtime failures — NOT the 2 KB value limit:
+ * expo-secure-store in SDK 54 only console.warns on oversized values and
+ * still stores them, it never throws for size. If a future SDK turns that
+ * warning into an error, the same catch path will absorb it. The fallback
+ * must be symmetric: anything setItem writes to AsyncStorage has to be
+ * readable by getItem on the next launch.
  */
 const SECURE_KEY_PREFIX = "memika.";
 
@@ -45,20 +48,27 @@ const SecureStorageAdapter = {
   getItem: async (key: string): Promise<string | null> => {
     if (Platform.OS === "web") return AsyncStorage.getItem(key);
     try {
-      return await SecureStore.getItemAsync(SECURE_KEY_PREFIX + key);
+      const value = await SecureStore.getItemAsync(SECURE_KEY_PREFIX + key);
+      if (value !== null) return value;
     } catch (err) {
       if (__DEV__) console.warn("[Memika] SecureStore.getItem failed, falling back", err);
-      return AsyncStorage.getItem(key);
     }
+    // Symmetric with setItem's fallback: a session written to AsyncStorage when
+    // SecureStore failed must be readable on the next launch.
+    return AsyncStorage.getItem(key);
   },
   setItem: async (key: string, value: string): Promise<void> => {
     if (Platform.OS === "web") return AsyncStorage.setItem(key, value);
     try {
       await SecureStore.setItemAsync(SECURE_KEY_PREFIX + key, value);
+      return;
     } catch (err) {
       if (__DEV__) console.warn("[Memika] SecureStore.setItem failed, falling back", err);
-      await AsyncStorage.setItem(key, value);
     }
+    // Drop any stale SecureStore copy so getItem (SecureStore-first) can't
+    // return an older token than the one we're about to write.
+    await SecureStore.deleteItemAsync(SECURE_KEY_PREFIX + key).catch(() => {});
+    await AsyncStorage.setItem(key, value);
   },
   removeItem: async (key: string): Promise<void> => {
     if (Platform.OS === "web") return AsyncStorage.removeItem(key);
