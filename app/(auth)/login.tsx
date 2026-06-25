@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   KeyboardAvoidingView,
   Platform,
@@ -12,6 +12,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Link } from "expo-router";
 
 import { Mascot } from "@/components/Mascot";
+import { AuthTextInput } from "@/components/AuthTextInput";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { GhostButton } from "@/components/GhostButton";
 import { useAuthStore, DEMO_ACCOUNTS, type DemoAccount } from "@/lib/auth-store";
@@ -26,7 +27,7 @@ export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [focused, setFocused] = useState<"email" | "password" | null>(null);
+  const passwordRef = useRef<TextInput>(null);
 
   const handleSubmit = async () => {
     setError(null);
@@ -95,24 +96,17 @@ export default function LoginScreen() {
 
           {/* Email */}
           <FieldLabel>Email</FieldLabel>
-          <TextInput
+          <AuthTextInput
             value={email}
             onChangeText={setEmail}
-            onFocus={() => setFocused("email")}
-            onBlur={() => setFocused(null)}
             autoCapitalize="none"
             autoCorrect={false}
             autoComplete="email"
             keyboardType="email-address"
             placeholder="tu@esempio.com"
-            placeholderTextColor={colors.placeholder}
-            className="rounded-input bg-surface px-4 text-body-lg text-navy"
-            style={{
-              height: 50,
-              fontFamily: FONT.medium,
-              borderWidth: 1.5,
-              borderColor: focused === "email" ? colors.navy : colors.hairline,
-            }}
+            returnKeyType="next"
+            submitBehavior="submit"
+            onSubmitEditing={() => passwordRef.current?.focus()}
           />
 
           {/* Password */}
@@ -120,7 +114,7 @@ export default function LoginScreen() {
             className="mt-5 flex-row items-end justify-between"
             style={{ marginBottom: 8 }}
           >
-            <FieldLabel className="mb-0">Password</FieldLabel>
+            <FieldLabel style={{ marginBottom: 0 }}>Password</FieldLabel>
             <Link href={"/(auth)/forgot-password" as never} asChild>
               <Pressable hitSlop={8} accessibilityRole="link">
                 <Text
@@ -136,21 +130,16 @@ export default function LoginScreen() {
               </Pressable>
             </Link>
           </View>
-          <TextInput
+          <AuthTextInput
+            ref={passwordRef}
             value={password}
             onChangeText={setPassword}
-            onFocus={() => setFocused("password")}
-            onBlur={() => setFocused(null)}
             autoComplete="current-password"
             secureTextEntry
             placeholder="••••••••"
-            placeholderTextColor={colors.placeholder}
-            className="rounded-input bg-surface px-4 text-body-lg text-navy"
-            style={{
-              height: 50,
-              fontFamily: FONT.medium,
-              borderWidth: 1.5,
-              borderColor: focused === "password" ? colors.navy : colors.hairline,
+            returnKeyType="done"
+            onSubmitEditing={() => {
+              if (!loading) void handleSubmit();
             }}
           />
 
@@ -185,52 +174,55 @@ export default function LoginScreen() {
             </Link>
           </View>
 
-          {/* Demo accounts — bracketed by hairlines */}
-          <View
-            style={{
-              marginTop: 36,
-              flexDirection: "row",
-              alignItems: "center",
-              gap: 12,
-            }}
-          >
-            <View style={{ flex: 1, height: 1, backgroundColor: colors.divider }} />
-            <Text
-              style={{
-                fontFamily: FONT.bold,
-                fontSize: 10.5,
-                letterSpacing: 1.6,
-                textTransform: "uppercase",
-                color: colors.midGrey,
-              }}
-            >
-              Demo accounts
-            </Text>
-            <View style={{ flex: 1, height: 1, backgroundColor: colors.divider }} />
-          </View>
-
-          <View style={{ marginTop: 18, gap: 12 }}>
-            {DEMO_ACCOUNTS.map((acct) => (
-              <DemoCard key={acct.email} account={acct} onPress={() => fillDemo(acct)} />
-            ))}
-          </View>
-
+          {/* Demo accounts — dev-only (isDemoMode is false in any production
+              build), bracketed by hairlines */}
           {isDemoMode && (
-            <Text
-              style={{
-                marginTop: 16,
-                fontFamily: FONT.regular,
-                fontSize: 12,
-                lineHeight: 18,
-                color: colors.midGrey,
-              }}
-            >
-              Demo mode attivo. Accedi con uno dei due account sopra — le password
-              vengono accettate senza verifica. Disattiva{" "}
-              <Text style={{ fontFamily: FONT.semibold }}>EXPO_PUBLIC_DEMO_MODE</Text>{" "}
-              in <Text style={{ fontFamily: FONT.semibold }}>.env</Text> per attivare
-              l'auth reale.
-            </Text>
+            <>
+              <View
+                style={{
+                  marginTop: 36,
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 12,
+                }}
+              >
+                <View style={{ flex: 1, height: 1, backgroundColor: colors.divider }} />
+                <Text
+                  style={{
+                    fontFamily: FONT.bold,
+                    fontSize: 10.5,
+                    letterSpacing: 1.6,
+                    textTransform: "uppercase",
+                    color: colors.midGrey,
+                  }}
+                >
+                  Demo accounts
+                </Text>
+                <View style={{ flex: 1, height: 1, backgroundColor: colors.divider }} />
+              </View>
+
+              <View style={{ marginTop: 18, gap: 12 }}>
+                {DEMO_ACCOUNTS.map((acct) => (
+                  <DemoCard key={acct.email} account={acct} onPress={() => fillDemo(acct)} />
+                ))}
+              </View>
+
+              <Text
+                style={{
+                  marginTop: 16,
+                  fontFamily: FONT.regular,
+                  fontSize: 12,
+                  lineHeight: 18,
+                  color: colors.midGrey,
+                }}
+              >
+                Demo mode attivo. Accedi con uno dei due account sopra — le password
+                vengono accettate senza verifica. Disattiva{" "}
+                <Text style={{ fontFamily: FONT.semibold }}>EXPO_PUBLIC_DEMO_MODE</Text>{" "}
+                in <Text style={{ fontFamily: FONT.semibold }}>.env</Text> per attivare
+                l'auth reale.
+              </Text>
+            </>
           )}
         </ScrollView>
       </KeyboardAvoidingView>
@@ -240,14 +232,13 @@ export default function LoginScreen() {
 
 function FieldLabel({
   children,
-  className = "",
+  style,
 }: {
   children: React.ReactNode;
-  className?: string;
+  style?: { marginBottom?: number; marginTop?: number };
 }) {
   return (
     <Text
-      className={className}
       style={{
         marginBottom: 8,
         fontFamily: FONT.semibold,
@@ -255,6 +246,7 @@ function FieldLabel({
         letterSpacing: 1.3,
         textTransform: "uppercase",
         color: colors.midGrey,
+        ...style,
       }}
     >
       {children}

@@ -12,7 +12,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { Mascot, type MascotVariant } from "@/components/Mascot";
 import { PrimaryButton } from "@/components/PrimaryButton";
-import { GhostButton } from "@/components/GhostButton";
+import { useAuthStore } from "@/lib/auth-store";
 import { colors, FONT, layerTint } from "@/theme/tokens";
 
 const { width: SCREEN_W } = Dimensions.get("window");
@@ -59,6 +59,15 @@ const STEPS: Step[] = [
 export default function OnboardingScreen() {
   const [step, setStep] = useState(0);
   const scrollRef = useRef<ScrollView>(null);
+  const user = useAuthStore((s) => s.user);
+  const setPendingOnboarding = useAuthStore((s) => s.setPendingOnboarding);
+
+  // Clearing the flag lets the auth gate enforce the same destination even
+  // if the explicit replace below is ever bypassed.
+  const finish = () => {
+    setPendingOnboarding(false);
+    router.replace((user ? "/(app)/today" : "/(auth)/login") as never);
+  };
 
   const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
     const idx = Math.round(e.nativeEvent.contentOffset.x / SCREEN_W);
@@ -69,11 +78,11 @@ export default function OnboardingScreen() {
     if (step < STEPS.length - 1) {
       scrollRef.current?.scrollTo({ x: (step + 1) * SCREEN_W, animated: true });
     } else {
-      router.replace("/(auth)/login" as never);
+      finish();
     }
   };
 
-  const skip = () => router.replace("/(auth)/login" as never);
+  const skip = () => finish();
 
   return (
     <SafeAreaView className="flex-1 bg-canvas" edges={["top", "bottom"]}>
@@ -198,13 +207,6 @@ export default function OnboardingScreen() {
           label={step === STEPS.length - 1 ? "Inizia ora" : "Continua"}
           onPress={goNext}
         />
-        {step > 0 && step < STEPS.length - 1 ? (
-          <GhostButton
-            label="Salta l'introduzione"
-            onPress={skip}
-            variant="link"
-          />
-        ) : null}
       </View>
     </SafeAreaView>
   );

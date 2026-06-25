@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   KeyboardAvoidingView,
   Platform,
@@ -13,8 +13,10 @@ import { Link, router } from "expo-router";
 import { ChevronLeft, CheckCircle2 } from "lucide-react-native";
 
 import { Mascot } from "@/components/Mascot";
+import { AuthTextInput } from "@/components/AuthTextInput";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { isDemoMode, supabase } from "@/lib/supabase";
+import { useAuthStore } from "@/lib/auth-store";
 import { authErrorMessage } from "@/lib/auth-errors";
 import { colors, FONT } from "@/theme/tokens";
 
@@ -23,11 +25,11 @@ export default function SignupScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
-  const [focused, setFocused] = useState<
-    "name" | "email" | "password" | "confirm" | null
-  >(null);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const emailRef = useRef<TextInput>(null);
+  const passwordRef = useRef<TextInput>(null);
+  const confirmRef = useRef<TextInput>(null);
 
   const handleSubmit = async () => {
     setError(null);
@@ -54,6 +56,10 @@ export default function SignupScreen() {
       return;
     }
     setSubmitting(true);
+    // Set BEFORE the await: supabase-js notifies SIGNED_IN listeners inside
+    // signUp, so the auth gate would otherwise redirect to Today before the
+    // onboarding replace below ever runs.
+    useAuthStore.getState().setPendingOnboarding(true);
     try {
       const { error: signUpError } = await supabase.auth.signUp({
         email: email.trim().toLowerCase(),
@@ -63,11 +69,13 @@ export default function SignupScreen() {
         },
       });
       if (signUpError) {
+        useAuthStore.getState().setPendingOnboarding(false);
         setError(authErrorMessage(signUpError));
         return;
       }
       router.replace("/(auth)/onboarding" as never);
     } catch (e) {
+      useAuthStore.getState().setPendingOnboarding(false);
       setError(authErrorMessage(e));
     } finally {
       setSubmitting(false);
@@ -141,61 +149,57 @@ export default function SignupScreen() {
           </View>
 
           <FieldLabel>Nome</FieldLabel>
-          <TextInput
+          <AuthTextInput
             value={name}
             onChangeText={setName}
-            onFocus={() => setFocused("name")}
-            onBlur={() => setFocused(null)}
             autoCapitalize="words"
             autoComplete="name"
             placeholder="Il tuo nome"
-            placeholderTextColor={colors.placeholder}
-            className="rounded-input bg-surface px-4 text-body-lg text-navy"
-            style={inputStyle(focused === "name")}
+            returnKeyType="next"
+            submitBehavior="submit"
+            onSubmitEditing={() => emailRef.current?.focus()}
           />
 
           <FieldLabel style={{ marginTop: 18 }}>Email</FieldLabel>
-          <TextInput
+          <AuthTextInput
+            ref={emailRef}
             value={email}
             onChangeText={setEmail}
-            onFocus={() => setFocused("email")}
-            onBlur={() => setFocused(null)}
             autoCapitalize="none"
             autoCorrect={false}
             autoComplete="email"
             keyboardType="email-address"
             placeholder="tu@esempio.com"
-            placeholderTextColor={colors.placeholder}
-            className="rounded-input bg-surface px-4 text-body-lg text-navy"
-            style={inputStyle(focused === "email")}
+            returnKeyType="next"
+            submitBehavior="submit"
+            onSubmitEditing={() => passwordRef.current?.focus()}
           />
 
           <FieldLabel style={{ marginTop: 18 }}>Password</FieldLabel>
-          <TextInput
+          <AuthTextInput
+            ref={passwordRef}
             value={password}
             onChangeText={setPassword}
-            onFocus={() => setFocused("password")}
-            onBlur={() => setFocused(null)}
             autoComplete="new-password"
             secureTextEntry
             placeholder="Almeno 8 caratteri"
-            placeholderTextColor={colors.placeholder}
-            className="rounded-input bg-surface px-4 text-body-lg text-navy"
-            style={inputStyle(focused === "password")}
+            returnKeyType="next"
+            submitBehavior="submit"
+            onSubmitEditing={() => confirmRef.current?.focus()}
           />
 
           <FieldLabel style={{ marginTop: 18 }}>Conferma password</FieldLabel>
-          <TextInput
+          <AuthTextInput
+            ref={confirmRef}
             value={confirm}
             onChangeText={setConfirm}
-            onFocus={() => setFocused("confirm")}
-            onBlur={() => setFocused(null)}
             autoComplete="new-password"
             secureTextEntry
             placeholder="Ripeti la password"
-            placeholderTextColor={colors.placeholder}
-            className="rounded-input bg-surface px-4 text-body-lg text-navy"
-            style={inputStyle(focused === "confirm")}
+            returnKeyType="done"
+            onSubmitEditing={() => {
+              if (!submitting) void handleSubmit();
+            }}
           />
 
           {error ? (
@@ -277,15 +281,6 @@ export default function SignupScreen() {
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
-}
-
-function inputStyle(focusedNow: boolean) {
-  return {
-    height: 54,
-    fontFamily: FONT.medium,
-    borderWidth: 1.5,
-    borderColor: focusedNow ? colors.navy : colors.hairline,
-  } as const;
 }
 
 function FieldLabel({

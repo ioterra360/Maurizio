@@ -5,7 +5,6 @@ import {
   Pressable,
   ScrollView,
   Text,
-  TextInput,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -13,6 +12,7 @@ import { Link, router } from "expo-router";
 import { ChevronLeft } from "lucide-react-native";
 
 import { Mascot } from "@/components/Mascot";
+import { AuthTextInput } from "@/components/AuthTextInput";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { isDemoMode, supabase } from "@/lib/supabase";
 import { authErrorMessage } from "@/lib/auth-errors";
@@ -20,7 +20,6 @@ import { colors, FONT } from "@/theme/tokens";
 
 export default function ForgotPasswordScreen() {
   const [email, setEmail] = useState("");
-  const [focused, setFocused] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -39,14 +38,14 @@ export default function ForgotPasswordScreen() {
     }
     setSubmitting(true);
     try {
-      // Always show the success view regardless of whether the email is
-      // registered — this is the standard "no enumeration" UX. Errors that
-      // are NOT enumeration leaks (network down, malformed input) still
-      // surface so the user can retry.
+      // No-enumeration UX is enforced by Supabase server-side: /recover
+      // returns success for unknown emails, so any error that does come
+      // back (rate limit, malformed email, SMTP) is genuine and must
+      // surface instead of faking a "sent" confirmation.
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(
         email.trim().toLowerCase(),
       );
-      if (resetError && /network|fetch|timeout/i.test(resetError.message)) {
+      if (resetError) {
         setError(authErrorMessage(resetError));
         return;
       }
@@ -169,23 +168,17 @@ export default function ForgotPasswordScreen() {
               >
                 Email
               </Text>
-              <TextInput
+              <AuthTextInput
                 value={email}
                 onChangeText={setEmail}
-                onFocus={() => setFocused(true)}
-                onBlur={() => setFocused(false)}
                 autoCapitalize="none"
                 autoCorrect={false}
                 autoComplete="email"
                 keyboardType="email-address"
                 placeholder="tu@esempio.com"
-                placeholderTextColor={colors.placeholder}
-                className="rounded-input bg-surface px-4 text-body-lg text-navy"
-                style={{
-                  height: 56,
-                  fontFamily: FONT.medium,
-                  borderWidth: 1.5,
-                  borderColor: focused ? colors.navy : colors.hairline,
+                returnKeyType="send"
+                onSubmitEditing={() => {
+                  if (!submitting) void handleSubmit();
                 }}
               />
 
