@@ -47,7 +47,16 @@ export function GhostButton({ label, onPress, variant = "link", disabled, style 
       accessibilityRole="link"
       accessibilityLabel={label}
       accessibilityState={{ disabled: !!disabled }}
-      style={({ pressed }) => [{ opacity: disabled ? 0.45 : pressed ? 0.6 : 1 }, style]}
+      style={({ pressed }) => [
+        {
+          alignSelf: "center",
+          minHeight: 44,
+          justifyContent: "center",
+          paddingHorizontal: 16,
+          opacity: disabled ? 0.45 : pressed ? 0.6 : 1,
+        },
+        style,
+      ]}
     >
       <Text
         className="text-body text-mid-grey"

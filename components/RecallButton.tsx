@@ -1,6 +1,6 @@
 import { Pressable, Text, View } from "react-native";
 import { Check, TriangleAlert, X, type LucideIcon } from "lucide-react-native";
-import { FONT, colors } from "@/theme/tokens";
+import { FONT, colors, statusTint } from "@/theme/tokens";
 
 export type Recall = "remembered" | "struggled" | "forgot";
 
@@ -15,9 +15,12 @@ const META: Record<
 > = {
   // Per the Claude Design contract (reviews.jsx:410): the primary confirm
   // is filled GREEN with a green glow shadow. Layer-local color, not navy.
+  // Deliberate a11y deviation from the mockup (screens.jsx:731): "forgot"
+  // keeps the peach border but uses statusTint.fading.text as ink — peach
+  // text on warm-white is ~1.8:1, far below the WCAG 3:1 large-text bar.
   remembered: { label: "Ricordato",  icon: Check,         bg: colors.active,    border: colors.active,         text: colors.warmWhite, iconColor: colors.warmWhite, shadowColor: colors.active },
   struggled:  { label: "Faticoso",   icon: TriangleAlert, bg: "transparent",    border: colors.hairlineStrong, text: colors.navy,      iconColor: colors.navy },
-  forgot:     { label: "Dimenticato",icon: X,             bg: "transparent",    border: colors.fading,         text: colors.fading,    iconColor: colors.fading },
+  forgot:     { label: "Dimenticato",icon: X,             bg: "transparent",    border: colors.fading,         text: statusTint.fading.text, iconColor: statusTint.fading.text },
 };
 
 /**
@@ -83,7 +86,7 @@ export function ProgressDots({
             width: i === active ? 20 : 8,
             height: 8,
             borderRadius: 4,
-            backgroundColor: i <= active ? color : "#DCDAD3",
+            backgroundColor: i <= active ? color : colors.dotIdle,
           }}
         />
       ))}

@@ -9,6 +9,8 @@ import { FONT, colors } from "@/theme/tokens";
 
 type Props = {
   message: string | null;
+  /** Bump to restart the timers even when `message` text is identical. */
+  nonce?: number;
   onDismiss?: () => void;
   /** Auto-dismiss timeout in ms. 0 disables. Default 1800. */
   durationMs?: number;
@@ -18,7 +20,7 @@ type Props = {
  * Compact toast notification that slides up from the bottom. Sits above
  * the tab bar (~80px from the bottom). Calls onDismiss after duration.
  */
-export function Toast({ message, onDismiss, durationMs = 1800 }: Props) {
+export function Toast({ message, nonce, onDismiss, durationMs = 1800 }: Props) {
   const opacity = useSharedValue(0);
   const translateY = useSharedValue(10);
 
@@ -27,18 +29,22 @@ export function Toast({ message, onDismiss, durationMs = 1800 }: Props) {
       opacity.value = withTiming(1, { duration: 200 });
       translateY.value = withTiming(0, { duration: 220 });
       if (durationMs > 0) {
+        let t2: ReturnType<typeof setTimeout> | undefined;
         const t = setTimeout(() => {
           opacity.value = withTiming(0, { duration: 220 });
           translateY.value = withTiming(10, { duration: 220 });
-          setTimeout(() => onDismiss?.(), 240);
+          t2 = setTimeout(() => onDismiss?.(), 240);
         }, durationMs);
-        return () => clearTimeout(t);
+        return () => {
+          clearTimeout(t);
+          if (t2 !== undefined) clearTimeout(t2);
+        };
       }
     } else {
       opacity.value = withTiming(0, { duration: 200 });
       translateY.value = withTiming(10, { duration: 200 });
     }
-  }, [message, durationMs, opacity, translateY, onDismiss]);
+  }, [message, nonce, durationMs, opacity, translateY, onDismiss]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     opacity: opacity.value,

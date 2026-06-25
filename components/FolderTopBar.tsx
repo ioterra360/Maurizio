@@ -33,7 +33,7 @@ export function FolderTopBar({ kind, name, priority }: Props) {
       <Pressable
         onPress={() => safeBack("/(app)/knowledge")}
         accessibilityRole="button"
-        accessibilityLabel="Back to knowledge"
+        accessibilityLabel="Torna alle cartelle"
         style={({ pressed }) => ({
           width: 40,
           height: 40,
@@ -80,19 +80,17 @@ export function FolderTopBar({ kind, name, priority }: Props) {
         </View>
       </View>
 
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="Folder settings"
-        style={({ pressed }) => ({
-          width: 40,
-          height: 40,
-          alignItems: "center",
-          justifyContent: "center",
-          opacity: pressed ? 0.5 : 1,
-        })}
+      {/* Settings cog: visually present per the mockup, but inert and hidden
+          from assistive tech until the folder-settings screen exists. When it
+          lands, restore a Pressable (opacity 0.85 pressed) with an Italian
+          label ("Impostazioni cartella"). */}
+      <View
+        style={{ width: 40, height: 40, alignItems: "center", justifyContent: "center" }}
+        accessibilityElementsHidden
+        importantForAccessibility="no-hide-descendants"
       >
         <SettingsIcon size={20} color={colors.navy} strokeWidth={1.7} />
-      </Pressable>
+      </View>
     </View>
   );
 }

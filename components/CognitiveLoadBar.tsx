@@ -13,9 +13,9 @@ type Props = {
 export function CognitiveLoadBar({ pct }: Props) {
   const clamped = Math.max(0, Math.min(100, pct));
   const zone =
-    clamped < 60 ? { color: colors.active, label: "SUSTAINABLE" }
-    : clamped < 85 ? { color: colors.fading, label: "HEAVY" }
-    : { color: colors.navy, label: "OVERLOADED" };
+    clamped < 60 ? { color: colors.active, label: "Sostenibile" }
+    : clamped < 85 ? { color: colors.fading, label: "Pesante" }
+    : { color: colors.navy, label: "Sovraccarico" };
 
   return (
     <View>
@@ -38,14 +38,9 @@ export function CognitiveLoadBar({ pct }: Props) {
             width: 18,
             height: 18,
             borderRadius: 9,
-            backgroundColor: "#fff",
+            backgroundColor: colors.surface,
             borderWidth: 2,
             borderColor: colors.navy,
-            shadowColor: colors.navy,
-            shadowOpacity: 0.18,
-            shadowOffset: { width: 0, height: 2 },
-            shadowRadius: 6,
-            elevation: 2,
           }}
         />
       </View>
@@ -62,7 +57,7 @@ export function CognitiveLoadBar({ pct }: Props) {
             letterSpacing: 0.6,
           }}
         >
-          Sustainable
+          Sostenibile
         </Text>
         <Text
           style={{
@@ -72,7 +67,7 @@ export function CognitiveLoadBar({ pct }: Props) {
             letterSpacing: 0.6,
           }}
         >
-          Heavy
+          Pesante
         </Text>
         <Text
           style={{
@@ -82,7 +77,7 @@ export function CognitiveLoadBar({ pct }: Props) {
             letterSpacing: 0.6,
           }}
         >
-          Overloaded
+          Sovraccarico
         </Text>
       </View>
 
@@ -93,6 +88,7 @@ export function CognitiveLoadBar({ pct }: Props) {
           fontSize: 13,
           color: zone.color,
           letterSpacing: 1.4,
+          textTransform: "uppercase",
         }}
       >
         {zone.label}

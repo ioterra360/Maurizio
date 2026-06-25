@@ -37,7 +37,7 @@ export function AdminTopBar({ title, subtitle, rightSlot, onBack }: Props) {
         <Pressable
           onPress={handleBack}
           accessibilityRole="button"
-          accessibilityLabel="Back"
+          accessibilityLabel="Indietro"
           className="flex-row items-center"
           style={({ pressed }) => ({
             paddingVertical: 4,
@@ -49,7 +49,7 @@ export function AdminTopBar({ title, subtitle, rightSlot, onBack }: Props) {
         >
           <ChevronLeft size={18} color={colors.midGrey} strokeWidth={2} />
           <Text style={{ fontFamily: FONT.medium, fontSize: 13, color: colors.midGrey }}>
-            Back
+            Indietro
           </Text>
         </Pressable>
       ) : null}

@@ -24,7 +24,7 @@ export function RetentionBar({
   return (
     <View
       accessibilityRole="progressbar"
-      accessibilityLabel={`Memory health: ${active}% active, ${fading}% fading, ${archived}% archived`}
+      accessibilityLabel={`Salute della memoria: ${active}% stabili, ${fading}% in dissolvenza, ${archived}% archiviati`}
       style={{
         width,
         height,

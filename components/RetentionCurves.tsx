@@ -61,7 +61,8 @@ function curve(endPct: number, w: number, h: number): string {
   const pts: string[] = [];
   for (let i = 0; i <= steps; i++) {
     const t = i / steps;
-    const pct = 100 - (100 - endPct) * (t * t); // ease-out
+    const e = 1 - (1 - t) * (1 - t); // ease-out: steep early drop, flattens late
+    const pct = 100 - (100 - endPct) * e;
     const x = (i / steps) * w;
     const y = h - (pct / 100) * h;
     pts.push(`${x.toFixed(1)},${y.toFixed(1)}`);

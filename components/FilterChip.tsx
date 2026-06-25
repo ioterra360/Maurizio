@@ -18,7 +18,7 @@ export function FilterChip({ label, count, active, dot, onPress }: Props) {
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={`Filter ${label}, ${count} items`}
+      accessibilityLabel={`Filtro ${label}, ${count} ricordi`}
       accessibilityState={{ selected: active }}
       className="flex-row items-center rounded-filter"
       style={({ pressed }) => ({

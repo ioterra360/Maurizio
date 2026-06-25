@@ -38,7 +38,7 @@ export function TopBar({ title, onBack, rightSlot }: Props) {
       <Pressable
         onPress={handleBack}
         accessibilityRole="button"
-        accessibilityLabel="Go back"
+        accessibilityLabel="Indietro"
         style={({ pressed }) => ({
           width: 40,
           height: 40,

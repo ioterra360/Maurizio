@@ -1,6 +1,6 @@
 import { Text, View } from "react-native";
 import { Plus, Scale, Stethoscope } from "lucide-react-native";
-import { FONT, colors } from "@/theme/tokens";
+import { FONT, colors, folderTint } from "@/theme/tokens";
 import type { FolderKind } from "@/lib/constants";
 
 type Props = {
@@ -23,28 +23,28 @@ export function FolderTile({ kind, size = 32 }: Props) {
 
   if (kind === "jp") {
     return (
-      <View style={[base, { backgroundColor: "#FCE9E9" }]}>
+      <View style={[base, { backgroundColor: folderTint.jp }]}>
         <Text style={{ fontSize: size * 0.62 }}>🇯🇵</Text>
       </View>
     );
   }
   if (kind === "es") {
     return (
-      <View style={[base, { backgroundColor: "#FDF1E0" }]}>
+      <View style={[base, { backgroundColor: folderTint.es }]}>
         <Text style={{ fontSize: size * 0.62 }}>🇪🇸</Text>
       </View>
     );
   }
   if (kind === "medicine") {
     return (
-      <View style={[base, { backgroundColor: "#E8F5EE" }]}>
+      <View style={[base, { backgroundColor: folderTint.medicine }]}>
         <Stethoscope size={size * 0.55} color={colors.active} strokeWidth={2} />
       </View>
     );
   }
   if (kind === "law") {
     return (
-      <View style={[base, { backgroundColor: "#EEEAFB" }]}>
+      <View style={[base, { backgroundColor: folderTint.law }]}>
         <Scale size={size * 0.55} color={colors.navy} strokeWidth={1.8} />
       </View>
     );

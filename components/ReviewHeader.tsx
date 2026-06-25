@@ -52,7 +52,7 @@ export function ReviewHeader({ layerKey, index, total }: Props) {
               width: i === index ? 18 : 6,
               height: 6,
               borderRadius: 3,
-              backgroundColor: i <= index ? color : "#DCDAD3",
+              backgroundColor: i <= index ? color : colors.dotIdle,
             }}
           />
         ))}

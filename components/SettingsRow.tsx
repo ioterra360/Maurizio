@@ -39,9 +39,9 @@ export function SettingsRow({ label, hint, value, onPress }: RowProps) {
     <View
       className="flex-row items-center justify-between rounded-chip bg-surface"
       style={{
-        paddingHorizontal: 18,
-        paddingVertical: 17,
-        gap: 14,
+        paddingHorizontal: 16,
+        paddingVertical: 13,
+        gap: 12,
         borderWidth: 1,
         borderColor: colors.hairline,
       }}
@@ -99,9 +99,9 @@ export function SettingsToggle({ label, hint, defaultOn = false, onChange }: Tog
     <View
       className="flex-row items-center rounded-chip bg-surface"
       style={{
-        paddingHorizontal: 18,
-        paddingVertical: 17,
-        gap: 14,
+        paddingHorizontal: 16,
+        paddingVertical: 13,
+        gap: 12,
         borderWidth: 1,
         borderColor: colors.hairline,
       }}
@@ -128,9 +128,9 @@ export function SettingsToggle({ label, hint, defaultOn = false, onChange }: Tog
           setOn(v);
           onChange?.(v);
         }}
-        trackColor={{ false: "#D9D7D1", true: colors.active }}
-        thumbColor="#fff"
-        ios_backgroundColor="#D9D7D1"
+        trackColor={{ false: colors.switchTrackOff, true: colors.active }}
+        thumbColor={colors.surface}
+        ios_backgroundColor={colors.switchTrackOff}
       />
     </View>
   );
