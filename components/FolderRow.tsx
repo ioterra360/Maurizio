@@ -1,6 +1,7 @@
+import { useState } from "react";
 import { Pressable, Text, View } from "react-native";
 import { GripVertical } from "lucide-react-native";
-import { FONT, colors } from "@/theme/tokens";
+import { FONT, colors, radii } from "@/theme/tokens";
 import { FolderTile } from "./FolderTile";
 import { RetentionBar } from "./RetentionBar";
 import type { FolderKind } from "@/lib/constants";
@@ -43,16 +44,23 @@ export function FolderRow({
   isActive,
 }: Props) {
   const showReorder = !!onDrag;
+  const [pressed, setPressed] = useState(false);
+  const [reorderPressed, setReorderPressed] = useState(false);
 
   return (
     <Pressable
       onPress={onPress}
       disabled={isActive}
+      onPressIn={() => setPressed(true)}
+      onPressOut={() => setPressed(false)}
       accessibilityRole="button"
       accessibilityLabel={`${name}, priorità ${priority}, ${count} ricordi`}
       accessibilityHint={showReorder ? "Tieni premuta la maniglia per riordinare" : undefined}
-      className="flex-row items-center rounded-card bg-surface"
-      style={({ pressed }) => ({
+      style={{
+        flexDirection: "row",
+        alignItems: "center",
+        borderRadius: radii.card,
+        backgroundColor: colors.surface,
         paddingTop: 12,
         paddingBottom: 12,
         paddingLeft: 14,
@@ -70,7 +78,7 @@ export function FolderRow({
         shadowRadius: isActive ? 16 : 2,
         elevation: isActive ? 8 : 1,
         transform: [{ scale: isActive ? 1.02 : 1 }],
-      })}
+      }}
     >
       <FolderTile kind={kind} />
 
@@ -130,14 +138,16 @@ export function FolderRow({
         <Pressable
           onLongPress={onDrag}
           delayLongPress={140}
+          onPressIn={() => setReorderPressed(true)}
+          onPressOut={() => setReorderPressed(false)}
           accessibilityRole="button"
           accessibilityLabel="Trascina per riordinare"
           hitSlop={10}
-          style={({ pressed }) => ({
+          style={{
             marginLeft: 2,
             padding: 4,
-            opacity: pressed || isActive ? 0.55 : 1,
-          })}
+            opacity: reorderPressed || isActive ? 0.55 : 1,
+          }}
         >
           <GripVertical size={16} color={colors.archived} strokeWidth={1.75} />
         </Pressable>

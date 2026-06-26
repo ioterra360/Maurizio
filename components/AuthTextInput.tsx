@@ -34,7 +34,7 @@ export function AuthTextInput({ ref, style, onFocus, onBlur, ...rest }: AuthText
       className="rounded-input bg-surface px-4 text-body-lg text-navy"
       style={[
         {
-          height: 50,
+          height: 54,
           fontFamily: FONT.medium,
           borderWidth: 1.5,
           borderColor: focused ? colors.navy : colors.hairline,

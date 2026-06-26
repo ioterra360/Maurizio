@@ -1,69 +1,81 @@
-import { Pressable, Text, type StyleProp, type ViewStyle } from "react-native";
-import { FONT, colors } from "@/theme/tokens";
+import { useState } from "react";
+import { Pressable, Text, View, type StyleProp, type ViewStyle } from "react-native";
+import { FONT, colors, radii } from "@/theme/tokens";
 
 type Props = {
   label: string;
   onPress?: () => void;
-  /** "link" = mid-grey small text; "outline" = bordered button. */
+  /** "link" = mid-grey text button; "outline" = bordered button on white. */
   variant?: "link" | "outline";
   disabled?: boolean;
   style?: StyleProp<ViewStyle>;
 };
 
 /**
- * Secondary CTAs — "Adjust today's flow", "Save & add another", etc.
+ * Secondary CTAs — "Forse più tardi", "Adjust today's flow", etc. Like
+ * PrimaryButton, the visual box is a static-styled <View> so it always
+ * renders (NativeWind v4 drops the render-prop `style` function on Pressable).
  */
 export function GhostButton({ label, onPress, variant = "link", disabled, style }: Props) {
+  const [pressed, setPressed] = useState(false);
+
   if (variant === "outline") {
     return (
       <Pressable
         onPress={onPress}
+        onPressIn={() => setPressed(true)}
+        onPressOut={() => setPressed(false)}
         disabled={disabled}
         accessibilityRole="button"
         accessibilityLabel={label}
         accessibilityState={{ disabled: !!disabled }}
-        className="w-full items-center justify-center rounded-cta"
-        style={({ pressed }) => [
-          {
-            height: 44,
-            backgroundColor: "transparent",
-            borderWidth: 1,
-            borderColor: colors.hairlineStrong,
-            opacity: disabled ? 0.45 : pressed ? 0.7 : 1,
-          },
-          style,
-        ]}
+        style={[{ width: "100%" }, style]}
       >
-        <Text className="text-body" style={{ fontFamily: FONT.medium, color: colors.navy }}>
-          {label}
-        </Text>
+        <View
+          style={{
+            width: "100%",
+            height: 52,
+            alignItems: "center",
+            justifyContent: "center",
+            borderRadius: radii.cta,
+            backgroundColor: colors.surface,
+            borderWidth: 1.5,
+            borderColor: colors.navy,
+            opacity: disabled ? 0.45 : pressed ? 0.7 : 1,
+          }}
+        >
+          <Text style={{ fontFamily: FONT.semibold, fontSize: 16, color: colors.navy, letterSpacing: -0.16 }}>
+            {label}
+          </Text>
+        </View>
       </Pressable>
     );
   }
+
   return (
     <Pressable
       onPress={onPress}
+      onPressIn={() => setPressed(true)}
+      onPressOut={() => setPressed(false)}
       disabled={disabled}
       accessibilityRole="link"
       accessibilityLabel={label}
       accessibilityState={{ disabled: !!disabled }}
-      style={({ pressed }) => [
-        {
+      style={style}
+    >
+      <View
+        style={{
           alignSelf: "center",
           minHeight: 44,
           justifyContent: "center",
           paddingHorizontal: 16,
           opacity: disabled ? 0.45 : pressed ? 0.6 : 1,
-        },
-        style,
-      ]}
-    >
-      <Text
-        className="text-body text-mid-grey"
-        style={{ fontFamily: FONT.medium }}
+        }}
       >
-        {label}
-      </Text>
+        <Text style={{ fontFamily: FONT.medium, fontSize: 15, color: colors.midGrey }}>
+          {label}
+        </Text>
+      </View>
     </Pressable>
   );
 }

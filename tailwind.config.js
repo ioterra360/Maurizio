@@ -44,19 +44,20 @@ module.exports = {
         "inter-bold": ["Inter_700Bold"],
       },
       fontSize: {
-        // Type scale calibrated from Memika App.html.
-        "xs-tight": ["10.5px", { lineHeight: "13px", letterSpacing: "0.14em" }],
-        "xs-tag":   ["10.5px", { lineHeight: "13px", letterSpacing: "0.08em" }],
-        micro: ["11px", { lineHeight: "15px" }],
-        caption: ["12px", { lineHeight: "16px" }],
-        body: ["13.5px", { lineHeight: "20px" }],
-        "body-lg": ["14.5px", { lineHeight: "22px" }],
-        cta: ["16px", { lineHeight: "22px", letterSpacing: "-0.01em" }],
-        // Line heights bumped to ≥1.25× font-size so descenders (g, y, p)
-        // don't clip on the editorial-style hero headers.
-        h2: ["19px", { lineHeight: "26px", letterSpacing: "-0.02em" }],
-        h1: ["30px", { lineHeight: "38px", letterSpacing: "-0.03em" }],
-        display: ["44px", { lineHeight: "54px", letterSpacing: "-0.035em" }],
+        // Type scale — enlarged across the board (2026-06-25) for readability;
+        // line-heights kept ≥1.25× so descenders (g, y, p) don't clip.
+        // Tracking labels (xs-*) left small on purpose — bumping them breaks
+        // chip/tag layouts; the readable text (caption→display) all grew.
+        "xs-tight": ["11px", { lineHeight: "14px", letterSpacing: "0.14em" }],
+        "xs-tag":   ["11px", { lineHeight: "14px", letterSpacing: "0.08em" }],
+        micro: ["12px", { lineHeight: "16px" }],
+        caption: ["13px", { lineHeight: "18px" }],
+        body: ["15px", { lineHeight: "22px" }],
+        "body-lg": ["16px", { lineHeight: "24px" }],
+        cta: ["17.5px", { lineHeight: "24px", letterSpacing: "-0.01em" }],
+        h2: ["21px", { lineHeight: "28px", letterSpacing: "-0.02em" }],
+        h1: ["33px", { lineHeight: "41px", letterSpacing: "-0.03em" }],
+        display: ["47px", { lineHeight: "57px", letterSpacing: "-0.035em" }],
       },
       borderRadius: {
         tag: "6px",

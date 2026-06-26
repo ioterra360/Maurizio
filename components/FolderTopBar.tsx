@@ -1,7 +1,8 @@
-import { Pressable, Text, View } from "react-native";
+import { Text, View } from "react-native";
 import { ChevronLeft, Settings as SettingsIcon } from "lucide-react-native";
 
 import { FolderTile } from "@/components/FolderTile";
+import { Tappable } from "@/components/Tappable";
 import { FONT, colors } from "@/theme/tokens";
 import type { FolderKind } from "@/lib/constants";
 import { safeBack } from "@/lib/safe-back";
@@ -30,20 +31,20 @@ export function FolderTopBar({ kind, name, priority }: Props) {
         height: 48,
       }}
     >
-      <Pressable
+      <Tappable
         onPress={() => safeBack("/(app)/knowledge")}
         accessibilityRole="button"
         accessibilityLabel="Torna alle cartelle"
-        style={({ pressed }) => ({
+        pressedOpacity={0.6}
+        style={{
           width: 40,
           height: 40,
           alignItems: "center",
           justifyContent: "center",
-          opacity: pressed ? 0.6 : 1,
-        })}
+        }}
       >
         <ChevronLeft size={22} color={colors.navy} strokeWidth={2} />
-      </Pressable>
+      </Tappable>
 
       <View className="flex-row items-center" style={{ gap: 8 }}>
         <FolderTile kind={kind} size={22} />

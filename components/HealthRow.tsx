@@ -37,7 +37,7 @@ export function HealthRow({ name, active, fading, archived, chip }: Props) {
       <Text
         className="text-navy"
         numberOfLines={1}
-        style={{ fontFamily: FONT.semibold, fontSize: 14, letterSpacing: -0.07, width: 78 }}
+        style={{ fontFamily: FONT.semibold, fontSize: 15, letterSpacing: -0.07, width: 84 }}
       >
         {name}
       </Text>
@@ -50,7 +50,7 @@ export function HealthRow({ name, active, fading, archived, chip }: Props) {
         <Text
           style={{
             fontFamily: FONT.semibold,
-            fontSize: 11.5,
+            fontSize: 12.5,
             color: s.text,
             letterSpacing: 0.2,
           }}

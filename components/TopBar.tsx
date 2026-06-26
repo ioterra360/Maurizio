@@ -1,5 +1,6 @@
-import { Pressable, Text, View } from "react-native";
+import { Text, View } from "react-native";
 import { ChevronLeft } from "lucide-react-native";
+import { Tappable } from "@/components/Tappable";
 import { FONT, colors } from "@/theme/tokens";
 import { safeBack } from "@/lib/safe-back";
 
@@ -35,31 +36,38 @@ export function TopBar({ title, onBack, rightSlot }: Props) {
         borderBottomWidth: 1,
       }}
     >
-      <Pressable
+      <Tappable
         onPress={handleBack}
         accessibilityRole="button"
         accessibilityLabel="Indietro"
-        style={({ pressed }) => ({
+        pressedOpacity={0.6}
+        style={{
           width: 40,
           height: 40,
           alignItems: "center",
           justifyContent: "center",
-          opacity: pressed ? 0.6 : 1,
-        })}
+        }}
       >
         <ChevronLeft size={22} color={colors.navy} strokeWidth={2} />
-      </Pressable>
+      </Tappable>
 
       {title ? (
         <Text
           className="text-navy"
-          style={{ fontFamily: FONT.semibold, fontSize: 16, letterSpacing: -0.16 }}
+          style={{
+            flex: 1,
+            textAlign: "center",
+            marginHorizontal: 8,
+            fontFamily: FONT.semibold,
+            fontSize: 16,
+            letterSpacing: -0.16,
+          }}
           numberOfLines={1}
         >
           {title}
         </Text>
       ) : (
-        <View />
+        <View style={{ flex: 1 }} />
       )}
 
       <View style={{ minWidth: 40, alignItems: "flex-end" }}>{rightSlot ?? null}</View>

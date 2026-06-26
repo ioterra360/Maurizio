@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { Pressable, Switch, Text, View } from "react-native";
-import { FONT, colors } from "@/theme/tokens";
+import { Switch, Text, View } from "react-native";
+import { Tappable } from "@/components/Tappable";
+import { FONT, colors, radii } from "@/theme/tokens";
 
 type RowProps = {
   label: string;
@@ -17,22 +18,25 @@ type RowProps = {
 export function SettingsRow({ label, hint, value, onPress }: RowProps) {
   if (onPress) {
     return (
-      <Pressable
+      <Tappable
         onPress={onPress}
         accessibilityRole="button"
         accessibilityLabel={label}
-        className="flex-row items-center justify-between rounded-chip bg-surface"
-        style={({ pressed }) => ({
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+          borderRadius: radii.chip,
+          backgroundColor: colors.surface,
           paddingHorizontal: 16,
           paddingVertical: 13,
           gap: 12,
           borderWidth: 1,
           borderColor: colors.hairline,
-          opacity: pressed ? 0.85 : 1,
-        })}
+        }}
       >
         <RowBody label={label} hint={hint} value={value} />
-      </Pressable>
+      </Tappable>
     );
   }
   return (
@@ -57,7 +61,7 @@ function RowBody({ label, hint, value }: Omit<RowProps, "onPress">) {
       <View className="flex-1" style={{ minWidth: 0 }}>
         <Text
           className="text-navy"
-          style={{ fontFamily: FONT.medium, fontSize: 14, letterSpacing: -0.07 }}
+          style={{ fontFamily: FONT.medium, fontSize: 15, letterSpacing: -0.07 }}
         >
           {label}
         </Text>
@@ -74,7 +78,7 @@ function RowBody({ label, hint, value }: Omit<RowProps, "onPress">) {
         <Text
           style={{
             fontFamily: FONT.medium,
-            fontSize: 13.5,
+            fontSize: 14.5,
             color: colors.midGrey,
             fontVariant: ["tabular-nums"],
           }}
@@ -109,7 +113,7 @@ export function SettingsToggle({ label, hint, defaultOn = false, onChange }: Tog
       <View className="flex-1" style={{ minWidth: 0 }}>
         <Text
           className="text-navy"
-          style={{ fontFamily: FONT.medium, fontSize: 14, letterSpacing: -0.07 }}
+          style={{ fontFamily: FONT.medium, fontSize: 15, letterSpacing: -0.07 }}
         >
           {label}
         </Text>

@@ -1,5 +1,6 @@
-import { ActivityIndicator, Pressable, Text, type StyleProp, type ViewStyle } from "react-native";
-import { FONT, colors } from "@/theme/tokens";
+import { useState } from "react";
+import { ActivityIndicator, Pressable, Text, View, type StyleProp, type ViewStyle } from "react-native";
+import { FONT, colors, radii } from "@/theme/tokens";
 import { tap as tapFeedback } from "@/lib/feedback";
 
 type Props = {
@@ -8,34 +9,30 @@ type Props = {
   loading?: boolean;
   disabled?: boolean;
   /**
-   * "fill" (default) = filled navy + white text + drop shadow. The visual
-   * contract from Claude Design — confident, dominant primary action.
-   * "outline" = warm-white surface + navy text + navy 1.5-px border. Used
-   *   when an outlined-only treatment is intentional (cancel-style).
-   * "tonal" = soft tag-blue background, navy text (low emphasis).
-   * "danger" = filled red with white text + red glow (destructive ops).
+   * "fill" (default) = filled navy + white text + drop shadow. The confident,
+   *   dominant primary action.
+   * "outline" = white surface + navy text + navy 1.5-px border (cancel-style).
+   * "tonal" = soft tag-blue fill, navy text (low-emphasis secondary).
+   * "danger" = filled red + white text + red glow (destructive ops).
    */
   variant?: "fill" | "outline" | "tonal" | "danger";
-  /**
-   * Optional fill-color override (e.g. a layer color on the review handoff).
-   * Applies to the "fill" variant only: replaces the navy background and the
-   * shadow tint with this color, keeping white text. Mirrors the design's
-   * `background: toData.color` handoff button in reviews.jsx.
-   */
+  /** Optional fill-color override (e.g. a layer color on the review handoff). */
   color?: string;
   style?: StyleProp<ViewStyle>;
 };
 
 /**
- * The primary call-to-action used across the app — Accedi, Crea account,
- * Save, Continua. Default is filled-navy per the design contract.
+ * The primary call-to-action across the app — Accedi, Crea account, Salva,
+ * Continua. The visual box is a plain <View> with a STATIC style so the
+ * background always renders; the Pressable only owns the touch + press state.
+ * (NativeWind v4 drops the `style={({pressed}) => …}` render-prop form on
+ * pressable components, which previously made the navy fill disappear.)
  */
 export function PrimaryButton({ label, onPress, loading, disabled, variant = "fill", color, style }: Props) {
   const isDisabled = disabled || loading;
+  const [pressed, setPressed] = useState(false);
 
-  // A color override only makes sense on the filled treatment.
   const fillColor = variant === "fill" && color ? color : colors.navy;
-
   const bg =
     variant === "fill"
       ? fillColor
@@ -43,7 +40,7 @@ export function PrimaryButton({ label, onPress, loading, disabled, variant = "fi
         ? colors.danger
         : variant === "tonal"
           ? colors.tagUserBg
-          : colors.warmWhite;
+          : colors.surface;
 
   const textColor =
     variant === "fill" || variant === "danger" ? colors.warmWhite : colors.navy;
@@ -54,8 +51,8 @@ export function PrimaryButton({ label, onPress, loading, disabled, variant = "fi
   const shadowTint =
     variant === "danger" ? colors.danger : variant === "fill" ? fillColor : colors.navy;
   const shadowOpacity =
-    variant === "fill" || variant === "danger" ? 0.32 : variant === "outline" ? 0.12 : 0.08;
-  const elevation = variant === "fill" || variant === "danger" ? 4 : variant === "outline" ? 2 : 1;
+    variant === "fill" || variant === "danger" ? 0.3 : variant === "tonal" ? 0.1 : 0.08;
+  const elevation = variant === "fill" || variant === "danger" ? 4 : variant === "tonal" ? 2 : 1;
 
   return (
     <Pressable
@@ -64,37 +61,40 @@ export function PrimaryButton({ label, onPress, loading, disabled, variant = "fi
         tapFeedback();
         onPress?.();
       }}
+      onPressIn={() => setPressed(true)}
+      onPressOut={() => setPressed(false)}
       disabled={isDisabled}
       accessibilityRole="button"
       accessibilityLabel={label}
       accessibilityState={{ disabled: isDisabled, busy: loading }}
-      className="w-full items-center justify-center rounded-cta"
-      style={({ pressed }) => [
-        {
+      style={[{ width: "100%" }, style]}
+    >
+      <View
+        style={{
+          width: "100%",
           height: 54,
+          alignItems: "center",
+          justifyContent: "center",
+          borderRadius: radii.cta,
           backgroundColor: bg,
           borderColor,
           borderWidth,
-          opacity: isDisabled ? 0.55 : pressed ? 0.88 : 1,
+          opacity: isDisabled ? 0.55 : pressed ? 0.9 : 1,
           shadowColor: shadowTint,
           shadowOpacity,
           shadowOffset: { width: 0, height: 6 },
-          shadowRadius: 18,
+          shadowRadius: 16,
           elevation,
-        },
-        style,
-      ]}
-    >
-      {loading ? (
-        <ActivityIndicator color={textColor} />
-      ) : (
-        <Text
-          className="text-cta"
-          style={{ fontFamily: FONT.semibold, color: textColor, letterSpacing: -0.16 }}
-        >
-          {label}
-        </Text>
-      )}
+        }}
+      >
+        {loading ? (
+          <ActivityIndicator color={textColor} />
+        ) : (
+          <Text style={{ fontFamily: FONT.semibold, fontSize: 17, color: textColor, letterSpacing: -0.16 }}>
+            {label}
+          </Text>
+        )}
+      </View>
     </Pressable>
   );
 }

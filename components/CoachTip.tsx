@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
-import { Pressable, Text, View } from "react-native";
+import { Text, View } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { X } from "lucide-react-native";
 
 import { Mascot } from "./Mascot";
+import { Tappable } from "@/components/Tappable";
 import { FONT, colors } from "@/theme/tokens";
 import type { CoachTip as Tip } from "@/lib/coach-tips";
 
@@ -113,18 +114,18 @@ export function CoachTip({ tip, persistDismiss = true, accent = colors.navy }: P
           >
             {tip.title}
           </Text>
-          <Pressable
+          <Tappable
             onPress={close}
             accessibilityRole="button"
             accessibilityLabel="Chiudi suggerimento"
             hitSlop={8}
-            style={({ pressed }) => ({
-              opacity: pressed ? 0.5 : 0.7,
-              marginTop: -2,
-            })}
+            pressedOpacity={0.5 / 0.7}
+            containerStyle={{ marginTop: -2 }}
           >
-            <X size={16} color={colors.midGrey} strokeWidth={2} />
-          </Pressable>
+            <View style={{ opacity: 0.7 }}>
+              <X size={16} color={colors.midGrey} strokeWidth={2} />
+            </View>
+          </Tappable>
         </View>
         <Text
           style={{

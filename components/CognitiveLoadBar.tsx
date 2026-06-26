@@ -14,7 +14,7 @@ export function CognitiveLoadBar({ pct }: Props) {
   const clamped = Math.max(0, Math.min(100, pct));
   const zone =
     clamped < 60 ? { color: colors.active, label: "Sostenibile" }
-    : clamped < 85 ? { color: colors.fading, label: "Pesante" }
+    : clamped < 85 ? { color: colors.fading, label: "Impegnativo" }
     : { color: colors.navy, label: "Sovraccarico" };
 
   return (
@@ -52,7 +52,7 @@ export function CognitiveLoadBar({ pct }: Props) {
         <Text
           style={{
             fontFamily: FONT.medium,
-            fontSize: 10.5,
+            fontSize: 12,
             color: colors.midGrey,
             letterSpacing: 0.6,
           }}
@@ -62,17 +62,17 @@ export function CognitiveLoadBar({ pct }: Props) {
         <Text
           style={{
             fontFamily: FONT.medium,
-            fontSize: 10.5,
+            fontSize: 12,
             color: colors.midGrey,
             letterSpacing: 0.6,
           }}
         >
-          Pesante
+          Impegnativo
         </Text>
         <Text
           style={{
             fontFamily: FONT.medium,
-            fontSize: 10.5,
+            fontSize: 12,
             color: colors.midGrey,
             letterSpacing: 0.6,
           }}
@@ -85,7 +85,7 @@ export function CognitiveLoadBar({ pct }: Props) {
         className="mt-3"
         style={{
           fontFamily: FONT.bold,
-          fontSize: 13,
+          fontSize: 14,
           color: zone.color,
           letterSpacing: 1.4,
           textTransform: "uppercase",

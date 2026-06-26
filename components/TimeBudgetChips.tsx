@@ -1,5 +1,6 @@
-import { Pressable, Text, View } from "react-native";
-import { FONT, colors } from "@/theme/tokens";
+import { Text, View } from "react-native";
+import { Tappable } from "@/components/Tappable";
+import { FONT, colors, radii } from "@/theme/tokens";
 import { TIME_BUDGETS } from "@/lib/constants";
 import { tap } from "@/lib/feedback";
 
@@ -33,28 +34,28 @@ export function TimeBudgetChips({ value, onChange }: Props) {
         {TIME_BUDGETS.map((b) => {
           const on = value === b.minutes;
           return (
-            <Pressable
+            <Tappable
               key={b.minutes}
               onPress={() => {
                 tap();
                 onChange(b.minutes);
               }}
-              accessibilityRole="button"
               accessibilityLabel={`Imposta tempo di studio a ${b.label}`}
               accessibilityState={{ selected: on }}
               hitSlop={6}
-              className="rounded-chip"
-              style={({ pressed }) => ({
+              pressedOpacity={0.7}
+              containerStyle={{ flex: 1 }}
+              style={{
                 flex: 1,
                 minHeight: 44,
                 alignItems: "center",
                 justifyContent: "center",
+                borderRadius: radii.chip,
                 paddingHorizontal: 8,
                 backgroundColor: on ? colors.navy : colors.surface,
                 borderWidth: on ? 0 : 1,
                 borderColor: colors.hairline,
-                opacity: pressed && !on ? 0.7 : 1,
-              })}
+              }}
             >
               <Text
                 numberOfLines={1}
@@ -68,7 +69,7 @@ export function TimeBudgetChips({ value, onChange }: Props) {
               >
                 {b.label}
               </Text>
-            </Pressable>
+            </Tappable>
           );
         })}
       </View>

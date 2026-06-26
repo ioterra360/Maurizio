@@ -1,6 +1,7 @@
-import { Pressable, Text, View } from "react-native";
+import { Text, View } from "react-native";
 import { ChevronRight, Radar, Repeat, Target, type LucideIcon } from "lucide-react-native";
-import { FONT, colors, layer, type LayerKey } from "@/theme/tokens";
+import { Tappable } from "@/components/Tappable";
+import { FONT, colors, layer, radii, type LayerKey } from "@/theme/tokens";
 
 type Props = {
   layerKey: LayerKey;
@@ -24,16 +25,19 @@ export function LayerCard({ layerKey, items, subtitle, onPress }: Props) {
   const Icon = ICONS[layerKey];
 
   return (
-    <Pressable
+    <Tappable
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={`${label}, ${items} ricordi, ${subtitle}`}
-      className="flex-row items-center overflow-hidden rounded-card bg-surface"
-      style={({ pressed }) => ({
+      style={{
+        flexDirection: "row",
+        alignItems: "center",
+        overflow: "hidden",
+        borderRadius: radii.card,
+        backgroundColor: colors.surface,
         borderWidth: 1,
         borderColor: colors.hairline,
-        opacity: pressed ? 0.85 : 1,
-      })}
+      }}
     >
       <View style={{ width: 4, alignSelf: "stretch", backgroundColor: color }} />
       <View
@@ -74,6 +78,6 @@ export function LayerCard({ layerKey, items, subtitle, onPress }: Props) {
         </View>
         <ChevronRight size={18} color={colors.placeholder} strokeWidth={1.9} />
       </View>
-    </Pressable>
+    </Tappable>
   );
 }

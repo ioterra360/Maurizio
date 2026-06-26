@@ -1,6 +1,7 @@
-import { Pressable, Text, View } from "react-native";
+import { Text, View } from "react-native";
 import { ChevronLeft, Radar, Repeat, Target, type LucideIcon } from "lucide-react-native";
 import { FONT, colors, layer as layerTokens, type LayerKey } from "@/theme/tokens";
+import { Tappable } from "@/components/Tappable";
 import { safeBack } from "@/lib/safe-back";
 
 const ICONS: Record<LayerKey, LucideIcon> = {
@@ -28,21 +29,21 @@ export function ReviewHeader({ layerKey, index, total }: Props) {
       className="flex-row items-center justify-between"
       style={{ paddingHorizontal: 18, paddingTop: 18, paddingBottom: 4 }}
     >
-      <Pressable
+      <Tappable
         onPress={() => safeBack("/(app)/today")}
         accessibilityRole="button"
         accessibilityLabel="Esci dal ripasso"
         hitSlop={10}
-        style={({ pressed }) => ({
+        pressedOpacity={0.5}
+        style={{
           width: 36,
           height: 36,
           alignItems: "center",
           justifyContent: "center",
-          opacity: pressed ? 0.5 : 1,
-        })}
+        }}
       >
         <ChevronLeft size={22} color={colors.navy} strokeWidth={2} />
-      </Pressable>
+      </Tappable>
 
       <View className="flex-row" style={{ gap: 6, flex: 1, justifyContent: "center" }}>
         {Array.from({ length: total }, (_, i) => (

@@ -1,6 +1,7 @@
-import { Pressable, Text, View } from "react-native";
+import { Text, View } from "react-native";
 import { Check, TriangleAlert, X, type LucideIcon } from "lucide-react-native";
-import { FONT, colors, statusTint } from "@/theme/tokens";
+import { Tappable } from "@/components/Tappable";
+import { FONT, colors, radii, statusTint } from "@/theme/tokens";
 
 export type Recall = "remembered" | "struggled" | "forgot";
 
@@ -31,24 +32,28 @@ export function RecallButton({ variant, onPress }: Props) {
   const m = META[variant];
   const Icon = m.icon;
   return (
-    <Pressable
+    <Tappable
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={m.label}
-      className="w-full flex-row items-center justify-center rounded-card"
-      style={({ pressed }) => ({
+      containerStyle={{ width: "100%" }}
+      style={{
+        width: "100%",
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+        borderRadius: radii.card,
         height: 60,
         backgroundColor: m.bg,
         borderWidth: 1.5,
         borderColor: m.border,
-        opacity: pressed ? 0.85 : 1,
         gap: 10,
         shadowColor: m.shadowColor ?? "transparent",
         shadowOpacity: m.shadowColor ? 0.45 : 0,
         shadowOffset: { width: 0, height: 8 },
         shadowRadius: 20,
         elevation: m.shadowColor ? 4 : 0,
-      })}
+      }}
     >
       <Icon size={20} color={m.iconColor} strokeWidth={2.1} />
       <Text
@@ -61,7 +66,7 @@ export function RecallButton({ variant, onPress }: Props) {
       >
         {m.label}
       </Text>
-    </Pressable>
+    </Tappable>
   );
 }
 

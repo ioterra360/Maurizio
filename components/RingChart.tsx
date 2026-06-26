@@ -106,7 +106,7 @@ export function RingChart({
           <Text
             style={{
               fontFamily: FONT.medium,
-              fontSize: 11,
+              fontSize: 12,
               color: textColor,
               opacity: 0.65,
               letterSpacing: 1.1,
@@ -130,11 +130,11 @@ export function LegendDot({ color, label, pct, onDark = true }: LegendDotProps) 
   return (
     <View className="flex-row items-center" style={{ gap: 6 }}>
       <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: color }} />
-      <Text style={{ fontFamily: FONT.medium, fontSize: 11.5, color: textColor }}>{label}</Text>
+      <Text style={{ fontFamily: FONT.medium, fontSize: 12.5, color: textColor }}>{label}</Text>
       <Text
         style={{
           fontFamily: FONT.semibold,
-          fontSize: 11.5,
+          fontSize: 12.5,
           color: pctColor,
           fontVariant: ["tabular-nums"],
         }}

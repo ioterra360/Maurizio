@@ -1,5 +1,6 @@
-import { Pressable, Text, View } from "react-native";
+import { Text, View } from "react-native";
 import { ChevronLeft } from "lucide-react-native";
+import { Tappable } from "@/components/Tappable";
 import { FONT, colors } from "@/theme/tokens";
 import { safeBack } from "@/lib/safe-back";
 
@@ -34,24 +35,24 @@ export function AdminTopBar({ title, subtitle, rightSlot, onBack }: Props) {
       }}
     >
       {onBack ? (
-        <Pressable
+        <Tappable
           onPress={handleBack}
           accessibilityRole="button"
           accessibilityLabel="Indietro"
-          className="flex-row items-center"
-          style={({ pressed }) => ({
+          pressedOpacity={0.5}
+          containerStyle={{ marginLeft: -4, marginBottom: 4 }}
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
             paddingVertical: 4,
-            marginLeft: -4,
-            marginBottom: 4,
             gap: 4,
-            opacity: pressed ? 0.5 : 1,
-          })}
+          }}
         >
           <ChevronLeft size={18} color={colors.midGrey} strokeWidth={2} />
-          <Text style={{ fontFamily: FONT.medium, fontSize: 13, color: colors.midGrey }}>
+          <Text style={{ fontFamily: FONT.medium, fontSize: 14, color: colors.midGrey }}>
             Indietro
           </Text>
-        </Pressable>
+        </Tappable>
       ) : null}
 
       <View
@@ -86,7 +87,7 @@ export function AdminTopBar({ title, subtitle, rightSlot, onBack }: Props) {
               <Text
                 style={{
                   fontFamily: FONT.bold,
-                  fontSize: 9.5,
+                  fontSize: 10.5,
                   color: colors.warmWhite,
                   letterSpacing: 0.95, // 0.1em on 9.5px
                   textTransform: "uppercase",
@@ -100,7 +101,7 @@ export function AdminTopBar({ title, subtitle, rightSlot, onBack }: Props) {
             <Text
               style={{
                 fontFamily: FONT.regular,
-                fontSize: 12.5,
+                fontSize: 13.5,
                 color: colors.midGrey,
                 marginTop: 4,
                 fontVariant: ["tabular-nums"],

@@ -1,5 +1,6 @@
-import { Pressable, Text, View } from "react-native";
-import { FONT, colors } from "@/theme/tokens";
+import { Text, View } from "react-native";
+import { Tappable } from "@/components/Tappable";
+import { FONT, colors, radii } from "@/theme/tokens";
 
 type Props = {
   label: string;
@@ -15,21 +16,22 @@ type Props = {
  */
 export function FilterChip({ label, count, active, dot, onPress }: Props) {
   return (
-    <Pressable
+    <Tappable
       onPress={onPress}
-      accessibilityRole="button"
       accessibilityLabel={`Filtro ${label}, ${count} ricordi`}
       accessibilityState={{ selected: active }}
-      className="flex-row items-center rounded-filter"
-      style={({ pressed }) => ({
+      pressedOpacity={0.6}
+      style={{
+        flexDirection: "row",
+        alignItems: "center",
+        borderRadius: radii.filter,
         height: 32,
         paddingHorizontal: 12,
         gap: 7,
         backgroundColor: active ? colors.navy : "transparent",
         borderWidth: active ? 0 : 1,
         borderColor: colors.hairline,
-        opacity: pressed && !active ? 0.6 : 1,
-      })}
+      }}
     >
       {dot ? (
         <View
@@ -62,6 +64,6 @@ export function FilterChip({ label, count, active, dot, onPress }: Props) {
       >
         {count}
       </Text>
-    </Pressable>
+    </Tappable>
   );
 }
