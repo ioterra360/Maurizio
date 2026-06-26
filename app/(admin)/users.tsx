@@ -1,13 +1,14 @@
 import { useMemo, useState } from "react";
-import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { ScrollView, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Search } from "lucide-react-native";
 
 import { AdminTopBar } from "@/components/AdminTopBar";
 import { InitialsAvatar } from "@/components/FolderTile";
 import { FilterChip } from "@/components/FilterChip";
+import { Tappable } from "@/components/Tappable";
 import { USERS, type AdminUser } from "@/lib/admin-data";
-import { FONT, colors, statusTint } from "@/theme/tokens";
+import { FONT, colors, radii, statusTint } from "@/theme/tokens";
 
 type PlanFilter = "all" | "Pro" | "Free" | "At risk";
 
@@ -81,7 +82,7 @@ export default function AdminUsersScreen() {
             style={{
               flex: 1,
               fontFamily: FONT.medium,
-              fontSize: 13.5,
+              fontSize: 14.5,
               color: colors.navy,
               padding: 0,
             }}
@@ -134,7 +135,7 @@ export default function AdminUsersScreen() {
           <Text
             style={{
               fontFamily: FONT.regular,
-              fontSize: 13.5,
+              fontSize: 14.5,
               color: colors.midGrey,
               textAlign: "center",
               fontStyle: "italic",
@@ -158,18 +159,20 @@ function UserRow({ user }: { user: AdminUser }) {
     user.retention >= 50 ? RETENTION_PILL.med :
     RETENTION_PILL.low;
   return (
-    <Pressable
+    <Tappable
       accessibilityRole="button"
       accessibilityLabel={`Apri i dettagli di ${user.name}`}
-      className="flex-row items-center rounded-chip bg-surface"
-      style={({ pressed }) => ({
+      style={{
+        flexDirection: "row",
+        alignItems: "center",
+        borderRadius: radii.chip,
+        backgroundColor: colors.surface,
         paddingHorizontal: 16,
         paddingVertical: 15,
         gap: 14,
         borderWidth: 1,
         borderColor: colors.hairline,
-        opacity: pressed ? 0.85 : 1,
-      })}
+      }}
     >
       <InitialsAvatar initials={user.initials} size={40} variant="user" />
       <View style={{ flex: 1, minWidth: 0 }}>
@@ -177,7 +180,7 @@ function UserRow({ user }: { user: AdminUser }) {
           <Text
             style={{
               fontFamily: FONT.semibold,
-              fontSize: 14,
+              fontSize: 15,
               color: colors.navy,
               letterSpacing: -0.08,
             }}
@@ -196,7 +199,7 @@ function UserRow({ user }: { user: AdminUser }) {
             <Text
               style={{
                 fontFamily: FONT.semibold,
-                fontSize: 9.5,
+                fontSize: 10.5,
                 color: tint.text,
                 letterSpacing: 0.3,
               }}
@@ -208,7 +211,7 @@ function UserRow({ user }: { user: AdminUser }) {
         <Text
           style={{
             fontFamily: FONT.regular,
-            fontSize: 11.5,
+            fontSize: 13,
             color: colors.midGrey,
             marginTop: 1,
           }}
@@ -230,7 +233,7 @@ function UserRow({ user }: { user: AdminUser }) {
           <Text
             style={{
               fontFamily: FONT.bold,
-              fontSize: 11,
+              fontSize: 12.5,
               color: retentionPill.text,
               fontVariant: ["tabular-nums"],
             }}
@@ -241,7 +244,7 @@ function UserRow({ user }: { user: AdminUser }) {
         <Text
           style={{
             fontFamily: FONT.regular,
-            fontSize: 10.5,
+            fontSize: 12,
             color: colors.midGrey,
             fontVariant: ["tabular-nums"],
           }}
@@ -249,6 +252,6 @@ function UserRow({ user }: { user: AdminUser }) {
           {user.lastSeen}
         </Text>
       </View>
-    </Pressable>
+    </Tappable>
   );
 }

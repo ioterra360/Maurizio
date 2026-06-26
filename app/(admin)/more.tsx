@@ -1,4 +1,4 @@
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
   Activity,
@@ -16,7 +16,8 @@ import { AdminTopBar } from "@/components/AdminTopBar";
 import { SectionLabel } from "@/components/SectionLabel";
 import { InitialsAvatar } from "@/components/FolderTile";
 import { useAuthStore } from "@/lib/auth-store";
-import { FONT, colors } from "@/theme/tokens";
+import { Tappable } from "@/components/Tappable";
+import { FONT, colors, radii } from "@/theme/tokens";
 
 type Sub = {
   icon: LucideIcon;
@@ -104,7 +105,7 @@ export default function AdminMoreScreen() {
                   <Text
                     style={{
                       fontFamily: FONT.semibold,
-                      fontSize: 15,
+                      fontSize: 16,
                       color: colors.navy,
                       letterSpacing: -0.1,
                     }}
@@ -118,7 +119,7 @@ export default function AdminMoreScreen() {
                     <Text
                       style={{
                         fontFamily: FONT.bold,
-                        fontSize: 10,
+                        fontSize: 11,
                         color: colors.navy,
                         letterSpacing: 0.7,
                       }}
@@ -130,7 +131,7 @@ export default function AdminMoreScreen() {
                 <Text
                   style={{
                     fontFamily: FONT.regular,
-                    fontSize: 12,
+                    fontSize: 13.5,
                     color: colors.midGrey,
                     marginTop: 1,
                   }}
@@ -140,29 +141,31 @@ export default function AdminMoreScreen() {
                 </Text>
               </View>
             </View>
-            <Pressable
+            <Tappable
               onPress={handleSignOut}
               accessibilityRole="button"
               accessibilityLabel="Esci"
-              className="items-center justify-center rounded-chip"
-              style={({ pressed }) => ({
+              pressedOpacity={0.7}
+              style={{
+                alignItems: "center",
+                justifyContent: "center",
+                borderRadius: radii.chip,
                 height: 40,
                 borderWidth: 1,
                 borderColor: colors.hairlineStrong,
-                opacity: pressed ? 0.7 : 1,
-              })}
+              }}
             >
               <Text
                 style={{
                   fontFamily: FONT.semibold,
-                  fontSize: 13,
+                  fontSize: 14.5,
                   color: colors.navy,
                   letterSpacing: -0.05,
                 }}
               >
                 Esci
               </Text>
-            </Pressable>
+            </Tappable>
           </View>
         </View>
       </ScrollView>
@@ -173,19 +176,21 @@ export default function AdminMoreScreen() {
 function SubRow({ sub }: { sub: Sub }) {
   const Icon = sub.icon;
   return (
-    <Pressable
+    <Tappable
       onPress={sub.onPress}
       accessibilityRole="button"
       accessibilityLabel={sub.label}
-      className="flex-row items-center rounded-chip bg-surface"
-      style={({ pressed }) => ({
+      style={{
+        flexDirection: "row",
+        alignItems: "center",
+        borderRadius: radii.chip,
+        backgroundColor: colors.surface,
         paddingHorizontal: 16,
         paddingVertical: 16,
         gap: 14,
         borderWidth: 1,
         borderColor: colors.hairline,
-        opacity: pressed ? 0.85 : 1,
-      })}
+      }}
     >
       <View
         style={{
@@ -203,7 +208,7 @@ function SubRow({ sub }: { sub: Sub }) {
         <Text
           style={{
             fontFamily: FONT.semibold,
-            fontSize: 13.5,
+            fontSize: 14.5,
             color: colors.navy,
             letterSpacing: -0.05,
           }}
@@ -213,7 +218,7 @@ function SubRow({ sub }: { sub: Sub }) {
         <Text
           style={{
             fontFamily: FONT.regular,
-            fontSize: 12,
+            fontSize: 13.5,
             color: colors.midGrey,
             marginTop: 1,
           }}
@@ -235,7 +240,7 @@ function SubRow({ sub }: { sub: Sub }) {
           <Text
             style={{
               fontFamily: FONT.bold,
-              fontSize: 11.5,
+              fontSize: 13,
               color: colors.navy,
               fontVariant: ["tabular-nums"],
             }}
@@ -245,6 +250,6 @@ function SubRow({ sub }: { sub: Sub }) {
         </View>
       ) : null}
       <ChevronRight size={18} color={colors.placeholder} strokeWidth={1.8} />
-    </Pressable>
+    </Tappable>
   );
 }

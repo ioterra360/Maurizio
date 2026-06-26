@@ -13,7 +13,7 @@ export default function AdminInsightsScreen() {
         contentContainerStyle={{ paddingBottom: 120 }}
         showsVerticalScrollIndicator={false}
       >
-        <AdminTopBar title="Insight" subtitle="Finestra 14g · coorte 12 maggio" />
+        <AdminTopBar title="Insight" subtitle="Finestra 14g · clienti dal 12 maggio" />
 
         {/* Onboarding funnel */}
         <View style={{ paddingHorizontal: 22, paddingBottom: 8 }}>
@@ -38,7 +38,7 @@ export default function AdminInsightsScreen() {
                     <Text
                       style={{
                         fontFamily: FONT.bold,
-                        fontSize: 10,
+                        fontSize: 11,
                         color: colors.midGrey,
                         fontVariant: ["tabular-nums"],
                       }}
@@ -52,7 +52,7 @@ export default function AdminInsightsScreen() {
                       <Text
                         style={{
                           fontFamily: FONT.semibold,
-                          fontSize: 13,
+                          fontSize: 14,
                           color: colors.navy,
                           letterSpacing: -0.05,
                         }}
@@ -62,7 +62,7 @@ export default function AdminInsightsScreen() {
                       <Text
                         style={{
                           fontFamily: FONT.bold,
-                          fontSize: 13,
+                          fontSize: 14,
                           color: colors.navy,
                           fontVariant: ["tabular-nums"],
                         }}
@@ -91,7 +91,7 @@ export default function AdminInsightsScreen() {
                     <Text
                       style={{
                         fontFamily: FONT.regular,
-                        fontSize: 12.5,
+                        fontSize: 13.5,
                         color: colors.midGrey,
                         marginTop: 4,
                         fontVariant: ["tabular-nums"],
@@ -123,14 +123,14 @@ export default function AdminInsightsScreen() {
             <Text
               style={{
                 fontFamily: FONT.medium,
-                fontSize: 13.5,
+                fontSize: 14.5,
                 color: colors.navy,
-                lineHeight: 19,
+                lineHeight: 20,
                 letterSpacing: -0.04,
               }}
             >
-              <Text style={{ fontFamily: FONT.bold }}>La perdita D7 → D30 è del 37%.</Text> La
-              coorte che ha aggiunto 3+ ricordi nella prima settimana mantiene il 78% al D30
+              <Text style={{ fontFamily: FONT.bold }}>La perdita D7 → D30 è del 37%.</Text> I
+              clienti che hanno aggiunto 3+ ricordi nella prima settimana mantengono il 78% al D30
               contro il 22% di base. Spingere il primo add nella settimana 1.
             </Text>
           </View>
@@ -156,7 +156,7 @@ export default function AdminInsightsScreen() {
                 <Text
                   style={{
                     fontFamily: FONT.semibold,
-                    fontSize: 13,
+                    fontSize: 14,
                     color: colors.navy,
                     letterSpacing: -0.05,
                   }}
@@ -166,7 +166,7 @@ export default function AdminInsightsScreen() {
                 <Text
                   style={{
                     fontFamily: FONT.bold,
-                    fontSize: 13,
+                    fontSize: 14,
                     color: colors.navy,
                     fontVariant: ["tabular-nums"],
                   }}
@@ -236,7 +236,7 @@ function LayerAdoption({
           <Text
             style={{
               fontFamily: FONT.semibold,
-              fontSize: 13,
+              fontSize: 14,
               color: colors.navy,
               letterSpacing: -0.05,
             }}
@@ -247,7 +247,7 @@ function LayerAdoption({
         <Text
           style={{
             fontFamily: FONT.bold,
-            fontSize: 13,
+            fontSize: 14,
             color: colors.navy,
             fontVariant: ["tabular-nums"],
           }}
@@ -275,7 +275,7 @@ function LayerAdoption({
       <Text
         style={{
           fontFamily: FONT.regular,
-          fontSize: 12.5,
+          fontSize: 13.5,
           color: colors.midGrey,
           marginTop: 5,
           fontVariant: ["tabular-nums"],

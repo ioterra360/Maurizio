@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { Pressable, ScrollView, Switch, Text, View } from "react-native";
+import { ScrollView, Switch, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { AdminTopBar } from "@/components/AdminTopBar";
+import { Tappable } from "@/components/Tappable";
 import { FLAGS, RULES, type FlagItem, type FlagSeverity } from "@/lib/admin-data";
-import { FONT, colors, palette, severityTint, statusTint } from "@/theme/tokens";
+import { FONT, colors, palette, radii, severityTint, statusTint } from "@/theme/tokens";
 
 const SEVERITY_TINT: Record<FlagSeverity, { bg: string; text: string; label: string }> = {
   high: { bg: statusTint.fading.bg,   text: statusTint.fading.text,   label: "ALTA" },
@@ -88,7 +89,7 @@ function FlagCard({ flag }: { flag: FlagItem }) {
           <Text
             style={{
               fontFamily: FONT.bold,
-              fontSize: 9.5,
+              fontSize: 10.5,
               color: tint.text,
               letterSpacing: 0.8,
             }}
@@ -104,7 +105,7 @@ function FlagCard({ flag }: { flag: FlagItem }) {
             <Text
               style={{
                 fontFamily: FONT.semibold,
-                fontSize: 9.5,
+                fontSize: 10.5,
                 color: colors.midGrey,
                 letterSpacing: 0.5,
                 textTransform: "uppercase",
@@ -117,7 +118,7 @@ function FlagCard({ flag }: { flag: FlagItem }) {
         <Text
           style={{
             fontFamily: FONT.medium,
-            fontSize: 11.5,
+            fontSize: 13,
             color: colors.midGrey,
             fontVariant: ["tabular-nums"],
           }}
@@ -128,10 +129,10 @@ function FlagCard({ flag }: { flag: FlagItem }) {
       <Text
         style={{
           fontFamily: FONT.semibold,
-          fontSize: 14,
+          fontSize: 15,
           color: colors.navy,
           letterSpacing: -0.07,
-          lineHeight: 19,
+          lineHeight: 20,
         }}
       >
         {flag.reason}
@@ -139,54 +140,64 @@ function FlagCard({ flag }: { flag: FlagItem }) {
       <Text
         style={{
           fontFamily: FONT.regular,
-          fontSize: 12.5,
+          fontSize: 13.5,
           color: colors.midGrey,
-          lineHeight: 17,
+          lineHeight: 18,
         }}
       >
         {flag.user} · {flag.folder} · “{flag.preview}”
       </Text>
       <View className="flex-row" style={{ gap: 8 }}>
-        <Pressable
+        <Tappable
           accessibilityRole="button"
-          className="flex-1 items-center justify-center rounded-chip"
-          style={({ pressed }) => ({
+          pressedOpacity={0.7}
+          containerStyle={{ flex: 1 }}
+          style={{
+            flex: 1,
+            alignItems: "center",
+            justifyContent: "center",
+            borderRadius: radii.chip,
             height: 34,
             borderWidth: 1,
             borderColor: colors.hairlineStrong,
-            opacity: pressed ? 0.7 : 1,
-          })}
+          }}
         >
-          <Text style={{ fontFamily: FONT.semibold, fontSize: 12.5, color: colors.navy }}>
+          <Text style={{ fontFamily: FONT.semibold, fontSize: 13.5, color: colors.navy }}>
             Esamina
           </Text>
-        </Pressable>
-        <Pressable
+        </Tappable>
+        <Tappable
           accessibilityRole="button"
-          className="flex-1 items-center justify-center rounded-chip"
-          style={({ pressed }) => ({
+          containerStyle={{ flex: 1 }}
+          style={{
+            flex: 1,
+            alignItems: "center",
+            justifyContent: "center",
+            borderRadius: radii.chip,
             height: 34,
             backgroundColor: colors.active,
-            opacity: pressed ? 0.85 : 1,
-          })}
+          }}
         >
-          <Text style={{ fontFamily: FONT.semibold, fontSize: 13, color: colors.navy }}>
+          <Text style={{ fontFamily: FONT.semibold, fontSize: 14, color: colors.navy }}>
             Approva
           </Text>
-        </Pressable>
-        <Pressable
+        </Tappable>
+        <Tappable
           accessibilityRole="button"
-          className="flex-1 items-center justify-center rounded-chip"
-          style={({ pressed }) => ({
+          containerStyle={{ flex: 1 }}
+          style={{
+            flex: 1,
+            alignItems: "center",
+            justifyContent: "center",
+            borderRadius: radii.chip,
             height: 34,
             backgroundColor: palette.peach,
-            opacity: pressed ? 0.85 : 1,
-          })}
+          }}
         >
-          <Text style={{ fontFamily: FONT.semibold, fontSize: 13, color: colors.warmWhite }}>
+          <Text style={{ fontFamily: FONT.semibold, fontSize: 14, color: colors.warmWhite }}>
             Rimuovi
           </Text>
-        </Pressable>
+        </Tappable>
       </View>
     </View>
   );
@@ -204,25 +215,30 @@ function TabPill({
   onPress: () => void;
 }) {
   return (
-    <Pressable
+    <Tappable
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={`${label}, ${count} elementi`}
       accessibilityState={{ selected: active }}
-      className="flex-1 flex-row items-center justify-center rounded-chip"
-      style={({ pressed }) => ({
+      pressedOpacity={0.65}
+      containerStyle={{ flex: 1 }}
+      style={{
+        flex: 1,
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+        borderRadius: radii.chip,
         height: 40,
         gap: 6,
         backgroundColor: active ? colors.navy : "transparent",
         borderWidth: active ? 0 : 1,
         borderColor: colors.hairline,
-        opacity: pressed && !active ? 0.65 : 1,
-      })}
+      }}
     >
       <Text
         style={{
           fontFamily: active ? FONT.semibold : FONT.medium,
-          fontSize: 14,
+          fontSize: 15,
           color: active ? colors.warmWhite : colors.navy,
           letterSpacing: -0.07,
         }}
@@ -232,14 +248,14 @@ function TabPill({
       <Text
         style={{
           fontFamily: FONT.semibold,
-          fontSize: 12,
+          fontSize: 13.5,
           color: active ? "rgba(250,248,244,0.78)" : colors.midGrey,
           fontVariant: ["tabular-nums"],
         }}
       >
         {count}
       </Text>
-    </Pressable>
+    </Tappable>
   );
 }
 
@@ -266,10 +282,10 @@ function RuleRow({
       }}
     >
       <View style={{ flex: 1, minWidth: 0 }}>
-        <Text style={{ fontFamily: FONT.semibold, fontSize: 13.5, color: colors.navy, letterSpacing: -0.05 }}>
+        <Text style={{ fontFamily: FONT.semibold, fontSize: 14.5, color: colors.navy, letterSpacing: -0.05 }}>
           {label}
         </Text>
-        <Text style={{ fontFamily: FONT.regular, fontSize: 12, color: colors.midGrey, marginTop: 2, lineHeight: 16 }}>
+        <Text style={{ fontFamily: FONT.regular, fontSize: 13.5, color: colors.midGrey, marginTop: 2, lineHeight: 17.5 }}>
           {hint}
         </Text>
       </View>

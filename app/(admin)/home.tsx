@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
   Bell,
@@ -12,6 +12,7 @@ import {
 } from "lucide-react-native";
 import { router } from "expo-router";
 
+import { Tappable } from "@/components/Tappable";
 import { AdminTopBar } from "@/components/AdminTopBar";
 import { SectionLabel } from "@/components/SectionLabel";
 import { RetentionCurves } from "@/components/RetentionCurves";
@@ -19,7 +20,7 @@ import { Mascot } from "@/components/Mascot";
 import { useAuthStore } from "@/lib/auth-store";
 import { ACTIVITY, FLAGS, KPIS, type KPI } from "@/lib/admin-data";
 import { dateBadge, firstName } from "@/lib/format";
-import { FONT, colors, layerTint, statusTint } from "@/theme/tokens";
+import { FONT, colors, layerTint, radii, statusTint } from "@/theme/tokens";
 
 const ICONS: Record<"folder" | "warn" | "sparkle" | "check", LucideIcon> = {
   folder: Folder,
@@ -47,10 +48,11 @@ export default function AdminHomeScreen() {
           title={`Ciao, ${display}`}
           subtitle={`Produzione · ${dateBadge()}`}
           rightSlot={
-            <Pressable
+            <Tappable
               accessibilityRole="button"
               accessibilityLabel="Apri avvisi"
-              style={({ pressed }) => ({
+              pressedOpacity={0.75}
+              style={{
                 width: 38,
                 height: 38,
                 borderRadius: 11,
@@ -59,8 +61,7 @@ export default function AdminHomeScreen() {
                 justifyContent: "center",
                 borderWidth: 1,
                 borderColor: colors.hairline,
-                opacity: pressed ? 0.75 : 1,
-              })}
+              }}
             >
               <Bell size={17} color={colors.navy} strokeWidth={1.8} />
               <View
@@ -76,7 +77,7 @@ export default function AdminHomeScreen() {
                   borderColor: colors.warmWhite,
                 }}
               />
-            </Pressable>
+            </Tappable>
           }
         />
 
@@ -94,12 +95,15 @@ export default function AdminHomeScreen() {
 
         {/* Moderation alert callout */}
         <View style={{ paddingHorizontal: 16, paddingTop: 18 }}>
-          <Pressable
+          <Tappable
             onPress={() => router.push("/(admin)/moderation")}
             accessibilityRole="button"
             accessibilityLabel="Apri la coda di moderazione"
-            className="flex-row items-center rounded-card bg-surface"
-            style={({ pressed }) => ({
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              borderRadius: radii.card,
+              backgroundColor: colors.surface,
               paddingHorizontal: 16,
               paddingVertical: 16,
               gap: 12,
@@ -107,14 +111,13 @@ export default function AdminHomeScreen() {
               borderColor: colors.hairline,
               borderLeftWidth: 3,
               borderLeftColor: colors.fading,
-              opacity: pressed ? 0.85 : 1,
-            })}
+            }}
           >
             <View style={{ flex: 1, minWidth: 0 }}>
               <Text
                 style={{
                   fontFamily: FONT.semibold,
-                  fontSize: 14.5,
+                  fontSize: 15.5,
                   color: colors.navy,
                   letterSpacing: -0.1,
                 }}
@@ -124,7 +127,7 @@ export default function AdminHomeScreen() {
               <Text
                 style={{
                   fontFamily: FONT.regular,
-                  fontSize: 12.5,
+                  fontSize: 13.5,
                   color: colors.midGrey,
                   marginTop: 3,
                 }}
@@ -133,7 +136,7 @@ export default function AdminHomeScreen() {
               </Text>
             </View>
             <ChevronRight size={18} color={colors.placeholder} strokeWidth={1.8} />
-          </Pressable>
+          </Tappable>
         </View>
 
         {/* Retention chart */}
@@ -152,7 +155,7 @@ export default function AdminHomeScreen() {
               <Text
                 style={{
                   fontFamily: FONT.regular,
-                  fontSize: 11.5,
+                  fontSize: 13,
                   color: colors.midGrey,
                   fontVariant: ["tabular-nums"],
                 }}
@@ -209,7 +212,7 @@ export default function AdminHomeScreen() {
                   <Text
                     style={{
                       fontFamily: FONT.semibold,
-                      fontSize: 13,
+                      fontSize: 14,
                       color: colors.navy,
                       letterSpacing: -0.05,
                     }}
@@ -219,7 +222,7 @@ export default function AdminHomeScreen() {
                   <Text
                     style={{
                       fontFamily: FONT.regular,
-                      fontSize: 12,
+                      fontSize: 13.5,
                       color: colors.midGrey,
                       marginTop: 1,
                     }}
@@ -230,7 +233,7 @@ export default function AdminHomeScreen() {
                 <Text
                   style={{
                     fontFamily: FONT.regular,
-                    fontSize: 11.5,
+                    fontSize: 13,
                     color: colors.midGrey,
                     fontVariant: ["tabular-nums"],
                   }}
@@ -272,7 +275,7 @@ function KpiCard({ kpi }: { kpi: KPI }) {
       <Text
         style={{
           fontFamily: FONT.bold,
-          fontSize: 10.5,
+          fontSize: 12,
           color: colors.midGrey,
           letterSpacing: 1.05, // 0.1em on 10.5px
           textTransform: "uppercase",
@@ -299,7 +302,7 @@ function KpiCard({ kpi }: { kpi: KPI }) {
         <Text
           style={{
             fontFamily: FONT.semibold,
-            fontSize: 11.5,
+            fontSize: 13,
             color: up ? statusTint.active.text : statusTint.fading.text,
             fontVariant: ["tabular-nums"],
           }}
@@ -315,13 +318,13 @@ function CompactLegend({ color, label, val }: { color: string; label: string; va
   return (
     <View className="flex-row items-center" style={{ gap: 5 }}>
       <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: color }} />
-      <Text style={{ fontFamily: FONT.medium, fontSize: 11, color: colors.midGrey }}>
+      <Text style={{ fontFamily: FONT.medium, fontSize: 12.5, color: colors.midGrey }}>
         {label}
       </Text>
       <Text
         style={{
           fontFamily: FONT.semibold,
-          fontSize: 11,
+          fontSize: 12.5,
           color: colors.navy,
           fontVariant: ["tabular-nums"],
         }}
