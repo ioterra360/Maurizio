@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo } from "react";
-import { ActivityIndicator, Pressable, Text, View } from "react-native";
+import { ActivityIndicator, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import DraggableFlatList, {
   type RenderItemParams,
@@ -10,6 +10,7 @@ import { router } from "expo-router";
 import { HeaderHero } from "@/components/HeaderHero";
 import { FolderRow } from "@/components/FolderRow";
 import { Mascot } from "@/components/Mascot";
+import { Tappable } from "@/components/Tappable";
 import { useFoldersWithStats } from "@/lib/use-folders";
 import type { FolderWithStats } from "@/lib/mappers";
 import { applyFolderOrder, useFolderOrderStore } from "@/lib/folder-order-store";
@@ -116,27 +117,26 @@ export default function KnowledgeScreen() {
           >
             Controlla la connessione e riprova.
           </Text>
-          <Pressable
+          <Tappable
             onPress={refetch}
             accessibilityRole="button"
             accessibilityLabel="Riprova a caricare le cartelle"
-            style={({ pressed }) => ({
-              marginTop: 4,
+            containerStyle={{ marginTop: 4 }}
+            style={{
               paddingHorizontal: 18,
               paddingVertical: 10,
               borderRadius: 999,
               backgroundColor: colors.warmWhite,
               borderWidth: 1.5,
               borderColor: colors.navy,
-              opacity: pressed ? 0.85 : 1,
-            })}
+            }}
           >
             <Text
               style={{ fontFamily: FONT.semibold, fontSize: 14, color: colors.navy }}
             >
               Riprova
             </Text>
-          </Pressable>
+          </Tappable>
         </View>
       </View>
     ) : (
@@ -173,30 +173,29 @@ export default function KnowledgeScreen() {
             Non hai ancora nessuna cartella. Aggiungi il tuo primo ricordo per
             iniziare.
           </Text>
-          <Pressable
+          <Tappable
             onPress={() => {
               markAddOpenedIntentionally();
               router.push("/add");
             }}
             accessibilityRole="button"
             accessibilityLabel="Aggiungi un ricordo"
-            style={({ pressed }) => ({
-              marginTop: 4,
+            containerStyle={{ marginTop: 4 }}
+            style={{
               paddingHorizontal: 18,
               paddingVertical: 10,
               borderRadius: 999,
               backgroundColor: colors.warmWhite,
               borderWidth: 1.5,
               borderColor: colors.navy,
-              opacity: pressed ? 0.85 : 1,
-            })}
+            }}
           >
             <Text
               style={{ fontFamily: FONT.semibold, fontSize: 14, color: colors.navy }}
             >
               Aggiungi un ricordo
             </Text>
-          </Pressable>
+          </Tappable>
         </View>
       </View>
     );
@@ -216,17 +215,19 @@ export default function KnowledgeScreen() {
       />
 
       {/* FAB */}
-      <Pressable
+      <Tappable
         onPress={() => {
           markAddOpenedIntentionally();
           router.push("/add");
         }}
         accessibilityRole="button"
         accessibilityLabel="Aggiungi un nuovo ricordo"
-        style={({ pressed }) => ({
+        containerStyle={{
           position: "absolute",
           right: 22,
           bottom: 104,
+        }}
+        style={{
           width: 56,
           height: 56,
           borderRadius: 28,
@@ -238,11 +239,10 @@ export default function KnowledgeScreen() {
           shadowOffset: { width: 0, height: 10 },
           shadowRadius: 24,
           elevation: 8,
-          opacity: pressed ? 0.85 : 1,
-        })}
+        }}
       >
         <Plus size={22} color={colors.warmWhite} strokeWidth={2.2} />
-      </Pressable>
+      </Tappable>
     </SafeAreaView>
   );
 }

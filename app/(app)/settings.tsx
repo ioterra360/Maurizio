@@ -11,12 +11,13 @@ import { SettingsRow, SettingsToggle } from "@/components/SettingsRow";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { GhostButton } from "@/components/GhostButton";
 import { Mascot } from "@/components/Mascot";
+import { Tappable } from "@/components/Tappable";
 import { useAuthStore } from "@/lib/auth-store";
 import { useUIStore } from "@/lib/ui-store";
 import { fetchProfile, updateProfile } from "@/lib/api";
 import type { Profile } from "@/lib/mappers";
 import { tap, error as errorFeedback } from "@/lib/feedback";
-import { FONT, colors } from "@/theme/tokens";
+import { FONT, colors, radii } from "@/theme/tokens";
 
 export default function SettingsScreen() {
   const user = useAuthStore((s) => s.user);
@@ -107,7 +108,7 @@ export default function SettingsScreen() {
                 placeholderTextColor={colors.placeholder}
                 style={{
                   fontFamily: FONT.semibold,
-                  fontSize: 15,
+                  fontSize: 16.5,
                   color: colors.navy,
                   letterSpacing: -0.15,
                   padding: 0,
@@ -116,7 +117,7 @@ export default function SettingsScreen() {
               <Text
                 style={{
                   fontFamily: FONT.regular,
-                  fontSize: 12.5,
+                  fontSize: 13.5,
                   color: colors.midGrey,
                   marginTop: 2,
                 }}
@@ -367,22 +368,22 @@ function DangerCard({
   onPress: () => void;
 }) {
   return (
-    <Pressable
+    <Tappable
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={title}
-      className="rounded-card bg-surface"
-      style={({ pressed }) => ({
+      pressedOpacity={0.92}
+      style={{
         flexDirection: "row",
         alignItems: "center",
         gap: 14,
         paddingHorizontal: 16,
         paddingVertical: 16,
+        borderRadius: radii.card,
         borderWidth: 1,
         borderColor: danger ? colors.danger : colors.hairlineStrong,
         backgroundColor: colors.surface,
-        opacity: pressed ? 0.92 : 1,
-      })}
+      }}
     >
       <View
         style={{
@@ -400,7 +401,7 @@ function DangerCard({
         <Text
           style={{
             fontFamily: FONT.bold,
-            fontSize: 15,
+            fontSize: 16,
             color: danger ? colors.danger : colors.navy,
             letterSpacing: -0.15,
           }}
@@ -411,14 +412,14 @@ function DangerCard({
           style={{
             marginTop: 3,
             fontFamily: FONT.regular,
-            fontSize: 13,
-            lineHeight: 19,
+            fontSize: 14,
+            lineHeight: 20,
             color: colors.midGrey,
           }}
         >
           {body}
         </Text>
       </View>
-    </Pressable>
+    </Tappable>
   );
 }

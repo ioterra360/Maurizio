@@ -1,7 +1,6 @@
 import { useState } from "react";
 import {
   Linking,
-  Pressable,
   ScrollView,
   Text,
   View,
@@ -17,6 +16,7 @@ import {
 } from "lucide-react-native";
 
 import { Mascot } from "@/components/Mascot";
+import { Tappable } from "@/components/Tappable";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { GhostButton } from "@/components/GhostButton";
 import { useAuthStore } from "@/lib/auth-store";
@@ -72,22 +72,22 @@ export default function SubscribeScreen() {
       >
         {/* Back */}
         <View style={{ paddingHorizontal: 22, paddingTop: 8 }}>
-          <Pressable
+          <Tappable
             onPress={() => router.back()}
             accessibilityRole="button"
             accessibilityLabel="Indietro"
             hitSlop={10}
-            style={({ pressed }) => ({
+            pressedOpacity={0.6}
+            style={{
               width: 40,
               height: 40,
               borderRadius: 20,
               alignItems: "center",
               justifyContent: "center",
-              opacity: pressed ? 0.6 : 1,
-            })}
+            }}
           >
             <ChevronLeft size={22} color={colors.navy} strokeWidth={2} />
-          </Pressable>
+          </Tappable>
         </View>
 
         {/* Announce mascot — premium pitch lead */}

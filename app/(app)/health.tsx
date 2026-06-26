@@ -1,11 +1,13 @@
 import { ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { router } from "expo-router";
 
 import { HeaderHero } from "@/components/HeaderHero";
 import { SectionLabel } from "@/components/SectionLabel";
 import { RingChart, LegendDot } from "@/components/RingChart";
 import { HealthRow } from "@/components/HealthRow";
 import { CognitiveLoadBar } from "@/components/CognitiveLoadBar";
+import { Tappable } from "@/components/Tappable";
 import { Mascot } from "@/components/Mascot";
 import { FONT, colors } from "@/theme/tokens";
 
@@ -54,7 +56,7 @@ export default function HealthScreen() {
                 textAlign: "center",
                 marginTop: 14,
                 fontFamily: FONT.medium,
-                fontSize: 13,
+                fontSize: 14,
                 color: "rgba(250,248,244,0.82)",
                 letterSpacing: 0.52, // 0.04em on 13px (was 1.2 = too wide)
                 textTransform: "uppercase",
@@ -64,8 +66,14 @@ export default function HealthScreen() {
               779 ricordi monitorati
             </Text>
             <View
-              className="flex-row justify-center"
-              style={{ marginTop: 14, gap: 14 }}
+              style={{
+                marginTop: 14,
+                flexDirection: "row",
+                flexWrap: "wrap",
+                justifyContent: "center",
+                rowGap: 8,
+                columnGap: 14,
+              }}
             >
               <LegendDot color={colors.active} label="Stabili" pct="62%" />
               <LegendDot color={colors.fading} label="In dissolvenza" pct="24%" />
@@ -101,27 +109,32 @@ export default function HealthScreen() {
             <Text
               style={{
                 fontFamily: FONT.medium,
-                fontSize: 14,
+                fontSize: 15,
                 color: colors.navy,
-                lineHeight: 20,
+                lineHeight: 22,
                 letterSpacing: -0.05,
               }}
             >
               Japanese è la tua priorità #1, ma solo il 35% del tempo di ripasso
               di questa settimana è andato lì.
             </Text>
-            <Text
-              style={{
-                marginTop: 10,
-                textAlign: "right",
-                fontFamily: FONT.semibold,
-                fontSize: 13,
-                color: colors.reinforcement,
-                letterSpacing: -0.05,
-              }}
+            <Tappable
+              onPress={() => router.push({ pathname: "/folder/[kind]", params: { kind: "jp" } })}
+              accessibilityLabel="Riequilibra questa settimana, vai alla cartella Japanese"
+              containerStyle={{ marginTop: 6, alignSelf: "flex-end" }}
+              style={{ paddingVertical: 4 }}
             >
-              Riequilibra questa settimana →
-            </Text>
+              <Text
+                style={{
+                  fontFamily: FONT.semibold,
+                  fontSize: 14.5,
+                  color: colors.reinforcement,
+                  letterSpacing: -0.05,
+                }}
+              >
+                Riequilibra questa settimana →
+              </Text>
+            </Tappable>
           </View>
         </View>
 

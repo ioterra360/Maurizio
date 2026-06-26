@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { ActivityIndicator, Pressable, ScrollView, Text, View } from "react-native";
+import { ActivityIndicator, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Plus, Repeat } from "lucide-react-native";
 import { router, useLocalSearchParams } from "expo-router";
@@ -12,6 +12,7 @@ import { ActionPill } from "@/components/ActionPill";
 import { FilterChip } from "@/components/FilterChip";
 import { ItemRow } from "@/components/ItemRow";
 import { SectionLabel } from "@/components/SectionLabel";
+import { Tappable } from "@/components/Tappable";
 import { FONT, colors } from "@/theme/tokens";
 import { FOLDER_KINDS, type FolderKind, type MemoryState } from "@/lib/constants";
 import { useFolderDetail } from "@/lib/use-folders";
@@ -92,25 +93,23 @@ export default function FolderDetailScreen() {
           <Text style={{ fontFamily: FONT.semibold, fontSize: 18, color: colors.navy }}>
             Non siamo riusciti a caricare questa cartella.
           </Text>
-          <Pressable
+          <Tappable
             onPress={refetch}
-            accessibilityRole="button"
             accessibilityLabel="Riprova a caricare la cartella"
-            style={({ pressed }) => ({
-              alignSelf: "flex-start",
+            containerStyle={{ alignSelf: "flex-start" }}
+            style={{
               paddingHorizontal: 18,
               paddingVertical: 10,
               borderRadius: 999,
               backgroundColor: colors.warmWhite,
               borderWidth: 1.5,
               borderColor: colors.navy,
-              opacity: pressed ? 0.85 : 1,
-            })}
+            }}
           >
             <Text style={{ fontFamily: FONT.semibold, fontSize: 14, color: colors.navy }}>
               Riprova
             </Text>
-          </Pressable>
+          </Tappable>
         </View>
       </SafeAreaView>
     );
@@ -282,14 +281,15 @@ export default function FolderDetailScreen() {
       </ScrollView>
 
       {/* FAB — folder detail has no tab bar, so it sits low at the bottom. */}
-      <Pressable
+      <Tappable
         onPress={addItem}
-        accessibilityRole="button"
         accessibilityLabel="Aggiungi un ricordo a questa cartella"
-        style={({ pressed }) => ({
+        containerStyle={{
           position: "absolute",
           right: 22,
           bottom: 24,
+        }}
+        style={{
           width: 56,
           height: 56,
           borderRadius: 28,
@@ -301,11 +301,10 @@ export default function FolderDetailScreen() {
           shadowOffset: { width: 0, height: 10 },
           shadowRadius: 24,
           elevation: 8,
-          opacity: pressed ? 0.85 : 1,
-        })}
+        }}
       >
         <Plus size={24} color={colors.warmWhite} strokeWidth={2.2} />
-      </Pressable>
+      </Tappable>
     </SafeAreaView>
   );
 }

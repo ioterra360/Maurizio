@@ -14,13 +14,14 @@ import { Redirect, useLocalSearchParams } from "expo-router";
 import { TopBar } from "@/components/TopBar";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { GhostButton } from "@/components/GhostButton";
+import { Tappable } from "@/components/Tappable";
 import {
   ADD_PREVIEW_BY_KIND,
   FOLDER_LABELS,
   getAllFolderSeeds,
   ITEM_TYPES_BY_KIND,
 } from "@/lib/folder-data";
-import { FONT, colors } from "@/theme/tokens";
+import { FONT, colors, radii } from "@/theme/tokens";
 import { FOLDER_KINDS, type FolderKind } from "@/lib/constants";
 import { applyFolderOrder, priorityOf, useFolderOrderStore } from "@/lib/folder-order-store";
 import { useAuthStore } from "@/lib/auth-store";
@@ -61,6 +62,7 @@ export default function AddScreen() {
   );
   const [text, setText] = useState("");
   const [dailyCount, setDailyCount] = useState(12);
+  const [savePressed, setSavePressed] = useState(false);
   const dailyMax = 20;
   const showToast = useUIStore((s) => s.showToast);
 
@@ -103,11 +105,13 @@ export default function AddScreen() {
             accessibilityRole="button"
             accessibilityLabel="Salva"
             hitSlop={10}
-            style={({ pressed }) => ({
+            onPressIn={() => setSavePressed(true)}
+            onPressOut={() => setSavePressed(false)}
+            style={{
               paddingHorizontal: 8,
               paddingVertical: 8,
-              opacity: !canSave ? 0.35 : pressed ? 0.6 : 1,
-            })}
+              opacity: !canSave ? 0.35 : savePressed ? 0.6 : 1,
+            }}
           >
             <Text
               style={{
@@ -144,7 +148,7 @@ export default function AddScreen() {
             {folders.map((f) => {
               const on = folder === f.kind;
               return (
-                <Pressable
+                <Tappable
                   key={f.kind}
                   onPress={() => {
                     setFolder(f.kind);
@@ -158,16 +162,18 @@ export default function AddScreen() {
                   }}
                   accessibilityRole="button"
                   accessibilityState={{ selected: on }}
-                  className="flex-row items-center rounded-chip"
-                  style={({ pressed }) => ({
+                  pressedOpacity={0.6}
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    borderRadius: radii.chip,
                     height: 36,
                     paddingHorizontal: 12,
                     gap: 6,
                     backgroundColor: on ? colors.navy : colors.surface,
                     borderWidth: on ? 0 : 1,
                     borderColor: colors.hairline,
-                    opacity: pressed && !on ? 0.6 : 1,
-                  })}
+                  }}
                 >
                   <Text
                     style={{
@@ -189,7 +195,7 @@ export default function AddScreen() {
                   >
                     · #{priorityOf(f.kind, order)}
                   </Text>
-                </Pressable>
+                </Tappable>
               );
             })}
           </ScrollView>
@@ -227,19 +233,23 @@ export default function AddScreen() {
             {types.map((t) => {
               const on = type === t.value;
               return (
-                <Pressable
+                <Tappable
                   key={t.value}
                   onPress={() => setType(t.value)}
                   accessibilityRole="button"
                   accessibilityState={{ selected: on }}
-                  className="flex-1 items-center justify-center rounded-chip"
-                  style={({ pressed }) => ({
+                  pressedOpacity={0.6}
+                  containerStyle={{ flex: 1 }}
+                  style={{
+                    flex: 1,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    borderRadius: radii.chip,
                     height: 32,
                     backgroundColor: on ? colors.navy : colors.surface,
                     borderWidth: on ? 0 : 1,
                     borderColor: colors.hairline,
-                    opacity: pressed && !on ? 0.6 : 1,
-                  })}
+                  }}
                 >
                   <Text
                     style={{
@@ -251,7 +261,7 @@ export default function AddScreen() {
                   >
                     {t.label}
                   </Text>
-                </Pressable>
+                </Tappable>
               );
             })}
           </View>

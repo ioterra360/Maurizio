@@ -60,7 +60,7 @@ export default function TodayScreen() {
   return (
     <SafeAreaView className="flex-1 bg-warm-white" edges={["top"]}>
       <ScrollView
-        contentContainerStyle={{ paddingBottom: 200 }}
+        contentContainerStyle={{ paddingBottom: 120 }}
         showsVerticalScrollIndicator={false}
       >
         {/* Editorial hero with mascot peek — mascot is absolutely positioned
@@ -69,6 +69,8 @@ export default function TodayScreen() {
         <View style={{ paddingHorizontal: 28, paddingTop: 22, position: "relative" }}>
           <Text
             accessibilityRole="header"
+            adjustsFontSizeToFit
+            numberOfLines={2}
             style={{
               fontFamily: FONT.bold,
               fontSize: 32,
@@ -76,7 +78,7 @@ export default function TodayScreen() {
               lineHeight: 42,
               letterSpacing: -1,
               paddingBottom: 2,
-              paddingRight: 60,
+              paddingRight: 96,
             }}
           >
             {greeting}
@@ -96,9 +98,9 @@ export default function TodayScreen() {
           </Text>
           <View
             pointerEvents="none"
-            style={{ position: "absolute", top: 12, right: 16 }}
+            style={{ position: "absolute", top: 4, right: 8 }}
           >
-            <Mascot variant="idea" size={64} withShadow={false} />
+            <Mascot variant="idea" size={104} withShadow={false} />
           </View>
         </View>
 
@@ -132,38 +134,27 @@ export default function TodayScreen() {
           />
         </View>
 
-        <Text
-          style={{
-            textAlign: "center",
-            fontFamily: FONT.regular,
-            fontSize: 13.5,
-            color: colors.midGrey,
-            paddingTop: 18,
-            fontVariant: ["tabular-nums"],
-          }}
-        >
-          Totale · {TOTAL_ITEMS} ricordi · circa {TOTAL_MINUTES} min
-        </Text>
+        {/* CTA — in normal flow at the bottom of the page (no floating layer),
+            so it can never overlap the Focus card or anything else. */}
+        <View style={{ paddingHorizontal: 20, marginTop: 28, alignItems: "center", gap: 12 }}>
+          <Text
+            style={{
+              textAlign: "center",
+              fontFamily: FONT.regular,
+              fontSize: 13.5,
+              color: colors.midGrey,
+              fontVariant: ["tabular-nums"],
+            }}
+          >
+            Totale · {TOTAL_ITEMS} ricordi · circa {TOTAL_MINUTES} min
+          </Text>
+          <PrimaryButton label="Inizia il ripasso di oggi" onPress={startReview} />
+          <GhostButton
+            label="Aggiusta il flusso di oggi"
+            onPress={() => router.push("/settings")}
+          />
+        </View>
       </ScrollView>
-
-      {/* Sticky CTA pinned above the tab bar */}
-      <View
-        pointerEvents="box-none"
-        style={{
-          position: "absolute",
-          left: 20,
-          right: 20,
-          bottom: 96,
-          alignItems: "center",
-          gap: 12,
-        }}
-      >
-        <PrimaryButton label="Inizia il ripasso di oggi" onPress={startReview} />
-        <GhostButton
-          label="Aggiusta il flusso di oggi"
-          onPress={() => router.push("/settings")}
-        />
-      </View>
     </SafeAreaView>
   );
 }
