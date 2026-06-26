@@ -1,14 +1,15 @@
 import { useCallback, useEffect, useState } from "react";
-import { Pressable, Text, View } from "react-native";
+import { Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useFocusEffect } from "expo-router";
 import { Sparkles } from "lucide-react-native";
 
 import { ReviewHeader } from "@/components/ReviewHeader";
 import { FolderPill } from "@/components/FolderPill";
+import { Tappable } from "@/components/Tappable";
 import { useReviewStore } from "@/lib/review-store";
 import { success, error, tap } from "@/lib/feedback";
-import { FONT, colors, statusTint } from "@/theme/tokens";
+import { FONT, colors, radii, statusTint } from "@/theme/tokens";
 
 type Stage = "pre" | "hint" | "answer";
 
@@ -35,9 +36,9 @@ export default function ReinforcementScreen() {
   const card = cards[index];
   if (!card) return null;
 
-  const advance = (response: "remembered" | "struggled") => {
-    if (response === "remembered") success();
-    else error();
+  const advance = (response: "remembered" | "struggled" | "forgot") => {
+    if (response === "forgot") error();
+    else success();
     const result = recordAndAdvance(response);
     if (result === "handoff") router.replace("/review/handoff");
     else if (result === "done") router.replace("/review/complete");
@@ -64,7 +65,7 @@ export default function ReinforcementScreen() {
 
         <Text
           adjustsFontSizeToFit
-          numberOfLines={2}
+          numberOfLines={1}
           style={{
             fontFamily: FONT.bold,
             fontSize: card.front.length > 10 ? 48 : 72,
@@ -155,112 +156,138 @@ export default function ReinforcementScreen() {
           <>
             {/* No hint affordance when the card has nothing safe to show. */}
             {hint != null ? (
-              <Pressable
+              <Tappable
                 onPress={() => reveal("hint")}
                 accessibilityRole="button"
                 accessibilityLabel="Dammi un indizio"
-                className="items-center justify-center rounded-cta"
-                style={({ pressed }) => ({
+                style={{
+                  alignItems: "center",
+                  justifyContent: "center",
+                  borderRadius: radii.cta,
                   height: 56,
                   borderWidth: 1.5,
                   borderColor: colors.hairlineStrong,
                   backgroundColor: colors.warmWhite,
-                  opacity: pressed ? 0.85 : 1,
-                })}
+                }}
               >
                 <Text style={{ fontFamily: FONT.semibold, fontSize: 17, color: colors.navy }}>
                   Dammi un indizio
                 </Text>
-              </Pressable>
+              </Tappable>
             ) : null}
-            <Pressable
+            <Tappable
+              onPress={() => advance("remembered")}
+              accessibilityRole="button"
+              accessibilityLabel="Continua, lo ricordo"
+              style={{
+                alignItems: "center",
+                justifyContent: "center",
+                borderRadius: radii.cta,
+                height: 56,
+                borderWidth: 1.5,
+                borderColor: colors.navy,
+                backgroundColor: colors.warmWhite,
+              }}
+            >
+              <Text style={{ fontFamily: FONT.semibold, fontSize: 17, color: colors.navy }}>
+                Continua
+              </Text>
+            </Tappable>
+            <Tappable
               onPress={() => reveal("answer")}
               accessibilityRole="button"
               accessibilityLabel="Mostra risposta"
-              className="items-center justify-center rounded-cta"
-              style={({ pressed }) => ({
+              pressedOpacity={0.88}
+              style={{
+                alignItems: "center",
+                justifyContent: "center",
+                borderRadius: radii.cta,
                 height: 60,
                 backgroundColor: colors.reinforcement,
                 borderWidth: 0,
-                opacity: pressed ? 0.88 : 1,
                 shadowColor: colors.reinforcement,
                 shadowOpacity: 0.5,
                 shadowOffset: { width: 0, height: 8 },
                 shadowRadius: 20,
                 elevation: 5,
-              })}
+              }}
             >
               <Text style={{ fontFamily: FONT.bold, fontSize: 19, color: colors.warmWhite, letterSpacing: -0.16 }}>
                 Mostra risposta
               </Text>
-            </Pressable>
+            </Tappable>
           </>
         ) : null}
 
         {stage === "hint" ? (
-          <Pressable
+          <Tappable
             onPress={() => reveal("answer")}
             accessibilityRole="button"
             accessibilityLabel="Mostra risposta"
-            className="items-center justify-center rounded-cta"
-            style={({ pressed }) => ({
+            pressedOpacity={0.88}
+            style={{
+              alignItems: "center",
+              justifyContent: "center",
+              borderRadius: radii.cta,
               height: 60,
               backgroundColor: colors.reinforcement,
               borderWidth: 0,
-              opacity: pressed ? 0.88 : 1,
               shadowColor: colors.reinforcement,
               shadowOpacity: 0.5,
               shadowOffset: { width: 0, height: 8 },
               shadowRadius: 20,
               elevation: 5,
-            })}
+            }}
           >
             <Text style={{ fontFamily: FONT.bold, fontSize: 19, color: colors.warmWhite, letterSpacing: -0.16 }}>
               Mostra risposta
             </Text>
-          </Pressable>
+          </Tappable>
         ) : null}
 
         {stage === "answer" ? (
           <>
-            <Pressable
-              onPress={() => advance("struggled")}
+            <Tappable
+              onPress={() => advance("forgot")}
               accessibilityRole="button"
-              accessibilityLabel="Ripassa di nuovo"
-              className="items-center justify-center rounded-cta"
-              style={({ pressed }) => ({
+              accessibilityLabel="Da ripassare"
+              style={{
+                alignItems: "center",
+                justifyContent: "center",
+                borderRadius: radii.cta,
                 height: 56,
                 borderWidth: 1.5,
                 borderColor: colors.fading,
                 backgroundColor: colors.warmWhite,
-                opacity: pressed ? 0.85 : 1,
-              })}
+              }}
             >
               <Text style={{ fontFamily: FONT.semibold, fontSize: 17, color: statusTint.fading.text }}>
-                Ripassa di nuovo
+                Da ripassare
               </Text>
-            </Pressable>
-            <Pressable
-              onPress={() => advance("remembered")}
+            </Tappable>
+            <Tappable
+              onPress={() => advance("struggled")}
               accessibilityRole="button"
               accessibilityLabel="Continua"
-              className="items-center justify-center rounded-cta"
-              style={({ pressed }) => ({
+              pressedOpacity={0.88}
+              style={{
+                alignItems: "center",
+                justifyContent: "center",
+                borderRadius: radii.cta,
                 height: 60,
                 backgroundColor: colors.reinforcement,
                 borderWidth: 0,
-                opacity: pressed ? 0.88 : 1,
                 shadowColor: colors.reinforcement,
                 shadowOpacity: 0.5,
                 shadowOffset: { width: 0, height: 8 },
                 shadowRadius: 20,
                 elevation: 5,
-              })}
+              }}
             >
               <Text style={{ fontFamily: FONT.bold, fontSize: 19, color: colors.warmWhite, letterSpacing: -0.16 }}>
                 Continua
               </Text>
-            </Pressable>
+            </Tappable>
           </>
         ) : null}
       </View>

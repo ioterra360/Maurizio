@@ -105,7 +105,7 @@ type PendingItem = {
  * "remembered" | "struggled" | "forgot" too — we map them to the closest
  * layer-native outcome per docs/SRS.md so the SM-2 quality is correct:
  *   scan:          remembered → remember (q=4),   forgot/struggled → show (q=2)
- *   reinforcement: remembered → continue (q=4),   forgot/struggled → again (q=1)
+ *   reinforcement: remembered → continue (q=4),   struggled → struggled (q=3),   forgot → again (q=1)
  *   focus:         passthrough — already matches the Focus screen vocabulary.
  */
 function toLayerOutcome(layer: LayerKey, response: ReviewResponse): LayerOutcome {
@@ -113,7 +113,9 @@ function toLayerOutcome(layer: LayerKey, response: ReviewResponse): LayerOutcome
     case "scan":
       return { layer: "scan", outcome: response === "remembered" ? "remember" : "show" };
     case "reinforcement":
-      return { layer: "reinforcement", outcome: response === "remembered" ? "continue" : "again" };
+      if (response === "remembered") return { layer: "reinforcement", outcome: "continue" };
+      if (response === "struggled") return { layer: "reinforcement", outcome: "struggled" };
+      return { layer: "reinforcement", outcome: "again" };
     case "focus":
       if (response === "remembered") return { layer: "focus", outcome: "remembered" };
       if (response === "struggled") return { layer: "focus", outcome: "struggled" };

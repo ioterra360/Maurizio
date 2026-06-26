@@ -31,7 +31,9 @@ export function qualityFor(outcome: LayerOutcome): Quality {
     case "scan":
       return outcome.outcome === "remember" ? 4 : 2;
     case "reinforcement":
-      return outcome.outcome === "continue" ? 4 : 1;
+      if (outcome.outcome === "continue") return 4;
+      if (outcome.outcome === "struggled") return 3;
+      return 1;
     case "focus":
       if (outcome.outcome === "remembered") return 5;
       if (outcome.outcome === "struggled") return 3;

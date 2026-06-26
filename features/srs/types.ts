@@ -11,7 +11,7 @@ import type { LayerKey } from "@/theme/tokens";
 
 export type LayerOutcome =
   | { layer: "scan"; outcome: "remember" | "show" }
-  | { layer: "reinforcement"; outcome: "continue" | "again" }
+  | { layer: "reinforcement"; outcome: "continue" | "struggled" | "again" }
   | { layer: "focus"; outcome: "remembered" | "struggled" | "forgot" };
 
 /**

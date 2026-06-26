@@ -79,9 +79,9 @@ export default function CompleteScreen() {
         >
           {/* Numerals use the darker statusTint inks — colors.active/.fading
               on the white surface fail the WCAG 3:1 large-text bar. */}
-          <Stat label="Ricordati" value={totals.remembered} color={statusTint.active.text} />
-          <Stat label="Difficili" value={totals.struggled} color={colors.navy} />
-          <Stat label="Dimenticati" value={totals.forgot} color={statusTint.fading.text} />
+          <Stat singular="Ricordato" plural="Ricordati" value={totals.remembered} color={statusTint.active.text} />
+          <Stat singular="Difficile" plural="Difficili" value={totals.struggled} color={colors.navy} />
+          <Stat singular="Dimenticato" plural="Dimenticati" value={totals.forgot} color={statusTint.fading.text} />
         </View>
       </View>
 
@@ -92,7 +92,18 @@ export default function CompleteScreen() {
   );
 }
 
-function Stat({ label, value, color }: { label: string; value: number; color: string }) {
+function Stat({
+  singular,
+  plural,
+  value,
+  color,
+}: {
+  singular: string;
+  plural: string;
+  value: number;
+  color: string;
+}) {
+  const label = value === 1 ? singular : plural;
   return (
     <View style={{ alignItems: "center" }}>
       <Text

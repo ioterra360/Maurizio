@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
-import { Pressable, Text, View } from "react-native";
+import { Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useFocusEffect } from "expo-router";
 
 import { ReviewHeader } from "@/components/ReviewHeader";
 import { FolderPill } from "@/components/FolderPill";
+import { Tappable } from "@/components/Tappable";
 import { useReviewStore } from "@/lib/review-store";
 import { success, tap } from "@/lib/feedback";
 import { FONT, colors, layerTint, radii } from "@/theme/tokens";
@@ -74,25 +75,25 @@ export default function ScanScreen() {
           >
             Nessun ricordo da ripassare qui.
           </Text>
-          <Pressable
+          <Tappable
             onPress={() => router.back()}
             accessibilityRole="button"
             accessibilityLabel="Torna indietro"
-            style={({ pressed }) => ({
-              marginTop: 24,
+            pressedOpacity={0.88}
+            containerStyle={{ marginTop: 24 }}
+            style={{
               height: 48,
               paddingHorizontal: 28,
               borderRadius: radii.pill,
               alignItems: "center",
               justifyContent: "center",
               backgroundColor: colors.navy,
-              opacity: pressed ? 0.88 : 1,
-            })}
+            }}
           >
             <Text style={{ fontFamily: FONT.semibold, fontSize: 16, color: colors.warmWhite }}>
               Torna indietro
             </Text>
-          </Pressable>
+          </Tappable>
         </View>
       </SafeAreaView>
     );
@@ -107,7 +108,7 @@ export default function ScanScreen() {
 
         <Text
           adjustsFontSizeToFit
-          numberOfLines={2}
+          numberOfLines={1}
           style={{
             fontFamily: FONT.bold,
             fontSize: card.front.length > 10 ? 56 : 84,
@@ -163,19 +164,21 @@ export default function ScanScreen() {
 
       {/* Actions */}
       <View style={{ paddingHorizontal: 22, paddingBottom: 32, gap: 12 }}>
-        <Pressable
+        <Tappable
           onPress={handleShowMe}
           disabled={revealed}
           accessibilityRole="button"
           accessibilityLabel="Mostrami il significato"
-          className="items-center justify-center rounded-cta"
-          style={({ pressed }) => ({
+          pressedOpacity={0.85}
+          style={{
+            alignItems: "center",
+            justifyContent: "center",
+            borderRadius: radii.cta,
             height: 56,
             borderWidth: 1.5,
             borderColor: revealed ? colors.divider : colors.scan,
             backgroundColor: colors.warmWhite,
-            opacity: revealed ? 0.55 : pressed ? 0.85 : 1,
-          })}
+          }}
         >
           <Text
             style={{
@@ -187,23 +190,25 @@ export default function ScanScreen() {
           >
             Mostrami
           </Text>
-        </Pressable>
-        <Pressable
+        </Tappable>
+        <Tappable
           onPress={handleRemember}
           accessibilityRole="button"
           accessibilityLabel="Lo ricordo"
-          className="items-center justify-center rounded-cta"
-          style={({ pressed }) => ({
+          pressedOpacity={0.88}
+          style={{
+            alignItems: "center",
+            justifyContent: "center",
+            borderRadius: radii.cta,
             height: 60,
             backgroundColor: colors.scan,
             borderWidth: 0,
-            opacity: pressed ? 0.88 : 1,
             shadowColor: colors.scan,
             shadowOpacity: 0.5,
             shadowOffset: { width: 0, height: 8 },
             shadowRadius: 20,
             elevation: 5,
-          })}
+          }}
         >
           <Text
             style={{
@@ -215,7 +220,7 @@ export default function ScanScreen() {
           >
             Lo ricordo
           </Text>
-        </Pressable>
+        </Tappable>
       </View>
     </SafeAreaView>
   );

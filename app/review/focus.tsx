@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useFocusEffect } from "expo-router";
@@ -6,6 +6,7 @@ import { router, useFocusEffect } from "expo-router";
 import { ReviewHeader } from "@/components/ReviewHeader";
 import { FolderPill } from "@/components/FolderPill";
 import { RecallButton } from "@/components/RecallButton";
+import { PrimaryButton } from "@/components/PrimaryButton";
 import { useReviewStore } from "@/lib/review-store";
 import { success, error } from "@/lib/feedback";
 import { FONT, colors } from "@/theme/tokens";
@@ -15,14 +16,21 @@ export default function FocusScreen() {
   const cards = useReviewStore((s) => s.cards());
   const index = useReviewStore((s) => s.index);
   const recordAndAdvance = useReviewStore((s) => s.recordAndAdvance);
+  const [revealed, setRevealed] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
       // No-op when arriving from a flow handoff; opens a single-layer
       // session when Today routed us here directly.
       ensureSession("focus", "single");
+      setRevealed(false);
     }, [ensureSession]),
   );
+
+  // Hide the answer again whenever the deck advances to the next card.
+  useEffect(() => {
+    setRevealed(false);
+  }, [index]);
 
   const card = cards[index];
   if (!card) return null;
@@ -47,7 +55,7 @@ export default function FocusScreen() {
 
         <Text
           adjustsFontSizeToFit
-          numberOfLines={2}
+          numberOfLines={1}
           style={{
             fontFamily: FONT.bold,
             fontSize: card.front.length > 10 ? 44 : 80,
@@ -76,48 +84,57 @@ export default function FocusScreen() {
           </Text>
         ) : null}
 
-        <View
-          className="rounded-card"
-          style={{
-            backgroundColor: colors.divider,
-            paddingHorizontal: 18,
-            paddingVertical: 16,
-            marginTop: 36,
-          }}
-        >
-          <Text
+        {revealed ? (
+          <View
+            className="rounded-card"
             style={{
-              fontFamily: FONT.semibold,
-              fontSize: 17,
-              color: colors.navy,
-              lineHeight: 24,
-              letterSpacing: -0.15,
+              backgroundColor: colors.divider,
+              paddingHorizontal: 18,
+              paddingVertical: 16,
+              marginTop: 36,
             }}
           >
-            {card.back}
-          </Text>
-          {card.example ? (
             <Text
               style={{
-                marginTop: 12,
-                fontFamily: FONT.regular,
-                fontSize: 14,
-                fontStyle: "italic",
-                color: colors.navySoft,
-                lineHeight: 20,
+                fontFamily: FONT.semibold,
+                fontSize: 17,
+                color: colors.navy,
+                lineHeight: 24,
+                letterSpacing: -0.15,
               }}
             >
-              {card.example}
+              {card.back}
             </Text>
-          ) : null}
-        </View>
+            {card.example ? (
+              <Text
+                style={{
+                  marginTop: 12,
+                  fontFamily: FONT.regular,
+                  fontSize: 14,
+                  fontStyle: "italic",
+                  color: colors.navySoft,
+                  lineHeight: 20,
+                }}
+              >
+                {card.example}
+              </Text>
+            ) : null}
+          </View>
+        ) : null}
       </View>
 
-      {/* Recall buttons */}
+      {/* Recall buttons appear only after the answer is revealed — Focus is
+          active recall, so the answer stays hidden until the user commits. */}
       <View style={{ paddingHorizontal: 22, paddingBottom: 32, gap: 10 }}>
-        <RecallButton variant="forgot" onPress={() => advance("forgot")} />
-        <RecallButton variant="struggled" onPress={() => advance("struggled")} />
-        <RecallButton variant="remembered" onPress={() => advance("remembered")} />
+        {revealed ? (
+          <>
+            <RecallButton variant="forgot" onPress={() => advance("forgot")} />
+            <RecallButton variant="struggled" onPress={() => advance("struggled")} />
+            <RecallButton variant="remembered" onPress={() => advance("remembered")} />
+          </>
+        ) : (
+          <PrimaryButton label="Mostra risposta" onPress={() => setRevealed(true)} />
+        )}
       </View>
     </SafeAreaView>
   );
