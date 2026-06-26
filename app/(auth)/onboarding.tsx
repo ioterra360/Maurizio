@@ -1,7 +1,6 @@
 import { useRef, useState } from "react";
 import {
   Dimensions,
-  Pressable,
   ScrollView,
   Text,
   View,
@@ -12,6 +11,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { Mascot, type MascotVariant } from "@/components/Mascot";
 import { PrimaryButton } from "@/components/PrimaryButton";
+import { Tappable } from "@/components/Tappable";
 import { useAuthStore } from "@/lib/auth-store";
 import { colors, FONT, layerTint } from "@/theme/tokens";
 
@@ -95,11 +95,11 @@ export default function OnboardingScreen() {
           justifyContent: "flex-end",
         }}
       >
-        <Pressable
+        <Tappable
           onPress={skip}
           accessibilityRole="link"
           hitSlop={10}
-          style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
+          pressedOpacity={0.6}
         >
           <Text
             style={{
@@ -111,7 +111,7 @@ export default function OnboardingScreen() {
           >
             Salta
           </Text>
-        </Pressable>
+        </Tappable>
       </View>
 
       {/* Steps */}

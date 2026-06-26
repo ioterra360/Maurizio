@@ -14,11 +14,10 @@ import { Link } from "expo-router";
 import { Mascot } from "@/components/Mascot";
 import { AuthTextInput } from "@/components/AuthTextInput";
 import { PrimaryButton } from "@/components/PrimaryButton";
-import { GhostButton } from "@/components/GhostButton";
 import { useAuthStore, DEMO_ACCOUNTS, type DemoAccount } from "@/lib/auth-store";
 import { isDemoMode } from "@/lib/supabase";
 import { authErrorMessage } from "@/lib/auth-errors";
-import { colors, FONT } from "@/theme/tokens";
+import { colors, FONT, radii } from "@/theme/tokens";
 
 export default function LoginScreen() {
   const signIn = useAuthStore((s) => s.signIn);
@@ -59,7 +58,7 @@ export default function LoginScreen() {
         <ScrollView
           contentContainerStyle={{
             flexGrow: 1,
-            paddingHorizontal: 28,
+            paddingHorizontal: 22,
             paddingBottom: 40,
           }}
           keyboardShouldPersistTaps="handled"
@@ -67,30 +66,18 @@ export default function LoginScreen() {
         >
           {/* Hero — mascot displayed at editorial scale per design contract */}
           <View className="items-center" style={{ paddingTop: 20, paddingBottom: 24 }}>
-            <Mascot variant="idea" size={92} withShadow={false} />
+            <Mascot variant="idea" size={112} withShadow={false} />
             <Text
               style={{
                 marginTop: 12,
                 fontFamily: FONT.bold,
-                fontSize: 28,
-                lineHeight: 34,
+                fontSize: 33,
+                lineHeight: 40,
                 letterSpacing: -0.5,
                 color: colors.navy,
               }}
             >
               Memika
-            </Text>
-            <Text
-              style={{
-                marginTop: 6,
-                fontFamily: FONT.regular,
-                fontSize: 14.5,
-                lineHeight: 22,
-                color: colors.midGrey,
-                textAlign: "center",
-              }}
-            >
-              La tua memoria, ben curata
             </Text>
           </View>
 
@@ -120,7 +107,7 @@ export default function LoginScreen() {
                 <Text
                   style={{
                     fontFamily: FONT.semibold,
-                    fontSize: 12,
+                    fontSize: 13.5,
                     color: colors.navy,
                     letterSpacing: -0.06,
                   }}
@@ -168,7 +155,7 @@ export default function LoginScreen() {
             <Link href={"/(auth)/signup" as never} asChild>
               <Pressable accessibilityRole="link">
                 <View pointerEvents="none">
-                  <GhostButton label="Crea un nuovo account" variant="outline" />
+                  <PrimaryButton label="Crea un nuovo account" variant="tonal" />
                 </View>
               </Pressable>
             </Link>
@@ -190,7 +177,7 @@ export default function LoginScreen() {
                 <Text
                   style={{
                     fontFamily: FONT.bold,
-                    fontSize: 10.5,
+                    fontSize: 11.5,
                     letterSpacing: 1.6,
                     textTransform: "uppercase",
                     color: colors.midGrey,
@@ -211,8 +198,8 @@ export default function LoginScreen() {
                 style={{
                   marginTop: 16,
                   fontFamily: FONT.regular,
-                  fontSize: 12,
-                  lineHeight: 18,
+                  fontSize: 13.5,
+                  lineHeight: 20,
                   color: colors.midGrey,
                 }}
               >
@@ -242,7 +229,7 @@ function FieldLabel({
       style={{
         marginBottom: 8,
         fontFamily: FONT.semibold,
-        fontSize: 11,
+        fontSize: 12.5,
         letterSpacing: 1.3,
         textTransform: "uppercase",
         color: colors.midGrey,
@@ -262,81 +249,69 @@ function DemoCard({
   onPress: () => void;
 }) {
   const isAdmin = account.role === "admin";
+  const [pressed, setPressed] = useState(false);
   return (
     <Pressable
       onPress={onPress}
+      onPressIn={() => setPressed(true)}
+      onPressOut={() => setPressed(false)}
       accessibilityRole="button"
       accessibilityLabel={`Usa account demo ${account.name}, ${isAdmin ? "admin" : "utente"}`}
-      className="flex-row items-center rounded-card bg-surface"
-      style={({ pressed }) => ({
-        paddingVertical: 16,
-        paddingHorizontal: 16,
-        opacity: pressed ? 0.85 : 1,
-        borderWidth: 1,
-        borderColor: colors.hairline,
-        gap: 14,
-      })}
     >
       <View
         style={{
-          width: 48,
-          height: 48,
-          borderRadius: 999,
+          flexDirection: "row",
           alignItems: "center",
-          justifyContent: "center",
-          backgroundColor: colors.tagUserBg,
-          borderWidth: isAdmin ? 2 : 0,
-          borderColor: colors.navy,
+          borderRadius: radii.card,
+          backgroundColor: colors.surface,
+          paddingVertical: 16,
+          paddingHorizontal: 16,
+          opacity: pressed ? 0.85 : 1,
+          borderWidth: 1,
+          borderColor: colors.hairlineStrong,
+          gap: 14,
         }}
       >
-        <Text
+        <View
           style={{
-            color: colors.navy,
-            fontFamily: FONT.bold,
-            fontSize: 16,
-            letterSpacing: 0.3,
+            width: 52,
+            height: 52,
+            borderRadius: 999,
+            alignItems: "center",
+            justifyContent: "center",
+            backgroundColor: colors.tagUserBg,
+            borderWidth: isAdmin ? 2 : 0,
+            borderColor: colors.navy,
           }}
         >
-          {account.initials}
-        </Text>
-      </View>
+          <Text style={{ color: colors.navy, fontFamily: FONT.bold, fontSize: 17, letterSpacing: 0.3 }}>
+            {account.initials}
+          </Text>
+        </View>
 
-      <View style={{ flex: 1 }}>
-        <Text style={{ fontFamily: FONT.semibold, fontSize: 16, color: colors.navy }}>
-          {account.name}
-        </Text>
-        <Text
-          style={{
-            marginTop: 3,
-            fontFamily: FONT.regular,
-            fontSize: 13.5,
-            color: colors.midGrey,
-          }}
-        >
-          {account.email}
-        </Text>
-      </View>
+        <View style={{ flex: 1 }}>
+          <Text style={{ fontFamily: FONT.semibold, fontSize: 17.5, color: colors.navy }}>
+            {account.name}
+          </Text>
+          <Text style={{ marginTop: 3, fontFamily: FONT.regular, fontSize: 15, color: colors.midGrey }}>
+            {account.email}
+          </Text>
+        </View>
 
-      <View
-        className="rounded-tag"
-        style={{
-          paddingHorizontal: 9,
-          paddingVertical: 4,
-          backgroundColor: colors.tagUserBg,
-          borderWidth: isAdmin ? 1 : 0,
-          borderColor: colors.navy,
-        }}
-      >
-        <Text
+        <View
           style={{
-            fontFamily: FONT.bold,
-            fontSize: 10.5,
-            letterSpacing: 0.6,
-            color: colors.navy,
+            paddingHorizontal: 9,
+            paddingVertical: 4,
+            borderRadius: radii.tag,
+            backgroundColor: colors.tagUserBg,
+            borderWidth: isAdmin ? 1 : 0,
+            borderColor: colors.navy,
           }}
         >
-          {isAdmin ? "ADMIN" : "USER"}
-        </Text>
+          <Text style={{ fontFamily: FONT.bold, fontSize: 11, letterSpacing: 0.6, color: colors.navy }}>
+            {isAdmin ? "ADMIN" : "USER"}
+          </Text>
+        </View>
       </View>
     </Pressable>
   );

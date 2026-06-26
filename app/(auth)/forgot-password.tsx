@@ -14,6 +14,7 @@ import { ChevronLeft } from "lucide-react-native";
 import { Mascot } from "@/components/Mascot";
 import { AuthTextInput } from "@/components/AuthTextInput";
 import { PrimaryButton } from "@/components/PrimaryButton";
+import { Tappable } from "@/components/Tappable";
 import { isDemoMode, supabase } from "@/lib/supabase";
 import { authErrorMessage } from "@/lib/auth-errors";
 import { colors, FONT } from "@/theme/tokens";
@@ -74,22 +75,22 @@ export default function ForgotPasswordScreen() {
         >
           {/* Back */}
           <View style={{ paddingTop: 8 }}>
-            <Pressable
+            <Tappable
               onPress={() => router.back()}
               accessibilityRole="button"
               accessibilityLabel="Indietro"
               hitSlop={10}
-              style={({ pressed }) => ({
+              pressedOpacity={0.6}
+              style={{
                 width: 40,
                 height: 40,
                 borderRadius: 20,
                 alignItems: "center",
                 justifyContent: "center",
-                opacity: pressed ? 0.6 : 1,
-              })}
+              }}
             >
               <ChevronLeft size={22} color={colors.navy} strokeWidth={2} />
-            </Pressable>
+            </Tappable>
           </View>
 
           {/* Hero — investigate mascot illustrates "looking for your password" */}
