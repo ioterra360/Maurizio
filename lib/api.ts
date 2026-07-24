@@ -38,8 +38,9 @@ import {
 import { FOLDER_DEFAULTS, type FolderKind, type ReviewResponse } from "./constants";
 import { getAllFolderSeeds, getFolderSeed, type FolderSeed } from "./folder-data";
 import { isoFromRelativeLabel } from "./format";
+import { DEMO_DUE_COUNTS, type LayerCounts } from "./queue";
 import type { LayerKey } from "@/theme/tokens";
-import type { UpdatedSrs } from "@/features/srs/types";
+import { initialSrsState, type UpdatedSrs } from "@/features/srs/types";
 
 // ---------------------------------------------------------------------------
 // Profile
@@ -129,6 +130,38 @@ export async function updateFolderName(folderId: string, name: string): Promise<
   if (error) throw error;
 }
 
+/** Attiva/disattiva la pausa di una cartella. Demo no-op. */
+export async function updateFolderPaused(folderId: string, paused: boolean): Promise<void> {
+  if (isDemoMode) return;
+  const { error } = await supabase.from("folders").update({ paused }).eq("id", folderId);
+  if (error) throw error;
+}
+
+/** Elimina la cartella. I ricordi cascano a DB (on delete cascade). Demo no-op. */
+export async function deleteFolder(folderId: string): Promise<void> {
+  if (isDemoMode) return;
+  const { error } = await supabase.from("folders").delete().eq("id", folderId);
+  if (error) throw error;
+}
+
+/** Ids delle cartelle in pausa dell'utente — usati per escluderle dalla coda. */
+async function pausedFolderIds(userId: string): Promise<string[]> {
+  const { data, error } = await supabase
+    .from("folders")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("paused", true);
+  if (error) throw error;
+  return (data ?? []).map((r: { id: string }) => r.id);
+}
+
+/** Range ISO [mezzanotte locale, ora] per il conteggio inserimenti di oggi. */
+function todayRange(): { from: string; to: string } {
+  const now = new Date();
+  const from = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  return { from: from.toISOString(), to: now.toISOString() };
+}
+
 // ---------------------------------------------------------------------------
 // Memories (used by Knowledge, Folder detail, SRS queue — Phase 2/3)
 // ---------------------------------------------------------------------------
@@ -143,6 +176,71 @@ export async function fetchMemoriesForFolder(folderId: string): Promise<Memory[]
     .returns<MemoryRow[]>();
   if (error) throw error;
   return (data ?? []).map(mapMemory);
+}
+
+/**
+ * Crea un ricordo con lo stato SRS iniziale ESPLICITO da initialSrsState()
+ * (il default DB di srs_interval_days è 1, non 0 — non fidarsi dei default
+ * per i campi che l'algoritmo legge). next_review_at = now(): entra subito
+ * in coda — il toast "primo ripasso domani" è framing UX (docs/SRS.md).
+ * Demo: no-op → null.
+ */
+export async function createMemory(input: {
+  userId: string;
+  folderId: string;
+  term: string;
+  reading?: string;
+  definition: string;
+  example?: string;
+  itemType?: string;
+}): Promise<Memory | null> {
+  if (isDemoMode) return null;
+  const srs = initialSrsState();
+  const { data, error } = await supabase
+    .from("memories")
+    .insert({
+      user_id: input.userId,
+      folder_id: input.folderId,
+      term: input.term,
+      reading: input.reading ?? null,
+      definition: input.definition,
+      example: input.example ?? null,
+      item_type: input.itemType ?? null,
+      srs_interval_days: srs.intervalDays,
+      srs_ease_factor: srs.easeFactor,
+      srs_repetitions: srs.repetitions,
+      last_reviewed_at: srs.lastReviewedAt,
+      next_review_at: srs.nextReviewAt,
+    })
+    .select("*")
+    .single<MemoryRow>();
+  if (error) throw error;
+  return mapMemory(data);
+}
+
+/** Ricordi inseriti oggi (giorno locale) — per il limite giornaliero. */
+export async function fetchTodayInputCount(userId: string): Promise<number> {
+  if (isDemoMode) return 0;
+  const { from, to } = todayRange();
+  const { count, error } = await supabase
+    .from("memories")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", userId)
+    .gte("created_at", from)
+    .lte("created_at", to);
+  if (error) throw error;
+  return count ?? 0;
+}
+
+/** Quanti ricordi contiene una cartella — per la conferma di eliminazione. */
+export async function countMemoriesInFolder(folderId: string): Promise<number> {
+  if (isDemoMode) return 0;
+  const { count, error } = await supabase
+    .from("memories")
+    .select("id", { count: "exact", head: true })
+    .eq("folder_id", folderId);
+  if (error) throw error;
+  return count ?? 0;
 }
 
 /** The SRS queue: memories due now or earlier, capped at `limit`. */
@@ -415,9 +513,10 @@ export async function applyScheduledUpdate(
 export async function fetchDueMemoriesByLayer(
   userId: string,
   layer: LayerKey,
-  limit = 30,
+  opts: { folderId?: string; limit?: number } = {},
 ): Promise<Memory[]> {
   if (isDemoMode) return [];
+  const limit = opts.limit ?? 30;
   const nowIso = new Date().toISOString();
   let query = supabase
     .from("memories")
@@ -425,6 +524,14 @@ export async function fetchDueMemoriesByLayer(
     .eq("user_id", userId)
     .neq("state", "archived")
     .lte("next_review_at", nowIso);
+  if (opts.folderId) {
+    query = query.eq("folder_id", opts.folderId);
+  } else {
+    // Le cartelle in pausa escono dalla coda globale. Una sessione scoped
+    // (folderId esplicito) invece le può ripassare comunque.
+    const paused = await pausedFolderIds(userId);
+    if (paused.length > 0) query = query.not("folder_id", "in", `(${paused.join(",")})`);
+  }
 
   // The layer predicates MUST be mutually exclusive so that during the full
   // Scan → Reinforcement → Focus flow no memory shows up twice. Per
@@ -445,4 +552,41 @@ export async function fetchDueMemoriesByLayer(
     .returns<MemoryRow[]>();
   if (error) throw error;
   return (data ?? []).map(mapMemory);
+}
+
+/**
+ * Conteggi della coda per livello — per il piano reattivo di Oggi e per la
+ * ripartizione del budget. Stessi predicati (mutuamente esclusivi) di
+ * fetchDueMemoriesByLayer. Demo: dimensioni dei mazzi statici.
+ */
+export async function fetchDueCounts(
+  userId: string,
+  folderId?: string,
+): Promise<LayerCounts> {
+  if (isDemoMode) return { ...DEMO_DUE_COUNTS };
+  const nowIso = new Date().toISOString();
+  const paused = folderId ? [] : await pausedFolderIds(userId);
+  const base = () => {
+    let q = supabase
+      .from("memories")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", userId)
+      .neq("state", "archived")
+      .lte("next_review_at", nowIso);
+    if (folderId) q = q.eq("folder_id", folderId);
+    else if (paused.length > 0) q = q.not("folder_id", "in", `(${paused.join(",")})`);
+    return q;
+  };
+  const [scan, reinforcement, focus] = await Promise.all(
+    [
+      base().lt("srs_repetitions", 3).neq("state", "fading"),
+      base().or("and(srs_repetitions.gte.3,srs_repetitions.lt.8),state.eq.fading"),
+      base().gte("srs_repetitions", 8).neq("state", "fading"),
+    ].map(async (q) => {
+      const { count, error } = await q;
+      if (error) throw error;
+      return count ?? 0;
+    }),
+  );
+  return { scan, reinforcement, focus };
 }
