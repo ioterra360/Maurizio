@@ -62,6 +62,7 @@ created lazily in app code for now).
 | `priority` | int | 1 = highest. Used for sort + SRS weighting later |
 | `color` | text | Hex string, optional override |
 | `icon` | text | Lucide icon name or emoji |
+| `paused` | boolean | Cartella dormiente: esclusa dalla coda ripassi e dai conteggi di Oggi, default `false` |
 | `created_at` / `updated_at` | timestamptz | |
 
 ### `memories`

@@ -86,6 +86,7 @@ export async function fetchFolders(userId: string): Promise<Folder[]> {
       priority: d.priority,
       color: null,
       icon: null,
+      paused: false,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     }));
@@ -115,6 +116,16 @@ export async function seedDefaultFolders(userId: string): Promise<void> {
   const { error } = await supabase
     .from("folders")
     .upsert(rows, { onConflict: "user_id,kind", ignoreDuplicates: true });
+  if (error) throw error;
+}
+
+/**
+ * Rename a folder. Demo mode is a no-op — demo folders are rebuilt from
+ * FOLDER_DEFAULTS on every fetch, so a rename could never stick anyway.
+ */
+export async function updateFolderName(folderId: string, name: string): Promise<void> {
+  if (isDemoMode) return;
+  const { error } = await supabase.from("folders").update({ name }).eq("id", folderId);
   if (error) throw error;
 }
 
@@ -169,6 +180,7 @@ function seedToFolderWithStats(userId: string, s: FolderSeed): FolderWithStats {
     priority: s.priority,
     color: null,
     icon: null,
+    paused: false,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     count: s.count,

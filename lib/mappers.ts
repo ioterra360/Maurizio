@@ -72,6 +72,7 @@ export type FolderRow = {
   priority: number;
   color: string | null;
   icon: string | null;
+  paused: boolean;
   created_at: string;
   updated_at: string;
 };
@@ -84,6 +85,7 @@ export type Folder = {
   priority: number;
   color: string | null;
   icon: string | null;
+  paused: boolean;
   createdAt: string;
   updatedAt: string;
 };
@@ -97,6 +99,7 @@ export function mapFolder(row: FolderRow): Folder {
     priority: row.priority,
     color: row.color,
     icon: row.icon,
+    paused: row.paused,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
