@@ -60,10 +60,11 @@ testabile** (`lib/queue.ts`): `sliceByLayer(memories)` e
   `fetchDueMemoriesByLayer` (async): stato `deckLoading` nello store, gli
   screen mostrano il `MascotLoader` (sez. 12) finché il mazzo non c'è.
   Lo stato vuoto calmo esiste già e resta.
-- Budget tempo (chips di Oggi): tetto items totale **9 / 27 / 54 / 108**
-  (5/15/30/60 min), ripartito sui tre livelli in proporzione alla coda di
-  ciascuno (resto allo Scan). Il chip selezionato vive nello stato di Oggi e
-  viene passato a `start()`.
+- Budget tempo (chips di Oggi): tetto items totale da
+  `TIME_BUDGETS[n].estItems` in `lib/constants.ts` (**8 / 28 / 55 / 110**,
+  fonte unica già esistente), ripartito sui tre livelli in proporzione alla
+  coda di ciascuno (resto allo Scan). Il chip selezionato vive nello stato
+  di Oggi e viene passato a `start()`.
 - **Il piano di Oggi è reattivo al budget**: cambiando chip, le tre card
   del flusso ricalcolano subito quantità per livello e minuti stimati, e la
   riga "Totale · N ricordi · ~M min" segue. Ogni budget propone un piano di
@@ -170,8 +171,8 @@ successivo, insieme alla roadmap Fase 4).
 - [ ] Flusso fluido: nessun tap tra i livelli, un solo recap finale
 - [ ] Sessione singola: recap del livello
 - [ ] Flash di conferma su Scan, con correzione al tocco
-- [ ] Il budget tempo cambia la dimensione del mazzo (9/27/54/108, split
-      proporzionale)
+- [ ] Il budget tempo cambia la dimensione del mazzo
+      (`TIME_BUDGETS.estItems`: 8/28/55/110, split proporzionale)
 - [ ] Il piano di Oggi si ricalcola live al cambio di chip (quantità +
       minuti per card) e la sessione esegue esattamente il piano mostrato;
       il budget scelto sopravvive al riavvio
