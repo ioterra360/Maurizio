@@ -7,7 +7,6 @@ import { TimeBudgetChips } from "@/components/TimeBudgetChips";
 import { SectionLabel } from "@/components/SectionLabel";
 import { LayerCard } from "@/components/LayerCard";
 import { PrimaryButton } from "@/components/PrimaryButton";
-import { GhostButton } from "@/components/GhostButton";
 import { Mascot } from "@/components/Mascot";
 import { useAuthStore } from "@/lib/auth-store";
 import { DECK_SIZES, useReviewStore } from "@/lib/review-store";
@@ -78,7 +77,7 @@ export default function TodayScreen() {
               lineHeight: 42,
               letterSpacing: -1,
               paddingBottom: 2,
-              paddingRight: 96,
+              paddingRight: 128,
             }}
           >
             {greeting}
@@ -98,9 +97,9 @@ export default function TodayScreen() {
           </Text>
           <View
             pointerEvents="none"
-            style={{ position: "absolute", top: 4, right: 8 }}
+            style={{ position: "absolute", top: -4, right: 4 }}
           >
-            <Mascot variant="idea" size={104} withShadow={false} />
+            <Mascot variant="idea" size={136} withShadow={false} />
           </View>
         </View>
 
@@ -149,10 +148,6 @@ export default function TodayScreen() {
             Totale · {TOTAL_ITEMS} ricordi · circa {TOTAL_MINUTES} min
           </Text>
           <PrimaryButton label="Inizia il ripasso di oggi" onPress={startReview} />
-          <GhostButton
-            label="Aggiusta il flusso di oggi"
-            onPress={() => router.push("/settings")}
-          />
         </View>
       </ScrollView>
     </SafeAreaView>

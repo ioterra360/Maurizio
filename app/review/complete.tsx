@@ -35,7 +35,7 @@ export default function CompleteScreen() {
         }}
       >
         {/* Celebratory mascot — checklist variant (job done) */}
-        <Mascot variant="checklist" size={160} withShadow={false} />
+        <Mascot variant="checklist" size={176} withShadow={false} />
 
         <Text
           style={{

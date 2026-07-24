@@ -53,7 +53,7 @@ export default function ReviewHandoffScreen() {
     <SafeAreaView className="flex-1 bg-warm-white" edges={["top"]}>
       <View style={{ flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 26 }}>
         {/* Checklist mascot — handoff is a "done step" moment */}
-        <Mascot variant="checklist" size={140} withShadow={false} />
+        <Mascot variant="checklist" size={164} withShadow={false} />
 
         {/* Outgoing layer done caption */}
         <Text

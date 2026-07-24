@@ -19,12 +19,12 @@ export default function HealthScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={{ position: "relative" }}>
-          <HeaderHero title="Salute della memoria" reservedRight={80} />
+          <HeaderHero title="Salute della memoria" reservedRight={108} />
           <View
             pointerEvents="none"
-            style={{ position: "absolute", top: 14, right: 18 }}
+            style={{ position: "absolute", top: 2, right: 14 }}
           >
-            <Mascot variant="investigate" size={64} withShadow={false} />
+            <Mascot variant="investigate" size={92} withShadow={false} />
           </View>
         </View>
 

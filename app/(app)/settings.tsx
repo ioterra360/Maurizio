@@ -73,12 +73,12 @@ export default function SettingsScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={{ position: "relative" }}>
-          <HeaderHero title="Impostazioni" reservedRight={80} />
+          <HeaderHero title="Impostazioni" reservedRight={108} />
           <View
             pointerEvents="none"
-            style={{ position: "absolute", top: 14, right: 18 }}
+            style={{ position: "absolute", top: 2, right: 14 }}
           >
-            <Mascot variant="announce" size={64} withShadow={false} />
+            <Mascot variant="announce" size={92} withShadow={false} />
           </View>
         </View>
 
@@ -146,7 +146,7 @@ export default function SettingsScreen() {
         <View style={{ paddingHorizontal: 16, gap: 10 }}>
           <SettingsRow
             label="Limite giornaliero"
-            hint="Numero massimo di nuovi ricordi da aggiungere al giorno. Mantiene il carico sostenibile."
+            hint="Numero massimo di nuovi ricordi da aggiungere al giorno."
             value={profile ? String(profile.dailyInputCap) : "20"}
           />
         </View>
@@ -161,7 +161,7 @@ export default function SettingsScreen() {
           <SettingsToggle
             key={profile ? `calm-${profile.calmMode}` : "calm"}
             label="Modalità calma"
-            hint="Niente badge. Solo la spinta del mattino."
+            hint="Niente contatori rossi né notifiche insistenti: arriva solo il promemoria del ripasso al mattino."
             defaultOn={profile ? profile.calmMode : true}
             onChange={(v) => {
               if (!user) return;

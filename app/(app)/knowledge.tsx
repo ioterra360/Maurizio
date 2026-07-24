@@ -69,13 +69,13 @@ export default function KnowledgeScreen() {
                 ? "1 cartella attiva"
                 : `${folders.length} cartelle attive · trascina per cambiare priorità`
         }
-        reservedRight={80}
+        reservedRight={108}
       />
       <View
         pointerEvents="none"
-        style={{ position: "absolute", top: 14, right: 18 }}
+        style={{ position: "absolute", top: 2, right: 14 }}
       >
-        <Mascot variant="checklist" size={64} withShadow={false} />
+        <Mascot variant="checklist" size={92} withShadow={false} />
       </View>
     </View>
   );
@@ -151,7 +151,7 @@ export default function KnowledgeScreen() {
             gap: 10,
           }}
         >
-          <Mascot variant="investigate" size={56} withShadow={false} />
+          <Mascot variant="investigate" size={84} withShadow={false} />
           <Text
             style={{
               fontFamily: FONT.semibold,

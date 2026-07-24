@@ -92,7 +92,7 @@ export default function SubscribeScreen() {
 
         {/* Announce mascot — premium pitch lead */}
         <View style={{ alignItems: "center", marginTop: 4, marginBottom: -8 }}>
-          <Mascot variant="announce" size={108} withShadow={false} />
+          <Mascot variant="announce" size={128} withShadow={false} />
         </View>
 
         {/* Hero — navy panel, warm-white inside (high contrast) */}
