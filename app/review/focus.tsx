@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
-import { Text, View } from "react-native";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { ActivityIndicator, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useFocusEffect } from "expo-router";
 
@@ -13,7 +13,15 @@ import { FONT, colors } from "@/theme/tokens";
 
 export default function FocusScreen() {
   const ensureSession = useReviewStore((s) => s.ensureSession);
-  const cards = useReviewStore((s) => s.cards());
+  // s.cards() in the selector loops zustand v5 on folder-scoped decks —
+  // see the note in review/scan.tsx.
+  const layer = useReviewStore((s) => s.layer);
+  const folderKind = useReviewStore((s) => s.folderKind);
+  const deck = useReviewStore((s) => s.deck);
+  const deckLoading = useReviewStore((s) => s.deckLoading);
+  const mode = useReviewStore((s) => s.mode);
+  const getCards = useReviewStore((s) => s.cards);
+  const cards = useMemo(() => getCards(), [getCards, layer, folderKind, deck]);
   const index = useReviewStore((s) => s.index);
   const recordAndAdvance = useReviewStore((s) => s.recordAndAdvance);
   const [revealed, setRevealed] = useState(false);
@@ -32,8 +40,46 @@ export default function FocusScreen() {
     setRevealed(false);
   }, [index]);
 
+  // Livello vuoto dentro un flusso: chiudi direttamente sul recap.
+  useEffect(() => {
+    if (deckLoading || cards.length > 0 || mode !== "flow") return;
+    router.replace("/review/complete");
+  }, [deckLoading, cards.length, mode]);
+
   const card = cards[index];
-  if (!card) return null;
+
+  if (deckLoading || (mode === "flow" && cards.length === 0)) {
+    return (
+      <SafeAreaView className="flex-1 bg-warm-white" edges={["top"]}>
+        <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+          <ActivityIndicator color={colors.navy} />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (!card) {
+    return (
+      <SafeAreaView className="flex-1 bg-warm-white" edges={["top"]}>
+        <View style={{ flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 32 }}>
+          <Text
+            style={{
+              fontFamily: FONT.semibold,
+              fontSize: 18,
+              color: colors.navy,
+              lineHeight: 26,
+              textAlign: "center",
+            }}
+          >
+            Nessun ricordo per il ripasso profondo, per ora.
+          </Text>
+          <View style={{ alignSelf: "stretch", marginTop: 24 }}>
+            <PrimaryButton label="Torna indietro" onPress={() => router.back()} />
+          </View>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   const advance = (response: "remembered" | "struggled" | "forgot") => {
     // Mirror scan/reinforcement: success on a clean recall, error otherwise

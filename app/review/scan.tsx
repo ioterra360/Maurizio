@@ -1,21 +1,42 @@
-import { useCallback, useEffect, useState } from "react";
-import { Text, View } from "react-native";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ActivityIndicator, Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useFocusEffect } from "expo-router";
 
 import { ReviewHeader } from "@/components/ReviewHeader";
 import { FolderPill } from "@/components/FolderPill";
 import { Tappable } from "@/components/Tappable";
-import { useReviewStore } from "@/lib/review-store";
+import { AMEND_WINDOW_MS, useReviewStore } from "@/lib/review-store";
 import { success, tap } from "@/lib/feedback";
 import { FONT, colors, layerTint, radii } from "@/theme/tokens";
 
 export default function ScanScreen() {
   const ensureSession = useReviewStore((s) => s.ensureSession);
-  const cards = useReviewStore((s) => s.cards());
+  // Never call s.cards() inside the selector: folder-scoped decks are
+  // rebuilt via filter() on every call, and an ever-new snapshot sends
+  // zustand v5 / useSyncExternalStore into an infinite re-render loop
+  // ("Maximum update depth exceeded") the moment a folder's "Ripassa ora"
+  // starts a session. Select the stable inputs and memoize the deck.
+  const layer = useReviewStore((s) => s.layer);
+  const folderKind = useReviewStore((s) => s.folderKind);
+  const deck = useReviewStore((s) => s.deck);
+  const deckLoading = useReviewStore((s) => s.deckLoading);
+  const mode = useReviewStore((s) => s.mode);
+  const getCards = useReviewStore((s) => s.cards);
+  const cards = useMemo(() => getCards(), [getCards, layer, folderKind, deck]);
   const index = useReviewStore((s) => s.index);
   const recordAndAdvance = useReviewStore((s) => s.recordAndAdvance);
+  const amendLastAnswer = useReviewStore((s) => s.amendLastAnswer);
   const [revealed, setRevealed] = useState(false);
+  // Flash di conferma dopo "Lo ricordo": mostra la soluzione della carta
+  // appena risposta per la finestra di amend, poi prosegue.
+  const [flash, setFlash] = useState<null | {
+    front: string;
+    reading?: string;
+    back: string;
+    amended: boolean;
+  }>(null);
+  const flashTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Today calls start(layer, mode) explicitly before navigating here, so
   // this effect is the defensive fallback for unusual entry paths (deep
@@ -35,28 +56,165 @@ export default function ScanScreen() {
     setRevealed(false);
   }, [index]);
 
+  // Il timer del flash non deve sopravvivere allo screen.
+  useEffect(
+    () => () => {
+      if (flashTimer.current) clearTimeout(flashTimer.current);
+    },
+    [],
+  );
+
+  // Livello senza carte dentro un flusso (es. la coda vera è vuota per
+  // questo livello): salta avanti invece di strandare l'utente. Lo stato
+  // vuoto con "Torna indietro" resta per le sessioni single.
+  useEffect(() => {
+    if (deckLoading || cards.length > 0 || mode !== "flow") return;
+    router.replace("/review/handoff");
+  }, [deckLoading, cards.length, mode]);
+
   const card = cards[index];
+
+  const routeAfter = (result: "next" | "handoff" | "done") => {
+    if (result === "handoff") router.replace("/review/handoff");
+    else if (result === "done") router.replace("/review/complete");
+  };
 
   const handleRemember = () => {
     // If the user already revealed the answer, this card needed a hint —
     // log it as "struggled" so the store/scheduler treats it as a soft
     // forget (Scan "show me" → SM-2 quality 2 per docs/SRS.md). A pure
     // "remembered" tap (no reveal) keeps full quality 4.
-    const response = revealed ? "struggled" : "remembered";
-    // Neutral cue after a reveal — the silent "struggled" downgrade is
-    // correct per docs/SRS.md, but a positive-labelled tap must never get
-    // the error buzz.
-    if (revealed) tap();
-    else success();
-    const result = recordAndAdvance(response);
-    if (result === "handoff") router.replace("/review/handoff");
-    else if (result === "done") router.replace("/review/complete");
+    if (revealed) {
+      tap();
+      routeAfter(recordAndAdvance("struggled", { revealed: true }));
+      return;
+    }
+    success();
+    const front = card.front;
+    const reading = card.reading;
+    const back = card.back;
+    const result = recordAndAdvance("remembered", { revealed: false });
+    // Flash di conferma: la soluzione resta visibile per la finestra di
+    // amend; la navigazione di fine mazzo aspetta la chiusura del flash.
+    setFlash({ front, reading, back, amended: false });
+    flashTimer.current = setTimeout(() => {
+      setFlash(null);
+      routeAfter(result);
+    }, AMEND_WINDOW_MS);
+  };
+
+  const handleAmend = () => {
+    if (!flash || flash.amended) return;
+    if (amendLastAnswer()) {
+      tap();
+      setFlash({ ...flash, amended: true });
+    }
   };
 
   const handleShowMe = () => {
     tap();
     setRevealed(true);
   };
+
+  // Flash di conferma — sostituisce interamente la carta (regge anche
+  // sull'ultima carta del mazzo, quando l'indice è già oltre la fine).
+  if (flash) {
+    return (
+      <SafeAreaView className="flex-1 bg-warm-white" edges={["top"]}>
+        <ReviewHeader
+          layerKey="scan"
+          index={Math.min(index, Math.max(cards.length - 1, 0))}
+          total={cards.length}
+        />
+        <Pressable
+          onPress={handleAmend}
+          accessibilityRole="button"
+          accessibilityLabel={
+            flash.amended
+              ? "Segnato come difficile"
+              : "Non lo ricordavo — segna come difficile"
+          }
+          style={{ flex: 1, paddingHorizontal: 24, alignItems: "center", paddingTop: 48 }}
+        >
+          <Text
+            adjustsFontSizeToFit
+            numberOfLines={1}
+            style={{
+              fontFamily: FONT.bold,
+              fontSize: flash.front.length > 10 ? 40 : 56,
+              color: colors.navy,
+              letterSpacing: -1.4,
+              textAlign: "center",
+              lineHeight: flash.front.length > 10 ? 46 : 62,
+              paddingHorizontal: 8,
+            }}
+          >
+            {flash.front}
+          </Text>
+          {flash.reading ? (
+            <Text
+              style={{
+                fontFamily: FONT.medium,
+                fontSize: 18,
+                color: colors.midGrey,
+                marginTop: 10,
+                letterSpacing: 0.2,
+              }}
+            >
+              {flash.reading}
+            </Text>
+          ) : null}
+          <View
+            style={{
+              backgroundColor: layerTint.scanReveal,
+              paddingHorizontal: 20,
+              paddingVertical: 18,
+              marginTop: 30,
+              alignSelf: "stretch",
+              borderRadius: 14,
+            }}
+          >
+            <Text
+              style={{
+                fontFamily: FONT.medium,
+                fontSize: 19,
+                color: colors.navy,
+                lineHeight: 26,
+                letterSpacing: -0.1,
+              }}
+            >
+              {flash.back}
+            </Text>
+          </View>
+          <Text
+            style={{
+              marginTop: 16,
+              fontFamily: flash.amended ? FONT.semibold : FONT.regular,
+              fontSize: 13,
+              color: flash.amended ? colors.navy : colors.midGrey,
+              textAlign: "center",
+            }}
+          >
+            {flash.amended
+              ? "✓ Segnato come difficile"
+              : "Sbagliato? Tocca per segnarlo come difficile"}
+          </Text>
+        </Pressable>
+      </SafeAreaView>
+    );
+  }
+
+  // Mazzo in caricamento dal DB — o livello vuoto in un flusso (l'effetto
+  // sopra sta già navigando avanti): mostra l'attesa, non lo stato vuoto.
+  if (deckLoading || (mode === "flow" && cards.length === 0)) {
+    return (
+      <SafeAreaView className="flex-1 bg-warm-white" edges={["top"]}>
+        <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+          <ActivityIndicator color={colors.navy} />
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   // Empty deck — e.g. a folder-scoped session whose folder has no due
   // cards, or a stale deep link. Offer a way back instead of a blank screen.

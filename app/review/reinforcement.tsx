@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
-import { Text, View } from "react-native";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { ActivityIndicator, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useFocusEffect } from "expo-router";
 import { Sparkles } from "lucide-react-native";
@@ -15,7 +15,15 @@ type Stage = "pre" | "hint" | "answer";
 
 export default function ReinforcementScreen() {
   const ensureSession = useReviewStore((s) => s.ensureSession);
-  const cards = useReviewStore((s) => s.cards());
+  // s.cards() in the selector loops zustand v5 on folder-scoped decks —
+  // see the note in review/scan.tsx.
+  const layer = useReviewStore((s) => s.layer);
+  const folderKind = useReviewStore((s) => s.folderKind);
+  const deck = useReviewStore((s) => s.deck);
+  const deckLoading = useReviewStore((s) => s.deckLoading);
+  const mode = useReviewStore((s) => s.mode);
+  const getCards = useReviewStore((s) => s.cards);
+  const cards = useMemo(() => getCards(), [getCards, layer, folderKind, deck]);
   const index = useReviewStore((s) => s.index);
   const recordAndAdvance = useReviewStore((s) => s.recordAndAdvance);
   const [stage, setStage] = useState<Stage>("pre");
@@ -33,8 +41,63 @@ export default function ReinforcementScreen() {
     setStage("pre");
   }, [index]);
 
+  // Livello vuoto dentro un flusso: salta avanti (handoff decide se andare
+  // a Focus o al recap) invece di strandare l'utente.
+  useEffect(() => {
+    if (deckLoading || cards.length > 0 || mode !== "flow") return;
+    router.replace("/review/handoff");
+  }, [deckLoading, cards.length, mode]);
+
   const card = cards[index];
-  if (!card) return null;
+
+  if (deckLoading || (mode === "flow" && cards.length === 0)) {
+    return (
+      <SafeAreaView className="flex-1 bg-warm-white" edges={["top"]}>
+        <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+          <ActivityIndicator color={colors.navy} />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (!card) {
+    return (
+      <SafeAreaView className="flex-1 bg-warm-white" edges={["top"]}>
+        <View style={{ flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 32 }}>
+          <Text
+            style={{
+              fontFamily: FONT.semibold,
+              fontSize: 18,
+              color: colors.navy,
+              lineHeight: 26,
+              textAlign: "center",
+            }}
+          >
+            Nessun ricordo da rinforzare ora.
+          </Text>
+          <Tappable
+            onPress={() => router.back()}
+            accessibilityRole="button"
+            accessibilityLabel="Torna indietro"
+            pressedOpacity={0.88}
+            containerStyle={{ marginTop: 24 }}
+            style={{
+              height: 48,
+              paddingHorizontal: 28,
+              borderRadius: radii.pill,
+              alignItems: "center",
+              justifyContent: "center",
+              backgroundColor: colors.navy,
+            }}
+          >
+            <Text style={{ fontFamily: FONT.semibold, fontSize: 16, color: colors.warmWhite }}>
+              Torna indietro
+            </Text>
+          </Tappable>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   const advance = (response: "remembered" | "struggled" | "forgot") => {
     if (response === "forgot") error();
