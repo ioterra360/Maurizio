@@ -18,12 +18,18 @@ import { Tappable } from "@/components/Tappable";
 import {
   ADD_PREVIEW_BY_KIND,
   FOLDER_LABELS,
-  getAllFolderSeeds,
   ITEM_TYPES_BY_KIND,
 } from "@/lib/folder-data";
 import { FONT, colors, radii } from "@/theme/tokens";
-import { FOLDER_KINDS, type FolderKind } from "@/lib/constants";
+import {
+  DAILY_INPUT_CAP_DEFAULT,
+  FOLDER_KINDS,
+  type FolderKind,
+} from "@/lib/constants";
 import { applyFolderOrder, priorityOf, useFolderOrderStore } from "@/lib/folder-order-store";
+import { createMemory, fetchProfile, fetchTodayInputCount } from "@/lib/api";
+import { useFoldersWithStats } from "@/lib/use-folders";
+import type { FolderWithStats } from "@/lib/mappers";
 import { useAuthStore } from "@/lib/auth-store";
 import { useUIStore } from "@/lib/ui-store";
 import { safeBack } from "@/lib/safe-back";
@@ -55,16 +61,51 @@ export default function AddScreen() {
   useEffect(() => {
     if (!orderHydrated) void hydrateOrder();
   }, [orderHydrated, hydrateOrder]);
-  const folders = useMemo(() => applyFolderOrder(getAllFolderSeeds(), order), [order]);
+  // Cartelle dal DB (serve l'id per il salvataggio), ristrette ai 4 seed
+  // kind: le mappe tipo/label/anteprima sono keyed su di essi.
+  const { folders: allFolders } = useFoldersWithStats();
+  const folders = useMemo(
+    () =>
+      applyFolderOrder(
+        allFolders.filter(
+          (f): f is FolderWithStats & { kind: FolderKind } =>
+            (FOLDER_KINDS as readonly string[]).includes(f.kind as string),
+        ),
+        order,
+      ),
+    [allFolders, order],
+  );
   const [folder, setFolder] = useState<FolderKind>(initialKind);
   const [type, setType] = useState<string>(
     ITEM_TYPES_BY_KIND[initialKind][0]?.value ?? "word",
   );
-  const [text, setText] = useState("");
-  const [dailyCount, setDailyCount] = useState(12);
+  const [term, setTerm] = useState("");
+  const [reading, setReading] = useState("");
+  const [definition, setDefinition] = useState("");
+  const [example, setExample] = useState("");
+  const [saving, setSaving] = useState(false);
   const [savePressed, setSavePressed] = useState(false);
-  const dailyMax = 20;
+  // Contatore giornaliero vero: inserimenti di oggi + tetto dal profilo.
+  const [dailyCount, setDailyCount] = useState<number | null>(null);
+  const [dailyMax, setDailyMax] = useState(DAILY_INPUT_CAP_DEFAULT);
   const showToast = useUIStore((s) => s.showToast);
+
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    Promise.all([fetchTodayInputCount(user.id), fetchProfile(user.id)])
+      .then(([count, profile]) => {
+        if (cancelled) return;
+        setDailyCount(count);
+        if (profile) setDailyMax(profile.dailyInputCap);
+      })
+      .catch((e) => {
+        if (__DEV__) console.warn("[add] daily count load failed", e);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
 
   if (!hydrated) return null;
   if (!user) return <Redirect href="/(auth)/login" />;
@@ -72,22 +113,45 @@ export default function AddScreen() {
 
   const preview = ADD_PREVIEW_BY_KIND[folder];
   const types = ITEM_TYPES_BY_KIND[folder];
-  const dailyLimitReached = dailyCount >= dailyMax;
-  const canSave = text.trim().length > 0 && !dailyLimitReached;
+  const dailyLimitReached = (dailyCount ?? 0) >= dailyMax;
+  // Limite giornaliero = avviso MORBIDO, mai blocco (docs/SRS.md): si può
+  // salvare anche oltre il tetto — domani il carico sarà solo più alto.
+  const canSave = term.trim().length > 0 && definition.trim().length > 0 && !saving;
 
-  const doSave = (addAnother: boolean) => {
-    if (!canSave) return;
-    setDailyCount((c) => Math.min(c + 1, dailyMax));
-    const folderName = folders.find((f) => f.kind === folder)?.name ?? folder;
-    showToast(`Salvato in ${folderName} · primo ripasso domani`);
-    if (addAnother) {
-      setText("");
-      // Keep the textarea focused for fast successive adds; no nav.
-    } else {
-      // Toast is rendered at the root layout — it survives this unmount.
-      // safeBack dismisses the keyboard first to avoid an Android race that
-      // leaves the IME attached to the unmounted TextInput.
-      safeBack("/(app)/knowledge");
+  const doSave = async (addAnother: boolean) => {
+    if (!canSave || !user) return;
+    const folderRow = folders.find((f) => f.kind === folder);
+    if (!folderRow) return;
+    setSaving(true);
+    try {
+      await createMemory({
+        userId: user.id,
+        folderId: folderRow.id,
+        term: term.trim(),
+        reading: folder === "jp" && reading.trim() ? reading.trim() : undefined,
+        definition: definition.trim(),
+        example: example.trim() ? example.trim() : undefined,
+        itemType: type,
+      });
+      setDailyCount((c) => (c ?? 0) + 1);
+      showToast(`Salvato in ${folderRow.name} · primo ripasso domani`);
+      if (addAnother) {
+        // Keep the fields cleared for fast successive adds; no nav.
+        setTerm("");
+        setReading("");
+        setDefinition("");
+        setExample("");
+      } else {
+        // Toast is rendered at the root layout — it survives this unmount.
+        // safeBack dismisses the keyboard first to avoid an Android race that
+        // leaves the IME attached to the unmounted TextInput.
+        safeBack("/(app)/knowledge");
+      }
+    } catch (e) {
+      if (__DEV__) console.warn("[add] save failed", e);
+      showToast("Salvataggio non riuscito. Riprova.");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -201,13 +265,55 @@ export default function AddScreen() {
             })}
           </ScrollView>
 
-          {/* Textarea */}
-          <View style={{ paddingHorizontal: 18 }}>
+          {/* Campi del ricordo — fronte/retro espliciti (spec core-loop §3) */}
+          <View style={{ paddingHorizontal: 18, gap: 10 }}>
             <TextInput
-              value={text}
-              onChangeText={setText}
-              placeholder="Cosa vuoi ricordare?"
+              value={term}
+              onChangeText={setTerm}
+              placeholder="Termine da ricordare"
               placeholderTextColor={colors.placeholder}
+              accessibilityLabel="Termine"
+              style={{
+                backgroundColor: colors.surface,
+                borderRadius: 14,
+                borderWidth: 1,
+                borderColor: colors.hairline,
+                paddingHorizontal: 16,
+                paddingVertical: 14,
+                fontFamily: FONT.semibold,
+                fontSize: 18,
+                color: colors.navy,
+                letterSpacing: -0.2,
+              }}
+            />
+            {folder === "jp" ? (
+              <TextInput
+                value={reading}
+                onChangeText={setReading}
+                placeholder="Lettura (opzionale) — es. muzukashii"
+                placeholderTextColor={colors.placeholder}
+                accessibilityLabel="Lettura"
+                autoCapitalize="none"
+                style={{
+                  backgroundColor: colors.surface,
+                  borderRadius: 14,
+                  borderWidth: 1,
+                  borderColor: colors.hairline,
+                  paddingHorizontal: 16,
+                  paddingVertical: 12,
+                  fontFamily: FONT.regular,
+                  fontSize: 15,
+                  color: colors.navy,
+                  letterSpacing: -0.07,
+                }}
+              />
+            ) : null}
+            <TextInput
+              value={definition}
+              onChangeText={setDefinition}
+              placeholder="Cosa significa?"
+              placeholderTextColor={colors.placeholder}
+              accessibilityLabel="Definizione"
               multiline
               textAlignVertical="top"
               style={{
@@ -216,11 +322,33 @@ export default function AddScreen() {
                 borderWidth: 1,
                 borderColor: colors.hairline,
                 padding: 16,
-                minHeight: 120,
+                minHeight: 90,
                 fontFamily: FONT.regular,
                 fontSize: 16,
                 color: colors.navy,
                 lineHeight: 22,
+                letterSpacing: -0.07,
+              }}
+            />
+            <TextInput
+              value={example}
+              onChangeText={setExample}
+              placeholder="Frase d'esempio (opzionale)"
+              placeholderTextColor={colors.placeholder}
+              accessibilityLabel="Frase d'esempio"
+              multiline
+              textAlignVertical="top"
+              style={{
+                backgroundColor: colors.surface,
+                borderRadius: 14,
+                borderWidth: 1,
+                borderColor: colors.hairline,
+                padding: 16,
+                minHeight: 70,
+                fontFamily: FONT.regular,
+                fontSize: 15,
+                color: colors.navy,
+                lineHeight: 21,
                 letterSpacing: -0.07,
               }}
             />
@@ -299,10 +427,21 @@ export default function AddScreen() {
                     letterSpacing: -0.4,
                   }}
                 >
-                  {text.trim().length > 0
-                    ? text.trim().split("\n")[0]?.slice(0, 60)
-                    : preview.front}
+                  {term.trim() ? term.trim().slice(0, 60) : preview.front}
                 </Text>
+                {folder === "jp" && reading.trim() ? (
+                  <Text
+                    style={{
+                      fontFamily: FONT.regular,
+                      fontSize: 13.5,
+                      color: colors.midGrey,
+                      marginTop: 2,
+                      letterSpacing: 0.2,
+                    }}
+                  >
+                    {reading.trim()}
+                  </Text>
+                ) : null}
               </View>
               <View style={{ height: 1, backgroundColor: colors.divider, marginHorizontal: 16 }} />
               <View style={{ paddingHorizontal: 16, paddingVertical: 12 }}>
@@ -326,8 +465,22 @@ export default function AddScreen() {
                     lineHeight: 20,
                   }}
                 >
-                  {preview.back}
+                  {definition.trim() ? definition.trim().slice(0, 160) : preview.back}
                 </Text>
+                {example.trim() ? (
+                  <Text
+                    style={{
+                      fontFamily: FONT.regular,
+                      fontStyle: "italic",
+                      fontSize: 13,
+                      color: colors.midGrey,
+                      marginTop: 6,
+                      lineHeight: 18,
+                    }}
+                  >
+                    {example.trim().slice(0, 120)}
+                  </Text>
+                ) : null}
               </View>
               <View
                 style={{
@@ -383,11 +536,15 @@ export default function AddScreen() {
               fontSize: dailyLimitReached ? 12.5 : 12,
               color: dailyLimitReached ? colors.danger : colors.midGrey,
               fontVariant: ["tabular-nums"],
+              textAlign: "center",
+              paddingHorizontal: 8,
             }}
           >
-            {dailyLimitReached
-              ? `Limite giornaliero raggiunto · torna domani`
-              : `${dailyCount} / ${dailyMax} ricordi oggi`}
+            {dailyCount === null
+              ? "…"
+              : dailyLimitReached
+                ? `Oltre il limite di oggi (${dailyCount}/${dailyMax}) — puoi salvare comunque, ma domani il carico sarà più alto.`
+                : `${dailyCount} / ${dailyMax} ricordi oggi`}
           </Text>
           <GhostButton
             label="Salva e aggiungi un altro"
