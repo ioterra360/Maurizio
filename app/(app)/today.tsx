@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { ScrollView, Text, View } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 
 import { TimeBudgetChips } from "@/components/TimeBudgetChips";
 import { SectionLabel } from "@/components/SectionLabel";
@@ -9,37 +10,81 @@ import { LayerCard } from "@/components/LayerCard";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { Mascot } from "@/components/Mascot";
 import { useAuthStore } from "@/lib/auth-store";
-import { DECK_SIZES, useReviewStore } from "@/lib/review-store";
+import { useReviewStore } from "@/lib/review-store";
+import { fetchDueCounts } from "@/lib/api";
+import { isDemoMode } from "@/lib/supabase";
+import {
+  DEMO_DUE_COUNTS,
+  layerMinutes,
+  splitBudget,
+  totalMinutes,
+  type LayerCounts,
+} from "@/lib/queue";
+import { TIME_BUDGETS } from "@/lib/constants";
 import { firstName, dateBadge, timeGreeting } from "@/lib/format";
 import { FONT, colors } from "@/theme/tokens";
 
-// Item counts come from the review-store decks — the same decks the CTAs
-// actually launch — so the plan can never contradict the session it starts.
-// Minute estimates stay local until Phase 3D threads the time budget into
-// fetchDueMemoriesByLayer.
-const PLAN = {
-  scan:          { items: DECK_SIZES.scan,          minutes: 3 },
-  reinforcement: { items: DECK_SIZES.reinforcement, minutes: 6 },
-  focus:         { items: DECK_SIZES.focus,         minutes: 6 },
-} as const;
-
-const TOTAL_ITEMS = PLAN.scan.items + PLAN.reinforcement.items + PLAN.focus.items;
-const TOTAL_MINUTES = PLAN.scan.minutes + PLAN.reinforcement.minutes + PLAN.focus.minutes;
+/** Chiave AsyncStorage del budget scelto — la proposta del giorno sopravvive al riavvio. */
+const BUDGET_KEY = "memika.time-budget-minutes";
 
 export default function TodayScreen() {
-  const name = useAuthStore((s) => s.user?.name ?? "");
-  const display = firstName(name, "Benvenuto");
+  const user = useAuthStore((s) => s.user);
+  const display = firstName(user?.name ?? "", "Benvenuto");
   const [budget, setBudget] = useState(15);
+  const [dueCounts, setDueCounts] = useState<LayerCounts | null>(null);
+
+  // Budget persistito: la scelta sopravvive al riavvio dell'app.
+  useEffect(() => {
+    AsyncStorage.getItem(BUDGET_KEY)
+      .then((v) => {
+        const n = v ? Number(v) : NaN;
+        if (TIME_BUDGETS.some((b) => b.minutes === n)) setBudget(n);
+      })
+      .catch(() => {});
+  }, []);
+  const pickBudget = (minutes: number) => {
+    setBudget(minutes);
+    AsyncStorage.setItem(BUDGET_KEY, String(minutes)).catch(() => {});
+  };
+
+  // Conteggi veri della coda, aggiornati a ogni focus della schermata.
+  useFocusEffect(
+    useCallback(() => {
+      if (!user) return;
+      let cancelled = false;
+      fetchDueCounts(user.id)
+        .then((c) => {
+          if (!cancelled) setDueCounts(c);
+        })
+        .catch((e) => {
+          if (__DEV__) console.warn("[today] due counts failed", e);
+        });
+      return () => {
+        cancelled = true;
+      };
+    }, [user]),
+  );
 
   // Recompute date label each render so a day rollover during a long session
   // doesn't leave a stale "MON · MAY 18" header.
   const greeting = timeGreeting();
   const dateLabel = dateBadge();
+
+  // Piano del giorno derivato: coda vera × budget scelto. In demo i conteggi
+  // sono quelli dei mazzi statici; in reale restano null ("…") finché il
+  // fetch non risolve — mai numeri finti a un utente vero.
+  const estItems = TIME_BUDGETS.find((b) => b.minutes === budget)?.estItems ?? 28;
+  const counts = dueCounts ?? (isDemoMode ? DEMO_DUE_COUNTS : null);
+  const plan = counts ? splitBudget(counts, estItems) : null;
+  const totItems = plan ? plan.scan + plan.reinforcement + plan.focus : null;
+  const totMin = plan ? totalMinutes(plan) : null;
+  const minutesLabel = (l: "scan" | "reinforcement" | "focus") =>
+    plan ? `~${layerMinutes(l, plan[l])} min` : "…";
   // Recommended flow subtitle pulled out so we can localize cleanly.
   const PLAN_LABELS = {
-    scan:          `Ricordi più vecchi · ~${PLAN.scan.minutes} min`,
-    reinforcement: `Ultimi 3–7 giorni · ~${PLAN.reinforcement.minutes} min`,
-    focus:         `Ricordi di ieri · ~${PLAN.focus.minutes} min`,
+    scan:          `Ricordi più vecchi · ${minutesLabel("scan")}`,
+    reinforcement: `Ultimi 3–7 giorni · ${minutesLabel("reinforcement")}`,
+    focus:         `Ricordi di ieri · ${minutesLabel("focus")}`,
   } as const;
   const startSession = useReviewStore((s) => s.start);
 
@@ -48,12 +93,15 @@ export default function TodayScreen() {
   // step let a same-layer pending request from an abandoned flow
   // suppress the new direct-entry session (Codex P2 on 6b777ad).
   const startReview = () => {
-    // T10 sostituisce il cap fisso con lo snapshot del piano mostrato.
-    startSession("scan", "flow", { budgetCap: 28 });
+    if (!plan) return;
+    // Il flusso esegue ESATTAMENTE il piano mostrato: snapshot dei caps,
+    // niente refetch interno sovrascrivibile da sessioni più vecchie.
+    startSession("scan", "flow", { budgetCap: estItems, layerCaps: plan });
     router.push("/review/scan");
   };
   const startLayer = (path: "scan" | "reinforcement" | "focus") => {
-    startSession(path, "single", { budgetCap: 28 });
+    // Livello singolo = tutto il budget su quel livello, per scelta di spec.
+    startSession(path, "single", { budgetCap: estItems });
     router.push(`/review/${path}`);
   };
 
@@ -106,7 +154,7 @@ export default function TodayScreen() {
 
         {/* Time budget chips */}
         <View style={{ paddingHorizontal: 20, marginTop: 22 }}>
-          <TimeBudgetChips value={budget} onChange={setBudget} />
+          <TimeBudgetChips value={budget} onChange={pickBudget} />
         </View>
 
         {/* Recommended flow */}
@@ -116,19 +164,19 @@ export default function TodayScreen() {
         <View style={{ paddingHorizontal: 20, gap: 10 }}>
           <LayerCard
             layerKey="scan"
-            items={PLAN.scan.items}
+            items={plan?.scan ?? 0}
             subtitle={PLAN_LABELS.scan}
             onPress={() => startLayer("scan")}
           />
           <LayerCard
             layerKey="reinforcement"
-            items={PLAN.reinforcement.items}
+            items={plan?.reinforcement ?? 0}
             subtitle={PLAN_LABELS.reinforcement}
             onPress={() => startLayer("reinforcement")}
           />
           <LayerCard
             layerKey="focus"
-            items={PLAN.focus.items}
+            items={plan?.focus ?? 0}
             subtitle={PLAN_LABELS.focus}
             onPress={() => startLayer("focus")}
           />
@@ -146,9 +194,15 @@ export default function TodayScreen() {
               fontVariant: ["tabular-nums"],
             }}
           >
-            Totale · {TOTAL_ITEMS} ricordi · circa {TOTAL_MINUTES} min
+            {plan
+              ? `Totale · ${totItems} ricordi · circa ${totMin} min`
+              : "Sto preparando il piano di oggi…"}
           </Text>
-          <PrimaryButton label="Inizia il ripasso di oggi" onPress={startReview} />
+          <PrimaryButton
+            label={plan && totItems === 0 ? "Niente da ripassare ora" : "Inizia il ripasso di oggi"}
+            onPress={startReview}
+            disabled={!plan || totItems === 0}
+          />
         </View>
       </ScrollView>
     </SafeAreaView>
