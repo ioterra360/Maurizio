@@ -63,6 +63,13 @@ the editorial design. No backend wiring yet beyond auth.
 
 ## Phase 3 — Review engine
 
+> **Status 2026-07-25:** sostanzialmente consegnata dal ciclo "core loop"
+> (spec + piano in `docs/superpowers/`): Add persiste su `memories`, i mazzi
+> arrivano da `fetchDueMemoriesByLayer` col budget-tempo, il flusso fluido
+> Scan→Reinforcement→Focus è automatico, il recap e Progressi usano dati
+> veri, le cartelle hanno stats/pausa/eliminazione. Fuori dal ciclo:
+> nudge "long absence", notifiche (Fase 4).
+
 **Goal:** the SRS works end-to-end. Memories you save show up in the right
 review layer at the right time, and recall outcomes update the schedule.
 

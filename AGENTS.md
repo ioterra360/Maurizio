@@ -80,7 +80,7 @@ docs(architecture): document Wix payments flow
 Trailer required when an AI agent authored or co-authored:
 
 ```
-Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>
+Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
 ```
 
 Pass the message via a HEREDOC so newlines survive shell escaping.

@@ -8,21 +8,28 @@
 app/
 ├── _layout.tsx                  ROOT — fonts, splash, auth hydrate, Stack screenOptions
 ├── index.tsx                    Smart redirect (login / today / admin)
+├── add.tsx                      Aggiungi ricordo — root-level (modal su iOS, card su Android)
+├── folder-settings.tsx          Impostazioni cartella (`?kind=`) — push root-level sopra i tab
 │
 ├── (auth)/
 │   ├── _layout.tsx              Redirects out if user already signed in
-│   └── login.tsx                The sole unauthenticated screen for now
+│   ├── login.tsx · signup.tsx · forgot-password.tsx · onboarding.tsx
 │
 ├── (app)/
-│   ├── _layout.tsx              Tabs nav. Redirects to login if no user; to admin if admin.
-│   ├── today.tsx                Phase 1 stub
-│   ├── knowledge.tsx            Phase 1 stub
-│   ├── health.tsx               Phase 1 stub
-│   └── settings.tsx             Phase 1 stub with working sign-out
+│   ├── _layout.tsx              Tabs nav (backBehavior "history"). Auth gate.
+│   ├── today.tsx · knowledge.tsx · health.tsx · settings.tsx
+│   ├── folder/[kind].tsx        Dettaglio cartella — tab nascosto (href: null)
+│   └── subscribe.tsx            Paywall — tab nascosto, tab bar nascosta
+│
+├── review/
+│   ├── _layout.tsx              Stack, auth-gated
+│   ├── scan.tsx · reinforcement.tsx · focus.tsx
+│   ├── handoff.tsx              Interstitial automatico tra i livelli (flow)
+│   └── complete.tsx             Recap di fine sessione (mascotte + esiti)
 │
 └── (admin)/
     ├── _layout.tsx              Redirects to user shell if not admin
-    └── home.tsx                 Phase 1 stub (full panel lands in Phase 4)
+    └── home.tsx · users.tsx · moderation.tsx · insights.tsx · more.tsx
 ```
 
 ## Route table
@@ -30,11 +37,16 @@ app/
 | Path | File | Who can reach it |
 |---|---|---|
 | `/` | `app/index.tsx` | Anyone — redirects immediately based on auth |
+| `/add` | `app/add.tsx` | Signed-in users (gated da add-gate) |
+| `/folder-settings?kind=` | `app/folder-settings.tsx` | Signed-in users |
 | `/(auth)/login` | `app/(auth)/login.tsx` | Only when signed out |
 | `/(app)/today` | `app/(app)/today.tsx` | Signed-in users |
 | `/(app)/knowledge` | `app/(app)/knowledge.tsx` | Signed-in users |
 | `/(app)/health` | `app/(app)/health.tsx` | Signed-in users |
 | `/(app)/settings` | `app/(app)/settings.tsx` | Signed-in users |
+| `/(app)/folder/[kind]` | `app/(app)/folder/[kind].tsx` | Signed-in users |
+| `/(app)/subscribe` | `app/(app)/subscribe.tsx` | Signed-in users |
+| `/review/scan · reinforcement · focus · handoff · complete` | `app/review/*` | Signed-in users |
 | `/(admin)/home` | `app/(admin)/home.tsx` | Signed-in admins |
 
 ## Why three route groups
