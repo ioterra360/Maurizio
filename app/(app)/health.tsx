@@ -1,6 +1,7 @@
+import { useCallback, useMemo, useState } from "react";
 import { ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 
 import { HeaderHero } from "@/components/HeaderHero";
 import { SectionLabel } from "@/components/SectionLabel";
@@ -9,9 +10,75 @@ import { HealthRow } from "@/components/HealthRow";
 import { CognitiveLoadBar } from "@/components/CognitiveLoadBar";
 import { Tappable } from "@/components/Tappable";
 import { Mascot } from "@/components/Mascot";
+import { useAuthStore } from "@/lib/auth-store";
+import { useFoldersWithStats } from "@/lib/use-folders";
+import { applyFolderOrder, useFolderOrderStore } from "@/lib/folder-order-store";
+import { fetchDueCounts } from "@/lib/api";
+import type { LayerCounts } from "@/lib/queue";
+import type { FolderWithStats } from "@/lib/mappers";
 import { FONT, colors } from "@/theme/tokens";
 
 export default function HealthScreen() {
+  const user = useAuthStore((s) => s.user);
+  const { folders, loading } = useFoldersWithStats();
+  const order = useFolderOrderStore((s) => s.order);
+  const orderedFolders = useMemo(
+    () => applyFolderOrder(folders, order),
+    [folders, order],
+  );
+
+  // Aggregato pesato sull'intera libreria: alimenta l'anello, la legenda e
+  // il totale "ricordi monitorati" (prima erano numeri scritti a mano).
+  const agg = useMemo(() => {
+    const count = folders.reduce((s, f) => s + f.count, 0);
+    const w = (k: "active" | "fading" | "archived") =>
+      count > 0
+        ? Math.round(
+            (folders.reduce((s, f) => s + (f.count * f[k]) / 100, 0) / count) * 100,
+          )
+        : 0;
+    return { count, active: w("active"), fading: w("fading"), archived: w("archived") };
+  }, [folders]);
+  // Durante il primo caricamento manteniamo i placeholder storici — mai NaN.
+  const ring = loading && folders.length === 0
+    ? { count: 779, active: 62, fading: 24, archived: 14 }
+    : agg;
+
+  // Insight onesto: la cartella col maggior numero assoluto di ricordi in
+  // dissolvenza. Nessuna → niente card.
+  const worst = useMemo(() => {
+    let best: { f: FolderWithStats; fadingCount: number } | null = null;
+    for (const f of folders) {
+      const fadingCount = Math.round((f.count * f.fading) / 100);
+      if (fadingCount > 0 && (!best || fadingCount > best.fadingCount)) {
+        best = { f, fadingCount };
+      }
+    }
+    return best;
+  }, [folders]);
+
+  // Carico cognitivo derivato dalla coda: 120 items ≈ tetto del budget 1h.
+  // Euristica dichiarata (spec core-loop §8), da tarare con la telemetria.
+  const [due, setDue] = useState<LayerCounts | null>(null);
+  useFocusEffect(
+    useCallback(() => {
+      if (!user) return;
+      let cancelled = false;
+      fetchDueCounts(user.id)
+        .then((c) => {
+          if (!cancelled) setDue(c);
+        })
+        .catch((e) => {
+          if (__DEV__) console.warn("[health] due counts failed", e);
+        });
+      return () => {
+        cancelled = true;
+      };
+    }, [user]),
+  );
+  const dueTotal = due ? due.scan + due.reinforcement + due.focus : null;
+  const loadPct = dueTotal === null ? 62 : Math.min(100, Math.round((dueTotal / 120) * 100));
+
   return (
     <SafeAreaView className="flex-1 bg-warm-white" edges={["top"]}>
       <ScrollView
@@ -42,12 +109,12 @@ export default function HealthScreen() {
             <View style={{ alignItems: "center" }}>
               <RingChart
                 size={156}
-                centerValue="62"
+                centerValue={String(ring.active)}
                 centerLabel="Stabili"
                 segments={[
-                  { color: colors.active, pct: 62 },
-                  { color: colors.fading, pct: 24 },
-                  { color: colors.archived, pct: 14 },
+                  { color: colors.active, pct: ring.active },
+                  { color: colors.fading, pct: ring.fading },
+                  { color: colors.archived, pct: ring.archived },
                 ]}
               />
             </View>
@@ -63,7 +130,7 @@ export default function HealthScreen() {
                 fontVariant: ["tabular-nums"],
               }}
             >
-              779 ricordi monitorati
+              {ring.count} ricordi monitorati
             </Text>
             <View
               style={{
@@ -75,75 +142,86 @@ export default function HealthScreen() {
                 columnGap: 14,
               }}
             >
-              <LegendDot color={colors.active} label="Stabili" pct="62%" />
-              <LegendDot color={colors.fading} label="In dissolvenza" pct="24%" />
-              <LegendDot color={colors.archived} label="Archiviati" pct="14%" />
+              <LegendDot color={colors.active} label="Stabili" pct={`${ring.active}%`} />
+              <LegendDot color={colors.fading} label="In dissolvenza" pct={`${ring.fading}%`} />
+              <LegendDot color={colors.archived} label="Archiviati" pct={`${ring.archived}%`} />
             </View>
           </View>
         </View>
 
-        {/* Folder breakdown */}
+        {/* Folder breakdown — dati veri dal rollup condiviso */}
         <View style={{ paddingHorizontal: 24, paddingTop: 22, paddingBottom: 8 }}>
           <SectionLabel>Per cartella</SectionLabel>
         </View>
         <View style={{ paddingHorizontal: 16, gap: 8 }}>
-          <HealthRow name="Japanese" active={84} fading={12} archived={4}  chip="Alta" />
-          <HealthRow name="Medicine" active={78} fading={15} archived={7}  chip="Alta" />
-          <HealthRow name="Spanish"  active={55} fading={32} archived={13} chip="Media" />
-          <HealthRow name="Law"      active={38} fading={42} archived={20} chip="Bassa" />
+          {orderedFolders.map((f) => (
+            <HealthRow
+              key={f.kind}
+              name={f.name}
+              active={f.active}
+              fading={f.fading}
+              archived={f.archived}
+              chip={f.active >= 70 ? "Alta" : f.active >= 45 ? "Media" : "Bassa"}
+            />
+          ))}
         </View>
 
-        {/* Insight card */}
-        <View style={{ paddingHorizontal: 16, paddingTop: 18 }}>
-          <View
-            className="rounded-card bg-surface"
-            style={{
-              paddingHorizontal: 16,
-              paddingVertical: 14,
-              borderWidth: 1,
-              borderColor: colors.hairline,
-              borderLeftWidth: 2.5,
-              borderLeftColor: colors.reinforcement,
-            }}
-          >
-            <Text
+        {/* Insight card — solo quando c'è davvero qualcosa da riequilibrare */}
+        {worst ? (
+          <View style={{ paddingHorizontal: 16, paddingTop: 18 }}>
+            <View
+              className="rounded-card bg-surface"
               style={{
-                fontFamily: FONT.medium,
-                fontSize: 15,
-                color: colors.navy,
-                lineHeight: 22,
-                letterSpacing: -0.05,
+                paddingHorizontal: 16,
+                paddingVertical: 14,
+                borderWidth: 1,
+                borderColor: colors.hairline,
+                borderLeftWidth: 2.5,
+                borderLeftColor: colors.reinforcement,
               }}
-            >
-              Japanese è la tua priorità #1, ma solo il 35% del tempo di ripasso
-              di questa settimana è andato lì.
-            </Text>
-            <Tappable
-              onPress={() => router.push({ pathname: "/folder/[kind]", params: { kind: "jp" } })}
-              accessibilityLabel="Riequilibra questa settimana, vai alla cartella Japanese"
-              containerStyle={{ marginTop: 6, alignSelf: "flex-end" }}
-              style={{ paddingVertical: 4 }}
             >
               <Text
                 style={{
-                  fontFamily: FONT.semibold,
-                  fontSize: 14.5,
-                  color: colors.reinforcement,
+                  fontFamily: FONT.medium,
+                  fontSize: 15,
+                  color: colors.navy,
+                  lineHeight: 22,
                   letterSpacing: -0.05,
                 }}
               >
-                Riequilibra questa settimana →
+                {worst.f.name} ha {worst.fadingCount}{" "}
+                {worst.fadingCount === 1 ? "ricordo" : "ricordi"} in dissolvenza —
+                una sessione mirata li può recuperare.
               </Text>
-            </Tappable>
+              <Tappable
+                onPress={() =>
+                  router.push({ pathname: "/folder/[kind]", params: { kind: worst.f.kind } })
+                }
+                accessibilityLabel={`Riequilibra ora, vai alla cartella ${worst.f.name}`}
+                containerStyle={{ marginTop: 6, alignSelf: "flex-end" }}
+                style={{ paddingVertical: 4 }}
+              >
+                <Text
+                  style={{
+                    fontFamily: FONT.semibold,
+                    fontSize: 14.5,
+                    color: colors.reinforcement,
+                    letterSpacing: -0.05,
+                  }}
+                >
+                  Riequilibra ora →
+                </Text>
+              </Tappable>
+            </View>
           </View>
-        </View>
+        ) : null}
 
         {/* Cognitive load */}
         <View style={{ paddingHorizontal: 24, paddingTop: 22, paddingBottom: 8 }}>
           <SectionLabel>Carico cognitivo</SectionLabel>
         </View>
         <View style={{ paddingHorizontal: 24 }}>
-          <CognitiveLoadBar pct={62} />
+          <CognitiveLoadBar pct={loadPct} />
         </View>
       </ScrollView>
     </SafeAreaView>
