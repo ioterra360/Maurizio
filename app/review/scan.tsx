@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Pressable, Text, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useFocusEffect } from "expo-router";
 
+import { MascotLoader } from "@/components/MascotLoader";
 import { ReviewHeader } from "@/components/ReviewHeader";
 import { FolderPill } from "@/components/FolderPill";
 import { Tappable } from "@/components/Tappable";
@@ -210,7 +211,7 @@ export default function ScanScreen() {
     return (
       <SafeAreaView className="flex-1 bg-warm-white" edges={["top"]}>
         <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-          <ActivityIndicator color={colors.navy} />
+          <MascotLoader label="Preparo il ripasso…" />
         </View>
       </SafeAreaView>
     );

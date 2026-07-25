@@ -3,7 +3,7 @@
 import "../global.css";
 
 import { useCallback, useEffect } from "react";
-import { View } from "react-native";
+import { Platform, View } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -134,7 +134,12 @@ export default function RootLayout() {
             <Stack.Screen
               name="add"
               options={{
-                presentation: "modal",
+                // Native modal only on iOS (card sheet). On Android the
+                // native modal wrapper reports a zero top safe-area inset,
+                // which slid the Add top bar under the status bar — the
+                // "Salva a metà" clip. A card with the same slide-from-bottom
+                // animation looks identical on Android and insets correctly.
+                presentation: Platform.OS === "ios" ? "modal" : "card",
                 animation: "slide_from_bottom",
                 contentStyle: { backgroundColor: colors.warmWhite },
               }}

@@ -30,6 +30,10 @@ export default function AppLayout() {
 
   return (
     <Tabs
+      // Back from a pushed hidden tab (folder detail) must return to the tab
+      // the user came from — the default backBehavior ("firstRoute") dumped
+      // them on Oggi instead of Cartelle.
+      backBehavior="history"
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: colors.navy,

@@ -117,6 +117,7 @@ export default function AddScreen() {
               style={{
                 fontFamily: FONT.bold,
                 fontSize: 15,
+                lineHeight: 20,
                 color: colors.navy,
                 letterSpacing: -0.1,
               }}
@@ -225,10 +226,12 @@ export default function AddScreen() {
             />
           </View>
 
-          {/* Type chips */}
+          {/* Type chips — content-hugging (no flex:1): equal-split widths
+              squeezed "Grammatica" while "Kanji" floated in dead space.
+              flexWrap lets long label sets break onto a second row. */}
           <View
             className="flex-row"
-            style={{ paddingHorizontal: 18, paddingTop: 14, gap: 6 }}
+            style={{ paddingHorizontal: 18, paddingTop: 14, gap: 6, flexWrap: "wrap" }}
           >
             {types.map((t) => {
               const on = type === t.value;
@@ -239,13 +242,12 @@ export default function AddScreen() {
                   accessibilityRole="button"
                   accessibilityState={{ selected: on }}
                   pressedOpacity={0.6}
-                  containerStyle={{ flex: 1 }}
                   style={{
-                    flex: 1,
                     alignItems: "center",
                     justifyContent: "center",
                     borderRadius: radii.chip,
                     height: 32,
+                    paddingHorizontal: 14,
                     backgroundColor: on ? colors.navy : colors.surface,
                     borderWidth: on ? 0 : 1,
                     borderColor: colors.hairline,

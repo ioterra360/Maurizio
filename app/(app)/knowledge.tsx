@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo } from "react";
-import { ActivityIndicator, Text, View } from "react-native";
+import { Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import DraggableFlatList, {
   type RenderItemParams,
@@ -10,6 +10,7 @@ import { router } from "expo-router";
 import { HeaderHero } from "@/components/HeaderHero";
 import { FolderRow } from "@/components/FolderRow";
 import { Mascot } from "@/components/Mascot";
+import { MascotLoader } from "@/components/MascotLoader";
 import { Tappable } from "@/components/Tappable";
 import { useFoldersWithStats } from "@/lib/use-folders";
 import type { FolderWithStats } from "@/lib/mappers";
@@ -83,7 +84,7 @@ export default function KnowledgeScreen() {
   const empty =
     loading && folders.length === 0 ? (
       <View style={{ paddingVertical: 48, alignItems: "center" }}>
-        <ActivityIndicator color={colors.navy} />
+        <MascotLoader label="Carico le tue cartelle…" />
       </View>
     ) : error ? (
       <View style={{ paddingHorizontal: 16 }}>

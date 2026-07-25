@@ -1,11 +1,12 @@
 import { useCallback, useMemo, useState } from "react";
-import { ActivityIndicator, ScrollView, Text, View } from "react-native";
+import { ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Plus, Repeat } from "lucide-react-native";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 
 import { TopBar } from "@/components/TopBar";
 import { FolderTopBar } from "@/components/FolderTopBar";
+import { MascotLoader } from "@/components/MascotLoader";
 import { RetentionBar } from "@/components/RetentionBar";
 import { StatBlock } from "@/components/StatBlock";
 import { ActionPill } from "@/components/ActionPill";
@@ -87,7 +88,7 @@ export default function FolderDetailScreen() {
       <SafeAreaView className="flex-1 bg-warm-white" edges={["top"]}>
         <TopBar />
         <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-          <ActivityIndicator color={colors.navy} />
+          <MascotLoader label="Apro la cartella…" />
         </View>
       </SafeAreaView>
     );
