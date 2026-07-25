@@ -1,11 +1,11 @@
 import { Text, View } from "react-native";
+import { router } from "expo-router";
 import { ChevronLeft, Settings as SettingsIcon } from "lucide-react-native";
 
 import { FolderTile } from "@/components/FolderTile";
 import { Tappable } from "@/components/Tappable";
 import { FONT, colors } from "@/theme/tokens";
 import type { FolderKind } from "@/lib/constants";
-import { safeBack } from "@/lib/safe-back";
 
 type Props = {
   kind: FolderKind;
@@ -32,7 +32,10 @@ export function FolderTopBar({ kind, name, priority }: Props) {
       }}
     >
       <Tappable
-        onPress={() => safeBack("/(app)/knowledge")}
+        // navigate (not back): the label promises "alle cartelle", and a
+        // history pop could land anywhere the user came from (Oggi,
+        // Progressi). navigate is deterministic and dedupes in-history tabs.
+        onPress={() => router.navigate("/(app)/knowledge")}
         accessibilityRole="button"
         accessibilityLabel="Torna alle cartelle"
         pressedOpacity={0.6}
@@ -81,17 +84,20 @@ export function FolderTopBar({ kind, name, priority }: Props) {
         </View>
       </View>
 
-      {/* Settings cog: visually present per the mockup, but inert and hidden
-          from assistive tech until the folder-settings screen exists. When it
-          lands, restore a Pressable (opacity 0.85 pressed) with an Italian
-          label ("Impostazioni cartella"). */}
-      <View
-        style={{ width: 40, height: 40, alignItems: "center", justifyContent: "center" }}
-        accessibilityElementsHidden
-        importantForAccessibility="no-hide-descendants"
+      <Tappable
+        onPress={() => router.push({ pathname: "/folder-settings", params: { kind } } as never)}
+        accessibilityRole="button"
+        accessibilityLabel="Impostazioni cartella"
+        pressedOpacity={0.6}
+        style={{
+          width: 40,
+          height: 40,
+          alignItems: "center",
+          justifyContent: "center",
+        }}
       >
         <SettingsIcon size={20} color={colors.navy} strokeWidth={1.7} />
-      </View>
+      </Tappable>
     </View>
   );
 }

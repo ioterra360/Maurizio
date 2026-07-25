@@ -30,7 +30,7 @@ export function TopBar({ title, onBack, rightSlot }: Props) {
         paddingLeft: 14,
         paddingRight: 18,
         paddingVertical: 8,
-        height: 48,
+        minHeight: 48,
         backgroundColor: "rgba(250,248,244,0.94)",
         borderBottomColor: "transparent",
         borderBottomWidth: 1,
@@ -70,7 +70,7 @@ export function TopBar({ title, onBack, rightSlot }: Props) {
         <View style={{ flex: 1 }} />
       )}
 
-      <View style={{ minWidth: 40, alignItems: "flex-end" }}>{rightSlot ?? null}</View>
+      <View style={{ minWidth: 40, flexShrink: 0, alignItems: "flex-end" }}>{rightSlot ?? null}</View>
     </View>
   );
 }
