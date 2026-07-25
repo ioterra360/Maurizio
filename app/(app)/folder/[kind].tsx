@@ -1,8 +1,8 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { ActivityIndicator, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Plus, Repeat } from "lucide-react-native";
-import { router, useLocalSearchParams } from "expo-router";
+import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 
 import { TopBar } from "@/components/TopBar";
 import { FolderTopBar } from "@/components/FolderTopBar";
@@ -31,6 +31,14 @@ export default function FolderDetailScreen() {
   const order = useFolderOrderStore((s) => s.order);
   const startSession = useReviewStore((s) => s.start);
   const [filter, setFilter] = useState<"all" | MemoryState>("all");
+
+  // Refetch on focus — the name can change in folder-settings, and the hook
+  // itself only loads on mount. Runs before the early returns (hooks rule).
+  useFocusEffect(
+    useCallback(() => {
+      refetch();
+    }, [refetch]),
+  );
 
   // Memory (api/db model) → FolderItem (UI/display model) adapter. Kept
   // inline so we can rip it out when ItemRow accepts Memory directly.
@@ -121,7 +129,7 @@ export default function FolderDetailScreen() {
   // the full Scan → Reinforcement → Focus flow. Initialize the store
   // before navigating so the Scan screen's flow-default fallback no-ops.
   const startReview = () => {
-    startSession("scan", "single", kind);
+    startSession("scan", "single", { folderKind: kind, folderId: data.id, budgetCap: 28 });
     router.push("/review/scan");
   };
   const addItem = () => {

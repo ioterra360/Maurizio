@@ -5,12 +5,21 @@ import { useAuthStore } from "./auth-store";
 import {
   applyScheduledUpdate,
   completeReviewSession,
+  fetchDueMemoriesByLayer,
+  fetchFolders,
   recordReviewItem,
   startReviewSession,
 } from "./api";
+import { isDemoMode } from "./supabase";
+import { toReviewCard, type LayerCounts } from "./queue";
 import { update as scheduleUpdate } from "@/features/srs/scheduler";
-import { initialSrsState, type LayerOutcome, type SrsState } from "@/features/srs/types";
-import type { FolderKind, ReviewResponse } from "./constants";
+import {
+  initialSrsState,
+  type LayerOutcome,
+  type SrsState,
+  type UpdatedSrs,
+} from "@/features/srs/types";
+import { FOLDER_KINDS, type FolderKind, type ReviewResponse } from "./constants";
 
 export type ReviewCard = {
   /** Stable id so persistence keeps SRS state per-card across reviews. */
@@ -88,6 +97,16 @@ export type Counts = {
   reviewed: number;
 };
 
+/** Esito di una singola carta nella sessione corrente — letto dal recap. */
+export type RecapEntry = {
+  id: string;
+  term: string;
+  reading?: string;
+  layer: LayerKey;
+  response: "remembered" | "struggled" | "forgot";
+  revealed: boolean;
+};
+
 const EMPTY_COUNTS: Counts = { remembered: 0, struggled: 0, forgot: 0, reviewed: 0 };
 
 type PendingItem = {
@@ -141,6 +160,17 @@ type ReviewState = {
   layer: LayerKey;
   /** Folder scope for the session — null reviews every folder's cards. */
   folderKind: FolderKind | null;
+  /** Folder scope come id DB — le sessioni da cartella lo passano a start(). */
+  folderId: string | null;
+  /** Mazzo vero caricato dal DB per il livello corrente. null = demo o non (ancora) caricato. */
+  deck: ReviewCard[] | null;
+  deckLoading: boolean;
+  /** Piano per livello (snapshot mostrato su Oggi) — advanceToLayer lo consulta. */
+  layerCaps: LayerCounts | null;
+  /** Tetto items complessivo della sessione (budget tempo). */
+  budgetCap: number | null;
+  /** Esiti per carta della sessione corrente — il recap li legge. */
+  results: RecapEntry[];
   index: number;
   /** Cumulative across all layers in the current flow — Complete screen reads this. */
   totals: Counts;
@@ -170,8 +200,25 @@ type ReviewState = {
   pendingSessionComplete: Counts | null;
   /** SRS state per card id — initialized lazily and updated in place. */
   srsByCard: Record<string, SrsState>;
-  start: (layer: LayerKey, mode: "flow" | "single", folderKind?: FolderKind) => void;
-  recordAndAdvance: (response: "remembered" | "struggled" | "forgot") => "next" | "handoff" | "done";
+  start: (
+    layer: LayerKey,
+    mode: "flow" | "single",
+    opts?: {
+      folderKind?: FolderKind;
+      folderId?: string;
+      budgetCap?: number;
+      layerCaps?: LayerCounts;
+    },
+  ) => void;
+  recordAndAdvance: (
+    response: "remembered" | "struggled" | "forgot",
+    opts?: { revealed?: boolean },
+  ) => "next" | "handoff" | "done";
+  /**
+   * Corregge l'ultima risposta Scan in "struggled" entro la finestra del
+   * flash di conferma. Ritorna false se la finestra è già chiusa.
+   */
+  amendLastAnswer: () => boolean;
   cards: () => ReviewCard[];
   current: () => ReviewCard | undefined;
   reset: () => void;
@@ -206,6 +253,97 @@ let lastRecordAt = 0;
 
 /** The newest in-flight session promise. Used to finalize an abandoned layer. */
 let currentSessionPromise: Promise<{ id: string } | null> | null = null;
+
+/** Durata del flash di conferma su Scan — finestra utile per l'amend. */
+export const AMEND_WINDOW_MS = 1400;
+
+/**
+ * Persistenza Scan differita per la finestra di correzione del flash: la
+ * risposta si scrive solo a finestra chiusa, così l'amend riscrive l'esito
+ * giusto senza doppie righe da riconciliare.
+ */
+let pendingScanPersist: {
+  timer: ReturnType<typeof setTimeout>;
+  run: () => void;
+} | null = null;
+
+/** Ultima risposta Scan — bersaglio del possibile amend nel flash. */
+let lastScanAnswer: {
+  cardId: string;
+  prior: SrsState;
+  persist: (finalResponse: ReviewResponse, finalSrs: UpdatedSrs) => void;
+} | null = null;
+
+function clearPendingScanPersist(flush = true) {
+  if (!pendingScanPersist) return;
+  clearTimeout(pendingScanPersist.timer);
+  const p = pendingScanPersist;
+  pendingScanPersist = null;
+  lastScanAnswer = null;
+  if (flush) p.run();
+}
+
+/** Sequenza monotona per i load del mazzo — l'ultimo vince. */
+let deckLoadSeq = 0;
+
+/**
+ * Carica il mazzo vero per `layer` da Supabase e lo mappa in ReviewCard.
+ * Demo/anonimo: deck resta null e cards() usa i mazzi statici. Il tetto
+ * viene dal piano per livello (layerCaps) o dal budget complessivo.
+ */
+async function loadDeckFor(
+  layer: LayerKey,
+  set: (partial: Partial<ReviewState>) => void,
+  get: () => ReviewState,
+): Promise<void> {
+  const userId = useAuthStore.getState().user?.id;
+  if (isDemoMode || !userId) {
+    set({ deck: null, deckLoading: false });
+    return;
+  }
+  const myId = ++deckLoadSeq;
+  set({ deckLoading: true });
+  try {
+    const s = get();
+    const cap = s.layerCaps?.[layer] ?? s.budgetCap ?? 28;
+    if (cap <= 0) {
+      if (myId === deckLoadSeq) set({ deck: [], deckLoading: false });
+      return;
+    }
+    const [memories, folders] = await Promise.all([
+      fetchDueMemoriesByLayer(userId, layer, {
+        folderId: s.folderId ?? undefined,
+        limit: cap,
+      }),
+      fetchFolders(userId),
+    ]);
+    if (myId !== deckLoadSeq) return;
+    const nameById = new Map(folders.map((f) => [f.id, f.name]));
+    const kindById = new Map(folders.map((f) => [f.id, f.kind]));
+    set({
+      deck: memories.map((m) => {
+        const kind = kindById.get(m.folderId);
+        return toReviewCard(
+          m,
+          nameById.get(m.folderId) ?? "Memika",
+          (FOLDER_KINDS as readonly string[]).includes(kind ?? "")
+            ? (kind as FolderKind)
+            : undefined,
+        );
+      }),
+      deckLoading: false,
+    });
+  } catch (e) {
+    if (myId === deckLoadSeq) set({ deck: [], deckLoading: false });
+    if (__DEV__) console.warn("[review] deck load failed", e);
+  }
+}
+
+/** Mazzo attivo: quello vero se caricato, statici SOLO in demo mode. */
+function activeDeck(s: ReviewState): ReviewCard[] {
+  if (s.deck) return s.deck;
+  return isDemoMode ? deckFor(s) : [];
+}
 
 /**
  * Fire-and-forget record of every queued answer against the now-known
@@ -316,6 +454,12 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
   mode: "single",
   layer: "scan",
   folderKind: null,
+  folderId: null,
+  deck: null,
+  deckLoading: false,
+  layerCaps: null,
+  budgetCap: null,
+  results: [],
   index: 0,
   totals: EMPTY_COUNTS,
   layerTotals: EMPTY_COUNTS,
@@ -333,12 +477,21 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
    * Synchronous on the surface — the server session id arrives on a follow-
    * up tick via the api layer (in demo mode this resolves immediately).
    */
-  start: (layer, mode, folderKind) => {
+  start: (layer, mode, opts = {}) => {
     lastRecordAt = 0;
+    clearPendingScanPersist();
     set({
       layer,
       mode,
-      folderKind: folderKind ?? null,
+      folderKind: opts.folderKind ?? null,
+      folderId: opts.folderId ?? null,
+      budgetCap: opts.budgetCap ?? null,
+      // Il piano fluido esegue lo snapshot mostrato su Oggi — niente refetch
+      // interno che una sessione più vecchia potrebbe sovrascrivere.
+      layerCaps: opts.layerCaps ?? null,
+      deck: null,
+      deckLoading: !isDemoMode,
+      results: [],
       index: 0,
       totals: EMPTY_COUNTS,
       layerTotals: EMPTY_COUNTS,
@@ -348,12 +501,16 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
       pendingSessionComplete: null,
     });
     openSessionFor(layer, set, get);
+    void loadDeckFor(layer, set, get);
   },
 
   setLayer: (layer) => set({ layer, index: 0 }),
 
   advanceToLayer: (next) => {
     lastRecordAt = 0;
+    // Flush della risposta Scan ancora nella finestra flash: il bersaglio di
+    // sessione è catturato nella closure, quindi scrive sulla riga giusta.
+    clearPendingScanPersist();
     const state = get();
     const layerCounts = state.layerTotals;
     // Close the previous layer's session with that layer's own counts so
@@ -376,25 +533,29 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
     set({
       layer: next,
       folderKind: null,
+      deck: null,
+      deckLoading: !isDemoMode,
       index: 0,
       sessionId: null,
       pendingSessionLayer: null,
       pendingItems: [],
       pendingSessionComplete: null,
       layerTotals: EMPTY_COUNTS,
-      // Cumulative `totals`, `mode`, and `srsByCard` are preserved across
-      // layers — mode in particular MUST survive so an ensureSession() race
-      // can't downgrade an in-progress flow to single.
+      // Cumulative `totals`, `mode`, `srsByCard`, `results`, `layerCaps` and
+      // `budgetCap` are preserved across layers — mode in particular MUST
+      // survive so an ensureSession() race can't downgrade an in-progress
+      // flow to single, and results/caps feed the final recap + next decks.
     });
     openSessionFor(next, set, get);
+    void loadDeckFor(next, set, get);
   },
 
-  cards: () => deckFor(get()),
-  current: () => deckFor(get())[get().index],
+  cards: () => activeDeck(get()),
+  current: () => activeDeck(get())[get().index],
 
-  recordAndAdvance: (response) => {
+  recordAndAdvance: (response, opts = {}) => {
     const state = get();
-    const cards = deckFor(state);
+    const cards = activeDeck(state);
     const card = cards[state.index];
     // Re-entry guards: a tap landing after the deck is finished, or within
     // the double-tap window, must not re-record. "next" is a no-op for all
@@ -424,38 +585,68 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
     const userId = useAuthStore.getState().user?.id;
     const prior = state.srsByCard[card.id] ?? card.srs ?? initialSrsState();
     const updated = scheduleUpdate(prior, toLayerOutcome(state.layer, response));
+    const entry: RecapEntry = {
+      id: card.id,
+      term: card.front,
+      reading: card.reading,
+      layer: state.layer,
+      response,
+      revealed: opts.revealed ?? false,
+    };
     set({
       srsByCard: { ...state.srsByCard, [card.id]: updated },
+      results: [...state.results, entry],
     });
     // Only persist when we have a real memories row to point at. Static
     // demo decks would FK-violate; the persist guards are belt + braces
     // because demo mode also short-circuits inside the api layer.
-    if (userId && isPersistableMemoryId(card.id)) {
-      // applyScheduledUpdate doesn't need a session id — fire it now.
-      void applyScheduledUpdate(card.id, updated).catch((e) => {
+    // Bersaglio di sessione catturato ORA, non al fire del timer del flash:
+    // advanceToLayer/reset possono ripulire lo store prima che la finestra
+    // di correzione scada, e la scrittura deve restare attribuita alla
+    // sessione in cui la risposta è avvenuta.
+    const canPersist = !!userId && isPersistableMemoryId(card.id);
+    const targetSessionId = state.sessionId;
+    const targetSessionPromise = currentSessionPromise;
+    const persist = (finalResponse: ReviewResponse, finalSrs: UpdatedSrs) => {
+      if (!canPersist || !userId) return;
+      void applyScheduledUpdate(card.id, finalSrs).catch((e) => {
         if (__DEV__) console.warn("[review] applyScheduledUpdate failed for", card.id, e);
       });
-      if (state.sessionId) {
+      const write = (sid: string) =>
         void recordReviewItem({
-          sessionId: state.sessionId,
+          sessionId: sid,
           memoryId: card.id,
           userId,
-          response,
+          response: finalResponse,
         }).catch((e) => {
           if (__DEV__) console.warn("[review] recordReviewItem failed for", card.id, e);
         });
-      } else if (state.pendingSessionLayer === state.layer) {
-        // Session id not back from the server yet — queue this answer to
-        // be flushed once openSessionFor resolves. Avoids the items/
-        // session-counter divergence Codex flagged.
-        const reviewedAt = new Date().toISOString();
-        set({
-          pendingItems: [
-            ...state.pendingItems,
-            { memoryId: card.id, userId, response, reviewedAt },
-          ],
+      if (targetSessionId) write(targetSessionId);
+      else if (targetSessionPromise) {
+        // Session id non ancora arrivato: incatena la scrittura alla promise
+        // catturata — arriva sulla sessione giusta anche se abbandonata.
+        void targetSessionPromise.then((session) => {
+          if (session) write(session.id);
         });
       }
+    };
+    if (state.layer === "scan") {
+      // Scan: persistenza differita per la finestra del flash, così un
+      // eventuale amend riscrive l'esito corretto in un colpo solo. Vale
+      // anche per le carte demo (persist è no-op ma l'amend dei contatori
+      // locali deve funzionare pure offline).
+      clearPendingScanPersist();
+      lastScanAnswer = { cardId: card.id, prior, persist };
+      pendingScanPersist = {
+        timer: setTimeout(() => {
+          pendingScanPersist = null;
+          lastScanAnswer = null;
+          persist(response, updated);
+        }, AMEND_WINDOW_MS),
+        run: () => persist(response, updated),
+      };
+    } else {
+      persist(response, updated);
     }
 
     const nextIndex = state.index + 1;
@@ -487,6 +678,37 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
     return "done";
   },
 
+  amendLastAnswer: () => {
+    if (!pendingScanPersist || !lastScanAnswer) return false;
+    clearTimeout(pendingScanPersist.timer);
+    pendingScanPersist = null;
+    const { cardId, prior, persist } = lastScanAnswer;
+    lastScanAnswer = null;
+    const s = get();
+    const corrected = scheduleUpdate(prior, toLayerOutcome("scan", "struggled"));
+    // remembered → struggled: sposta i contatori e correggi l'ultima entry.
+    const fix = (c: Counts): Counts => ({
+      ...c,
+      remembered: c.remembered - 1,
+      struggled: c.struggled + 1,
+    });
+    const results = s.results.slice();
+    const last = results[results.length - 1];
+    if (last && last.id === cardId) {
+      results[results.length - 1] = { ...last, response: "struggled" };
+    }
+    set({
+      totals: fix(s.totals),
+      layerTotals: fix(s.layerTotals),
+      srsByCard: { ...s.srsByCard, [cardId]: corrected },
+      results,
+    });
+    // Stessa closure della risposta originale: stesso bersaglio di sessione,
+    // outcome corretto.
+    persist("struggled", corrected);
+    return true;
+  },
+
   ensureSession: (layer, mode) => {
     const state = get();
     // Open OR pending session for this layer — flow handoff in progress.
@@ -495,10 +717,17 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
       return;
     }
     // Genuine direct entry from Today — open a single-layer session.
+    clearPendingScanPersist();
     set({
       layer,
       mode,
       folderKind: null,
+      folderId: null,
+      budgetCap: null,
+      layerCaps: null,
+      deck: null,
+      deckLoading: !isDemoMode,
+      results: [],
       index: 0,
       totals: EMPTY_COUNTS,
       layerTotals: EMPTY_COUNTS,
@@ -508,9 +737,13 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
       pendingSessionComplete: null,
     });
     openSessionFor(layer, set, get);
+    void loadDeckFor(layer, set, get);
   },
 
   reset: () => {
+    // Flush di un'eventuale risposta Scan ancora nella finestra flash — la
+    // closure ha già catturato il bersaglio di sessione giusto.
+    clearPendingScanPersist();
     // Finalize whatever's in flight before we wipe — same chain trick as
     // advanceToLayer so a "Back to Today" tap before the session id arrives
     // doesn't leave an open row.
@@ -524,6 +757,12 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
       mode: "single",
       layer: "scan",
       folderKind: null,
+      folderId: null,
+      deck: null,
+      deckLoading: false,
+      layerCaps: null,
+      budgetCap: null,
+      results: [],
       index: 0,
       totals: EMPTY_COUNTS,
       layerTotals: EMPTY_COUNTS,

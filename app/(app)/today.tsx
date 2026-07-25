@@ -48,11 +48,12 @@ export default function TodayScreen() {
   // step let a same-layer pending request from an abandoned flow
   // suppress the new direct-entry session (Codex P2 on 6b777ad).
   const startReview = () => {
-    startSession("scan", "flow");
+    // T10 sostituisce il cap fisso con lo snapshot del piano mostrato.
+    startSession("scan", "flow", { budgetCap: 28 });
     router.push("/review/scan");
   };
   const startLayer = (path: "scan" | "reinforcement" | "focus") => {
-    startSession(path, "single");
+    startSession(path, "single", { budgetCap: 28 });
     router.push(`/review/${path}`);
   };
 
