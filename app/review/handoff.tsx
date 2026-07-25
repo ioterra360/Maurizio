@@ -4,29 +4,38 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 
 import { Mascot } from "@/components/Mascot";
-import { PrimaryButton } from "@/components/PrimaryButton";
-import { LayerCard } from "@/components/LayerCard";
-import { useReviewStore, deckSizeFor } from "@/lib/review-store";
+import { useReviewStore } from "@/lib/review-store";
 import { success } from "@/lib/feedback";
 import { FONT, colors, layer as layerTokens, type LayerKey } from "@/theme/tokens";
 
+/**
+ * Interstitial automatico tra i livelli del flusso fluido: nessun tap
+ * richiesto — celebra il livello chiuso, annuncia il prossimo e avanza da
+ * solo dopo un momento (spec core-loop §5).
+ */
 export default function ReviewHandoffScreen() {
   const layer = useReviewStore((s) => s.layer);
+  const layerCaps = useReviewStore((s) => s.layerCaps);
   const advanceToLayer = useReviewStore((s) => s.advanceToLayer);
 
-  // The store's `layer` still holds the layer we just finished.
+  // The store's `layer` still holds the layer we just finished. Skip planned-
+  // empty layers so the flow can never strand the user on a deck with zero
+  // cards (caps unknown → defensive entry, don't skip anything).
+  const chain: LayerKey[] =
+    layer === "scan"
+      ? ["reinforcement", "focus"]
+      : layer === "reinforcement"
+        ? ["focus"]
+        : [];
   const nextLayer: LayerKey | null =
-    layer === "scan" ? "reinforcement" :
-    layer === "reinforcement" ? "focus" :
-    null;
+    chain.find((l) => (layerCaps ? layerCaps[l] > 0 : true)) ?? null;
 
   // Celebratory cue on landing — once per mount.
   useEffect(() => {
     success();
   }, []);
 
-  // Defensive: if we somehow land here on focus, go straight to complete.
-  // (Don't pretend "next layer is focus" when we just finished focus.)
+  // Defensive: nothing left to run — straight to the recap.
   useEffect(() => {
     if (!nextLayer) router.replace("/review/complete");
   }, [nextLayer]);
@@ -36,12 +45,18 @@ export default function ReviewHandoffScreen() {
     if (ranRef.current || !nextLayer) return;
     ranRef.current = true;
     // advanceToLayer closes the previous layer's review_sessions row with
-    // its own counts and opens a fresh session for the next layer — this
-    // is what setLayer used to do silently, losing per-layer analytics.
+    // its own counts and opens a fresh session for the next layer.
     advanceToLayer(nextLayer);
     if (nextLayer === "reinforcement") router.replace("/review/reinforcement");
     else router.replace("/review/focus");
   }, [advanceToLayer, nextLayer]);
+
+  // Interstitial automatico: goNext è idempotente via ranRef, quindi un
+  // unmount anticipato non può double-fire.
+  useEffect(() => {
+    const t = setTimeout(goNext, 1100);
+    return () => clearTimeout(t);
+  }, [goNext]);
 
   if (!nextLayer) return null;
 
@@ -99,19 +114,21 @@ export default function ReviewHandoffScreen() {
             : "Ripasso profondo — ricordi di ieri, valutazione su tre livelli."}
         </Text>
 
-        {/* Layer preview card */}
-        <View style={{ alignSelf: "stretch", marginTop: 26 }}>
-          <LayerCard
-            layerKey={nextLayer}
-            items={deckSizeFor(nextLayer)}
-            subtitle={nextLayer === "reinforcement" ? "Ultimi 3–7 giorni" : "Ricordi di ieri"}
-            onPress={goNext}
-          />
+        {/* Puntini di transizione col colore del livello in arrivo */}
+        <View style={{ flexDirection: "row", gap: 6, marginTop: 22 }}>
+          {[0, 1, 2].map((i) => (
+            <View
+              key={i}
+              style={{
+                width: 6,
+                height: 6,
+                borderRadius: 3,
+                backgroundColor: next.color,
+                opacity: 0.35 + i * 0.3,
+              }}
+            />
+          ))}
         </View>
-      </View>
-
-      <View style={{ paddingHorizontal: 22, paddingBottom: 32 }}>
-        <PrimaryButton label={`Inizia ${next.label}`} color={next.color} onPress={goNext} />
       </View>
     </SafeAreaView>
   );
