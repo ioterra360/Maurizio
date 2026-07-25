@@ -8,6 +8,8 @@ type Props = {
   label: string;
   /** Tint for the icon. */
   color?: string;
+  /** Disabilitato (es. cartella in pausa) — attenuato e non tappabile. */
+  disabled?: boolean;
   onPress?: () => void;
 };
 
@@ -15,12 +17,14 @@ type Props = {
  * "Review now" / "Add item" quick-action buttons in the Folder detail header.
  * Tonal pill with icon + label.
  */
-export function ActionPill({ icon: Icon, label, color = colors.navy, onPress }: Props) {
+export function ActionPill({ icon: Icon, label, color = colors.navy, disabled, onPress }: Props) {
   return (
     <Tappable
       onPress={onPress}
+      disabled={disabled}
       accessibilityRole="button"
       accessibilityLabel={label}
+      accessibilityState={{ disabled: !!disabled }}
       containerStyle={{ flex: 1 }}
       style={{
         flex: 1,
@@ -33,6 +37,7 @@ export function ActionPill({ icon: Icon, label, color = colors.navy, onPress }: 
         gap: 10,
         borderWidth: 1,
         borderColor: colors.hairline,
+        opacity: disabled ? 0.45 : 1,
       }}
     >
       <Icon size={18} color={color} strokeWidth={2} />

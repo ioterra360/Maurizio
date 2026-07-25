@@ -46,6 +46,7 @@ export default function KnowledgeScreen() {
           active={item.active}
           fading={item.fading}
           archived={item.archived}
+          paused={item.paused}
           onPress={() =>
             router.push({ pathname: "/folder/[kind]", params: { kind: item.kind } })
           }

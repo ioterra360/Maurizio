@@ -225,10 +225,24 @@ export default function FolderDetailScreen() {
             icon={Repeat}
             label="Ripassa ora"
             color={colors.reinforcement}
+            disabled={data.paused}
             onPress={startReview}
           />
           <ActionPill icon={Plus} label="Aggiungi" color={colors.navy} onPress={addItem} />
         </View>
+        {data.paused ? (
+          <Text
+            style={{
+              paddingHorizontal: 22,
+              paddingTop: 8,
+              fontFamily: FONT.regular,
+              fontSize: 12.5,
+              color: colors.midGrey,
+            }}
+          >
+            Cartella in pausa — riattivala dalle impostazioni per ripassarla.
+          </Text>
+        ) : null}
 
         {/* Filters */}
         <View style={{ paddingHorizontal: 22, paddingTop: 20, paddingBottom: 10 }}>

@@ -14,6 +14,8 @@ type Props = {
   active: number;
   fading: number;
   archived: number;
+  /** Cartella in pausa — resa attenuata con badge, esclusa dai ripassi. */
+  paused?: boolean;
   onPress?: () => void;
   /**
    * Drag-to-reorder activator (from DraggableFlatList's renderItem). When
@@ -39,6 +41,7 @@ export function FolderRow({
   active,
   fading,
   archived,
+  paused,
   onPress,
   onDrag,
   isActive,
@@ -54,7 +57,7 @@ export function FolderRow({
       onPressIn={() => setPressed(true)}
       onPressOut={() => setPressed(false)}
       accessibilityRole="button"
-      accessibilityLabel={`${name}, priorità ${priority}, ${count} ricordi`}
+      accessibilityLabel={`${name}${paused ? ", in pausa" : ""}, priorità ${priority}, ${count} ricordi`}
       accessibilityHint={showReorder ? "Tieni premuta la maniglia per riordinare" : undefined}
       style={{
         flexDirection: "row",
@@ -68,7 +71,7 @@ export function FolderRow({
         gap: 12,
         borderWidth: 1,
         borderColor: isActive ? colors.hairlineStrong : colors.hairline,
-        opacity: pressed && !isActive ? 0.94 : 1,
+        opacity: (pressed && !isActive ? 0.94 : 1) * (paused ? 0.55 : 1),
         // Subtle baseline elevation — keeps the card readable on the warm
         // canvas. While dragging, the card lifts with a stronger shadow so it
         // visibly floats above the list.
@@ -117,6 +120,28 @@ export function FolderRow({
               #{priority}
             </Text>
           </View>
+          {paused ? (
+            <View
+              style={{
+                paddingHorizontal: 7,
+                paddingVertical: 2,
+                borderRadius: 7,
+                backgroundColor: colors.divider,
+                flexShrink: 0,
+              }}
+            >
+              <Text
+                style={{
+                  fontFamily: FONT.semibold,
+                  fontSize: 10,
+                  color: colors.midGrey,
+                  letterSpacing: 0.2,
+                }}
+              >
+                In pausa
+              </Text>
+            </View>
+          ) : null}
         </View>
         <Text
           numberOfLines={1}
