@@ -45,7 +45,7 @@ export type AuthLink = {
   type: AuthLinkType | null;
   accessToken: string | null;
   refreshToken: string | null;
-  /** PKCE authorization code (`?code=`), only if the flow is ever switched to PKCE. */
+  /** PKCE authorization code (`?code=`) — the shape Supabase sends since the client runs `flowType: "pkce"`. */
   code: string | null;
   /** `error_code` (preferred) or `error` from the fragment, e.g. `otp_expired`. */
   error: string | null;
@@ -186,6 +186,12 @@ export function classifyAuthLink(link: AuthLink): AuthLinkAction {
  */
 export function authLinkErrorMessage(code: string | null | undefined): string {
   const c = (code ?? "").toLowerCase();
+  // PKCE: the code_verifier lives on the device that requested the email.
+  // Opening the link elsewhere (another phone, a reinstalled app) cannot
+  // complete the exchange — say so instead of a generic failure.
+  if (c.includes("code verifier") || c.includes("code_verifier")) {
+    return "Apri il link dallo stesso telefono da cui hai richiesto il reset, oppure richiedi un nuovo link.";
+  }
   if (c.includes("otp_expired") || c.includes("expired")) {
     return "Il link è scaduto. Richiedi un nuovo link di reset.";
   }

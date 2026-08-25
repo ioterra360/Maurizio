@@ -1,7 +1,8 @@
 import { create } from "zustand";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { supabase, isSupabaseConfigured } from "./supabase";
+import { clearPersistedSession, supabase, isSupabaseConfigured } from "./supabase";
 import { reportError } from "./report-error";
+import { decideAuthEvent } from "./auth-events";
 import {
   authLinkErrorMessage,
   authLinkFingerprint,
@@ -54,9 +55,11 @@ type AuthState = {
    */
   receiveAuthLink: (url: string) => Promise<"ignored" | "duplicate" | "queued">;
   /**
-   * Turns the tokens (implicit flow) or the PKCE code carried by a link into
-   * a Supabase session. Resolves with a user-facing Italian error message
-   * on failure, null on success.
+   * Exchanges the PKCE code carried by a link for a Supabase session.
+   * Implicit-flow token links are refused (see the implementation). Resolves
+   * with a user-facing Italian error message on failure, null on success.
+   * Drops `authLink` from the store as its first step, so it is idempotent
+   * across screen remounts.
    */
   applyAuthLink: (link: AuthLink) => Promise<string | null>;
   /** `supabase.auth.updateUser({ password })`. Throws the raw error. */
@@ -74,7 +77,14 @@ type AuthState = {
   /** Updates the cached user name after a successful profile save. */
   setUserName: (name: string) => void;
   signIn: (email: string, password: string) => Promise<void>;
-  signOut: () => Promise<void>;
+  /**
+   * Ends the session. `scope: "global"` (default) revokes every session of
+   * the user on every device; `"local"` only this one — used when
+   * abandoning a recovery link, which must not log the user out of their
+   * other phone. The persisted session is ALWAYS cleared locally, even when
+   * the server call fails.
+   */
+  signOut: (options?: { scope?: "global" | "local" }) => Promise<void>;
   hydrate: () => Promise<void>;
   /** Subscribes to Supabase auth events. Returns an unsubscribe fn. */
   subscribeAuthChanges: () => () => void;
@@ -194,14 +204,24 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const action = classifyAuthLink(link);
     if (action.kind === "error") return authLinkErrorMessage(action.code);
     if (action.kind === "ignore") return authLinkErrorMessage(null);
+    // Implicit-flow links (`#access_token=…&refresh_token=…`) are refused:
+    // the client runs the PKCE flow (lib/supabase.ts), so Supabase never
+    // sends them any more, and accepting arbitrary bearer tokens from a URL
+    // would let any app/web page log this device into an attacker's account
+    // (login CSRF). The parser still recognises them so the screen shows a
+    // clear error instead of "open the link from your email".
+    if (action.kind === "tokens") {
+      reportError("auth/link-implicit-refused", new Error("implicit-flow auth link refused"), {
+        recovery: action.recovery,
+      });
+      return authLinkErrorMessage("invalid");
+    }
+    // Consume the link BEFORE the exchange: a remount of the target screen
+    // (e.g. a route replace landing on the same screen) must never re-send
+    // the code, and a PKCE code is single-use anyway.
+    set({ authLink: null });
     try {
-      const result =
-        action.kind === "tokens"
-          ? await supabase.auth.setSession({
-              access_token: action.accessToken,
-              refresh_token: action.refreshToken,
-            })
-          : await supabase.auth.exchangeCodeForSession(action.code);
+      const result = await supabase.auth.exchangeCodeForSession(action.code);
       if (result.error) {
         reportError("auth/link-session", result.error, { kind: action.kind });
         return authLinkErrorMessage(result.error.code ?? result.error.message);
@@ -272,27 +292,30 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     // defers the profile fetch until after the notify resolves and the
     // lock releases — the pattern Supabase's own docs prescribe.
     const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
-      // Token revoked, password reset on web, manual sign-out elsewhere —
-      // any of these zero out the local user so the auth gate kicks them
-      // back to login instead of leaving a half-broken state.
-      if (event === "SIGNED_OUT" || !session) {
+      // The decision table lives in lib/auth-events.ts (unit-tested). The
+      // one rule that matters: INITIAL_SESSION(null) — emitted for every new
+      // subscription when nothing is persisted — must NOT wipe a recovery
+      // link queued by the root layout a moment earlier; only an explicit
+      // SIGNED_OUT (token revoked, password reset on web, sign-out
+      // elsewhere) ends a pending reset.
+      const decision = decideAuthEvent(event, Boolean(session));
+      if (decision.clearUser) {
         authEpoch += 1;
-        set({ user: null, pendingPasswordReset: false, authLink: null });
+        set(
+          decision.clearRecovery
+            ? { user: null, pendingPasswordReset: false, authLink: null }
+            : { user: null },
+        );
         return;
       }
-      if (event === "PASSWORD_RECOVERY") {
-        // Only emitted by exchangeCodeForSession (PKCE) / verifyOtp — never
-        // by setSession, which is why receiveAuthLink raises the flag
-        // itself. Handling it here keeps a future PKCE/OTP switch safe: the
-        // root layout watches the flag and opens /(auth)/reset-password.
+      if (decision.markRecovery) {
+        // Emitted by exchangeCodeForSession when the PKCE code came from a
+        // recovery email. receiveAuthLink already raised the flag from the
+        // URL path; this covers a future OTP flow. The root layout watches
+        // the flag and opens /(auth)/reset-password.
         set({ pendingPasswordReset: true });
       }
-      if (
-        event === "SIGNED_IN" ||
-        event === "TOKEN_REFRESHED" ||
-        event === "USER_UPDATED" ||
-        event === "PASSWORD_RECOVERY"
-      ) {
+      if (decision.refreshProfile && session) {
         const myEpoch = ++authEpoch;
         setTimeout(() => {
           void buildAuthUserFromSession(session)
@@ -344,15 +367,34 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
-  signOut: async () => {
+  signOut: async (options) => {
+    const scope = options?.scope ?? "global";
     if (isSupabaseConfigured) {
-      // scope: 'global' revokes all sessions across devices for this user.
-      // Failing to reach the server should not leave the user stuck — clear
-      // local state regardless, but log so monitoring (Phase 4 Sentry) sees it.
+      // auth-js only removes the persisted session when the server call
+      // succeeds (or answers 401/403/404). On a network failure / timeout
+      // it RETURNS `{ error }` and keeps `sb-…-auth-token` in SecureStore,
+      // so the next cold start would silently restore a user who pressed
+      // "Esci", abandoned a recovery link, or just deleted their account.
+      // Failing to reach the server must never leave that behind.
+      let failed = false;
       try {
-        await supabase.auth.signOut({ scope: "global" });
+        const { error } = await supabase.auth.signOut({ scope });
+        if (error) {
+          failed = true;
+          reportError("auth/sign-out", error, { scope });
+        }
       } catch (err) {
-        reportError("auth/sign-out", err);
+        failed = true;
+        reportError("auth/sign-out-threw", err, { scope });
+      }
+      if (failed) {
+        await clearPersistedSession();
+        // With the storage empty this skips the network entirely and just
+        // runs auth-js's own teardown (SIGNED_OUT to subscribers, refresh
+        // timer, code verifier).
+        await supabase.auth.signOut({ scope: "local" }).catch((err: unknown) => {
+          reportError("auth/sign-out-local", err);
+        });
       }
     }
     await AsyncStorage.removeItem(DEMO_STORAGE_KEY).catch(() => {});

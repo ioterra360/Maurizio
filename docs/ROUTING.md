@@ -110,8 +110,8 @@ The Expo `scheme` is `memika` (in `app.json`). Universal links / app links on
 
 | Link | Sent by | Lands in |
 |---|---|---|
-| `memika://reset-password#access_token=…&refresh_token=…&type=recovery` | `resetPasswordForEmail(email, { redirectTo: Linking.createURL("reset-password") })` in `forgot-password.tsx` | `app/(auth)/reset-password.tsx` |
-| `memika://auth-callback#access_token=…&type=signup` | `signUp({ options.emailRedirectTo: Linking.createURL("auth-callback") })` in `signup.tsx` (only if email confirmation is ever re-enabled — hosted Auth has it OFF) | `app/auth-callback.tsx` |
+| `memika://reset-password?code=…` | `resetPasswordForEmail(email, { redirectTo: Linking.createURL("reset-password") })` in `forgot-password.tsx` | `app/(auth)/reset-password.tsx` |
+| `memika://auth-callback?code=…` | `signUp({ options.emailRedirectTo: Linking.createURL("auth-callback") })` in `signup.tsx` (only if email confirmation is ever re-enabled — hosted Auth has it OFF) | `app/auth-callback.tsx` |
 
 Expired / already-used links arrive as
 `memika://reset-password#error=access_denied&error_code=otp_expired` and are
@@ -119,11 +119,14 @@ shown as "Link non utilizzabile" with a "Richiedi un nuovo link" button.
 
 ### How the password-reset flow is wired
 
-1. **Supabase implicit flow** (`lib/supabase.ts` keeps `detectSessionInUrl:
-   false`, default `flowType: "implicit"`): the tokens travel in the URL
-   **fragment**, which `Linking.parse` / Expo Router drop. `lib/auth-links.ts`
-   (pure, vitest-covered) parses fragment + query out of any URL shape
-   (`memika://`, `exp://…/--/`, `https://memika.app/…`).
+1. **Supabase PKCE flow** (`lib/supabase.ts`: `flowType: "pkce"`,
+   `detectSessionInUrl: false`): the link carries a one-time `?code=` that
+   only this device can exchange (the `code_verifier` was written to
+   SecureStore by `resetPasswordForEmail`). `lib/auth-links.ts` (pure,
+   vitest-covered) parses query + fragment out of any URL shape
+   (`memika://`, `exp://…/--/`, `https://memika.app/…`); implicit
+   `#access_token=` links are still recognised but `applyAuthLink` refuses
+   them (login-CSRF vector).
 2. **`app/_layout.tsx`** reads `Linking.getInitialURL()` (cold start, BEFORE
    `hydrate()`, so the gate never renders without the flag) and
    `Linking.addEventListener("url")` (warm start) and hands the URL to
@@ -134,20 +137,25 @@ shown as "Link non utilizzabile" with a "Richiedi un nuovo link" button.
 3. **Gate** (`lib/auth-gate.tsx`): while `pendingPasswordReset` is set the
    `(auth)` surface renders even with a user, and `(app)`/`(admin)` redirect
    to `/(auth)/reset-password`. The root layout also `router.replace`s there
-   whenever the flag turns on, so the screen opens wherever the user was.
-   Expo Router additionally navigates by PATH on its own (`reset-password`
-   → `(auth)/reset-password`) — the two mechanisms are redundant on purpose.
-4. **`reset-password.tsx`** calls `applyAuthLink` (`setSession` with the
-   tokens; `exchangeCodeForSession` if a PKCE `?code=` ever shows up), then
-   `updateUser({ password })` via `updatePassword`, clears the flag with
-   `endPasswordReset()` and replaces to `/`. "Annulla" signs out — the
-   recovery link IS a login and must not survive an abandoned reset.
-5. `PASSWORD_RECOVERY` in `onAuthStateChange` also raises the flag (it is only
-   emitted by PKCE / `verifyOtp`, never by `setSession`) so a future switch
-   of flow needs no routing changes.
+   whenever the flag turns on — unless `usePathname()` already says
+   `/reset-password` (Expo Router navigates by PATH on its own, and a
+   REPLACE onto the same route would mount a second instance and re-run the
+   code exchange).
+4. **`reset-password.tsx`** calls `applyAuthLink` (drops `authLink` from the
+   store, then `exchangeCodeForSession(code)`), then `updateUser({ password })`
+   via `updatePassword`, clears the flag with `endPasswordReset()` and
+   replaces to `/`. "Annulla" signs out with `scope: "local"` — the recovery
+   link IS a login and must not survive an abandoned reset, but the user's
+   other devices stay signed in.
+5. `PASSWORD_RECOVERY` in `onAuthStateChange` (emitted by
+   `exchangeCodeForSession` for a recovery code) also raises the flag.
+   The event → store decision table is `lib/auth-events.ts` (vitest):
+   `INITIAL_SESSION(null)`, which auth-js emits for every new subscription,
+   must NOT clear a queued link — it races the initial-URL handling on cold
+   start.
 
-Signing in from `login`, signing out, and `SIGNED_OUT` all clear the flag so a
-stale one can never pin a user inside `(auth)`.
+Signing in from `login`, signing out, and an explicit `SIGNED_OUT` all clear
+the flag so a stale one can never pin a user inside `(auth)`.
 
 ### DEV-only sign-out link
 

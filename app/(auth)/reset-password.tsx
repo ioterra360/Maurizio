@@ -25,7 +25,7 @@ type LinkStatus = "verifying" | "ready" | "invalid";
 
 /**
  * "Nuova password" — the landing screen of the recovery email
- * (`memika://reset-password#access_token=…&type=recovery`).
+ * (`memika://reset-password?code=…`, PKCE).
  *
  * How the pieces fit:
  *   1. app/_layout.tsx receives the URL and stores it in the auth store
@@ -126,9 +126,11 @@ export default function ResetPasswordScreen() {
 
   // Abandoning the reset: the recovery link created a real session, so
   // leaving it alive would silently log the user in without a new password.
+  // Local scope: only THIS recovery session dies — the user's other devices
+  // stay signed in (they never asked to be logged out everywhere).
   const handleCancel = async () => {
     endPasswordReset();
-    await signOut();
+    await signOut({ scope: "local" });
     router.replace("/(auth)/login" as never);
   };
 

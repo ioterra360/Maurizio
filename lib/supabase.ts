@@ -109,6 +109,13 @@ export const supabase = createClient(
       autoRefreshToken: true,
       persistSession: true,
       detectSessionInUrl: false,
+      // PKCE: email links carry a one-time `?code=` that only the device
+      // holding the matching code_verifier (written to SecureStore when the
+      // reset / signup was requested) can exchange. With the implicit flow
+      // the link itself carried bearer tokens, so any app or web page could
+      // open `memika://auth-callback#access_token=…` and log this device
+      // into an attacker's account. lib/auth-store.ts refuses token links.
+      flowType: "pkce",
     },
     global: {
       // Every Supabase request (auth, REST, RPC) is aborted after 15 s so a
@@ -123,3 +130,34 @@ export const supabase = createClient(
     },
   },
 );
+
+/**
+ * Storage keys auth-js uses for this project (`sb-<ref>-auth-token` and
+ * its companions). Mirrors supabase-js's default `storageKey`; kept in one
+ * place so `clearPersistedSession` can never drift from it.
+ */
+function persistedSessionKeys(): string[] {
+  const ref = new URL(supabaseUrl || "https://placeholder.supabase.co").hostname.split(".")[0];
+  const base = `sb-${ref}-auth-token`;
+  return [base, `${base}-code-verifier`, `${base}-user`];
+}
+
+/**
+ * Removes the persisted session WITHOUT talking to the server.
+ *
+ * `supabase.auth.signOut()` only removes the stored session when the server
+ * call succeeds (or answers 401/403/404); on a network failure / timeout it
+ * returns `{ error }` and leaves `sb-…-auth-token` in SecureStore, which the
+ * next launch restores. The auth store calls this on that error path so a
+ * failed "Esci", an abandoned recovery link or a just-deleted account can
+ * never come back as a logged-in user.
+ */
+export async function clearPersistedSession(): Promise<void> {
+  for (const key of persistedSessionKeys()) {
+    try {
+      await SecureStorageAdapter.removeItem(key);
+    } catch (err) {
+      reportError("secure-store/clear-session", err);
+    }
+  }
+}

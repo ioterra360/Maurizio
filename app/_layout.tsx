@@ -12,6 +12,7 @@ import {
   Stack,
   router,
   useNavigationContainerRef,
+  usePathname,
   useRootNavigationState,
   type ErrorBoundaryProps,
 } from "expo-router";
@@ -77,6 +78,8 @@ SplashScreen.setOptions({ fade: true, duration: 220 });
  * Borrowed from the TLC mobile pattern (15 s bootstrap timeout).
  */
 const BOOTSTRAP_TIMEOUT_MS = 15_000;
+/** `usePathname()` value of app/(auth)/reset-password.tsx (route groups are stripped). */
+const RESET_PASSWORD_PATHNAME = "/reset-password";
 
 /**
  * DEV ONLY — "sign out on open" deep link for testers.
@@ -208,6 +211,7 @@ function RootLayout() {
   const pendingPasswordReset = useAuthStore((s) => s.pendingPasswordReset);
   const navigationState = useRootNavigationState();
   const navReady = Boolean(navigationState?.key);
+  const pathname = usePathname();
   const navigationRef = useNavigationContainerRef();
 
   // Sentry navigation breadcrumbs + screen-load spans need the container.
@@ -262,11 +266,15 @@ function RootLayout() {
   // Whenever a password recovery starts (deep link, or a PASSWORD_RECOVERY
   // event from Supabase), open the reset screen — regardless of where the
   // user was. Waits for the navigator so router.replace never fires before
-  // the root layout mounted.
+  // the root layout mounted. Skipped when Expo Router already put the reset
+  // screen on screen from the URL path (cold start, and usually warm start
+  // too): a REPLACE onto the same route mints a NEW screen instance, which
+  // would unmount the one that is exchanging the code and re-run it.
   useEffect(() => {
     if (!pendingPasswordReset || !hydrated || !navReady) return;
+    if (pathname === RESET_PASSWORD_PATHNAME) return;
     router.replace("/(auth)/reset-password" as never);
-  }, [pendingPasswordReset, hydrated, navReady]);
+  }, [pendingPasswordReset, hydrated, navReady, pathname]);
 
   // Listen to Supabase auth state changes (token refresh / global sign-out)
   // for the lifetime of the app.

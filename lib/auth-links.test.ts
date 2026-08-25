@@ -163,6 +163,8 @@ describe("authLinkErrorMessage", () => {
     expect(authLinkErrorMessage("server_error")).toMatch(/nuovo link/);
     expect(authLinkErrorMessage(null)).not.toMatch(/null/);
     expect(authLinkErrorMessage("server_error")).not.toMatch(/server_error/);
+    // auth-js: "PKCE code verifier not found in storage" (link opened on another device)
+    expect(authLinkErrorMessage("PKCE code verifier not found in storage")).toMatch(/stesso telefono/);
   });
 });
 
