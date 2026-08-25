@@ -9,6 +9,7 @@ app/
 ├── _layout.tsx                  ROOT — fonts, splash, auth hydrate, Stack screenOptions
 ├── index.tsx                    Smart redirect (login / today / admin)
 ├── add.tsx                      Aggiungi ricordo — root-level (modal su iOS, card su Android)
+├── choose-topic.tsx             Scegli il tuo argomento — crea l'UNICA cartella (root-level, vedi sotto)
 ├── folder-settings.tsx          Impostazioni cartella (`?kind=`) — push root-level sopra i tab
 │
 ├── (auth)/
@@ -37,7 +38,8 @@ app/
 | Path | File | Who can reach it |
 |---|---|---|
 | `/` | `app/index.tsx` | Anyone — redirects immediately based on auth |
-| `/add` | `app/add.tsx` | Signed-in users (gated da add-gate) |
+| `/add` | `app/add.tsx` | Signed-in users (gated da add-gate; 0 cartelle → redirect a `/choose-topic`) |
+| `/choose-topic` | `app/choose-topic.tsx` | Signed-in users con 0 cartelle (≥1 → redirect a Today) |
 | `/folder-settings?kind=` | `app/folder-settings.tsx` | Signed-in users |
 | `/(auth)/login` | `app/(auth)/login.tsx` | Only when signed out |
 | `/(app)/today` | `app/(app)/today.tsx` | Signed-in users |
@@ -48,6 +50,16 @@ app/
 | `/(app)/subscribe` | `app/(app)/subscribe.tsx` | Signed-in users |
 | `/review/scan · reinforcement · focus · handoff · complete` | `app/review/*` | Signed-in users |
 | `/(admin)/home` | `app/(admin)/home.tsx` | Signed-in admins |
+
+## Onboarding → one folder
+
+`signup` → `/(auth)/onboarding` (carousel) → `/choose-topic` → `/(app)/today`.
+`choose-topic` lives in the ROOT stack, not in `(auth)`: the `(auth)` gate
+redirects any signed-in user to Today, but the same screen must also be
+reachable from `(app)` surfaces. Add redirects there when the user owns zero
+folders; Knowledge's empty state links there; a user who already has ≥1
+folder is bounced to Today on mount. No other route creates folders
+(freemium = one folder; the Premium sheet comes with RevenueCat).
 
 ## Why three route groups
 
@@ -80,8 +92,8 @@ The Expo `scheme` is `memika` (in `app.json`). Once we have a real domain, we
 add universal links / app links in Phase 4. For now, only `memika://` works,
 and the only deep link we care about is:
 
-- `memika://(app)/today` — entry after Wix Payments webhook confirms a
-  subscription. (Phase 4 wires this.)
+- `memika://reset-password` / `memika://auth-callback` — Supabase auth
+  emails (password recovery / signup confirmation). Not wired yet.
 
 ## Adding a new screen
 

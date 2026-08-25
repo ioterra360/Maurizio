@@ -94,7 +94,9 @@ export const folderTint = {
   es: "#FDF1E0",
   medicine: "#E8F5EE",
   law: "#EEEAFB",
-} as const satisfies Record<"jp" | "es" | "medicine" | "law", string>;
+  /** Custom (user-named) folder — neutral warm tint. */
+  custom: "#F1EFE9",
+} as const satisfies Record<"jp" | "es" | "medicine" | "law" | "custom", string>;
 
 /**
  * Memory lifecycle status tints — used by ItemRow, HealthRow and any

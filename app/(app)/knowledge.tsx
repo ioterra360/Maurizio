@@ -172,16 +172,13 @@ export default function KnowledgeScreen() {
               textAlign: "center",
             }}
           >
-            Non hai ancora nessuna cartella. Aggiungi il tuo primo ricordo per
-            iniziare.
+            Scegli l'argomento che vuoi proteggere dall'oblio: Memika creerà
+            la tua cartella e potrai aggiungere il primo ricordo.
           </Text>
           <Tappable
-            onPress={() => {
-              markAddOpenedIntentionally();
-              router.push("/add");
-            }}
+            onPress={() => router.push("/choose-topic" as never)}
             accessibilityRole="button"
-            accessibilityLabel="Aggiungi un ricordo"
+            accessibilityLabel="Scegli il tuo argomento"
             containerStyle={{ marginTop: 4 }}
             style={{
               paddingHorizontal: 18,
@@ -195,7 +192,7 @@ export default function KnowledgeScreen() {
             <Text
               style={{ fontFamily: FONT.semibold, fontSize: 14, color: colors.navy }}
             >
-              Aggiungi un ricordo
+              Scegli il tuo argomento
             </Text>
           </Tappable>
         </View>
@@ -216,7 +213,9 @@ export default function KnowledgeScreen() {
         containerStyle={{ flex: 1 }}
       />
 
-      {/* FAB */}
+      {/* FAB — opens Add MEMORY (it never creates folders: freemium = one
+          folder, chosen at onboarding). Hidden while the user has none. */}
+      {!loading && !error && folders.length === 0 ? null : (
       <Tappable
         onPress={() => {
           markAddOpenedIntentionally();
@@ -245,6 +244,7 @@ export default function KnowledgeScreen() {
       >
         <Plus size={22} color={colors.warmWhite} strokeWidth={2.2} />
       </Tappable>
+      )}
     </SafeAreaView>
   );
 }

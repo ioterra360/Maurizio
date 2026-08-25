@@ -63,10 +63,13 @@ export default function OnboardingScreen() {
   const setPendingOnboarding = useAuthStore((s) => s.setPendingOnboarding);
 
   // Clearing the flag lets the auth gate enforce the same destination even
-  // if the explicit replace below is ever bypassed.
+  // if the explicit replace below is ever bypassed. A signed-in user goes to
+  // the topic pick (/choose-topic creates their ONE folder and self-skips
+  // when they already have one); "Salta" leads there too — the app cannot
+  // work without a folder.
   const finish = () => {
     setPendingOnboarding(false);
-    router.replace((user ? "/(app)/today" : "/(auth)/login") as never);
+    router.replace((user ? "/choose-topic" : "/(auth)/login") as never);
   };
 
   const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {

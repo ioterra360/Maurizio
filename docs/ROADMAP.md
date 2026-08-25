@@ -76,7 +76,8 @@ review layer at the right time, and recall outcomes update the schedule.
 **Scope:**
 - `features/srs/scheduler.ts` pure function (SM-2 adapted) with unit tests
 - Persistence: hook Add → `memories` table, Settings → `profiles` table,
-  default folders auto-seeded at signup (DB trigger or app-side)
+  ~~default folders auto-seeded at signup~~ → replaced (2026-08-25) by the
+  one-folder topic pick at onboarding (`/choose-topic`)
 - Scan screen — large term, two-button reveal pattern
 - Reinforcement screen — three-state (pre → hint → answer) with Review-again
   / Continue buttons

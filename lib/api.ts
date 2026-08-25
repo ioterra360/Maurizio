@@ -11,9 +11,7 @@
  *   this return without a backend?" branch instead of scattered guards
  * - Phase 3 SRS scheduler only needs to know about lib/api, not the DB
  *
- * Add functions feature-by-feature as Phase 2/3 lands. Today this file
- * is intentionally thin — auth + profile lookups + a single seed-folder
- * helper. Growth is expected.
+ * Add functions feature-by-feature as Phase 2/3 lands.
  */
 
 import { supabase, isDemoMode } from "./supabase";
@@ -35,8 +33,9 @@ import {
   mapReviewItem,
   mapReviewSession,
 } from "./mappers";
-import { FOLDER_DEFAULTS, type FolderKind, type ReviewResponse } from "./constants";
+import { FOLDER_TEMPLATES, type FolderKind, type ReviewResponse } from "./constants";
 import { getAllFolderSeeds, getFolderSeed, type FolderSeed } from "./folder-data";
+import { nextFolderPriority, type NewFolderInput } from "./folder-templates";
 import { isoFromRelativeLabel } from "./format";
 import { DEMO_DUE_COUNTS, type LayerCounts } from "./queue";
 import type { LayerKey } from "@/theme/tokens";
@@ -79,12 +78,14 @@ export async function updateProfile(
 
 export async function fetchFolders(userId: string): Promise<Folder[]> {
   if (isDemoMode) {
-    return FOLDER_DEFAULTS.map((d, i) => ({
+    // Demo accounts keep all four template folders so the offline UI stays
+    // fully reviewable. Real users start with ONE folder (see createFolder).
+    return FOLDER_TEMPLATES.map((t, i) => ({
       id: `demo-folder-${i}`,
       userId,
-      kind: d.kind,
-      name: d.name,
-      priority: d.priority,
+      kind: t.kind,
+      name: t.name,
+      priority: i + 1,
       color: null,
       icon: null,
       paused: false,
@@ -103,26 +104,73 @@ export async function fetchFolders(userId: string): Promise<Folder[]> {
 }
 
 /**
- * Seed the four default folders for a new user. Idempotent — uses upsert.
- * Called once during onboarding (Phase 2).
+ * How many folders the user owns. Drives the "must pick a topic" guard on
+ * Add / Knowledge and the skip logic on /choose-topic. Demo: the four
+ * template folders.
  */
-export async function seedDefaultFolders(userId: string): Promise<void> {
-  if (isDemoMode) return;
-  const rows = FOLDER_DEFAULTS.map((d) => ({
-    user_id: userId,
-    kind: d.kind,
-    name: d.name,
-    priority: d.priority,
-  }));
-  const { error } = await supabase
+export async function countFolders(userId: string): Promise<number> {
+  if (isDemoMode) return FOLDER_TEMPLATES.length;
+  const { count, error } = await supabase
     .from("folders")
-    .upsert(rows, { onConflict: "user_id,kind", ignoreDuplicates: true });
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", userId);
   if (error) throw error;
+  return count ?? 0;
+}
+
+/**
+ * Create ONE folder for the user — the onboarding topic pick (a template
+ * or a custom name, see lib/folder-templates.ts). Priority = max+1 of the
+ * folders the user already has, read in the same call.
+ *
+ * `itemTypes` are NOT persisted: the folders table has no item_types
+ * column and Add derives the chips from `kind` (ITEM_TYPES_BY_KIND). The
+ * field travels in NewFolderInput so a future column is a one-line change.
+ *
+ * RLS: folders_all_own_or_admin lets an authenticated user insert rows
+ * where user_id = auth.uid(). unique(user_id, kind) means a second folder
+ * of the same kind fails with 23505 — the freemium flow never gets there
+ * (one folder per free account), Premium will pick distinct kinds.
+ *
+ * Demo: returns a synthetic row, nothing stored.
+ */
+export async function createFolder(
+  userId: string,
+  input: NewFolderInput,
+): Promise<Folder> {
+  const now = new Date().toISOString();
+  if (isDemoMode) {
+    return {
+      id: `demo-folder-${input.kind}`,
+      userId,
+      kind: input.kind,
+      name: input.name,
+      priority: 1,
+      color: null,
+      icon: null,
+      paused: false,
+      createdAt: now,
+      updatedAt: now,
+    };
+  }
+  const existing = await fetchFolders(userId);
+  const { data, error } = await supabase
+    .from("folders")
+    .insert({
+      user_id: userId,
+      kind: input.kind,
+      name: input.name,
+      priority: nextFolderPriority(existing),
+    })
+    .select("*")
+    .single<FolderRow>();
+  if (error) throw error;
+  return mapFolder(data);
 }
 
 /**
  * Rename a folder. Demo mode is a no-op — demo folders are rebuilt from
- * FOLDER_DEFAULTS on every fetch, so a rename could never stick anyway.
+ * FOLDER_TEMPLATES on every fetch, so a rename could never stick anyway.
  */
 export async function updateFolderName(folderId: string, name: string): Promise<void> {
   if (isDemoMode) return;
@@ -325,7 +373,7 @@ function rollupStats(folder: Folder, items: Memory[]): FolderWithStats {
  * Demo mode reads from the shared folder-data seed so the offline UI shows
  * the same numbers as the rest of the design contract. Remote mode joins
  * folders against memories and rolls up `state` counts in JS — that's one
- * folders query + N memories queries; cheap at 4 default folders, and we
+ * folders query + N memories queries; cheap at one-to-few folders, and we
  * will replace it with a server-side view in Phase 3 step C.
  */
 export async function fetchFoldersWithStats(userId: string): Promise<FolderWithStats[]> {

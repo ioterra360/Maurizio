@@ -15,11 +15,7 @@ import { TopBar } from "@/components/TopBar";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { GhostButton } from "@/components/GhostButton";
 import { Tappable } from "@/components/Tappable";
-import {
-  ADD_PREVIEW_BY_KIND,
-  FOLDER_LABELS,
-  ITEM_TYPES_BY_KIND,
-} from "@/lib/folder-data";
+import { ADD_PREVIEW_BY_KIND, ITEM_TYPES_BY_KIND } from "@/lib/folder-data";
 import { FONT, colors, radii } from "@/theme/tokens";
 import {
   DAILY_INPUT_CAP_DEFAULT,
@@ -47,12 +43,15 @@ export default function AddScreen() {
   // tap on a FAB), bounce out — the user shouldn't be dumped into "create
   // memory" by reloading. See lib/add-gate.ts for the full rationale.
   const [wasOpenedIntentionally] = useState(() => consumeIntentionalAddOpen());
-  // Preselect the originating folder when pushed from folder detail;
-  // fall back to the first seed folder for paramless opens (Knowledge FAB).
+  // Preselect the originating folder when pushed from folder detail; for a
+  // paramless open (Knowledge FAB) the first folder the user owns wins once
+  // the list arrives (effect below) — there is no fixed default kind any
+  // more, a user may own only "law" or only a custom folder.
   const params = useLocalSearchParams<{ kind?: string }>();
-  const initialKind = (FOLDER_KINDS as readonly string[]).includes(params.kind ?? "")
+  const paramKind = (FOLDER_KINDS as readonly string[]).includes(params.kind ?? "")
     ? (params.kind as FolderKind)
-    : "jp";
+    : null;
+  const initialKind: FolderKind = paramKind ?? "custom";
   // Add lives outside the (app) group, so hydrate the persisted folder
   // order here too — the pill row and #N suffixes must match Knowledge.
   const order = useFolderOrderStore((s) => s.order);
@@ -61,9 +60,10 @@ export default function AddScreen() {
   useEffect(() => {
     if (!orderHydrated) void hydrateOrder();
   }, [orderHydrated, hydrateOrder]);
-  // Cartelle dal DB (serve l'id per il salvataggio), ristrette ai 4 seed
-  // kind: le mappe tipo/label/anteprima sono keyed su di essi.
-  const { folders: allFolders } = useFoldersWithStats();
+  // Cartelle dal DB (serve l'id per il salvataggio), ristrette ai kind
+  // noti (4 modelli + custom): le mappe tipo/anteprima sono keyed su di essi.
+  const { folders: allFolders, loading: foldersLoading, error: foldersError } =
+    useFoldersWithStats();
   const folders = useMemo(
     () =>
       applyFolderOrder(
@@ -79,6 +79,17 @@ export default function AddScreen() {
   const [type, setType] = useState<string>(
     ITEM_TYPES_BY_KIND[initialKind][0]?.value ?? "word",
   );
+  // Snap the selection onto a folder the user actually owns (first in the
+  // custom order) whenever the current kind isn't in their list — covers the
+  // paramless open and a stale ?kind= for a folder they deleted.
+  useEffect(() => {
+    if (folders.length === 0) return;
+    if (folders.some((f) => f.kind === folder)) return;
+    const first = folders[0];
+    if (!first) return;
+    setFolder(first.kind);
+    setType(ITEM_TYPES_BY_KIND[first.kind][0]?.value ?? "word");
+  }, [folders, folder]);
   const [term, setTerm] = useState("");
   const [reading, setReading] = useState("");
   const [definition, setDefinition] = useState("");
@@ -110,6 +121,11 @@ export default function AddScreen() {
   if (!hydrated) return null;
   if (!user) return <Redirect href="/(auth)/login" />;
   if (!wasOpenedIntentionally) return <Redirect href="/(app)/today" />;
+  // Zero folders = nothing to save into. Never a silent no-op: send the user
+  // to the topic pick, which creates their one folder and comes back.
+  if (!foldersLoading && !foldersError && allFolders.length === 0) {
+    return <Redirect href={"/choose-topic" as never} />;
+  }
 
   const preview = ADD_PREVIEW_BY_KIND[folder];
   const types = ITEM_TYPES_BY_KIND[folder];
@@ -121,7 +137,16 @@ export default function AddScreen() {
   const doSave = async (addAnother: boolean) => {
     if (!canSave || !user) return;
     const folderRow = folders.find((f) => f.kind === folder);
-    if (!folderRow) return;
+    if (!folderRow) {
+      // Folders still loading or failed to load — say so instead of eating
+      // the tap (the zero-folder case is redirected above).
+      showToast(
+        foldersError
+          ? "Cartelle non caricate. Controlla la connessione e riprova."
+          : "Un attimo, sto caricando le tue cartelle…",
+      );
+      return;
+    }
     setSaving(true);
     try {
       await createMemory({
@@ -248,7 +273,7 @@ export default function AddScreen() {
                       letterSpacing: -0.07,
                     }}
                   >
-                    {FOLDER_LABELS[f.kind]}
+                    {f.name}
                   </Text>
                   <Text
                     style={{

@@ -38,17 +38,25 @@ Self-learners building a long-term knowledge base in domains where things
 **decay** if not revisited: language learners, medical students, law students,
 people sitting professional exams.
 
-We pre-seed four folders to make onboarding fast:
+At onboarding the user picks **one topic** (`/choose-topic`) — a template or
+a custom name — and exactly one folder is created. Nothing is auto-seeded.
 
-| Slug | Display | Item types |
+| Slug | Display (IT) | Item types (IT) |
 |---|---|---|
-| `jp` | Japanese | Word · Kanji · Grammar · Phrase |
-| `medicine` | Medicine | Term · Concept · Drug · Fact |
-| `es` | Spanish | Word · Verb · Grammar · Phrase |
-| `law` | Law | Doctrine · Case · Statute · Term |
+| `jp` | Giapponese | Parola · Kanji · Grammatica · Frase |
+| `medicine` | Medicina | Termine · Concetto · Farmaco · Nozione |
+| `es` | Spagnolo | Parola · Verbo · Grammatica · Frase |
+| `law` | Diritto | Dottrina · Caso · Norma · Termine |
+| `custom` | *nome scelto dall'utente* | Termine · Concetto · Nozione · Frase |
 
-Users can later create their own folders. The seed list is a starting point,
-not a content commitment — we do not edit user folders.
+Templates live in `lib/constants.ts` (`FOLDER_TEMPLATES`); the pick/validate
+helpers in `lib/folder-templates.ts`. We do not edit user folders.
+
+**Freemium:** a free account owns exactly ONE folder (`FREE_FOLDER_LIMIT`).
+Opening/creating a second one will raise the Premium sheet once RevenueCat
+in-app purchases land — until then there is simply no create-folder
+affordance after onboarding. A daily/monthly word quota for free users comes
+later (number/period undecided; not implemented, nothing blocks it).
 
 ## What it is NOT
 
@@ -56,7 +64,7 @@ not a content commitment — we do not edit user folders.
 - ❌ Not a flashcard import tool. We are not Anki. We design our own intake.
 - ❌ Not gamified. No streaks, no XP, no leaderboards. Editorial calm.
 - ❌ Not social. No sharing, follows, comments. Memika is a quiet place.
-- ❌ Not free forever. Subscription model from day one (Wix Payments).
+- ❌ Not free forever. Freemium (one folder) + Premium via in-app purchase.
 
 ## Value proposition
 
@@ -80,13 +88,11 @@ slightly Studio-Ghibli-via-Stripe. See `docs/DESIGN-SYSTEM.md` for visual specs.
 
 ## Subscription model
 
-Single tier at launch. Pricing TBD. Payment runs entirely on Wix Payments
-(Maurizio's Italian P.IVA, then later Memika SRL). The app never embeds a
-payment SDK — it asks the user to subscribe on the web, then a Wix webhook
-flips a flag on the user's Supabase profile.
-
-This is the Spotify pattern: avoids Apple/Google's 15-30% cut. See
-`docs/PAYMENTS.md`.
+Freemium + one Premium tier, sold as **in-app purchases via RevenueCat**
+(decided 2026-07-25, confirmed 2026-08-25). Pricing TBD. Not built yet —
+`app/(app)/subscribe.tsx` is gated off by `PREMIUM_ENABLED=false`. The old
+Wix/web-checkout plan in `docs/PAYMENTS.md` is stale and must not be
+implemented (Apple 3.1.1 / Play Payments policy).
 
 ## Roadmap snapshot
 

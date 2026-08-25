@@ -1,12 +1,19 @@
 /**
- * Phase-2 mock content for the four seed folders.
+ * DEMO-MODE mock content for the four folder templates (demo accounts still
+ * show four folders so the offline UI stays reviewable). Real users start
+ * with ONE folder picked at onboarding — see lib/folder-templates.ts.
  * Mirrors the design contract in _design_drop/memika/project/folder-screen.jsx.
- *
- * Once the real Supabase data starts flowing (Phase 3), this file is replaced
- * with a Zustand store backed by lib/api.ts. Until then it keeps the UI honest.
  */
 
-import type { FolderKind, MemoryState } from "./constants";
+import {
+  CUSTOM_FOLDER_KIND,
+  CUSTOM_ITEM_TYPES,
+  FOLDER_TEMPLATES,
+  type FolderKind,
+  type ItemTypeOption,
+  type MemoryState,
+  type TemplateKind,
+} from "./constants";
 
 export type FolderItem = {
   front: string;
@@ -18,7 +25,7 @@ export type FolderItem = {
 };
 
 export type FolderSeed = {
-  kind: FolderKind;
+  kind: TemplateKind;
   name: string;
   priority: number;
   count: number;
@@ -29,10 +36,10 @@ export type FolderSeed = {
   items: FolderItem[];
 };
 
-const FOLDERS: Record<FolderKind, FolderSeed> = {
+const FOLDERS: Record<TemplateKind, FolderSeed> = {
   jp: {
     kind: "jp",
-    name: "Japanese",
+    name: "Giapponese",
     priority: 1,
     count: 247,
     active: 78,
@@ -53,7 +60,7 @@ const FOLDERS: Record<FolderKind, FolderSeed> = {
   },
   medicine: {
     kind: "medicine",
-    name: "Medicine",
+    name: "Medicina",
     priority: 2,
     count: 312,
     active: 71,
@@ -74,7 +81,7 @@ const FOLDERS: Record<FolderKind, FolderSeed> = {
   },
   es: {
     kind: "es",
-    name: "Spanish",
+    name: "Spagnolo",
     priority: 3,
     count: 132,
     active: 65,
@@ -95,7 +102,7 @@ const FOLDERS: Record<FolderKind, FolderSeed> = {
   },
   law: {
     kind: "law",
-    name: "Law",
+    name: "Diritto",
     priority: 4,
     count: 88,
     active: 52,
@@ -116,57 +123,43 @@ const FOLDERS: Record<FolderKind, FolderSeed> = {
   },
 };
 
-export function getFolderSeed(kind: FolderKind): FolderSeed {
-  return FOLDERS[kind];
+/** Demo seed for a kind — undefined for `custom` (no mock content). */
+export function getFolderSeed(kind: FolderKind): FolderSeed | undefined {
+  return (FOLDERS as Partial<Record<FolderKind, FolderSeed>>)[kind];
 }
 
 export function getAllFolderSeeds(): FolderSeed[] {
   return [FOLDERS.jp, FOLDERS.medicine, FOLDERS.es, FOLDERS.law];
 }
 
-/** Item-type option: stable English slug (`value`) + Italian UI label. */
-export type ItemTypeOption = { value: string; label: string };
+export type { ItemTypeOption };
 
-/** Item-type chips per folder, used by the Add to Memory screen. */
+/**
+ * Item-type chips per folder kind, used by the Add screen. Templates carry
+ * their own (lib/constants.ts); a custom folder gets the generic set.
+ */
 export const ITEM_TYPES_BY_KIND: Record<FolderKind, readonly ItemTypeOption[]> = {
-  jp: [
-    { value: "word", label: "Parola" },
-    { value: "kanji", label: "Kanji" },
-    { value: "grammar", label: "Grammatica" },
-    { value: "phrase", label: "Frase" },
-  ],
-  medicine: [
-    { value: "term", label: "Termine" },
-    { value: "concept", label: "Concetto" },
-    { value: "drug", label: "Farmaco" },
-    { value: "fact", label: "Nozione" },
-  ],
-  es: [
-    { value: "word", label: "Parola" },
-    { value: "verb", label: "Verbo" },
-    { value: "grammar", label: "Grammatica" },
-    { value: "phrase", label: "Frase" },
-  ],
-  law: [
-    { value: "doctrine", label: "Dottrina" },
-    { value: "case", label: "Caso" },
-    { value: "statute", label: "Norma" },
-    { value: "term", label: "Termine" },
-  ],
+  ...(Object.fromEntries(FOLDER_TEMPLATES.map((t) => [t.kind, t.itemTypes])) as Record<
+    TemplateKind,
+    readonly ItemTypeOption[]
+  >),
+  [CUSTOM_FOLDER_KIND]: CUSTOM_ITEM_TYPES,
 };
 
 /** Preview cards used in the Add-to-Memory preview tile. */
 export const ADD_PREVIEW_BY_KIND: Record<FolderKind, { front: string; back: string }> = {
-  jp: { front: "中心", back: "Center · core · the middle" },
-  medicine: { front: "Tachycardia", back: "Resting heart rate above 100 bpm" },
-  es: { front: "ámbito", back: "Scope · sphere · realm of activity" },
-  law: { front: "Estoppel", back: "Preclusion of contradiction in legal proceedings" },
+  jp: { front: "中心", back: "Centro · nucleo · il mezzo" },
+  medicine: { front: "Tachicardia", back: "Frequenza cardiaca a riposo sopra i 100 bpm" },
+  es: { front: "ámbito", back: "Ambito · sfera · campo d'azione" },
+  law: { front: "Estoppel", back: "Preclusione dal contraddirsi in un procedimento" },
+  custom: { front: "Termine", back: "La definizione che vuoi ricordare" },
 };
 
-/** Map FolderKind → display label with the flag/icon hint. */
+/** Map FolderKind → short display label with the flag/icon hint. */
 export const FOLDER_LABELS: Record<FolderKind, string> = {
-  jp: "🇯🇵 Japanese",
-  medicine: "Medicine",
-  es: "🇪🇸 Spanish",
-  law: "Law",
+  jp: "🇯🇵 Giapponese",
+  medicine: "Medicina",
+  es: "🇪🇸 Spagnolo",
+  law: "Diritto",
+  custom: "Altro",
 };

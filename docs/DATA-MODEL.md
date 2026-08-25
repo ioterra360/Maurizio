@@ -49,9 +49,12 @@ ends with `@memika.app`.
 
 ### `folders`
 
-Knowledge categories owned by a user. The four seed folders (`jp`, `medicine`,
-`es`, `law`) are inserted at first signup (Phase 2 task — not yet implemented;
-created lazily in app code for now).
+Knowledge categories owned by a user. Nothing is auto-seeded: the user picks
+ONE topic at onboarding (`/choose-topic`) and `createFolder()` in
+`lib/api.ts` inserts a single row — kind `jp` / `medicine` / `es` / `law`
+(template) or `custom` (user-named, name 1–40 chars client-side). Insert is
+allowed by `folders_all_own_or_admin` (user_id = auth.uid()). Free accounts
+own one folder (`FREE_FOLDER_LIMIT`, enforced in the UI for now).
 
 | Column | Type | Notes |
 |---|---|---|

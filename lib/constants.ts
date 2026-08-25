@@ -1,5 +1,5 @@
 /**
- * Domain constants. Centralized so changing a seed-folder name or a status
+ * Domain constants. Centralized so changing a template name or a status
  * label doesn't mean a grep-and-replace across feature folders.
  *
  * Slugs MUST match the database. UI labels can localize freely.
@@ -7,20 +7,99 @@
 
 import type { LayerKey } from "@/theme/tokens";
 
-export const FOLDER_KINDS = ["jp", "medicine", "es", "law"] as const;
+/**
+ * The four folder TEMPLATES a user can pick at onboarding. These slugs are
+ * the database identifiers (folders.kind) and never change; the UI labels
+ * are Italian. Nothing is auto-seeded any more: the user starts with ONE
+ * folder — a template or a custom one — chosen in /choose-topic.
+ */
+export const TEMPLATE_KINDS = ["jp", "medicine", "es", "law"] as const;
+export type TemplateKind = (typeof TEMPLATE_KINDS)[number];
+
+/** Kind slug of a user-named folder ("Altro…" at onboarding). */
+export const CUSTOM_FOLDER_KIND = "custom" as const;
+
+/** Every kind slug the app can route/render. Templates + custom. */
+export const FOLDER_KINDS = [...TEMPLATE_KINDS, CUSTOM_FOLDER_KIND] as const;
 export type FolderKind = (typeof FOLDER_KINDS)[number];
 
-export const FOLDER_DEFAULTS: ReadonlyArray<{
-  kind: FolderKind;
+/** Item-type option: stable English slug (`value`) + Italian UI label. */
+export type ItemTypeOption = { value: string; label: string };
+
+export type FolderTemplate = {
+  kind: TemplateKind;
+  /** Italian display name — becomes folders.name when the template is picked. */
   name: string;
-  priority: number;
-  itemTypes: readonly string[];
-}> = [
-  { kind: "jp",       name: "Japanese", priority: 1, itemTypes: ["Word", "Kanji", "Grammar", "Phrase"] },
-  { kind: "medicine", name: "Medicine", priority: 2, itemTypes: ["Term", "Concept", "Drug", "Fact"] },
-  { kind: "es",       name: "Spanish",  priority: 3, itemTypes: ["Word", "Verb", "Grammar", "Phrase"] },
-  { kind: "law",      name: "Law",      priority: 4, itemTypes: ["Doctrine", "Case", "Statute", "Term"] },
+  /** One-line hint shown on the template card at onboarding. */
+  hint: string;
+  /** Item-type chips offered by Add for this template (Italian labels). */
+  itemTypes: readonly ItemTypeOption[];
+};
+
+export const FOLDER_TEMPLATES: ReadonlyArray<FolderTemplate> = [
+  {
+    kind: "jp",
+    name: "Giapponese",
+    hint: "Parole, kanji, grammatica",
+    itemTypes: [
+      { value: "word", label: "Parola" },
+      { value: "kanji", label: "Kanji" },
+      { value: "grammar", label: "Grammatica" },
+      { value: "phrase", label: "Frase" },
+    ],
+  },
+  {
+    kind: "medicine",
+    name: "Medicina",
+    hint: "Termini, concetti, farmaci",
+    itemTypes: [
+      { value: "term", label: "Termine" },
+      { value: "concept", label: "Concetto" },
+      { value: "drug", label: "Farmaco" },
+      { value: "fact", label: "Nozione" },
+    ],
+  },
+  {
+    kind: "es",
+    name: "Spagnolo",
+    hint: "Parole, verbi, grammatica",
+    itemTypes: [
+      { value: "word", label: "Parola" },
+      { value: "verb", label: "Verbo" },
+      { value: "grammar", label: "Grammatica" },
+      { value: "phrase", label: "Frase" },
+    ],
+  },
+  {
+    kind: "law",
+    name: "Diritto",
+    hint: "Dottrina, casi, norme",
+    itemTypes: [
+      { value: "doctrine", label: "Dottrina" },
+      { value: "case", label: "Caso" },
+      { value: "statute", label: "Norma" },
+      { value: "term", label: "Termine" },
+    ],
+  },
 ];
+
+/** Generic chips for a custom folder — no domain assumption. */
+export const CUSTOM_ITEM_TYPES: readonly ItemTypeOption[] = [
+  { value: "term", label: "Termine" },
+  { value: "concept", label: "Concetto" },
+  { value: "fact", label: "Nozione" },
+  { value: "phrase", label: "Frase" },
+];
+
+/** Custom folder names: 1–40 chars after trimming (lib/folder-templates.ts). */
+export const FOLDER_NAME_MAX_LENGTH = 40;
+
+/**
+ * Freemium: a free account owns exactly one folder. Creating/opening a
+ * second one will raise the Premium sheet once RevenueCat lands; until then
+ * no create-folder affordance exists beyond the onboarding pick.
+ */
+export const FREE_FOLDER_LIMIT = 1;
 
 export const MEMORY_STATES = ["active", "fading", "archived"] as const;
 export type MemoryState = (typeof MEMORY_STATES)[number];

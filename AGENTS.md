@@ -51,9 +51,13 @@ These exist because of past decisions documented elsewhere in `docs/`.
 - **Layer order is locked: Scan → Reinforcement → Focus.** Never reorder in
   copy, navigation, icons, or recommendation flow. This was a Phase-0 product
   decision and is in the design contract.
-- **The four seed folders are: Japanese · Medicine · Spanish · Law.** Their
-  `kind` slugs are `jp`, `medicine`, `es`, `law` (database) — these are the
-  identifiers; UI labels can localize but slugs do not change.
+- **There are four folder TEMPLATES: Giapponese · Medicina · Spagnolo ·
+  Diritto.** Their `kind` slugs are `jp`, `medicine`, `es`, `law` (database,
+  unchanged); a user-named folder has kind `custom`. Nothing is auto-seeded:
+  a user starts with **ONE folder chosen at onboarding** (`/choose-topic`,
+  helpers in `lib/folder-templates.ts`). Freemium = one folder per free
+  account; no create-folder affordance exists elsewhere until the Premium
+  (RevenueCat) sheet lands. Demo mode still shows all four for UI review.
 - **Demo accounts are: `angelo.casula@gmail.com` (user) and
   `maurizio.cocco@memika.app` (admin).** Role inferred from email: admin if it
   contains `admin` or ends with `@memika.app`. Server-side mirror of this logic

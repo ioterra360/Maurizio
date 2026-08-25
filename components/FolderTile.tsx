@@ -1,5 +1,5 @@
 import { Text, View } from "react-native";
-import { Plus, Scale, Stethoscope } from "lucide-react-native";
+import { BookOpen, Plus, Scale, Stethoscope } from "lucide-react-native";
 import { FONT, colors, folderTint } from "@/theme/tokens";
 import type { FolderKind } from "@/lib/constants";
 
@@ -46,6 +46,13 @@ export function FolderTile({ kind, size = 32 }: Props) {
     return (
       <View style={[base, { backgroundColor: folderTint.law }]}>
         <Scale size={size * 0.55} color={colors.navy} strokeWidth={1.8} />
+      </View>
+    );
+  }
+  if (kind === "custom") {
+    return (
+      <View style={[base, { backgroundColor: folderTint.custom }]}>
+        <BookOpen size={size * 0.55} color={colors.navy} strokeWidth={1.8} />
       </View>
     );
   }
