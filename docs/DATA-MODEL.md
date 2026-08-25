@@ -32,7 +32,7 @@ public.profiles
 
 One row per registered user. Auto-created on signup by `handle_new_user()`
 trigger. Role inferred from email shape — admin if it contains `admin` or
-ends with `@memika.app`.
+is in the `admin_emails` allowlist (currently `memikaapp@gmail.com`).
 
 | Column | Type | Notes |
 |---|---|---|

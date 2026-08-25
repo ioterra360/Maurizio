@@ -1,5 +1,5 @@
 > **BOZZA — da far revisionare a un professionista (avvocato / DPO) prima della pubblicazione.**
-> Questo testo è una proposta redazionale e non costituisce consulenza legale. La versione HTML pronta per memika.app/privacy è `privacy.html` (stesso contenuto, senza questa nota).
+> Questo testo è una proposta redazionale e non costituisce consulenza legale. La versione HTML pronta per ioterra360.github.io/memika-legal/privacy/ è `privacy.html` (stesso contenuto, senza questa nota).
 
 # Informativa sulla privacy — Memika
 
@@ -77,7 +77,7 @@ In qualsiasi momento l'utente può esercitare i diritti previsti dagli artt. 15-
 
 - **accesso** ai propri dati e alle informazioni sul trattamento;
 - **rettifica** dei dati inesatti (il nome visualizzato è modificabile direttamente nell'App);
-- **cancellazione** ("diritto all'oblio") — disponibile anche direttamente nell'App: *Impostazioni → Elimina account*; istruzioni complete su https://memika.app/account-deletion;
+- **cancellazione** ("diritto all'oblio") — disponibile anche direttamente nell'App: *Impostazioni → Elimina account*; istruzioni complete su https://ioterra360.github.io/memika-legal/account-deletion/;
 - **limitazione** del trattamento;
 - **portabilità** dei dati in un formato strutturato e leggibile da dispositivo automatico;
 - **opposizione** al trattamento basato sul legittimo interesse;
@@ -101,7 +101,7 @@ L'App calcola automaticamente quando riproporre ogni memoria in base agli esiti 
 
 ## 12. Modifiche alla presente informativa
 
-Potremmo aggiornare questa informativa in caso di modifiche all'App, ai fornitori o alla normativa. La versione aggiornata sarà pubblicata su https://memika.app/privacy con la data di ultimo aggiornamento; in caso di modifiche sostanziali ne daremo notizia nell'App. Dove il consenso è necessario, lo chiederemo espressamente.
+Potremmo aggiornare questa informativa in caso di modifiche all'App, ai fornitori o alla normativa. La versione aggiornata sarà pubblicata su https://ioterra360.github.io/memika-legal/privacy/ con la data di ultimo aggiornamento; in caso di modifiche sostanziali ne daremo notizia nell'App. Dove il consenso è necessario, lo chiederemo espressamente.
 
 ## 13. Contatti
 

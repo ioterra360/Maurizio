@@ -15,7 +15,7 @@ What exists today:
 | Piece | State |
 |---|---|
 | `PREMIUM_ENABLED` in `lib/constants.ts` | `false` — kill-switch. Hides the "Memika Premium" row in Settings and makes `app/(app)/subscribe.tsx` redirect to Settings. |
-| `app/(app)/subscribe.tsx` | The OLD external-checkout screen (opens `https://memika.app/subscribe`). **Must be rewritten** as the RevenueCat paywall before the flag is ever flipped. Never ship it as is. |
+| `app/(app)/subscribe.tsx` | The OLD external-checkout screen (opens `https://ioterra360.github.io/memika-legal/`). **Must be rewritten** as the RevenueCat paywall before the flag is ever flipped. Never ship it as is. |
 | `FREE_FOLDER_LIMIT = 1` in `lib/constants.ts` | The freemium rule. Onboarding creates exactly one folder (`/choose-topic`); no create-folder affordance exists anywhere else. |
 | `profiles` entitlement column | Does not exist yet (see "Data model" below). |
 | Store prerequisites | Apple Developer (Individual) and Google Play (Personal) accounts opened 2026-08-25 under Maurizio Cocco. Paid Apps Agreement / merchant profile not yet completed. |

@@ -78,7 +78,7 @@ Codify by aliasing `npm install` if it gets annoying. For now, type the flag.
 
 - Restart Metro after changing `.env` (env vars are read at bundle time).
 - Confirm the email matches exactly: `angelo.casula@gmail.com` (lowercase) or
-  `maurizio.cocco@memika.app` (lowercase). Trim leading/trailing whitespace.
+  `memikaapp@gmail.com` (lowercase). Trim leading/trailing whitespace.
 
 If `.env` says `EXPO_PUBLIC_DEMO_MODE=false`: you're in real-Supabase mode and
 those users don't exist in `auth.users` yet. Either:
@@ -208,7 +208,7 @@ Things to know:
   (a sign-in / sign-out happened in between) — look for `[Memika] auth link:`
   logs in Metro; `duplicate` means the fingerprint guard fired.
 - **Only 2 emails per hour arrive.** Hosted Auth still uses Supabase's built-in
-  dev sender (`rate_limit_email_sent = 2`). Custom SMTP on memika.app is a
+  dev sender (`rate_limit_email_sent = 2`). Custom SMTP (future domain / Gmail app password) is a
   pending owner decision — see docs/DEPLOY.md.
 - **No email at all in dev.** `isDemoMode` short-circuits
   `resetPasswordForEmail`; run with real Supabase creds in `.env`.

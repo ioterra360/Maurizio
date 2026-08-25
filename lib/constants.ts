@@ -129,12 +129,12 @@ export const PREMIUM_ENABLED = false;
 
 /**
  * Public legal / support endpoints. The pages are published by the
- * publisher (Maurizio Cocco) on memika.app from the drafts in docs/legal/;
+ * publisher on GitHub Pages (repo ioterra360/memika-legal, no custom domain yet) from the drafts in docs/legal/;
  * Google Play's Data-safety form and Apple's privacy fields point at the
  * same URLs, so change them here and in the store listings together.
  */
-export const PRIVACY_URL = "https://memika.app/privacy";
-export const TERMS_URL = "https://memika.app/terms";
+export const PRIVACY_URL = "https://ioterra360.github.io/memika-legal/privacy/";
+export const TERMS_URL = "https://ioterra360.github.io/memika-legal/terms/";
 /** Web path for deleting an account without reinstalling (Play requirement). */
-export const ACCOUNT_DELETION_URL = "https://memika.app/account-deletion";
+export const ACCOUNT_DELETION_URL = "https://ioterra360.github.io/memika-legal/account-deletion/";
 export const SUPPORT_EMAIL = "memikaapp@gmail.com";

@@ -1,5 +1,5 @@
 > **BOZZA — da far revisionare a un professionista (avvocato) prima della pubblicazione.**
-> Questo testo è una proposta redazionale e non costituisce consulenza legale. La versione HTML pronta per memika.app/terms è `terms.html` (stesso contenuto, senza questa nota).
+> Questo testo è una proposta redazionale e non costituisce consulenza legale. La versione HTML pronta per ioterra360.github.io/memika-legal/terms/ è `terms.html` (stesso contenuto, senza questa nota).
 
 # Termini e condizioni di servizio — Memika
 
@@ -59,7 +59,7 @@ L'App, il suo codice, il design, il marchio "Memika" e tutti i materiali diversi
 
 Ci impegniamo a mantenere l'App funzionante, ma **non garantiamo** che sia sempre disponibile, priva di errori o interruzioni. Possiamo modificare, sospendere o interrompere funzionalità dell'App, anche per manutenzione. In caso di cessazione definitiva del servizio ne daremo comunicazione con un preavviso ragionevole, così che l'utente possa recuperare i propri contenuti; gli abbonamenti in corso saranno gestiti secondo le regole dello store.
 
-L'utente può cancellare il proprio account in qualsiasi momento dall'App (*Impostazioni → Elimina account*) o come indicato su https://memika.app/account-deletion.
+L'utente può cancellare il proprio account in qualsiasi momento dall'App (*Impostazioni → Elimina account*) o come indicato su https://ioterra360.github.io/memika-legal/account-deletion/.
 
 ## 8. Esclusione di garanzie
 
@@ -73,11 +73,11 @@ Si raccomanda all'utente di non affidare all'App l'unica copia di contenuti impo
 
 ## 10. Privacy
 
-Il trattamento dei dati personali è descritto nell'Informativa sulla privacy disponibile su https://memika.app/privacy, che costituisce parte integrante dei presenti Termini.
+Il trattamento dei dati personali è descritto nell'Informativa sulla privacy disponibile su https://ioterra360.github.io/memika-legal/privacy/, che costituisce parte integrante dei presenti Termini.
 
 ## 11. Modifiche ai Termini
 
-Possiamo aggiornare i presenti Termini. La versione aggiornata sarà pubblicata su https://memika.app/terms con la data di ultimo aggiornamento; in caso di modifiche sostanziali ne daremo notizia nell'App con congruo anticipo. Se l'utente non accetta le modifiche può cessare di usare l'App e cancellare l'account; l'uso continuato dopo l'entrata in vigore delle modifiche ne comporta l'accettazione.
+Possiamo aggiornare i presenti Termini. La versione aggiornata sarà pubblicata su https://ioterra360.github.io/memika-legal/terms/ con la data di ultimo aggiornamento; in caso di modifiche sostanziali ne daremo notizia nell'App con congruo anticipo. Se l'utente non accetta le modifiche può cessare di usare l'App e cancellare l'account; l'uso continuato dopo l'entrata in vigore delle modifiche ne comporta l'accettazione.
 
 ## 12. Legge applicabile e foro competente
 

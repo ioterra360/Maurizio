@@ -348,7 +348,7 @@ export default function SettingsScreen() {
           ) : null}
         </View>
 
-        {/* Legal + support — real pages on memika.app, mailto for support */}
+        {/* Legal + support — real pages on GitHub Pages (ioterra360.github.io/memika-legal), mailto for support */}
         <View style={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 8 }}>
           <SectionLabel>Privacy e termini</SectionLabel>
         </View>
@@ -410,7 +410,7 @@ export default function SettingsScreen() {
             onPress={openDeleteConfirm}
           />
           {/* Web path — Google Play requires a deletion route that works
-              without the app installed; the page is published on memika.app. */}
+              without the app installed; the page is published on GitHub Pages. */}
           <Tappable
             onPress={openDeletionWebPage}
             accessibilityRole="link"
@@ -434,7 +434,7 @@ export default function SettingsScreen() {
             >
               Richiesta via web:{" "}
               <Text style={{ fontFamily: FONT.semibold, color: colors.navy }}>
-                memika.app/account-deletion
+                ioterra360.github.io/memika-legal/account-deletion/
               </Text>
             </Text>
             <ExternalLink size={13} color={colors.midGrey} strokeWidth={2} />

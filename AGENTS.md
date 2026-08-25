@@ -66,9 +66,10 @@ These exist because of past decisions documented elsewhere in `docs/`.
   account; no create-folder affordance exists elsewhere until the Premium
   (RevenueCat) sheet lands. Demo mode still shows all four for UI review.
 - **Demo accounts are: `angelo.casula@gmail.com` (user) and
-  `maurizio.cocco@memika.app` (admin).** Role inferred from email: admin if it
-  contains `admin` or ends with `@memika.app`. Server-side mirror of this logic
-  lives in the `handle_new_user()` trigger — change in both places or neither.
+  `memikaapp@gmail.com` (admin).** Admin role is granted ONLY by the
+  `public.admin_emails` allowlist (seeded with `memikaapp@gmail.com`, migration
+  20260825181500) inside the `handle_new_user()` trigger — never inferred from
+  the email shape. To add an admin, insert into `admin_emails` via a migration.
 - **`.env` is gitignored — including the un-suffixed form.** Never commit
   secrets. The PAT (`SUPABASE_ACCESS_TOKEN`) lives only there.
 - **The `service_role` Supabase key has not been wired into this repo and
@@ -241,7 +242,7 @@ Don't ask if you can grep or read the docs. Do ask when:
 - A task seems to contradict a hard rule above.
 - You'd need to spend tokens / hit external paid APIs to proceed.
 - Store listing text, pricing, or the legal pages under `docs/legal/` (they
-  are drafts for Maurizio to review and publish on memika.app).
+  are the source of the public pages on GitHub Pages, repo ioterra360/memika-legal).
 - You'd commit something that touches billing, payments, GDPR, or the deal
   terms with Maurizio.
 

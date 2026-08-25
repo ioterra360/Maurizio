@@ -108,7 +108,7 @@ export const DEMO_ACCOUNTS = [
     initials: "AC",
   },
   {
-    email: "maurizio.cocco@memika.app",
+    email: "memikaapp@gmail.com",
     name: "Maurizio Cocco",
     role: "admin" as const,
     initials: "MC",

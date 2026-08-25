@@ -43,7 +43,7 @@ export default function SignupScreen() {
   const passwordRef = useRef<TextInput>(null);
   const confirmRef = useRef<TextInput>(null);
 
-  // Legal pages live on memika.app; opening them in the system browser is
+  // Legal pages live on GitHub Pages (ioterra360/memika-legal); opening them in the system browser is
   // fine under store rules (they are documents, not a checkout).
   const openLegal = (url: string) => {
     Linking.openURL(url).catch((err) => {

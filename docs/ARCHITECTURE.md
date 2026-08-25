@@ -181,7 +181,7 @@ from the client.
 
 ## What lives outside this repo
 
-- **memika.app** — the publisher's site hosting `/privacy`, `/terms` and
+- **GitHub Pages (ioterra360/memika-legal)** — public pages hosting `/privacy`, `/terms` and
   `/account-deletion` (drafts in `docs/legal/`). No web checkout, no marketing
   landing inside the app.
 - **RevenueCat** — subscription backend (to be created; `docs/PAYMENTS.md`).

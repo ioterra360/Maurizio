@@ -23,7 +23,7 @@ import { useAuthStore } from "@/lib/auth-store";
 import { PREMIUM_ENABLED } from "@/lib/constants";
 import { colors, FONT } from "@/theme/tokens";
 
-const CHECKOUT_URL = "https://memika.app/subscribe";
+const CHECKOUT_URL = "https://ioterra360.github.io/memika-legal/";
 
 const BENEFITS = [
   {

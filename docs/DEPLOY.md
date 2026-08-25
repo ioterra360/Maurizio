@@ -34,7 +34,7 @@ What's not yet set up:
 - TestFlight / Play Internal + Closed Testing tracks
 - Sentry org (EU), DSN, `SENTRY_AUTH_TOKEN` secret — until then every profile
   must set `SENTRY_DISABLE_AUTO_UPLOAD=true` or the build fails (see § Sentry)
-- Legal pages live on memika.app (drafts in `docs/legal/`, Maurizio publishes)
+- Legal pages live on GitHub Pages (ioterra360/memika-legal) (drafts in `docs/legal/`, Maurizio publishes)
 - RevenueCat (`docs/PAYMENTS.md`) — not started
 - OTA updates (`expo-updates` not installed; no `channel` keys in `eas.json` on purpose)
 
@@ -130,8 +130,8 @@ period):
 
 | Setting | Value |
 |---|---|
-| `site_url` | `https://memika.app` |
-| `uri_allow_list` | `memika://**,memika://reset-password,memika://auth-callback,exp+memika://**,exp://**,https://memika.app/**` |
+| `site_url` | `https://ioterra360.github.io/memika-legal` |
+| `uri_allow_list` | `memika://**,memika://reset-password,memika://auth-callback,exp+memika://**,exp://**,https://ioterra360.github.io/memika-legal/**` |
 | `mailer_autoconfirm` | `true` (email confirmation OFF — see below) |
 | `password_min_length` | `8` (matches the client validation) |
 
@@ -148,7 +148,7 @@ curl -X PATCH \
   -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
   https://api.supabase.com/v1/projects/taekvxxljtgzsjrlmumo/config/auth \
-  -d '{"site_url":"https://memika.app","uri_allow_list":"memika://**,memika://reset-password,memika://auth-callback,exp+memika://**,exp://**,https://memika.app/**","mailer_autoconfirm":true,"password_min_length":8}'
+  -d '{"site_url":"https://ioterra360.github.io/memika-legal","uri_allow_list":"memika://**,memika://reset-password,memika://auth-callback,exp+memika://**,exp://**,https://ioterra360.github.io/memika-legal/**","mailer_autoconfirm":true,"password_min_length":8}'
 # verify
 curl -s -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
   https://api.supabase.com/v1/projects/taekvxxljtgzsjrlmumo/config/auth | grep -o '"site_url":"[^"]*"\|"uri_allow_list":"[^"]*"\|"mailer_autoconfirm":[a-z]*'
@@ -167,14 +167,14 @@ Decisions baked in (do not re-litigate without the owner):
   flipping it ON later only needs SMTP + Italian templates.
 - **`exp://**` and `exp+memika://**` are DEV wildcards.** Remove them from the
   allow-list before public marketing (they widen the redirect surface of auth
-  links). `memika://**` and `https://memika.app/**` are the production entries.
+  links). `memika://**` and `https://ioterra360.github.io/memika-legal/**` are the production entries.
 - **Password reset emails go through the same built-in sender** (2/hour,
   project-wide: the third "Password dimenticata" in any hour, across ALL
   users, gets a 429 → "Troppi tentativi"). The subjects and bodies ARE
   Italian since 2026-08-25 (`mailer_subjects_*` / `mailer_templates_*` set
   via the Management API, mirrored in `supabase/config.toml`
   `[auth.email.template.*]` + `supabase/templates/*.html`), but the sender is
-  still `noreply@mail.app.supabase.io`. A custom SMTP (Resend on memika.app
+  still `noreply@mail.app.supabase.io`. A custom SMTP (Resend on a future domain or Gmail app password
   with SPF/DKIM, or Gmail SMTP for memikaapp@gmail.com with an app
   password) is the owner's call and needs his credentials: PATCH
   `smtp_host/port/user/pass/sender_name/admin_email`, then raise
@@ -335,7 +335,7 @@ Android build into testers' hands first.
       rating questionnaire, target audience 16+
 - [ ] Data safety form: collects email + user content (memories), no ads, no
       tracking, data encrypted in transit, deletion path in-app + URL
-      `https://memika.app/account-deletion`
+      `https://ioterra360.github.io/memika-legal/account-deletion/`
 - [ ] App access: test credentials for the reviewer (a real account created
       via signup, not a demo account — demo mode does not exist in release)
 - [ ] **Closed test with ≥ 12 opted-in testers for 14 continuous days** before
@@ -347,7 +347,7 @@ Android build into testers' hands first.
 - [ ] App Store Connect record: name "Memika", Italian primary language,
       1024 px icon, screenshots (6.9" and 6.5"), privacy nutrition labels
       (email, user content; not used for tracking), age rating, support URL,
-      privacy policy URL `https://memika.app/privacy`
+      privacy policy URL `https://ioterra360.github.io/memika-legal/privacy/`
 - [ ] TestFlight internal group (Angelo + Maurizio); external group optional
 - [ ] App Review notes: a test account (email + password), where account
       deletion lives (Impostazioni → Elimina account), how password reset
@@ -357,7 +357,7 @@ Android build into testers' hands first.
 
 **Publisher / owner (Maurizio)**
 - [ ] Publish `docs/legal/privacy.html`, `terms.html`, `account-deletion.html`
-      at `https://memika.app/privacy`, `/terms`, `/account-deletion` — the
+      at `https://ioterra360.github.io/memika-legal/privacy/`, `/terms`, `/account-deletion` — the
       account-deletion page is mandatory for the Play Data safety form
 - [ ] Support inbox memikaapp@gmail.com monitored (it is the address in the
       legal pages, Settings and both store listings)

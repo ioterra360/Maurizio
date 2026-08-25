@@ -124,7 +124,7 @@ admin tools (Phase 4).
 > onboarding (`/choose-topic`, templates localized, no auto-seed, no silent
 > no-op without folders); `8184f5b` Settings → Elimina account with live
 > counts; `394f4e9` password reset end-to-end via `memika://reset-password` +
-> hosted Auth URL config (site_url memika.app, allow-list, autoconfirm on,
+> hosted Auth URL config (site_url ioterra360.github.io/memika-legal, allow-list, autoconfirm on,
 > min password 8); `9565d3f` legal links + consent line, honest copy, real
 > version row, admin "view as user"; `9ab550f` Sentry ~7.2 + error boundary +
 > 15 s network timeout + honest error states; this docs sync.
@@ -166,7 +166,7 @@ gets Premium.
       listing, screenshots, privacy nutrition labels: email + user content,
       no tracking), review notes with a test account, demo of account
       deletion and password reset.
-- [ ] Publish the legal pages on memika.app (`/privacy`, `/terms`,
+- [ ] Legal pages published on GitHub Pages (ioterra360/memika-legal) — DONE 2026-08-25; custom domain later (`/privacy`, `/terms`,
       `/account-deletion`) — Maurizio, from `docs/legal/*.html`
 - [ ] Sentry org in the EU region: real slugs in `app.json`, DSN in
       `eas.json`, `SENTRY_AUTH_TOKEN` as an EAS secret (or
@@ -175,7 +175,7 @@ gets Premium.
 - [ ] Local notifications via `expo-notifications` for the morning / evening
       review reminders (Settings already stores the times; hints say "in un
       prossimo aggiornamento")
-- [ ] Custom SMTP (e.g. Resend on memika.app) + Italian auth email templates,
+- [ ] Custom SMTP (e.g. Resend on a future custom domain, or Gmail app password) + Italian auth email templates,
       then re-enable email confirmation — optional for launch, the built-in
       sender is capped at 2 emails/hour
 - [ ] Remove the `exp://**` / `exp+memika://**` entries from the Supabase
@@ -187,7 +187,7 @@ gets Premium.
   demo data
 - A free user cannot obtain a second folder; a Premium sandbox purchase on
   both stores unlocks it end-to-end
-- An admin (`maurizio.cocco@memika.app`) sees the admin shell on login and
+- An admin (`memikaapp@gmail.com`) sees the admin shell on login and
   can open the app as a user
 - The Sentry dashboard receives a deliberate test event from a TestFlight /
   Play build with symbolicated stack traces

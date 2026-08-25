@@ -105,7 +105,7 @@ If you see a typed-route error, the underlying cause is almost always:
 ## Deep links
 
 The Expo `scheme` is `memika` (in `app.json`). Universal links / app links on
-`memika.app` come later; today only the custom scheme (and Expo Go's
+a custom domain comes later; today only the custom scheme (and Expo Go's
 `exp://<lan-ip>:<port>/--/<path>`) works. The two auth links:
 
 | Link | Sent by | Lands in |
@@ -124,7 +124,7 @@ shown as "Link non utilizzabile" with a "Richiedi un nuovo link" button.
    only this device can exchange (the `code_verifier` was written to
    SecureStore by `resetPasswordForEmail`). `lib/auth-links.ts` (pure,
    vitest-covered) parses query + fragment out of any URL shape
-   (`memika://`, `exp://…/--/`, `https://memika.app/…`); implicit
+   (`memika://`, `exp://…/--/`, `https://<custom-domain>/…` (future universal links)); implicit
    `#access_token=` links are still recognised but `applyAuthLink` refuses
    them (login-CSRF vector).
 2. **`app/_layout.tsx`** reads `Linking.getInitialURL()` (cold start, BEFORE
@@ -205,7 +205,7 @@ Pattern:
 ## What we deliberately don't have
 
 - **No `(public)` group** with a marketing landing inside the app. The only
-  public web pages are the legal ones on memika.app (privacy / terms /
+  public web pages are the legal ones on GitHub Pages (ioterra360/memika-legal) (privacy / terms /
   account-deletion); there is no web checkout.
 - **No nested tab navigators.** Memika is shallow — one tab bar, push from
   there. If you find yourself needing a sub-tab bar, refactor the screen instead.

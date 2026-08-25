@@ -45,7 +45,7 @@ Open the QR code with **Expo Go** on iOS or Android.
 
 > Without a `.env`, the app boots in **offline demo mode**: the two demo accounts
 > from the login screen (`angelo.casula@gmail.com` user ·
-> `maurizio.cocco@memika.app` admin) work locally with any password. Set the
+> `memikaapp@gmail.com` admin) work locally with any password. Set the
 > Supabase env vars to switch to real auth. You can also force demo mode with
 > `EXPO_PUBLIC_DEMO_MODE=true` even when creds are present.
 

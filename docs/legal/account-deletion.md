@@ -1,5 +1,5 @@
 > **BOZZA — da far revisionare a un professionista prima della pubblicazione.**
-> Questo testo è una proposta redazionale e non costituisce consulenza legale. La versione HTML pronta per memika.app/account-deletion è `account-deletion.html` (stesso contenuto, senza questa nota). Nota per Google Play: il titolo della pagina deve contenere il nome dell'app ("Memika") e la pagina deve essere raggiungibile senza login.
+> Questo testo è una proposta redazionale e non costituisce consulenza legale. La versione HTML pronta per ioterra360.github.io/memika-legal/account-deletion/ è `account-deletion.html` (stesso contenuto, senza questa nota). Nota per Google Play: il titolo della pagina deve contenere il nome dell'app ("Memika") e la pagina deve essere raggiungibile senza login.
 
 # Memika — Eliminazione dell'account e dei dati
 
@@ -46,4 +46,4 @@ Eliminare l'account **non disdice automaticamente** l'abbonamento Premium, che �
 
 ## Domande
 
-Per qualsiasi domanda sui tuoi dati scrivi a **memikaapp@gmail.com**. Maggiori informazioni nell'[Informativa sulla privacy](https://memika.app/privacy).
+Per qualsiasi domanda sui tuoi dati scrivi a **memikaapp@gmail.com**. Maggiori informazioni nell'[Informativa sulla privacy](https://ioterra360.github.io/memika-legal/privacy/).
