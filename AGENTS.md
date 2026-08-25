@@ -10,8 +10,9 @@
 **Memika** (codename — final name TBD) is a calm, editorial spaced-repetition
 mobile app. Three review rhythms in a fixed order: **Scan → Reinforcement →
 Focus**. It runs on Expo SDK 54 + React Native 0.81 + TypeScript with Supabase
-as the backend. Marketing site + payments live on Wix (Spotify-style pattern —
-in-app signup, web checkout) and are NOT part of this repo.
+as the backend. Payments will be **in-app purchases via RevenueCat** (not built yet — decided
+2026-07-25, confirmed 2026-08-25). There is no marketing site and no web
+checkout for Memika.
 
 Owner: Maurizio Cocco (product). Developer: Angelo Casula / Tailor App Studio
 (implementation). See `docs/PRODUCT.md` for full domain context.
@@ -193,7 +194,11 @@ The `--legacy-peer-deps` flag is required because `lucide-react-native` over-dec
 - **`react-native-vector-icons`.** Use `lucide-react-native`. Same set as the
   mockup, no font registration step.
 - **A monorepo / Nx setup.** Memika is one app. Premature.
-- **In-app payments (IAP).** Spotify pattern is locked in. See `docs/PAYMENTS.md`.
+- **Web checkout / external payment links.** Payments are in-app purchases via
+  RevenueCat. A store build that links out to a web checkout is rejected under
+  Apple 3.1.1 / Play Payments policy — `app/(app)/subscribe.tsx` is gated off by
+  `PREMIUM_ENABLED` until the IAP paywall replaces it. `docs/PAYMENTS.md` still
+  describes the old Wix plan and is stale until then.
 - **Server-side auth roles set from the client.** Roles come from the
   `handle_new_user` trigger, period.
 - **Light/dark mode toggle now.** The editorial design assumes light. Dark
@@ -216,6 +221,6 @@ Don't ask if you can grep or read the docs. Do ask when:
 |---|---|---|
 | GitHub | `gh ...` | Already logged in as `ioterra360`. |
 | Supabase | `npx supabase ...` | Reads `SUPABASE_ACCESS_TOKEN` from `.env`. |
-| Expo | `npm start` / `npx expo ...` | EAS account not yet linked (Phase 4). |
+| Expo / EAS | `npm start` / `eas build --profile <p> -p <platform>` | Logged in as `ioterra`; project `@ioterra/memika` (`extra.eas.projectId` in `app.json`). Store profiles carry the Supabase env in `eas.json`. |
 
 End of AGENTS.md. Skipping any of section 2 is a fail — read the linked docs.

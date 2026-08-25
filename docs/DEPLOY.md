@@ -4,18 +4,23 @@
 
 ## Status
 
-🚧 **Builds not yet configured.** Phase 4.
+✅ **EAS project linked (2026-08-25):** `@ioterra/memika`, `eas.json` profiles
+`development` (dev client), `preview` (internal APK / ad-hoc, Supabase env),
+`production` (store builds, Supabase env, `autoIncrement` with
+`appVersionSource: "remote"`). Store accounts: Apple **Individual** and Google
+Play **Personal**, both under Maurizio (sole proprietorship — Apple does not
+allow Organization for a ditta individuale).
 
-What's working today:
-- `npm start` for Expo Go dev (already used for Phase 1 testing)
-- Supabase CLI for DB migrations (already used)
+What.s working today:
+- `npm start` for Expo Go dev
+- Supabase CLI for DB migrations
+- `eas build` profiles (see below)
 
-What's not yet set up:
-- EAS Build profiles
-- TestFlight provisioning
-- Google Play Internal Testing track
-- Sentry source maps integration
-- OTA update channel strategy
+What.s not yet set up:
+- Apple Developer / Play Console accounts (Maurizio, in progress)
+- TestFlight / Play Internal Testing tracks
+- Sentry
+- OTA updates (`expo-updates` not installed; no `channel` keys in `eas.json` on purpose)
 
 This doc captures the planned setup so we don't reinvent it under deadline.
 
@@ -54,8 +59,8 @@ Stored in `app.json` under `ios.bundleIdentifier` and `android.package`.
 | Profile | Purpose | Distribution |
 |---|---|---|
 | `development` | Dev client with debugger | Internal (Expo Go-like) |
-| `preview` | Internal test build, prod env | Internal distribution + TestFlight |
-| `production` | App Store + Play Store releases | Public stores |
+| `preview` | Internal APK / ad-hoc build, real Supabase | Internal distribution (no store) |
+| `production` | TestFlight / Play tracks and store releases | Stores (`eas submit`) |
 
 Build commands (after Phase 4 setup):
 
@@ -68,7 +73,7 @@ eas build --profile production --platform all
 ## Code signing
 
 iOS:
-- Apple Developer account needed (€99/year, registered under Tailor or Memika SRL)
+- Apple Developer account: Maurizio, **Individual** (€99/year). On Individual accounts only the Account Holder can generate signing credentials → first `eas build -p ios` runs with his Apple ID; EAS stores the credentials afterwards
 - EAS handles certificate + provisioning profile generation
 - Distribution certificate stored in EAS Secrets
 
@@ -117,11 +122,11 @@ For when we actually ship to TestFlight or Play Internal:
 - [ ] Bundle ID + package name updated in `app.json`
 - [ ] App Store Connect record created (icon, screenshots, description)
 - [ ] Google Play Console listing created (same)
-- [ ] Privacy policy URL live on Wix
+- [ ] Privacy policy URL live on memika.app
 - [ ] Support email reachable
 - [ ] Apple Developer + Play Developer accounts in good standing
 - [ ] `eas build --profile preview --platform all` produces a working build
-- [ ] At least one test purchase via Wix Payments succeeds end-to-end
+- [ ] At least one sandbox in-app purchase via RevenueCat succeeds end-to-end
 - [ ] Push notifications deliver to a real device
 - [ ] Sentry receives a deliberate test error
 - [ ] Both Angelo and Maurizio have installed the build
