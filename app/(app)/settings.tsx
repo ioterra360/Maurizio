@@ -25,6 +25,7 @@ import { Tappable } from "@/components/Tappable";
 import { useAuthStore } from "@/lib/auth-store";
 import { useReviewStore } from "@/lib/review-store";
 import { useUIStore } from "@/lib/ui-store";
+import { reportError } from "@/lib/report-error";
 import { deleteOwnAccount, fetchDeletionPreview, fetchProfile, updateProfile } from "@/lib/api";
 import {
   ACCOUNT_DELETION_URL,
@@ -94,7 +95,7 @@ export default function SettingsScreen() {
         if (!cancelled && p) setProfile(p);
       })
       .catch((err) => {
-        if (__DEV__) console.warn("[Memika] settings profile load failed", err);
+        reportError("settings/profile-load", err);
       });
     return () => {
       cancelled = true;
@@ -106,7 +107,7 @@ export default function SettingsScreen() {
     if (!user || !trimmed || trimmed === user.name) return;
     setUserName(trimmed);
     updateProfile(user.id, { name: trimmed }).catch((err) => {
-      if (__DEV__) console.warn("[Memika] name save failed", err);
+      reportError("settings/name-save", err);
     });
   };
 
@@ -137,7 +138,7 @@ export default function SettingsScreen() {
         if (useAuthStore.getState().user?.id === uid) setDeletionPreview(p);
       })
       .catch((err) => {
-        if (__DEV__) console.warn("[Memika] deletion preview failed", err);
+        reportError("settings/deletion-preview", err);
       });
   };
 
@@ -147,7 +148,7 @@ export default function SettingsScreen() {
     try {
       await deleteOwnAccount();
     } catch (err) {
-      if (__DEV__) console.warn("[Memika] account deletion failed", err);
+      reportError("settings/account-deletion", err);
       // Close the sheet BEFORE toasting: the global toast renders below this
       // native Modal and would be invisible on iOS while it stays open.
       setDeleting(false);
@@ -172,7 +173,7 @@ export default function SettingsScreen() {
   const openExternal = (url: string) => {
     tap();
     Linking.openURL(url).catch((err) => {
-      if (__DEV__) console.warn("[Memika] openURL failed", url, err);
+      reportError("settings/open-url", err, { url });
       showToast(
         url.startsWith("mailto:")
           ? `Nessuna app di posta disponibile. Scrivi a ${SUPPORT_EMAIL}.`
@@ -295,7 +296,7 @@ export default function SettingsScreen() {
             onChange={(v) => {
               if (!user) return;
               updateProfile(user.id, { calmMode: v }).catch((err) => {
-                if (__DEV__) console.warn("[Memika] calm mode save failed", err);
+                reportError("settings/calm-mode-save", err);
               });
             }}
           />
@@ -307,7 +308,7 @@ export default function SettingsScreen() {
             onChange={(v) => {
               if (!user) return;
               updateProfile(user.id, { weeklyDigest: v }).catch((err) => {
-                if (__DEV__) console.warn("[Memika] weekly digest save failed", err);
+                reportError("settings/weekly-digest-save", err);
               });
             }}
           />

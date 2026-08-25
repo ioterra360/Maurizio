@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ScrollView, Text, View } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -8,10 +8,12 @@ import { TimeBudgetChips } from "@/components/TimeBudgetChips";
 import { SectionLabel } from "@/components/SectionLabel";
 import { LayerCard } from "@/components/LayerCard";
 import { PrimaryButton } from "@/components/PrimaryButton";
+import { ErrorCard } from "@/components/ErrorCard";
 import { Mascot } from "@/components/Mascot";
 import { useAuthStore } from "@/lib/auth-store";
 import { useReviewStore } from "@/lib/review-store";
 import { fetchDueCounts } from "@/lib/api";
+import { reportError } from "@/lib/report-error";
 import { isDemoMode } from "@/lib/supabase";
 import {
   DEMO_DUE_COUNTS,
@@ -32,6 +34,14 @@ export default function TodayScreen() {
   const display = firstName(user?.name ?? "", "Benvenuto");
   const [budget, setBudget] = useState(15);
   const [dueCounts, setDueCounts] = useState<LayerCounts | null>(null);
+  // Stato del fetch della coda: la schermata non deve mai restare su
+  // "Sto preparando il piano…" con la CTA disabilitata per sempre — dopo
+  // un errore (rete, timeout) mostra una card con "Riprova".
+  const [dueError, setDueError] = useState(false);
+  const [dueLoading, setDueLoading] = useState(false);
+  // Sequenza monotona: solo l'ultima richiesta può scrivere lo stato, così
+  // un retry veloce non viene sovrascritto da una risposta più lenta.
+  const dueSeq = useRef(0);
 
   // Budget persistito: la scelta sopravvive al riavvio dell'app.
   useEffect(() => {
@@ -47,22 +57,34 @@ export default function TodayScreen() {
     AsyncStorage.setItem(BUDGET_KEY, String(minutes)).catch(() => {});
   };
 
-  // Conteggi veri della coda, aggiornati a ogni focus della schermata.
+  // Conteggi veri della coda — aggiornati a ogni focus e su "Riprova".
+  const loadDueCounts = useCallback(() => {
+    if (!user) return;
+    const myId = ++dueSeq.current;
+    setDueLoading(true);
+    setDueError(false);
+    fetchDueCounts(user.id)
+      .then((c) => {
+        if (myId !== dueSeq.current) return;
+        setDueCounts(c);
+        setDueLoading(false);
+      })
+      .catch((e) => {
+        if (myId !== dueSeq.current) return;
+        reportError("today/due-counts", e);
+        setDueError(true);
+        setDueLoading(false);
+      });
+  }, [user]);
+
   useFocusEffect(
     useCallback(() => {
-      if (!user) return;
-      let cancelled = false;
-      fetchDueCounts(user.id)
-        .then((c) => {
-          if (!cancelled) setDueCounts(c);
-        })
-        .catch((e) => {
-          if (__DEV__) console.warn("[today] due counts failed", e);
-        });
+      loadDueCounts();
       return () => {
-        cancelled = true;
+        // Invalida la richiesta in volo: al prossimo focus se ne apre una nuova.
+        dueSeq.current++;
       };
-    }, [user]),
+    }, [loadDueCounts]),
   );
 
   // Recompute date label each render so a day rollover during a long session
@@ -78,6 +100,10 @@ export default function TodayScreen() {
   const plan = counts ? splitBudget(counts, estItems) : null;
   const totItems = plan ? plan.scan + plan.reinforcement + plan.focus : null;
   const totMin = plan ? totalMinutes(plan) : null;
+  // Errore senza nessun conteggio (nemmeno uno precedente): stato di errore
+  // al posto della CTA. Con conteggi stale dal focus precedente il piano
+  // resta visibile e il refetch fallito è solo riportato.
+  const showPlanError = dueError && !plan;
   const minutesLabel = (l: "scan" | "reinforcement" | "focus") =>
     plan ? `~${layerMinutes(l, plan[l])} min` : "…";
   // Recommended flow subtitle pulled out so we can localize cleanly.
@@ -185,24 +211,36 @@ export default function TodayScreen() {
         {/* CTA — in normal flow at the bottom of the page (no floating layer),
             so it can never overlap the Focus card or anything else. */}
         <View style={{ paddingHorizontal: 20, marginTop: 28, alignItems: "center", gap: 12 }}>
-          <Text
-            style={{
-              textAlign: "center",
-              fontFamily: FONT.regular,
-              fontSize: 13.5,
-              color: colors.midGrey,
-              fontVariant: ["tabular-nums"],
-            }}
-          >
-            {plan
-              ? `Totale · ${totItems} ricordi · circa ${totMin} min`
-              : "Sto preparando il piano di oggi…"}
-          </Text>
-          <PrimaryButton
-            label={plan && totItems === 0 ? "Niente da ripassare ora" : "Inizia il ripasso di oggi"}
-            onPress={startReview}
-            disabled={!plan || totItems === 0}
-          />
+          {showPlanError ? (
+            <ErrorCard
+              title="Non siamo riusciti a preparare il piano di oggi."
+              onRetry={loadDueCounts}
+              retrying={dueLoading}
+              retryAccessibilityLabel="Riprova a caricare il piano di oggi"
+              style={{ alignSelf: "stretch" }}
+            />
+          ) : (
+            <>
+              <Text
+                style={{
+                  textAlign: "center",
+                  fontFamily: FONT.regular,
+                  fontSize: 13.5,
+                  color: colors.midGrey,
+                  fontVariant: ["tabular-nums"],
+                }}
+              >
+                {plan
+                  ? `Totale · ${totItems} ricordi · circa ${totMin} min`
+                  : "Sto preparando il piano di oggi…"}
+              </Text>
+              <PrimaryButton
+                label={plan && totItems === 0 ? "Niente da ripassare ora" : "Inizia il ripasso di oggi"}
+                onPress={startReview}
+                disabled={!plan || totItems === 0}
+              />
+            </>
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>

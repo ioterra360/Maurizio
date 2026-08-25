@@ -30,6 +30,7 @@ import {
   type TopicChoice,
 } from "@/lib/folder-templates";
 import { useUIStore } from "@/lib/ui-store";
+import { reportError } from "@/lib/report-error";
 import { colors, FONT, radii } from "@/theme/tokens";
 
 type Selection = TemplateKind | "custom" | null;
@@ -77,7 +78,7 @@ export default function ChooseTopicScreen() {
       .catch((e) => {
         // Can't tell — let the user pick; a duplicate kind is refused by
         // the DB (unique user_id+kind) and surfaces as a toast below.
-        if (__DEV__) console.warn("[choose-topic] countFolders failed", e);
+        reportError("choose-topic/count-folders", e);
         if (!cancelled) setChecking(false);
       });
     return () => {
@@ -112,7 +113,7 @@ export default function ChooseTopicScreen() {
       showToast(`Cartella "${folder.name}" pronta · aggiungi il primo ricordo`);
       router.replace("/(app)/today");
     } catch (e) {
-      if (__DEV__) console.warn("[choose-topic] createFolder failed", e);
+      reportError("choose-topic/create-folder", e);
       setError("Non siamo riusciti a creare la cartella. Controlla la connessione e riprova.");
     } finally {
       setSaving(false);

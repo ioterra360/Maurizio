@@ -5,6 +5,8 @@ import { createClient } from "@supabase/supabase-js";
 import { Platform } from "react-native";
 
 import { resolveDemoMode } from "./demo-mode";
+import { SUPABASE_FETCH_TIMEOUT_MS, withRequestTimeout } from "./network";
+import { reportError } from "./report-error";
 
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL ?? "";
 const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? "";
@@ -67,7 +69,7 @@ const SecureStorageAdapter = {
       const value = await SecureStore.getItemAsync(SECURE_KEY_PREFIX + key);
       if (value !== null) return value;
     } catch (err) {
-      if (__DEV__) console.warn("[Memika] SecureStore.getItem failed, falling back", err);
+      reportError("secure-store/get-item", err);
     }
     // Symmetric with setItem's fallback: a session written to AsyncStorage when
     // SecureStore failed must be readable on the next launch.
@@ -79,7 +81,7 @@ const SecureStorageAdapter = {
       await SecureStore.setItemAsync(SECURE_KEY_PREFIX + key, value);
       return;
     } catch (err) {
-      if (__DEV__) console.warn("[Memika] SecureStore.setItem failed, falling back", err);
+      reportError("secure-store/set-item", err);
     }
     // Drop any stale SecureStore copy so getItem (SecureStore-first) can't
     // return an older token than the one we're about to write.
@@ -107,6 +109,17 @@ export const supabase = createClient(
       autoRefreshToken: true,
       persistSession: true,
       detectSessionInUrl: false,
+    },
+    global: {
+      // Every Supabase request (auth, REST, RPC) is aborted after 15 s so a
+      // dead connection surfaces as an error the UI can retry instead of a
+      // spinner that never resolves. Requests that carry their own signal
+      // keep it. See lib/network.ts for why AbortSignal.timeout() is not
+      // used (not available on Hermes / RN 0.81).
+      fetch: withRequestTimeout(
+        (input, init) => fetch(input, init),
+        SUPABASE_FETCH_TIMEOUT_MS,
+      ),
     },
   },
 );

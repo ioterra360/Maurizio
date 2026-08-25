@@ -28,6 +28,7 @@ import { useFoldersWithStats } from "@/lib/use-folders";
 import type { FolderWithStats } from "@/lib/mappers";
 import { useAuthStore } from "@/lib/auth-store";
 import { useUIStore } from "@/lib/ui-store";
+import { reportError } from "@/lib/report-error";
 import { safeBack } from "@/lib/safe-back";
 import { consumeIntentionalAddOpen } from "@/lib/add-gate";
 
@@ -111,7 +112,7 @@ export default function AddScreen() {
         if (profile) setDailyMax(profile.dailyInputCap);
       })
       .catch((e) => {
-        if (__DEV__) console.warn("[add] daily count load failed", e);
+        reportError("add/daily-count-load", e);
       });
     return () => {
       cancelled = true;
@@ -173,7 +174,7 @@ export default function AddScreen() {
         safeBack("/(app)/knowledge");
       }
     } catch (e) {
-      if (__DEV__) console.warn("[add] save failed", e);
+      reportError("add/save", e);
       showToast("Salvataggio non riuscito. Riprova.");
     } finally {
       setSaving(false);

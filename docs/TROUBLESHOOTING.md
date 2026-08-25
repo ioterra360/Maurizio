@@ -213,12 +213,91 @@ Things to know:
 - **No email at all in dev.** `isDemoMode` short-circuits
   `resetPasswordForEmail`; run with real Supabase creds in `.env`.
 
+## Debugging a TestFlight / Play build
+
+A store build has no Metro, no red box and no `console.warn`. Three sources
+of truth, in this order:
+
+1. **Sentry** (once the DSN + org are configured — see docs/DEPLOY.md § Sentry).
+   - Route render crashes land as issues from `app/_layout.tsx`'s
+     `ErrorBoundary` (tag `where:root/error-boundary`); the user sees the
+     mascot + "Qualcosa è andato storto" + Riprova.
+   - Non-fatal failures are the `reportError(tag, …)` calls: filter Issues
+     by `where:<tag>` (e.g. `where:review/deck-load`, `where:auth/hydrate`,
+     `where:today/due-counts`). Supabase errors also carry `code:<PGRST…>`.
+   - Native crashes (Hermes OOM, native module) come in through the native
+     SDK with the JS stack if source maps were uploaded; without the auth
+     token they are un-symbolicated but still counted.
+   - `Sentry.init` is `enabled: false` in `__DEV__` and when
+     `EXPO_PUBLIC_SENTRY_DSN` is empty — Expo Go never reports, and a build
+     whose eas.json profile lacks the DSN silently reports nothing.
+2. **Android — `adb logcat`** (works on a Play internal-testing install, no
+   dev build needed):
+
+   ```bash
+   adb devices                              # phone must be in USB-debugging mode
+   adb logcat -c                            # clear
+   adb logcat -v time '*:S' ReactNativeJS:V ReactNative:V AndroidRuntime:E Sentry:V
+   # ReactNativeJS = console.* from the JS bundle (release keeps console.error/warn)
+   # AndroidRuntime:E = native crash + stack
+   # everything:  adb logcat -v time | grep -i -E "memika|reactnative|sentry|fatal"
+   ```
+
+   Reproduce the crash, then `adb logcat -d > logcat.txt` and attach it.
+   Package name is `studio.tailor.memika` (`adb shell pidof studio.tailor.memika`).
+3. **iOS — Xcode → Window → Devices and Simulators → select the iPhone →
+   "Open Console"** (or Console.app on the Mac, filter `process:Memika`).
+   Filter by `Memika` or `ReactNativeJS`. Crash logs of a TestFlight build
+   are also under Devices → "View Device Logs", and TestFlight testers can
+   send them from the TestFlight app (Send Beta Feedback → include crash).
+   Symbolication of the JS part needs the Sentry source maps; the native
+   part symbolicates from the dSYM EAS keeps for the build.
+
+Companion behaviours to know when reading a report:
+
+- Every Supabase request is aborted after 15 s (`lib/network.ts`); a
+  `RequestTimeoutError` in Sentry means "no answer at all", not a server
+  error. Today / Health / the review screens then show an honest error card
+  with Riprova instead of a spinner or fake numbers.
+- The bootstrap timeout (15 s) forces `hydrated=true` and reports
+  `where:root/bootstrap-timeout` — the user lands on the login screen.
+
+## Hermes compile check before an EAS build
+
+EAS compiles the JS bundle to Hermes bytecode at the end of the build; a
+bundle that Metro accepts but `hermesc` rejects (or that crashes Sentry's
+debug-ID serializer, see getsentry/sentry-react-native#5315) fails the build
+after 15–20 minutes of native compilation. Run the same two steps locally
+first — one minute instead of twenty:
+
+```bash
+# from memika-app/
+TMP="$TMPDIR/memika-export"; rm -rf "$TMP"
+npx expo export --platform android --no-bytecode --output-dir "$TMP"
+# --no-bytecode = plain JS so hermesc gets a readable input
+
+BUNDLE=$(ls "$TMP"/_expo/static/js/android/*.js | head -1)
+# hermesc ships with react-native; pick the binary for the host OS:
+#   win64-bin/hermesc.exe   osx-bin/hermesc   linux64-bin/hermesc
+node_modules/react-native/sdks/hermesc/win64-bin/hermesc.exe \
+  -emit-binary -out "$TMP/index.hbc" "$BUNDLE"
+echo "hermesc exit=$?"        # MUST be 0
+```
+
+Exit 0 = the bundle compiles. A non-zero exit prints the offending line
+(typical causes: a dependency shipping syntax Hermes does not support — e.g.
+the dynamic `import()` that broke supabase-js 2.106.0, commit d014aff — or
+a Metro/Sentry serializer error during export). `npx expo config --type
+introspect --json` in the same session confirms every config plugin still
+resolves (`_internal.pluginHistory` lists them).
+
 ## Where to log when nothing works
 
 - App console: shake device in Expo Go → "Show Inspector" → console tab
 - Metro terminal: native errors print here
 - Supabase logs: Dashboard → Logs Explorer → choose "Auth" or "Postgres"
-- Sentry (Phase 4): structured app errors
+- Sentry: structured app errors in release builds (see "Debugging a
+  TestFlight / Play build" above)
 
 ## When to ask for help
 

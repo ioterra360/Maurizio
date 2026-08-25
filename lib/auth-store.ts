@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { supabase, isSupabaseConfigured } from "./supabase";
+import { reportError } from "./report-error";
 import {
   authLinkErrorMessage,
   authLinkFingerprint,
@@ -140,9 +141,7 @@ async function buildAuthUserFromSession(
     .eq("id", u.id)
     .maybeSingle();
 
-  if (error && __DEV__) {
-    console.warn("[Memika] profile lookup failed", error.message);
-  }
+  if (error) reportError("auth/profile-lookup", error);
 
   const role: UserRole = profile?.role === "admin" ? "admin" : "user";
   const name =
@@ -204,7 +203,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             })
           : await supabase.auth.exchangeCodeForSession(action.code);
       if (result.error) {
-        if (__DEV__) console.warn("[Memika] auth link session failed", result.error.message);
+        reportError("auth/link-session", result.error, { kind: action.kind });
         return authLinkErrorMessage(result.error.code ?? result.error.message);
       }
       // onAuthStateChange(SIGNED_IN) also does this, but resolving the user
@@ -214,7 +213,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       if (myEpoch === authEpoch) set({ user });
       return null;
     } catch (err) {
-      if (__DEV__) console.warn("[Memika] auth link session threw", err);
+      reportError("auth/link-session-threw", err, { kind: action.kind });
       return authLinkErrorMessage(null);
     }
   },
@@ -259,7 +258,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         }
       }
     } catch (err) {
-      if (__DEV__) console.warn("[Memika] auth hydrate failed", err);
+      reportError("auth/hydrate", err);
     } finally {
       set({ hydrated: true });
     }
@@ -301,7 +300,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
               if (myEpoch === authEpoch) set({ user });
             })
             .catch((err) => {
-              if (__DEV__) console.warn("[Memika] auth profile refresh failed", err);
+              reportError("auth/profile-refresh", err, { event });
             });
         }, 0);
       }
@@ -353,7 +352,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       try {
         await supabase.auth.signOut({ scope: "global" });
       } catch (err) {
-        if (__DEV__) console.warn("[Memika] supabase.signOut failed", err);
+        reportError("auth/sign-out", err);
       }
     }
     await AsyncStorage.removeItem(DEMO_STORAGE_KEY).catch(() => {});

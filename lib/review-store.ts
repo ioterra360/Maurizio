@@ -11,6 +11,7 @@ import {
   startReviewSession,
 } from "./api";
 import { isDemoMode } from "./supabase";
+import { reportError } from "./report-error";
 import { toReviewCard, type LayerCounts } from "./queue";
 import { update as scheduleUpdate } from "@/features/srs/scheduler";
 import {
@@ -165,6 +166,12 @@ type ReviewState = {
   /** Mazzo vero caricato dal DB per il livello corrente. null = demo o non (ancora) caricato. */
   deck: ReviewCard[] | null;
   deckLoading: boolean;
+  /**
+   * L'ultimo caricamento del mazzo è fallito (rete, timeout, RLS). Le
+   * schermate mostrano un errore con "Riprova" invece di trattare il mazzo
+   * vuoto come "livello finito" e saltare a Complete con 0 carte.
+   */
+  deckError: boolean;
   /** Piano per livello (snapshot mostrato su Oggi) — advanceToLayer lo consulta. */
   layerCaps: LayerCounts | null;
   /** Tetto items complessivo della sessione (budget tempo). */
@@ -238,6 +245,8 @@ type ReviewState = {
    * from Today still persists a row.
    */
   ensureSession: (layer: LayerKey, mode: "flow" | "single") => void;
+  /** Ricarica il mazzo del livello corrente dopo un `deckError`. */
+  retryDeckLoad: () => void;
 };
 
 /**
@@ -298,16 +307,16 @@ async function loadDeckFor(
 ): Promise<void> {
   const userId = useAuthStore.getState().user?.id;
   if (isDemoMode || !userId) {
-    set({ deck: null, deckLoading: false });
+    set({ deck: null, deckLoading: false, deckError: false });
     return;
   }
   const myId = ++deckLoadSeq;
-  set({ deckLoading: true });
+  set({ deckLoading: true, deckError: false });
   try {
     const s = get();
     const cap = s.layerCaps?.[layer] ?? s.budgetCap ?? 28;
     if (cap <= 0) {
-      if (myId === deckLoadSeq) set({ deck: [], deckLoading: false });
+      if (myId === deckLoadSeq) set({ deck: [], deckLoading: false, deckError: false });
       return;
     }
     const [memories, folders] = await Promise.all([
@@ -332,10 +341,13 @@ async function loadDeckFor(
         );
       }),
       deckLoading: false,
+      deckError: false,
     });
   } catch (e) {
-    if (myId === deckLoadSeq) set({ deck: [], deckLoading: false });
-    if (__DEV__) console.warn("[review] deck load failed", e);
+    // deck stays null (not []) so nothing downstream reads "empty layer";
+    // deckError is what the screens branch on.
+    if (myId === deckLoadSeq) set({ deck: null, deckLoading: false, deckError: true });
+    reportError("review/deck-load", e, { layer });
   }
 }
 
@@ -359,7 +371,7 @@ function flushPendingItems(sessionId: string, items: PendingItem[]) {
       response: p.response,
       reviewedAt: p.reviewedAt,
     }).catch((e) => {
-      if (__DEV__) console.warn("[review] backfill recordReviewItem failed", e);
+      reportError("review/backfill-record-item", e, { sessionId });
     });
   }
 }
@@ -408,7 +420,7 @@ function openSessionFor(
             const counts = s.pendingSessionComplete;
             set({ pendingSessionComplete: null });
             void completeReviewSession(session.id, counts).catch((e) => {
-              if (__DEV__) console.warn("[review] late completeReviewSession failed", e);
+              reportError("review/late-complete-session", e, { sessionId: session.id });
             });
           }
         } else {
@@ -419,7 +431,7 @@ function openSessionFor(
     })
     .catch((e) => {
       if (myId === openSessionSeq) set({ pendingSessionLayer: null });
-      if (__DEV__) console.warn("[review] startReviewSession failed", e);
+      reportError("review/start-session", e, { layer });
       return null;
     });
   currentSessionPromise = p;
@@ -444,7 +456,7 @@ function finalizeStaleSession(
     if (items.length > 0) flushPendingItems(session.id, items);
     if (counts) {
       void completeReviewSession(session.id, counts).catch((e) => {
-        if (__DEV__) console.warn("[review] stale completeReviewSession failed", e);
+        reportError("review/stale-complete-session", e, { sessionId: session.id });
       });
     }
   });
@@ -457,6 +469,7 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
   folderId: null,
   deck: null,
   deckLoading: false,
+  deckError: false,
   layerCaps: null,
   budgetCap: null,
   results: [],
@@ -491,6 +504,7 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
       layerCaps: opts.layerCaps ?? null,
       deck: null,
       deckLoading: !isDemoMode,
+      deckError: false,
       results: [],
       index: 0,
       totals: EMPTY_COUNTS,
@@ -521,7 +535,7 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
       // queue only when sessionId was null) and complete now.
       flushPendingItems(state.sessionId, state.pendingItems);
       void completeReviewSession(state.sessionId, layerCounts).catch((e) => {
-        if (__DEV__) console.warn("[review] completeReviewSession failed", e);
+        reportError("review/complete-session", e, { sessionId: state.sessionId, layer: state.layer });
       });
     } else {
       // Session id still in flight — chain the drain + complete onto the
@@ -535,6 +549,7 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
       folderKind: null,
       deck: null,
       deckLoading: !isDemoMode,
+      deckError: false,
       index: 0,
       sessionId: null,
       pendingSessionLayer: null,
@@ -610,7 +625,7 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
     const persist = (finalResponse: ReviewResponse, finalSrs: UpdatedSrs) => {
       if (!canPersist || !userId) return;
       void applyScheduledUpdate(card.id, finalSrs).catch((e) => {
-        if (__DEV__) console.warn("[review] applyScheduledUpdate failed for", card.id, e);
+        reportError("review/apply-scheduled-update", e, { cardId: card.id });
       });
       const write = (sid: string) =>
         void recordReviewItem({
@@ -619,7 +634,7 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
           userId,
           response: finalResponse,
         }).catch((e) => {
-          if (__DEV__) console.warn("[review] recordReviewItem failed for", card.id, e);
+          reportError("review/record-item", e, { cardId: card.id, sessionId: sid });
         });
       if (targetSessionId) write(targetSessionId);
       else if (targetSessionPromise) {
@@ -667,7 +682,7 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
     const finalLayerCounts = layerTotals;
     if (state.sessionId) {
       void completeReviewSession(state.sessionId, finalLayerCounts).catch((e) => {
-        if (__DEV__) console.warn("[review] completeReviewSession failed", e);
+        reportError("review/complete-session", e, { sessionId: state.sessionId, layer: state.layer });
       });
     } else if (state.pendingSessionLayer === state.layer) {
       // Session id still in flight — defer completion. openSessionFor
@@ -727,6 +742,7 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
       layerCaps: null,
       deck: null,
       deckLoading: !isDemoMode,
+      deckError: false,
       results: [],
       index: 0,
       totals: EMPTY_COUNTS,
@@ -738,6 +754,12 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
     });
     openSessionFor(layer, set, get);
     void loadDeckFor(layer, set, get);
+  },
+
+  retryDeckLoad: () => {
+    const s = get();
+    if (s.deckLoading) return;
+    void loadDeckFor(s.layer, set, get);
   },
 
   reset: () => {
@@ -760,6 +782,7 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
       folderId: null,
       deck: null,
       deckLoading: false,
+      deckError: false,
       layerCaps: null,
       budgetCap: null,
       results: [],

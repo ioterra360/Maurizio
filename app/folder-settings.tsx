@@ -21,6 +21,7 @@ import {
 } from "@/lib/api";
 import { useFolderDetail } from "@/lib/use-folders";
 import { useUIStore } from "@/lib/ui-store";
+import { reportError } from "@/lib/report-error";
 import { safeBack } from "@/lib/safe-back";
 import { relativeReviewed } from "@/lib/format";
 import { FOLDER_KINDS, type FolderKind } from "@/lib/constants";
@@ -83,7 +84,7 @@ export default function FolderSettingsScreen() {
       showToast(`Cartella ${folder.name} eliminata`);
       router.replace("/(app)/knowledge");
     } catch (err) {
-      if (__DEV__) console.warn("[Memika] folder delete failed", err);
+      reportError("folder-settings/delete", err);
       showToast("Eliminazione non riuscita. Riprova.");
       setDeleting(false);
       setConfirmDelete(false);
@@ -99,7 +100,7 @@ export default function FolderSettingsScreen() {
       // Folder detail refetches on focus, so the new name shows on return.
       safeBack("/(app)/knowledge");
     } catch (err) {
-      if (__DEV__) console.warn("[Memika] folder rename failed", err);
+      reportError("folder-settings/rename", err);
       showToast("Salvataggio non riuscito. Riprova.");
       setSaving(false);
     }
@@ -246,7 +247,7 @@ export default function FolderSettingsScreen() {
                   refetch();
                 })
                 .catch((err) => {
-                  if (__DEV__) console.warn("[Memika] folder pause failed", err);
+                  reportError("folder-settings/pause", err);
                   showToast("Operazione non riuscita. Riprova.");
                 });
             }}

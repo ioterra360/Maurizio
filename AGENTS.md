@@ -113,6 +113,8 @@ lib/
   auth-gate.tsx     useAuthGate(surface) — single source of routing decisions.
   auth-errors.ts    Supabase-error → user-message mapping.
   auth-links.ts     Pure parser for memika://reset-password#… / auth-callback#… deep links.
+  report-error.ts   reportError(tag, err, extra) — console.warn in dev, Sentry.captureException in release. Use it in every catch.
+  network.ts        withRequestTimeout(fetch, ms) — the 15 s Supabase request timeout (no AbortSignal.timeout on Hermes).
 theme/              Design tokens mirroring tailwind.config.js for non-NW consumers.
 supabase/           Versioned database (config.toml + migrations/).
 docs/               Architectural docs.

@@ -3,6 +3,7 @@ import { Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useFocusEffect } from "expo-router";
 
+import { DeckErrorScreen } from "@/components/DeckErrorScreen";
 import { MascotLoader } from "@/components/MascotLoader";
 import { ReviewHeader } from "@/components/ReviewHeader";
 import { FolderPill } from "@/components/FolderPill";
@@ -22,6 +23,8 @@ export default function ScanScreen() {
   const folderKind = useReviewStore((s) => s.folderKind);
   const deck = useReviewStore((s) => s.deck);
   const deckLoading = useReviewStore((s) => s.deckLoading);
+  const deckError = useReviewStore((s) => s.deckError);
+  const retryDeckLoad = useReviewStore((s) => s.retryDeckLoad);
   const mode = useReviewStore((s) => s.mode);
   const getCards = useReviewStore((s) => s.cards);
   const cards = useMemo(() => getCards(), [getCards, layer, folderKind, deck]);
@@ -69,9 +72,9 @@ export default function ScanScreen() {
   // questo livello): salta avanti invece di strandare l'utente. Lo stato
   // vuoto con "Torna indietro" resta per le sessioni single.
   useEffect(() => {
-    if (deckLoading || cards.length > 0 || mode !== "flow") return;
+    if (deckLoading || deckError || cards.length > 0 || mode !== "flow") return;
     router.replace("/review/handoff");
-  }, [deckLoading, cards.length, mode]);
+  }, [deckLoading, deckError, cards.length, mode]);
 
   const card = cards[index];
 
@@ -204,6 +207,11 @@ export default function ScanScreen() {
       </SafeAreaView>
     );
   }
+
+  // Mazzo non caricato (rete / timeout / RLS): errore con "Riprova". Mai
+  // trattarlo come livello vuoto — in un flusso salterebbe al recap con 0
+  // carte senza che l'utente capisca cosa sia successo.
+  if (deckError) return <DeckErrorScreen onRetry={retryDeckLoad} />;
 
   // Mazzo in caricamento dal DB — o livello vuoto in un flusso (l'effetto
   // sopra sta già navigando avanti): mostra l'attesa, non lo stato vuoto.

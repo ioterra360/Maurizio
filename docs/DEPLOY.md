@@ -157,13 +157,91 @@ Decisions baked in (do not re-litigate without the owner):
 
 ## Sentry
 
-To be wired in Phase 4. Plan:
+Wired 2026-08-25 (task B6). `@sentry/react-native` is pinned to `~7.2.0`,
+the version SDK 54's `bundledNativeModules.json` blesses (`expo-doctor` is
+clean). 8.x adds `expoRouterIntegration` / `wrapExpoRouterErrorBoundary`
+but would need `expo.install.exclude` in package.json to silence doctor —
+upgrade later if wanted, not now.
 
-- Free tier (5k errors/month) — enough for soft launch
-- Init in `app/_layout.tsx` before any rendering
-- DSN as an `EXPO_PUBLIC_*` var
-- Source maps uploaded automatically by the `@sentry/react-native` Expo
-  config plugin
+What is in the code:
+
+| Where | What |
+|---|---|
+| `app/_layout.tsx` | `Sentry.init({ dsn: EXPO_PUBLIC_SENTRY_DSN, enabled: !__DEV__ && dsn !== "", tracesSampleRate: 0.2, sendDefaultPii: false })` at module scope, `reactNavigationIntegration` registered with the router's container ref, `export default Sentry.wrap(RootLayout)`, and a named `ErrorBoundary` export (mascot + "Qualcosa è andato storto" + Riprova) that calls `reportError` — Expo Router renders it for any route crash, and errors caught there never reach Sentry's global handler on their own. |
+| `lib/report-error.ts` | `reportError(tag, err, extra?)` — every non-fatal `catch` in the app goes through it: `console.warn` in dev, `Sentry.captureException` with `tags.where = tag` (+ `tags.code` for Supabase errors) in release. Search Sentry Issues by `where:review/deck-load` etc. |
+| `metro.config.js` | `getSentryExpoConfig(__dirname)` wrapped by `withNativeWind`. It injects debug IDs into bundle + source map. **Never** stack `withSentryConfig` on top of it and never enable `annotateReactComponents` — both reproduce the RN 0.81 export crash `Cannot read properties of undefined (reading 'match')` (getsentry/sentry-react-native#5315). |
+| `app.json` | `["@sentry/react-native/expo", { url, organization, project }]` — the config plugin adds the native SDK and the source-map upload step to the Xcode build phase / Gradle. Expo config plugins do not allow comments, so the notes live here. |
+
+### Values to fill in (owner decision, not yet created)
+
+The plugin entry currently carries **placeholders**: `organization: "memika"`,
+`project: "memika-app"`, `url: "https://de.sentry.io/"`. When Maurizio (or
+Angelo on his behalf) creates the Sentry account:
+
+1. Create the org in the **EU data region** (Frankfurt) — Italian publisher,
+   GDPR; the privacy policy already lists Sentry as a processor "non ancora
+   attivo". An EU org has DSNs on `oNNN.ingest.de.sentry.io` and its API host
+   is `https://de.sentry.io/` (what `url` points to). If the org ends up in the
+   US region instead, **delete the `url` key** — otherwise the source-map
+   upload talks to the wrong host.
+2. Create a React Native project; copy the org slug and project slug into
+   `app.json` (replace the placeholders) and the DSN into:
+   - `.env` → `EXPO_PUBLIC_SENTRY_DSN=` for local release-like testing
+     (`Sentry.init` stays disabled while `__DEV__` is true, so Expo Go never
+     reports);
+   - `eas.json` → `build.preview.env` and `build.production.env`
+     `EXPO_PUBLIC_SENTRY_DSN` (public key, same category as the Supabase URL).
+3. Create an **auth token** (Sentry → Settings → Auth Tokens, scopes
+   `project:releases` + `org:read`) and store it as an EAS secret — it must
+   NOT go in `app.json` (`authToken`) or in git:
+
+   ```bash
+   eas env:create --scope project --environment production \
+     --name SENTRY_AUTH_TOKEN --value <token> --visibility secret
+   eas env:create --scope project --environment preview \
+     --name SENTRY_AUTH_TOKEN --value <token> --visibility secret
+   ```
+
+### Builds WITHOUT a Sentry token fail — read this before the first EAS build
+
+The plugin's Xcode script (`scripts/sentry-xcode.sh`) and `sentry.gradle` run
+`sentry-cli` after bundling. Without `SENTRY_AUTH_TOKEN` the upload errors
+and **the build fails** (iOS prints `error: sentry-cli - To disable source
+maps auto upload, set SENTRY_DISABLE_AUTO_UPLOAD=true …`). Until the token
+exists, every EAS profile that builds must set one of:
+
+- `SENTRY_DISABLE_AUTO_UPLOAD=true` — skips the upload (crashes still
+  report, stack traces are just un-symbolicated), or
+- `SENTRY_ALLOW_FAILURE=true` — tries and ignores failures.
+
+Put it in `eas.json` `build.<profile>.env` (the `development` profile should
+carry `SENTRY_DISABLE_AUTO_UPLOAD=true` permanently — dev-client builds have
+no use for source maps). TODO for whoever next edits `eas.json`: add
+`SENTRY_DISABLE_AUTO_UPLOAD=true` to all profiles now, remove it from
+`preview`/`production` once the secret exists.
+
+### Checking that it works
+
+- Build output: look for `sentry-cli - Uploaded … source maps` (iOS) /
+  `> Task :app:sentryUpload…` (Android). A silent skip usually means the
+  token is not visible to the build (issue #4961).
+- In the app: Settings has no "send test error" button on purpose; the
+  release checklist item "Sentry receives a deliberate test error" is done by
+  temporarily throwing in a screen on a preview build. `reportError` calls
+  are searchable by the `where` tag.
+- After an `eas update` (OTA), source maps must be uploaded by hand:
+  `SENTRY_ORG=<org> SENTRY_PROJECT=<project> SENTRY_URL=https://de.sentry.io/ \
+  npx sentry-expo-upload-sourcemaps dist`.
+
+### Network timeouts
+
+`lib/supabase.ts` passes a `global.fetch` wrapped by
+`withRequestTimeout(fetch, 15_000)` (`lib/network.ts`): every Supabase
+request without its own `AbortSignal` is aborted after 15 s and rejects with
+`RequestTimeoutError` ("Network request timed out after 15000 ms"), which the
+existing auth / account-deletion error matchers already turn into the Italian
+connection message. `AbortSignal.timeout()` is NOT used — Hermes / RN 0.81
+only ship the `abort-controller` polyfill, which lacks it.
 
 ## Release checklist (Phase 4)
 

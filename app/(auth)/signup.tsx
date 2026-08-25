@@ -22,6 +22,7 @@ import { useAuthStore } from "@/lib/auth-store";
 import { authErrorMessage } from "@/lib/auth-errors";
 import { AUTH_LINK_PATHS } from "@/lib/auth-links";
 import { PRIVACY_URL, TERMS_URL } from "@/lib/constants";
+import { reportError } from "@/lib/report-error";
 import { colors, FONT } from "@/theme/tokens";
 
 /** True, verifiable trust signals — no offline/encryption claims the app can't keep. */
@@ -46,7 +47,7 @@ export default function SignupScreen() {
   // fine under store rules (they are documents, not a checkout).
   const openLegal = (url: string) => {
     Linking.openURL(url).catch((err) => {
-      if (__DEV__) console.warn("[Memika] open legal page failed", err);
+      reportError("signup/open-legal-page", err, { url });
       setError("Impossibile aprire la pagina. Riprova più tardi.");
     });
   };

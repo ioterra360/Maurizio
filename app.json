@@ -54,7 +54,15 @@
           "recordAudioAndroid": false
         }
       ],
-      "expo-asset"
+      "expo-asset",
+      [
+        "@sentry/react-native/expo",
+        {
+          "url": "https://de.sentry.io/",
+          "organization": "memika",
+          "project": "memika-app"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
