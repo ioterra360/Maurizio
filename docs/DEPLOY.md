@@ -168,9 +168,23 @@ Decisions baked in (do not re-litigate without the owner):
 - **`exp://**` and `exp+memika://**` are DEV wildcards.** Remove them from the
   allow-list before public marketing (they widen the redirect surface of auth
   links). `memika://**` and `https://memika.app/**` are the production entries.
-- **Password reset emails go through the same built-in sender** (2/hour). A
-  custom SMTP (e.g. Resend on memika.app with SPF/DKIM) plus Italian
-  `mailer_templates_recovery_content` is an owner decision still open.
+- **Password reset emails go through the same built-in sender** (2/hour,
+  project-wide: the third "Password dimenticata" in any hour, across ALL
+  users, gets a 429 → "Troppi tentativi"). The subjects and bodies ARE
+  Italian since 2026-08-25 (`mailer_subjects_*` / `mailer_templates_*` set
+  via the Management API, mirrored in `supabase/config.toml`
+  `[auth.email.template.*]` + `supabase/templates/*.html`), but the sender is
+  still `noreply@mail.app.supabase.io`. A custom SMTP (Resend on memika.app
+  with SPF/DKIM, or Gmail SMTP for memikaapp@gmail.com with an app
+  password) is the owner's call and needs his credentials: PATCH
+  `smtp_host/port/user/pass/sender_name/admin_email`, then raise
+  `rate_limit_email_sent` (Supabase only allows that with custom SMTP).
+- **Auth links use PKCE** (`flowType: "pkce"` in `lib/supabase.ts`): the
+  email carries a one-time `?code=` that only the phone which requested the
+  reset can exchange (the `code_verifier` sits in its SecureStore). Opening
+  the link on another device fails with an explicit Italian message. The
+  client refuses implicit `#access_token=` links outright — they would let
+  any app/web page log the device into an attacker's account.
 
 ## Sentry
 
@@ -231,11 +245,12 @@ exists, every EAS profile that builds must set one of:
   report, stack traces are just un-symbolicated), or
 - `SENTRY_ALLOW_FAILURE=true` — tries and ignores failures.
 
-Put it in `eas.json` `build.<profile>.env` (the `development` profile should
-carry `SENTRY_DISABLE_AUTO_UPLOAD=true` permanently — dev-client builds have
-no use for source maps). TODO for whoever next edits `eas.json`: add
-`SENTRY_DISABLE_AUTO_UPLOAD=true` to all profiles now, remove it from
-`preview`/`production` once the secret exists.
+Since 2026-08-25 all three profiles in `eas.json` carry
+`SENTRY_DISABLE_AUTO_UPLOAD=true` (the `development` profile keeps it
+permanently — dev-client builds have no use for source maps). Once the
+`SENTRY_AUTH_TOKEN` secret exists and the real org/project slugs are in
+`app.json`, remove it from `preview`/`production` so release builds get
+symbolicated stack traces.
 
 ### Checking that it works
 
