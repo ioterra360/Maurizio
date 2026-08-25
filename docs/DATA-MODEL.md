@@ -156,6 +156,52 @@ sidesteps the recursive-RLS-on-profiles problem.
 | `folders_set_updated_at` | `folders` | BEFORE UPDATE | Touch `updated_at` |
 | `memories_set_updated_at` | `memories` | BEFORE UPDATE | Touch `updated_at` |
 
+## Functions
+
+| Function | Security | Callable by | Purpose |
+|---|---|---|---|
+| `is_admin()` | DEFINER | `authenticated` | Admin bypass used by every `or public.is_admin()` policy; reads the caller's `profiles.role` without recursing into RLS |
+| `handle_new_user()` | DEFINER (trigger) | nobody (trigger-only) | Creates the `profiles` row on `auth.users` insert, inferring role from the `admin_emails` allowlist |
+| `set_updated_at()` | trigger | nobody (trigger-only) | Touches `updated_at` |
+| `review_items_consistency()` | trigger | nobody (trigger-only) | Session, memory and item must share `user_id` |
+| `delete_own_account()` | DEFINER | `authenticated` only (revoked from `public` and `anon`) | In-app account deletion (Apple 5.1.1(v) / Google Play): `delete from auth.users where id = auth.uid()`; raises `42501` when there is no authenticated caller |
+
+### Account deletion
+
+`delete_own_account()` (migration `20260825152550`) is the only way the client
+can remove an account: the app never holds the `service_role` key, and
+`auth.users` is not writable by `authenticated`. The function takes **no
+parameters** — the target is always `auth.uid()` from the caller's JWT, so a
+user can only delete themselves. Everything else goes with the cascade chain:
+
+```
+auth.users ─▶ profiles ─▶ folders ─▶ memories ─▶ review_items
+                     └──▶ review_sessions ─▶ review_items
+```
+
+(`profiles.id → auth.users` cascade in `20260519220216_initial_schema.sql:32`;
+`folders/memories/review_sessions.user_id → profiles` at lines 55/76/105;
+`review_items.session_id/memory_id` at 123/124; `review_items.user_id` added
+with cascade in `20260519224817_security_hardening.sql:156`.) `admin_emails`
+is keyed by email with no FK and is intentionally left alone. Supabase's own
+`auth.refresh_tokens`, `auth.sessions`, `auth.identities` also cascade from
+`auth.users`, so the caller's session is dead the moment the call returns —
+the client should still `signOut()` to clear SecureStore.
+
+Client usage (through `lib/api.ts`):
+
+```ts
+const { error } = await supabase.rpc("delete_own_account");
+if (!error) await supabase.auth.signOut();
+```
+
+Migration `20260825153500` additionally revokes execute from `anon`: the
+hosted project's default privileges grant execute on new `public` functions to
+`anon`/`authenticated`/`service_role`, and `revoke … from public` does not undo
+that explicit grant. No Storage bucket exists yet; when the photo bucket lands,
+`storage.objects` cleanup for `owner = auth.uid()` must be added to this
+function in a new migration.
+
 ## Common queries
 
 ### The due queue for a user
