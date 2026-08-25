@@ -104,6 +104,57 @@ Why:
 Configuration: `expo-updates` package + `app.json` `updates` block. Documented
 in detail when we set it up.
 
+## Auth URL configuration (hosted Supabase)
+
+Applied 2026-08-25 via the Management API (task B4). The password-reset and
+signup links must redirect INTO the app, so the hosted Auth config carries the
+custom scheme (and the Expo Go / dev-client shapes for the unadvertised test
+period):
+
+| Setting | Value |
+|---|---|
+| `site_url` | `https://memika.app` |
+| `uri_allow_list` | `memika://**,memika://reset-password,memika://auth-callback,exp+memika://**,exp://**,https://memika.app/**` |
+| `mailer_autoconfirm` | `true` (email confirmation OFF — see below) |
+| `password_min_length` | `8` (matches the client validation) |
+
+`supabase/config.toml` mirrors the same values for local parity
+(`site_url`, `additional_redirect_urls`, `minimum_password_length`,
+`[auth.email] enable_confirmations = false`).
+
+Re-apply / change (idempotent; `uri_allow_list` is one comma-separated string
+and PATCH replaces the whole list):
+
+```bash
+export SUPABASE_ACCESS_TOKEN="$(grep '^SUPABASE_ACCESS_TOKEN=' .env | cut -d= -f2-)"
+curl -X PATCH \
+  -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  https://api.supabase.com/v1/projects/taekvxxljtgzsjrlmumo/config/auth \
+  -d '{"site_url":"https://memika.app","uri_allow_list":"memika://**,memika://reset-password,memika://auth-callback,exp+memika://**,exp://**,https://memika.app/**","mailer_autoconfirm":true,"password_min_length":8}'
+# verify
+curl -s -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+  https://api.supabase.com/v1/projects/taekvxxljtgzsjrlmumo/config/auth | grep -o '"site_url":"[^"]*"\|"uri_allow_list":"[^"]*"\|"mailer_autoconfirm":[a-z]*'
+```
+
+Dashboard equivalent: Authentication → URL Configuration (Site URL, Redirect
+URLs) and Authentication → Providers → Email ("Confirm email").
+
+Decisions baked in (do not re-litigate without the owner):
+
+- **Email confirmation stays OFF for launch.** There is no custom SMTP yet:
+  Supabase's built-in sender is capped at 2 emails/hour, dev-only, English
+  templates from `noreply@mail.app.supabase.io`. With confirmation ON, an App
+  Reviewer's signup would never get its link. `signup.tsx` still passes
+  `emailRedirectTo` and refuses to continue when no session comes back, so
+  flipping it ON later only needs SMTP + Italian templates.
+- **`exp://**` and `exp+memika://**` are DEV wildcards.** Remove them from the
+  allow-list before public marketing (they widen the redirect surface of auth
+  links). `memika://**` and `https://memika.app/**` are the production entries.
+- **Password reset emails go through the same built-in sender** (2/hour). A
+  custom SMTP (e.g. Resend on memika.app with SPF/DKIM) plus Italian
+  `mailer_templates_recovery_content` is an owner decision still open.
+
 ## Sentry
 
 To be wired in Phase 4. Plan:

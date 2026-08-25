@@ -18,6 +18,7 @@ export function useAuthGate(surface: Surface) {
   const user = useAuthStore((s) => s.user);
   const hydrated = useAuthStore((s) => s.hydrated);
   const pendingOnboarding = useAuthStore((s) => s.pendingOnboarding);
+  const pendingPasswordReset = useAuthStore((s) => s.pendingPasswordReset);
 
   // The root layout already gates rendering on `hydrated`, but each group
   // re-checks defensively in case a future change to the root forgets to.
@@ -27,6 +28,9 @@ export function useAuthGate(surface: Surface) {
     // Freshly signed-up user is walking through onboarding — let the (auth)
     // stack render instead of redirecting them to the app surface.
     if (user && pendingOnboarding) return null;
+    // A recovery link just created a session: keep the user on
+    // /(auth)/reset-password until they save a new password.
+    if (user && pendingPasswordReset) return null;
     if (user?.role === "admin") return <Redirect href="/(admin)/home" />;
     if (user?.role === "user") return <Redirect href="/(app)/today" />;
     return null;
@@ -34,12 +38,14 @@ export function useAuthGate(surface: Surface) {
 
   if (surface === "app") {
     if (!user) return <Redirect href="/(auth)/login" />;
+    if (pendingPasswordReset) return <Redirect href={"/(auth)/reset-password" as never} />;
     if (user.role === "admin") return <Redirect href="/(admin)/home" />;
     return null;
   }
 
   // surface === "admin"
   if (!user) return <Redirect href="/(auth)/login" />;
+  if (pendingPasswordReset) return <Redirect href={"/(auth)/reset-password" as never} />;
   if (user.role !== "admin") return <Redirect href="/(app)/today" />;
   return null;
 }

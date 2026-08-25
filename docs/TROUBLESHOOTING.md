@@ -163,6 +163,56 @@ doesn't work:
 gh auth refresh -s repo,workflow,read:org
 ```
 
+## Testing the password-reset link on a device / simulator
+
+The recovery email contains a link like
+`memika://reset-password#access_token=…&refresh_token=…&type=recovery`
+(or `exp://192.168.1.52:8083/--/reset-password#…` when the request was sent
+from Expo Go — `Linking.createURL` picks the shape of the running build).
+The hosted allow-list accepts both (`memika://**`, `exp://**`).
+
+**Real flow (recommended):** Login → "Password dimenticata?" → your email →
+open the email ON THE DEVICE and tap the link. Gmail/Outlook in-app browsers
+sometimes refuse custom-scheme redirects: long-press → copy link, then paste
+it in Safari/Chrome or use `uri-scheme` below.
+
+**Simulate the link without an email** (dev build or Expo Go running):
+
+```bash
+# iOS simulator — the fragment must be quoted or the shell eats the `#`
+npx uri-scheme open "memika://reset-password#access_token=AAA&refresh_token=BBB&type=recovery" --ios
+# Android emulator/device
+npx uri-scheme open "memika://reset-password#access_token=AAA&refresh_token=BBB&type=recovery" --android
+# Expo Go (replace host:port with what `npm start` prints)
+npx uri-scheme open "exp://192.168.1.52:8083/--/reset-password#access_token=AAA&refresh_token=BBB&type=recovery" --android
+# Expired-link branch
+npx uri-scheme open "memika://reset-password#error=access_denied&error_code=otp_expired" --ios
+```
+
+`adb shell am start -W -a android.intent.action.VIEW -d "<url>" studio.tailor.memika`
+and `xcrun simctl openurl booted "<url>"` are the raw equivalents. Fake
+tokens (`AAA`/`BBB`) exercise routing + the "Link non utilizzabile" state;
+for the happy path copy the fragment from a real email.
+
+Things to know:
+
+- **Nothing happens / lands on Today.** The link was already consumed:
+  `receiveAuthLink` remembers the last fingerprint under the AsyncStorage key
+  `memika.auth-link.seen` (so Expo Go reloads don't replay it). Send a new
+  email or change one character of a fake fragment.
+- **"Link non utilizzabile" on a fresh email.** Check that the email's
+  redirect matches the build you are running (an email requested from Expo Go
+  carries `exp://…`, which a store build will not open — request again from
+  that build). Recovery links also expire after `mailer_otp_exp` (1 h).
+- **Lands on Login instead of the form.** `pendingPasswordReset` was cleared
+  (a sign-in / sign-out happened in between) — look for `[Memika] auth link:`
+  logs in Metro; `duplicate` means the fingerprint guard fired.
+- **Only 2 emails per hour arrive.** Hosted Auth still uses Supabase's built-in
+  dev sender (`rate_limit_email_sent = 2`). Custom SMTP on memika.app is a
+  pending owner decision — see docs/DEPLOY.md.
+- **No email at all in dev.** `isDemoMode` short-circuits
+  `resetPasswordForEmail`; run with real Supabase creds in `.env`.
+
 ## Where to log when nothing works
 
 - App console: shake device in Expo Go → "Show Inspector" → console tab

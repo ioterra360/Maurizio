@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Link, router } from "expo-router";
+import * as Linking from "expo-linking";
 import { ChevronLeft } from "lucide-react-native";
 
 import { Mascot } from "@/components/Mascot";
@@ -17,6 +18,7 @@ import { PrimaryButton } from "@/components/PrimaryButton";
 import { Tappable } from "@/components/Tappable";
 import { isDemoMode, supabase } from "@/lib/supabase";
 import { authErrorMessage } from "@/lib/auth-errors";
+import { AUTH_LINK_PATHS } from "@/lib/auth-links";
 import { colors, FONT } from "@/theme/tokens";
 
 export default function ForgotPasswordScreen() {
@@ -43,8 +45,13 @@ export default function ForgotPasswordScreen() {
       // returns success for unknown emails, so any error that does come
       // back (rate limit, malformed email, SMTP) is genuine and must
       // surface instead of faking a "sent" confirmation.
+      // redirectTo MUST be on the hosted Auth allow-list (memika://**,
+      // exp://** — see docs/DEPLOY.md). createURL yields memika://reset-password
+      // in a build and exp://<lan-ip>:<port>/--/reset-password in Expo Go;
+      // the link lands in app/(auth)/reset-password.tsx via the root layout.
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(
         email.trim().toLowerCase(),
+        { redirectTo: Linking.createURL(AUTH_LINK_PATHS.resetPassword) },
       );
       if (resetError) {
         setError(authErrorMessage(resetError));

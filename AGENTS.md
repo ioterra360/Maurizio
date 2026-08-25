@@ -112,6 +112,7 @@ lib/
   auth-store.ts     Zustand auth store with onAuthStateChange subscription.
   auth-gate.tsx     useAuthGate(surface) — single source of routing decisions.
   auth-errors.ts    Supabase-error → user-message mapping.
+  auth-links.ts     Pure parser for memika://reset-password#… / auth-callback#… deep links.
 theme/              Design tokens mirroring tailwind.config.js for non-NW consumers.
 supabase/           Versioned database (config.toml + migrations/).
 docs/               Architectural docs.

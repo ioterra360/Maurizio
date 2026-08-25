@@ -8,7 +8,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
-import { Stack } from "expo-router";
+import { Stack, router, useRootNavigationState } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import * as Linking from "expo-linking";
 import {
@@ -20,6 +20,7 @@ import {
 } from "@expo-google-fonts/inter";
 
 import { useAuthStore } from "@/lib/auth-store";
+import { parseDevSignOutToken } from "@/lib/auth-links";
 import { useUIStore } from "@/lib/ui-store";
 import { Toast } from "@/components/Toast";
 import { colors } from "@/theme/tokens";
@@ -37,14 +38,34 @@ SplashScreen.setOptions({ fade: true, duration: 220 });
 const BOOTSTRAP_TIMEOUT_MS = 15_000;
 
 /**
- * AsyncStorage key for the last consumed reset token. Reset deep-links use the
- * shape `?reset=<token>` (e.g. `?reset=1`); when we see one, we sign out only
- * if its token differs from the stored one, then persist the new token. This
- * makes Expo Go bundle reloads (which keep firing the same initial URL) a
- * no-op after the first apply, so refreshing no longer kicks the user back
- * to login on every fast-reload.
+ * DEV ONLY — "sign out on open" deep link for testers.
+ *
+ * The Expo Go QR / bookmark can carry `?dev-signout=<token>` (legacy alias
+ * `?reset=<token>`, kept so existing QR codes keep working). When the app is
+ * opened with one, we sign out ONCE per distinct token so the tester lands
+ * on the login screen; the token is remembered under this key so Expo Go
+ * bundle reloads (which re-deliver the same initial URL) don't sign out
+ * again. Compiled out of release builds via `__DEV__`.
+ *
+ * Not to be confused with the REAL password-reset link
+ * (`memika://reset-password#access_token=…`) which is handled by
+ * `useAuthStore().receiveAuthLink` below.
  */
-const RESET_TOKEN_KEY = "memika.reset-token";
+const DEV_SIGNOUT_TOKEN_KEY = "memika.dev-signout-token";
+
+async function handleDevSignOutLink(url: string): Promise<void> {
+  if (!__DEV__) return;
+  const token = parseDevSignOutToken(url);
+  if (!token) return;
+  const lastSeen = await AsyncStorage.getItem(DEV_SIGNOUT_TOKEN_KEY).catch(() => null);
+  if (token === lastSeen) {
+    console.log(`[Memika] dev-signout=${token} already consumed, skipping`);
+    return;
+  }
+  console.log(`[Memika] dev-signout=${token} — signing out (new token)`);
+  await useAuthStore.getState().signOut();
+  await AsyncStorage.setItem(DEV_SIGNOUT_TOKEN_KEY, token).catch(() => {});
+}
 
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({
@@ -57,39 +78,61 @@ export default function RootLayout() {
   const hydrate = useAuthStore((s) => s.hydrate);
   const hydrated = useAuthStore((s) => s.hydrated);
   const subscribeAuthChanges = useAuthStore((s) => s.subscribeAuthChanges);
+  const receiveAuthLink = useAuthStore((s) => s.receiveAuthLink);
+  const pendingPasswordReset = useAuthStore((s) => s.pendingPasswordReset);
+  const navigationState = useRootNavigationState();
+  const navReady = Boolean(navigationState?.key);
 
-  // Kick off auth hydration on mount. If the deep-link URL the app was
-  // opened with carries `?reset=1` (the QR points here in DEV so testers
-  // always land on the login screen), wipe any persisted session FIRST
-  // so the auth gate sees user=null and routes to /login.
+  // Kick off auth hydration on mount. The URL the app was opened with is
+  // inspected FIRST, before the navigator mounts, so that:
+  //   - a DEV `?dev-signout=` link wipes the persisted session and the gate
+  //     sees user=null;
+  //   - a Supabase auth link (memika://reset-password#…, auth-callback#…)
+  //     raises `pendingPasswordReset` / stores the link BEFORE the (auth)
+  //     gate can render — the recovery tokens create a real session, and
+  //     the flag is what stops the gate from bouncing the user to Today.
   useEffect(() => {
     (async () => {
       try {
         const initialUrl = await Linking.getInitialURL();
         if (initialUrl) {
-          // Regex over the raw URL is more robust than Linking.parse on the
-          // shapes Expo Go produces (exp://host:port/--/?reset=<token> has
-          // empty path which Linking.parse doesn't always pick query params
-          // from).
-          const m = initialUrl.match(/[?&]reset=([^&#]+)/);
-          if (m) {
-            const token = decodeURIComponent(m[1]);
-            const lastSeen = await AsyncStorage.getItem(RESET_TOKEN_KEY).catch(() => null);
-            if (token !== lastSeen) {
-              if (__DEV__) console.log(`[Memika] reset=${token} deep-link — signing out (new token)`);
-              await useAuthStore.getState().signOut();
-              await AsyncStorage.setItem(RESET_TOKEN_KEY, token).catch(() => {});
-            } else if (__DEV__) {
-              console.log(`[Memika] reset=${token} deep-link — already consumed, skipping`);
-            }
+          await handleDevSignOutLink(initialUrl);
+          const outcome = await receiveAuthLink(initialUrl);
+          if (__DEV__ && outcome !== "ignored") {
+            console.log(`[Memika] initial auth link: ${outcome}`);
           }
         }
       } catch (err) {
-        if (__DEV__) console.warn("[Memika] reset-via-deeplink check failed", err);
+        if (__DEV__) console.warn("[Memika] initial-URL check failed", err);
       }
       hydrate();
     })();
-  }, [hydrate]);
+  }, [hydrate, receiveAuthLink]);
+
+  // Warm-start links (app already open, user taps the email link).
+  // Expo Router navigates to the matching route by path on its own; we only
+  // need to capture the fragment tokens it drops.
+  useEffect(() => {
+    const sub = Linking.addEventListener("url", ({ url }) => {
+      receiveAuthLink(url)
+        .then((outcome) => {
+          if (__DEV__ && outcome !== "ignored") console.log(`[Memika] auth link: ${outcome}`);
+        })
+        .catch((err) => {
+          if (__DEV__) console.warn("[Memika] auth link handling failed", err);
+        });
+    });
+    return () => sub.remove();
+  }, [receiveAuthLink]);
+
+  // Whenever a password recovery starts (deep link, or a PASSWORD_RECOVERY
+  // event from Supabase), open the reset screen — regardless of where the
+  // user was. Waits for the navigator so router.replace never fires before
+  // the root layout mounted.
+  useEffect(() => {
+    if (!pendingPasswordReset || !hydrated || !navReady) return;
+    router.replace("/(auth)/reset-password" as never);
+  }, [pendingPasswordReset, hydrated, navReady]);
 
   // Listen to Supabase auth state changes (token refresh / global sign-out)
   // for the lifetime of the app.

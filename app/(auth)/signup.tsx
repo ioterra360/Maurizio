@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Link, router } from "expo-router";
+import * as Linking from "expo-linking";
 import { ChevronLeft, CheckCircle2 } from "lucide-react-native";
 
 import { Mascot } from "@/components/Mascot";
@@ -19,6 +20,7 @@ import { Tappable } from "@/components/Tappable";
 import { isDemoMode, supabase } from "@/lib/supabase";
 import { useAuthStore } from "@/lib/auth-store";
 import { authErrorMessage } from "@/lib/auth-errors";
+import { AUTH_LINK_PATHS } from "@/lib/auth-links";
 import { colors, FONT } from "@/theme/tokens";
 
 export default function SignupScreen() {
@@ -62,16 +64,31 @@ export default function SignupScreen() {
     // onboarding replace below ever runs.
     useAuthStore.getState().setPendingOnboarding(true);
     try {
-      const { error: signUpError } = await supabase.auth.signUp({
+      const { data, error: signUpError } = await supabase.auth.signUp({
         email: email.trim().toLowerCase(),
         password,
         options: {
           data: { name: name.trim() },
+          // Hosted Auth runs with email confirmation OFF (mailer_autoconfirm),
+          // so no email is sent today. If confirmation is ever re-enabled the
+          // link must come back INTO the app: app/auth-callback.tsx finishes
+          // the session and routes to the topic pick.
+          emailRedirectTo: Linking.createURL(AUTH_LINK_PATHS.authCallback),
         },
       });
       if (signUpError) {
         useAuthStore.getState().setPendingOnboarding(false);
         setError(authErrorMessage(signUpError));
+        return;
+      }
+      if (!data.session) {
+        // Confirmation required server-side: there is no session yet, so
+        // onboarding (which creates the folder) cannot run. Be honest
+        // instead of dropping the user into a broken carousel.
+        useAuthStore.getState().setPendingOnboarding(false);
+        setError(
+          "Ti abbiamo inviato un'email: apri il link per confermare l'account, poi accedi.",
+        );
         return;
       }
       router.replace("/(auth)/onboarding" as never);

@@ -1,6 +1,13 @@
 import { create } from "zustand";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { supabase, isSupabaseConfigured } from "./supabase";
+import {
+  authLinkErrorMessage,
+  authLinkFingerprint,
+  classifyAuthLink,
+  parseAuthLink,
+  type AuthLink,
+} from "./auth-links";
 
 export type UserRole = "user" | "admin";
 
@@ -23,6 +30,38 @@ type AuthState = {
    */
   pendingOnboarding: boolean;
   setPendingOnboarding: (pending: boolean) => void;
+  /**
+   * True while a password-recovery link is being handled: from the moment
+   * the app receives `memika://reset-password#…` until the user saves a new
+   * password (or gives up). The auth gate keeps the user inside the (auth)
+   * stack while it is set — the recovery tokens create a REAL session, and
+   * without this flag the SIGNED_IN they emit would bounce the user to
+   * Today before they ever see the "Nuova password" form.
+   */
+  pendingPasswordReset: boolean;
+  /**
+   * The last auth deep link the app received (recovery / signup
+   * confirmation). The target screen consumes it via `applyAuthLink`.
+   * Memory-only on purpose: it carries bearer tokens.
+   */
+  authLink: AuthLink | null;
+  /**
+   * Feeds an incoming URL (initial URL or `url` event) through the auth-link
+   * parser. Returns what happened so the caller can log it; non-auth URLs
+   * are ignored, an already-consumed link is skipped (Expo Go reloads
+   * re-deliver the same initial URL).
+   */
+  receiveAuthLink: (url: string) => Promise<"ignored" | "duplicate" | "queued">;
+  /**
+   * Turns the tokens (implicit flow) or the PKCE code carried by a link into
+   * a Supabase session. Resolves with a user-facing Italian error message
+   * on failure, null on success.
+   */
+  applyAuthLink: (link: AuthLink) => Promise<string | null>;
+  /** `supabase.auth.updateUser({ password })`. Throws the raw error. */
+  updatePassword: (password: string) => Promise<void>;
+  /** Clears the recovery flag + link (after success, cancel or sign-out). */
+  endPasswordReset: () => void;
   /** Updates the cached user name after a successful profile save. */
   setUserName: (name: string) => void;
   signIn: (email: string, password: string) => Promise<void>;
@@ -33,6 +72,8 @@ type AuthState = {
 };
 
 const DEMO_STORAGE_KEY = "memika.demo-auth";
+/** Fingerprint of the last auth link we acted on — see receiveAuthLink. */
+const AUTH_LINK_SEEN_KEY = "memika.auth-link.seen";
 
 /**
  * Single source of truth for the two demo accounts used during development.
@@ -116,8 +157,67 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   loading: false,
   hydrated: false,
   pendingOnboarding: false,
+  pendingPasswordReset: false,
+  authLink: null,
 
   setPendingOnboarding: (pending) => set({ pendingOnboarding: pending }),
+
+  receiveAuthLink: async (url) => {
+    if (!isSupabaseConfigured) return "ignored";
+    const link = parseAuthLink(url);
+    const action = classifyAuthLink(link);
+    if (action.kind === "ignore") return "ignored";
+
+    const fingerprint = authLinkFingerprint(url);
+    const seen = await AsyncStorage.getItem(AUTH_LINK_SEEN_KEY).catch(() => null);
+    if (seen === fingerprint) return "duplicate";
+    await AsyncStorage.setItem(AUTH_LINK_SEEN_KEY, fingerprint).catch(() => {});
+
+    // The flag goes up BEFORE anyone calls setSession so the gate never sees
+    // a recovery SIGNED_IN without it. Non-recovery links (signup
+    // confirmation, magic link) are ordinary sign-ins — no flag.
+    set({ authLink: link, pendingPasswordReset: action.recovery });
+    return "queued";
+  },
+
+  applyAuthLink: async (link) => {
+    if (!isSupabaseConfigured) return "Demo mode attivo: i link email non sono disponibili.";
+    const action = classifyAuthLink(link);
+    if (action.kind === "error") return authLinkErrorMessage(action.code);
+    if (action.kind === "ignore") return authLinkErrorMessage(null);
+    try {
+      const result =
+        action.kind === "tokens"
+          ? await supabase.auth.setSession({
+              access_token: action.accessToken,
+              refresh_token: action.refreshToken,
+            })
+          : await supabase.auth.exchangeCodeForSession(action.code);
+      if (result.error) {
+        if (__DEV__) console.warn("[Memika] auth link session failed", result.error.message);
+        return authLinkErrorMessage(result.error.code ?? result.error.message);
+      }
+      // onAuthStateChange(SIGNED_IN) also does this, but resolving the user
+      // here means the caller can rely on `user` right after the await.
+      const myEpoch = ++authEpoch;
+      const user = await buildAuthUserFromSession(result.data.session);
+      if (myEpoch === authEpoch) set({ user });
+      return null;
+    } catch (err) {
+      if (__DEV__) console.warn("[Memika] auth link session threw", err);
+      return authLinkErrorMessage(null);
+    }
+  },
+
+  updatePassword: async (password) => {
+    if (!isSupabaseConfigured) {
+      throw new Error("Demo mode: password update is disabled.");
+    }
+    const { error } = await supabase.auth.updateUser({ password });
+    if (error) throw error;
+  },
+
+  endPasswordReset: () => set({ pendingPasswordReset: false, authLink: null }),
 
   setUserName: (name) => {
     const user = get().user;
@@ -168,10 +268,22 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       // back to login instead of leaving a half-broken state.
       if (event === "SIGNED_OUT" || !session) {
         authEpoch += 1;
-        set({ user: null });
+        set({ user: null, pendingPasswordReset: false, authLink: null });
         return;
       }
-      if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED" || event === "USER_UPDATED") {
+      if (event === "PASSWORD_RECOVERY") {
+        // Only emitted by exchangeCodeForSession (PKCE) / verifyOtp — never
+        // by setSession, which is why receiveAuthLink raises the flag
+        // itself. Handling it here keeps a future PKCE/OTP switch safe: the
+        // root layout watches the flag and opens /(auth)/reset-password.
+        set({ pendingPasswordReset: true });
+      }
+      if (
+        event === "SIGNED_IN" ||
+        event === "TOKEN_REFRESHED" ||
+        event === "USER_UPDATED" ||
+        event === "PASSWORD_RECOVERY"
+      ) {
         const myEpoch = ++authEpoch;
         setTimeout(() => {
           void buildAuthUserFromSession(session)
@@ -198,7 +310,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         if (error) throw error;
         const myEpoch = ++authEpoch;
         const user = await buildAuthUserFromSession(data.session);
-        if (myEpoch === authEpoch) set({ user });
+        // A real login supersedes any half-finished recovery, otherwise the
+        // gate would pin the user inside the (auth) stack.
+        if (myEpoch === authEpoch) set({ user, pendingPasswordReset: false, authLink: null });
       } else {
         // Demo mode is __DEV__-only (enforced in supabase.ts). Tighten further:
         // only the two seed accounts are valid. Arbitrary emails are rejected,
@@ -236,6 +350,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     // Bump the epoch so any profile fetch started before sign-out is
     // discarded instead of writing a dead user back into the store.
     authEpoch += 1;
-    set({ user: null, pendingOnboarding: false });
+    set({ user: null, pendingOnboarding: false, pendingPasswordReset: false, authLink: null });
   },
 }));

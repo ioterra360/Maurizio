@@ -9,12 +9,14 @@ app/
 ├── _layout.tsx                  ROOT — fonts, splash, auth hydrate, Stack screenOptions
 ├── index.tsx                    Smart redirect (login / today / admin)
 ├── add.tsx                      Aggiungi ricordo — root-level (modal su iOS, card su Android)
+├── auth-callback.tsx            Landing dei link email NON di recovery (conferma signup) — root-level
 ├── choose-topic.tsx             Scegli il tuo argomento — crea l'UNICA cartella (root-level, vedi sotto)
 ├── folder-settings.tsx          Impostazioni cartella (`?kind=`) — push root-level sopra i tab
 │
 ├── (auth)/
 │   ├── _layout.tsx              Redirects out if user already signed in
 │   ├── login.tsx · signup.tsx · forgot-password.tsx · onboarding.tsx
+│   └── reset-password.tsx       "Nuova password" — landing di memika://reset-password#… (vedi Deep links)
 │
 ├── (app)/
 │   ├── _layout.tsx              Tabs nav (backBehavior "history"). Auth gate.
@@ -42,6 +44,8 @@ app/
 | `/choose-topic` | `app/choose-topic.tsx` | Signed-in users con 0 cartelle (≥1 → redirect a Today) |
 | `/folder-settings?kind=` | `app/folder-settings.tsx` | Signed-in users |
 | `/(auth)/login` | `app/(auth)/login.tsx` | Only when signed out |
+| `/(auth)/reset-password` | `app/(auth)/reset-password.tsx` | Chi apre il link di recovery (gate: `pendingPasswordReset`) |
+| `/auth-callback` | `app/auth-callback.tsx` | Chi apre un link email di conferma (root-level, con o senza sessione) |
 | `/(app)/today` | `app/(app)/today.tsx` | Signed-in users |
 | `/(app)/knowledge` | `app/(app)/knowledge.tsx` | Signed-in users |
 | `/(app)/health` | `app/(app)/health.tsx` | Signed-in users |
@@ -88,12 +92,58 @@ If you see a typed-route error, the underlying cause is almost always:
 
 ## Deep links
 
-The Expo `scheme` is `memika` (in `app.json`). Once we have a real domain, we
-add universal links / app links in Phase 4. For now, only `memika://` works,
-and the only deep link we care about is:
+The Expo `scheme` is `memika` (in `app.json`). Universal links / app links on
+`memika.app` come later; today only the custom scheme (and Expo Go's
+`exp://<lan-ip>:<port>/--/<path>`) works. The two auth links:
 
-- `memika://reset-password` / `memika://auth-callback` — Supabase auth
-  emails (password recovery / signup confirmation). Not wired yet.
+| Link | Sent by | Lands in |
+|---|---|---|
+| `memika://reset-password#access_token=…&refresh_token=…&type=recovery` | `resetPasswordForEmail(email, { redirectTo: Linking.createURL("reset-password") })` in `forgot-password.tsx` | `app/(auth)/reset-password.tsx` |
+| `memika://auth-callback#access_token=…&type=signup` | `signUp({ options.emailRedirectTo: Linking.createURL("auth-callback") })` in `signup.tsx` (only if email confirmation is ever re-enabled — hosted Auth has it OFF) | `app/auth-callback.tsx` |
+
+Expired / already-used links arrive as
+`memika://reset-password#error=access_denied&error_code=otp_expired` and are
+shown as "Link non utilizzabile" with a "Richiedi un nuovo link" button.
+
+### How the password-reset flow is wired
+
+1. **Supabase implicit flow** (`lib/supabase.ts` keeps `detectSessionInUrl:
+   false`, default `flowType: "implicit"`): the tokens travel in the URL
+   **fragment**, which `Linking.parse` / Expo Router drop. `lib/auth-links.ts`
+   (pure, vitest-covered) parses fragment + query out of any URL shape
+   (`memika://`, `exp://…/--/`, `https://memika.app/…`).
+2. **`app/_layout.tsx`** reads `Linking.getInitialURL()` (cold start, BEFORE
+   `hydrate()`, so the gate never renders without the flag) and
+   `Linking.addEventListener("url")` (warm start) and hands the URL to
+   `useAuthStore().receiveAuthLink(url)`. That stores the parsed link in
+   `authLink`, raises `pendingPasswordReset` for recovery links and dedupes
+   by fingerprint in AsyncStorage so Expo Go reloads (which re-deliver the
+   initial URL) don't replay a consumed link.
+3. **Gate** (`lib/auth-gate.tsx`): while `pendingPasswordReset` is set the
+   `(auth)` surface renders even with a user, and `(app)`/`(admin)` redirect
+   to `/(auth)/reset-password`. The root layout also `router.replace`s there
+   whenever the flag turns on, so the screen opens wherever the user was.
+   Expo Router additionally navigates by PATH on its own (`reset-password`
+   → `(auth)/reset-password`) — the two mechanisms are redundant on purpose.
+4. **`reset-password.tsx`** calls `applyAuthLink` (`setSession` with the
+   tokens; `exchangeCodeForSession` if a PKCE `?code=` ever shows up), then
+   `updateUser({ password })` via `updatePassword`, clears the flag with
+   `endPasswordReset()` and replaces to `/`. "Annulla" signs out — the
+   recovery link IS a login and must not survive an abandoned reset.
+5. `PASSWORD_RECOVERY` in `onAuthStateChange` also raises the flag (it is only
+   emitted by PKCE / `verifyOtp`, never by `setSession`) so a future switch
+   of flow needs no routing changes.
+
+Signing in from `login`, signing out, and `SIGNED_OUT` all clear the flag so a
+stale one can never pin a user inside `(auth)`.
+
+### DEV-only sign-out link
+
+`exp://<lan-ip>:<port>/--/?dev-signout=<token>` (legacy alias `?reset=<token>`,
+kept so existing QR codes still work) signs out once per distinct token so a
+tester always lands on Login. `handleDevSignOutLink` in `app/_layout.tsx` is
+compiled out of release builds (`__DEV__`); it only looks at the query string,
+never at a `#fragment`, so it cannot collide with a real recovery link.
 
 ## Adding a new screen
 

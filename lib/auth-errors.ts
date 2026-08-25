@@ -37,6 +37,15 @@ export function authErrorMessage(err: unknown): string {
   if (msg.includes("password should be at least") || msg.includes("password too short")) {
     return "La password è troppo corta.";
   }
+  if (msg.includes("same_password") || msg.includes("different from the old password")) {
+    return "La nuova password deve essere diversa da quella attuale.";
+  }
+  if (msg.includes("weak_password") || msg.includes("password is known to be weak")) {
+    return "Password troppo debole. Scegline una più lunga o meno comune.";
+  }
+  if (msg.includes("auth session missing") || msg.includes("session_not_found")) {
+    return "La sessione è scaduta. Richiedi un nuovo link di reset.";
+  }
   if (msg.includes("user already registered") || msg.includes("already exists")) {
     return "Esiste già un account con questa email. Prova ad accedere.";
   }
