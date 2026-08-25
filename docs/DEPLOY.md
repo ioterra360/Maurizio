@@ -243,6 +243,27 @@ existing auth / account-deletion error matchers already turn into the Italian
 connection message. `AbortSignal.timeout()` is NOT used — Hermes / RN 0.81
 only ship the `abort-controller` polyfill, which lacks it.
 
+## Brand assets (icon, adaptive icon, splash, store icons)
+
+All launcher / splash artwork is derived from the navy brand tile in
+`assets/brand/icon.png` (475 px source, upscaled with Lanczos — acceptable for the
+unadvertised first release, re-export from a vector source before marketing).
+
+| File | Size / mode | Used by |
+| --- | --- | --- |
+| `assets/icon.png` | 1024×1024 RGB, opaque, square corners | `expo.icon` (iOS app icon — Apple rejects alpha) |
+| `assets/adaptive-icon.png` | 1024×1024 RGBA, tile inside the 672 px safe circle | `expo.android.adaptiveIcon.foregroundImage` on `#F5F3EF` |
+| `assets/splash-icon.png` | 1024×1024 RGBA | `expo-splash-screen` plugin, `imageWidth: 200` on `#F5F3EF` |
+| `assets/favicon.png` | 48×48 RGBA | `expo.web.favicon` |
+| `docs/store-assets/appstore-icon-1024.png` | 1024×1024 RGB, no alpha | App Store Connect listing icon (upload manually) |
+| `docs/store-assets/play-icon-512.png` | 512×512 RGB | Google Play Console "App icon" (upload manually) |
+
+The splash is configured ONLY through the `expo-splash-screen` config plugin in
+`app.json` (SDK 54 reads the plugin, the legacy top-level `expo.splash` block was
+removed on purpose — do not add it back, it silently loses to the plugin). Sanity
+checks after touching any of these: `npx expo config --type introspect --json`
+must resolve without warnings and `npx expo-doctor` must stay at 18/18.
+
 ## Release checklist (Phase 4)
 
 For when we actually ship to TestFlight or Play Internal:

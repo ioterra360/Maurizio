@@ -8,11 +8,6 @@
     "scheme": "memika",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
-    "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#F5F3EF"
-    },
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "studio.tailor.memika",
