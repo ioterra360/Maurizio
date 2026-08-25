@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { Modal, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { Linking, Modal, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
-import { LogOut, Trash2, AlertTriangle } from "lucide-react-native";
+import { LogOut, Trash2, AlertTriangle, ExternalLink } from "lucide-react-native";
 
 import { HeaderHero } from "@/components/HeaderHero";
 import { InitialsAvatar } from "@/components/FolderTile";
@@ -13,9 +13,15 @@ import { GhostButton } from "@/components/GhostButton";
 import { Mascot } from "@/components/Mascot";
 import { Tappable } from "@/components/Tappable";
 import { useAuthStore } from "@/lib/auth-store";
+import { useReviewStore } from "@/lib/review-store";
 import { useUIStore } from "@/lib/ui-store";
-import { fetchProfile, updateProfile } from "@/lib/api";
-import { PREMIUM_ENABLED } from "@/lib/constants";
+import { deleteOwnAccount, fetchDeletionPreview, fetchProfile, updateProfile } from "@/lib/api";
+import { ACCOUNT_DELETION_URL, PREMIUM_ENABLED } from "@/lib/constants";
+import {
+  deletionErrorMessage,
+  deletionPreviewMessage,
+  type DeletionPreview,
+} from "@/lib/account-deletion";
 import type { Profile } from "@/lib/mappers";
 import { tap, error as errorFeedback } from "@/lib/feedback";
 import { FONT, colors, radii } from "@/theme/tokens";
@@ -27,6 +33,10 @@ export default function SettingsScreen() {
   const showToast = useUIStore((s) => s.showToast);
   const [name, setName] = useState(user?.name ?? "");
   const [confirmDelete, setConfirmDelete] = useState(false);
+  // Live counts for the confirmation sheet — null while loading or when the
+  // count query failed (the copy then falls back to a count-free sentence).
+  const [deletionPreview, setDeletionPreview] = useState<DeletionPreview | null>(null);
+  const [deleting, setDeleting] = useState(false);
   // Real profile (null in demo mode — the hardcoded literals below act as
   // the fallback until pickers/persistence land for every field).
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -63,8 +73,59 @@ export default function SettingsScreen() {
     .join("");
 
   const handleSignOut = async () => {
+    // Drop any in-progress review first: its fire-and-forget writes are
+    // already .catch()-guarded, but a live deck must not outlive the user.
+    useReviewStore.getState().reset();
     await signOut();
     router.replace("/(auth)/login");
+  };
+
+  const openDeleteConfirm = () => {
+    if (!user) return;
+    errorFeedback();
+    setDeletionPreview(null);
+    setConfirmDelete(true);
+    const uid = user.id;
+    fetchDeletionPreview(uid)
+      .then((p) => {
+        // Ignore a late result if the user signed out meanwhile.
+        if (useAuthStore.getState().user?.id === uid) setDeletionPreview(p);
+      })
+      .catch((err) => {
+        if (__DEV__) console.warn("[Memika] deletion preview failed", err);
+      });
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!user || deleting) return;
+    setDeleting(true);
+    try {
+      await deleteOwnAccount();
+    } catch (err) {
+      if (__DEV__) console.warn("[Memika] account deletion failed", err);
+      // Close the sheet BEFORE toasting: the global toast renders below this
+      // native Modal and would be invisible on iOS while it stays open.
+      setDeleting(false);
+      setConfirmDelete(false);
+      showToast(deletionErrorMessage(err));
+      return;
+    }
+    // Server side the account is gone (sessions cascade from auth.users).
+    // Clear the local session: reset the review deck, sign out, go to login.
+    useReviewStore.getState().reset();
+    setConfirmDelete(false);
+    await signOut();
+    setDeleting(false);
+    router.replace("/(auth)/login");
+    showToast("Account eliminato");
+  };
+
+  const openDeletionWebPage = () => {
+    tap();
+    Linking.openURL(ACCOUNT_DELETION_URL).catch((err) => {
+      if (__DEV__) console.warn("[Memika] open account-deletion page failed", err);
+      showToast("Impossibile aprire la pagina. Riprova.");
+    });
   };
 
   return (
@@ -248,11 +309,38 @@ export default function SettingsScreen() {
             title="Elimina account"
             body="Cancella tutti i ricordi, le cartelle e la cronologia. Non recuperabile."
             danger
-            onPress={() => {
-              errorFeedback();
-              setConfirmDelete(true);
-            }}
+            onPress={openDeleteConfirm}
           />
+          {/* Web path — Google Play requires a deletion route that works
+              without the app installed; the page is published on memika.app. */}
+          <Tappable
+            onPress={openDeletionWebPage}
+            accessibilityRole="link"
+            accessibilityLabel="Richiesta di eliminazione via web"
+            pressedOpacity={0.6}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 6,
+              paddingHorizontal: 8,
+              paddingVertical: 4,
+            }}
+          >
+            <Text
+              style={{
+                fontFamily: FONT.regular,
+                fontSize: 13,
+                lineHeight: 18,
+                color: colors.midGrey,
+              }}
+            >
+              Richiesta via web:{" "}
+              <Text style={{ fontFamily: FONT.semibold, color: colors.navy }}>
+                memika.app/account-deletion
+              </Text>
+            </Text>
+            <ExternalLink size={13} color={colors.midGrey} strokeWidth={2} />
+          </Tappable>
         </View>
       </ScrollView>
 
@@ -261,7 +349,9 @@ export default function SettingsScreen() {
         visible={confirmDelete}
         transparent
         animationType="slide"
-        onRequestClose={() => setConfirmDelete(false)}
+        onRequestClose={() => {
+          if (!deleting) setConfirmDelete(false);
+        }}
       >
         {/* Backdrop and sheet are SIBLINGS, not nested. React Native's
             Pressable does not honor synthetic e.stopPropagation(), so a
@@ -270,8 +360,10 @@ export default function SettingsScreen() {
         <View style={{ flex: 1, justifyContent: "flex-end" }}>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Close"
-            onPress={() => setConfirmDelete(false)}
+            accessibilityLabel="Chiudi"
+            onPress={() => {
+              if (!deleting) setConfirmDelete(false);
+            }}
             style={{
               position: "absolute",
               top: 0,
@@ -326,27 +418,26 @@ export default function SettingsScreen() {
                 lineHeight: 22,
               }}
             >
-              779 ricordi in 4 cartelle saranno eliminati per sempre.
-              Verrai disconnesso da ogni dispositivo.
+              {deletionPreviewMessage(deletionPreview)} Verrai disconnesso da ogni
+              dispositivo. Non si può annullare.
             </Text>
             <View style={{ marginTop: 22, gap: 10 }}>
-              {/* Account deletion is not wired yet (needs an Edge Function —
-                  GDPR work requiring human sign-off). The sheet must close in
-                  the same press: the global toast renders below this native
-                  Modal and would be invisible on iOS while it stays open. */}
+              {/* Real deletion: delete_own_account() RPC (SECURITY DEFINER,
+                  target = auth.uid()), then local sign-out → login. */}
               <PrimaryButton
-                label="Sì, elimina tutto"
+                label={deleting ? "Elimino…" : "Sì, elimina tutto"}
                 onPress={() => {
                   errorFeedback();
-                  setConfirmDelete(false);
-                  showToast("L'eliminazione dell'account non è ancora disponibile");
+                  void handleDeleteAccount();
                 }}
                 variant="danger"
+                loading={deleting}
               />
               <GhostButton
                 label="Annulla"
                 onPress={() => setConfirmDelete(false)}
                 variant="link"
+                disabled={deleting}
               />
             </View>
           </View>

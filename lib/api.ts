@@ -34,6 +34,7 @@ import {
   mapReviewSession,
 } from "./mappers";
 import { FOLDER_TEMPLATES, type FolderKind, type ReviewResponse } from "./constants";
+import type { DeletionPreview } from "./account-deletion";
 import { getAllFolderSeeds, getFolderSeed, type FolderSeed } from "./folder-data";
 import { nextFolderPriority, type NewFolderInput } from "./folder-templates";
 import { isoFromRelativeLabel } from "./format";
@@ -69,6 +70,50 @@ export async function updateProfile(
   if (patch.morningReviewAt !== undefined) payload.morning_review_at = patch.morningReviewAt;
   if (patch.eveningReviewAt !== undefined) payload.evening_review_at = patch.eveningReviewAt;
   const { error } = await supabase.from("profiles").update(payload).eq("id", userId);
+  if (error) throw error;
+}
+
+// ---------------------------------------------------------------------------
+// Account
+// ---------------------------------------------------------------------------
+
+/**
+ * What the "Elimina account" sheet will wipe: how many memories and folders
+ * the user owns. Two `head` count queries (no rows transferred). Demo mode:
+ * the seed counts, so the sheet copy reads naturally during UI review.
+ */
+export async function fetchDeletionPreview(userId: string): Promise<DeletionPreview> {
+  if (isDemoMode) {
+    const seeds = getAllFolderSeeds();
+    return {
+      memories: seeds.reduce((sum, s) => sum + s.count, 0),
+      folders: seeds.length,
+    };
+  }
+  const [foldersRes, memoriesRes] = await Promise.all([
+    supabase.from("folders").select("id", { count: "exact", head: true }).eq("user_id", userId),
+    supabase.from("memories").select("id", { count: "exact", head: true }).eq("user_id", userId),
+  ]);
+  if (foldersRes.error) throw foldersRes.error;
+  if (memoriesRes.error) throw memoriesRes.error;
+  return { memories: memoriesRes.count ?? 0, folders: foldersRes.count ?? 0 };
+}
+
+/**
+ * Delete the signed-in user's account — auth.users row plus everything that
+ * cascades from it (profile, folders, memories, review history, sessions).
+ * Runs through the `delete_own_account()` SECURITY DEFINER function
+ * (migration 20260825152550): the target is always auth.uid(), the client
+ * never holds service_role. Raises 42501 when there is no valid session.
+ *
+ * The caller must still `signOut()` afterwards to clear SecureStore — the
+ * server-side session is already dead when this resolves.
+ *
+ * Demo mode: nothing to delete (no backend); the caller signs out as usual.
+ */
+export async function deleteOwnAccount(): Promise<void> {
+  if (isDemoMode) return;
+  const { error } = await supabase.rpc("delete_own_account");
   if (error) throw error;
 }
 

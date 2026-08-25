@@ -191,7 +191,14 @@ is keyed by email with no FK and is intentionally left alone. Supabase's own
 `auth.users`, so the caller's session is dead the moment the call returns —
 the client should still `signOut()` to clear SecureStore.
 
-Client usage (through `lib/api.ts`):
+Client usage: `deleteOwnAccount()` in `lib/api.ts` wraps the RPC (demo mode
+is a no-op); Settings → "Elimina account" shows live counts from
+`fetchDeletionPreview(userId)` (two `head` count queries on `folders` and
+`memories`), calls `deleteOwnAccount()`, resets the review store, then
+`signOut()` from the auth store and routes to login. Copy/error mapping lives
+in `lib/account-deletion.ts` (tested). The web path
+(`ACCOUNT_DELETION_URL` in `lib/constants.ts`) is linked under the card for
+Google Play's "delete without the app" requirement.
 
 ```ts
 const { error } = await supabase.rpc("delete_own_account");

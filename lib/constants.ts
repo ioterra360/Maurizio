@@ -126,3 +126,15 @@ export const DAILY_INPUT_CAP_DEFAULT = 20;
  * a web checkout is rejected under Apple 3.1.1 / Play Payments policy.
  */
 export const PREMIUM_ENABLED = false;
+
+/**
+ * Public legal / support endpoints. The pages are published by the
+ * publisher (Maurizio Cocco) on memika.app from the drafts in docs/legal/;
+ * Google Play's Data-safety form and Apple's privacy fields point at the
+ * same URLs, so change them here and in the store listings together.
+ */
+export const PRIVACY_URL = "https://memika.app/privacy";
+export const TERMS_URL = "https://memika.app/terms";
+/** Web path for deleting an account without reinstalling (Play requirement). */
+export const ACCOUNT_DELETION_URL = "https://memika.app/account-deletion";
+export const SUPPORT_EMAIL = "memikaapp@gmail.com";
