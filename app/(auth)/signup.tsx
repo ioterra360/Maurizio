@@ -21,7 +21,15 @@ import { isDemoMode, supabase } from "@/lib/supabase";
 import { useAuthStore } from "@/lib/auth-store";
 import { authErrorMessage } from "@/lib/auth-errors";
 import { AUTH_LINK_PATHS } from "@/lib/auth-links";
+import { PRIVACY_URL, TERMS_URL } from "@/lib/constants";
 import { colors, FONT } from "@/theme/tokens";
+
+/** True, verifiable trust signals — no offline/encryption claims the app can't keep. */
+const SIGNUP_BENEFITS = [
+  "Tre ritmi di ripasso: Scan, Reinforcement, Focus",
+  "I tuoi ricordi salvati nel cloud, sotto il tuo controllo",
+  "Nessuna pubblicità, nessun tracciamento",
+] as const;
 
 export default function SignupScreen() {
   const [name, setName] = useState("");
@@ -33,6 +41,15 @@ export default function SignupScreen() {
   const emailRef = useRef<TextInput>(null);
   const passwordRef = useRef<TextInput>(null);
   const confirmRef = useRef<TextInput>(null);
+
+  // Legal pages live on memika.app; opening them in the system browser is
+  // fine under store rules (they are documents, not a checkout).
+  const openLegal = (url: string) => {
+    Linking.openURL(url).catch((err) => {
+      if (__DEV__) console.warn("[Memika] open legal page failed", err);
+      setError("Impossibile aprire la pagina. Riprova più tardi.");
+    });
+  };
 
   const handleSubmit = async () => {
     setError(null);
@@ -241,13 +258,40 @@ export default function SignupScreen() {
             />
           </View>
 
+          {/* Consent — the account is created by tapping the CTA above */}
+          <Text
+            style={{
+              marginTop: 12,
+              fontFamily: FONT.regular,
+              fontSize: 12.5,
+              lineHeight: 18,
+              color: colors.midGrey,
+              textAlign: "center",
+              paddingHorizontal: 8,
+            }}
+          >
+            Creando l'account accetti i{" "}
+            <Text
+              accessibilityRole="link"
+              onPress={() => openLegal(TERMS_URL)}
+              style={{ fontFamily: FONT.semibold, color: colors.navy }}
+            >
+              Termini
+            </Text>{" "}
+            e l'
+            <Text
+              accessibilityRole="link"
+              onPress={() => openLegal(PRIVACY_URL)}
+              style={{ fontFamily: FONT.semibold, color: colors.navy }}
+            >
+              Informativa privacy
+            </Text>
+            .
+          </Text>
+
           {/* Benefits row — soft trust signals under the CTA */}
           <View style={{ marginTop: 22, gap: 10 }}>
-            {[
-              "Spaced repetition basato su SM-2",
-              "Funziona offline, sincronizza quando vuoi",
-              "I tuoi ricordi sono crittografati",
-            ].map((b) => (
+            {SIGNUP_BENEFITS.map((b) => (
               <View
                 key={b}
                 style={{ flexDirection: "row", alignItems: "center", gap: 10 }}

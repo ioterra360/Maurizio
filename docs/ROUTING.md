@@ -76,6 +76,18 @@ Groups (parentheses in the folder name) don't add a URL segment but DO add a
 - A signed-in admin user hitting `/(auth)/login` gets bounced to
   `/(admin)/home`.
 
+### Admin "Apri l'app come utente"
+
+The admin shell has no consumer screens, so the (only) admin could never
+see Today/Cartelle/Progressi/Impostazioni with his own account. The row
+**Altro → Account → "Apri l'app come utente"** sets `viewAsUser` in
+`lib/auth-store.ts` (memory-only, cleared on sign-out and on reload) and
+replaces to `/(app)/today`. While the flag is set, `useAuthGate` and
+`app/index.tsx` treat the admin like a regular user for the `(auth)` and
+`(app)` surfaces, and `/choose-topic` lets him create a folder. The `(admin)`
+surface never bounces an admin, so **Impostazioni → Informazioni → "Torna al
+pannello admin"** just clears the flag and replaces to `/(admin)/home`.
+
 The redirects compose at the layout boundary instead of being scattered across
 every screen. Don't replicate them in individual screen files.
 

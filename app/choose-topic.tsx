@@ -48,6 +48,11 @@ type Selection = TemplateKind | "custom" | null;
 export default function ChooseTopicScreen() {
   const user = useAuthStore((s) => s.user);
   const hydrated = useAuthStore((s) => s.hydrated);
+  // An admin browsing the consumer app ("Apri l'app come utente") may own
+  // zero folders too; without this the Add → /choose-topic redirect would
+  // bounce them straight back to the admin shell.
+  const viewAsUser = useAuthStore((s) => s.viewAsUser);
+  const adminOnly = user?.role === "admin" && !viewAsUser;
   const showToast = useUIStore((s) => s.showToast);
 
   const [checking, setChecking] = useState(true);
@@ -58,7 +63,7 @@ export default function ChooseTopicScreen() {
 
   // Returning user (already has a folder) → skip this step entirely.
   useEffect(() => {
-    if (!user || user.role === "admin") return;
+    if (!user || adminOnly) return;
     let cancelled = false;
     countFolders(user.id)
       .then((n) => {
@@ -78,11 +83,11 @@ export default function ChooseTopicScreen() {
     return () => {
       cancelled = true;
     };
-  }, [user]);
+  }, [user, adminOnly]);
 
   if (!hydrated) return null;
   if (!user) return <Redirect href="/(auth)/login" />;
-  if (user.role === "admin") return <Redirect href="/(admin)/home" />;
+  if (adminOnly) return <Redirect href="/(admin)/home" />;
 
   const customValidation = validateFolderName(customName);
   const canCreate =

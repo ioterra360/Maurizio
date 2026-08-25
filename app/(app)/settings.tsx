@@ -1,7 +1,17 @@
 import { useEffect, useState } from "react";
-import { Linking, Modal, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import {
+  Linking,
+  Modal,
+  Platform,
+  Pressable,
+  ScrollView,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
+import Constants from "expo-constants";
 import { LogOut, Trash2, AlertTriangle, ExternalLink } from "lucide-react-native";
 
 import { HeaderHero } from "@/components/HeaderHero";
@@ -16,7 +26,14 @@ import { useAuthStore } from "@/lib/auth-store";
 import { useReviewStore } from "@/lib/review-store";
 import { useUIStore } from "@/lib/ui-store";
 import { deleteOwnAccount, fetchDeletionPreview, fetchProfile, updateProfile } from "@/lib/api";
-import { ACCOUNT_DELETION_URL, PREMIUM_ENABLED } from "@/lib/constants";
+import {
+  ACCOUNT_DELETION_URL,
+  PREMIUM_ENABLED,
+  PRIVACY_URL,
+  SUPPORT_EMAIL,
+  TERMS_URL,
+} from "@/lib/constants";
+import { formatAppVersion, memberSinceLabel } from "@/lib/app-version";
 import {
   deletionErrorMessage,
   deletionPreviewMessage,
@@ -26,10 +43,38 @@ import type { Profile } from "@/lib/mappers";
 import { tap, error as errorFeedback } from "@/lib/feedback";
 import { FONT, colors, radii } from "@/theme/tokens";
 
+/**
+ * Real version + build of the running binary. `expoConfig.version` is the
+ * marketing version from app.json; the build number comes from the native
+ * binary (`Constants.platform.ios.buildNumber` = CFBundleVersion,
+ * `Constants.platform.android.versionCode`) because EAS remote versioning
+ * stamps it into the native project, not into app.json. Both are null in
+ * Expo Go, where the row simply shows the version alone.
+ */
+const APP_VERSION_LABEL = formatAppVersion({
+  version: Constants.expoConfig?.version,
+  nativeBuild:
+    Platform.OS === "ios"
+      ? Constants.platform?.ios?.buildNumber
+      : Platform.OS === "android"
+        ? Constants.platform?.android?.versionCode
+        : null,
+  configBuild:
+    Platform.OS === "ios"
+      ? Constants.expoConfig?.ios?.buildNumber
+      : Platform.OS === "android"
+        ? Constants.expoConfig?.android?.versionCode
+        : null,
+});
+
+const SUPPORT_MAILTO = `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent("Supporto Memika")}`;
+
 export default function SettingsScreen() {
   const user = useAuthStore((s) => s.user);
   const signOut = useAuthStore((s) => s.signOut);
   const setUserName = useAuthStore((s) => s.setUserName);
+  const viewAsUser = useAuthStore((s) => s.viewAsUser);
+  const setViewAsUser = useAuthStore((s) => s.setViewAsUser);
   const showToast = useUIStore((s) => s.showToast);
   const [name, setName] = useState(user?.name ?? "");
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -120,13 +165,34 @@ export default function SettingsScreen() {
     showToast("Account eliminato");
   };
 
-  const openDeletionWebPage = () => {
+  const openDeletionWebPage = () => openExternal(ACCOUNT_DELETION_URL);
+
+  // Legal pages + support mailto. System browser / mail client; failures
+  // (no mail app configured, URL blocked) surface as a toast, never a crash.
+  const openExternal = (url: string) => {
     tap();
-    Linking.openURL(ACCOUNT_DELETION_URL).catch((err) => {
-      if (__DEV__) console.warn("[Memika] open account-deletion page failed", err);
-      showToast("Impossibile aprire la pagina. Riprova.");
+    Linking.openURL(url).catch((err) => {
+      if (__DEV__) console.warn("[Memika] openURL failed", url, err);
+      showToast(
+        url.startsWith("mailto:")
+          ? `Nessuna app di posta disponibile. Scrivi a ${SUPPORT_EMAIL}.`
+          : "Impossibile aprire la pagina. Riprova.",
+      );
     });
   };
+
+  const backToAdmin = () => {
+    tap();
+    // Clear the flag first: the admin surface never bounces an admin, but
+    // the (app) gate would re-render this tree before the replace lands.
+    setViewAsUser(false);
+    router.replace("/(admin)/home");
+  };
+
+  // "da agosto 2026" from profiles.created_at; null in demo mode / before
+  // the profile loads → fall back to the email, never to an invented date.
+  const memberSince = memberSinceLabel(profile?.createdAt);
+  const profileSubtitle = memberSince ? `Con Memika ${memberSince}` : (user?.email ?? "");
 
   return (
     <SafeAreaView className="flex-1 bg-warm-white" edges={["top"]}>
@@ -183,8 +249,9 @@ export default function SettingsScreen() {
                   color: colors.midGrey,
                   marginTop: 2,
                 }}
+                numberOfLines={1}
               >
-                Studente quotidiano · da marzo 2026
+                {profileSubtitle}
               </Text>
             </View>
           </View>
@@ -223,7 +290,7 @@ export default function SettingsScreen() {
           <SettingsToggle
             key={profile ? `calm-${profile.calmMode}` : "calm"}
             label="Modalità calma"
-            hint="Niente contatori rossi né notifiche insistenti: arriva solo il promemoria del ripasso al mattino."
+            hint="Niente contatori rossi né promemoria insistenti. Le notifiche di ripasso arriveranno in un prossimo aggiornamento: la preferenza viene salvata già ora."
             defaultOn={profile ? profile.calmMode : true}
             onChange={(v) => {
               if (!user) return;
@@ -235,7 +302,7 @@ export default function SettingsScreen() {
           <SettingsToggle
             key={profile ? `digest-${profile.weeklyDigest}` : "digest"}
             label="Riepilogo settimanale"
-            hint="La domenica un riassunto di ciò che si è consolidato, cosa sta sfumando, dove concentrarti."
+            hint="Un riassunto settimanale di cosa si è consolidato e cosa sta sfumando. Non è ancora attivo: arriverà in un prossimo aggiornamento."
             defaultOn={profile ? profile.weeklyDigest : false}
             onChange={(v) => {
               if (!user) return;
@@ -269,8 +336,38 @@ export default function SettingsScreen() {
           <SectionLabel>Informazioni</SectionLabel>
         </View>
         <View style={{ paddingHorizontal: 16, gap: 10 }}>
-          <SettingsRow label="Versione" value="0.1.0" />
-          <SettingsRow label="Privacy"  value="Locale, sempre" />
+          <SettingsRow label="Versione" value={APP_VERSION_LABEL} />
+          {user?.role === "admin" && viewAsUser ? (
+            <SettingsRow
+              label="Torna al pannello admin"
+              hint="Stai usando l'app come utente con il tuo account admin."
+              value="Apri"
+              onPress={backToAdmin}
+            />
+          ) : null}
+        </View>
+
+        {/* Legal + support — real pages on memika.app, mailto for support */}
+        <View style={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 8 }}>
+          <SectionLabel>Privacy e termini</SectionLabel>
+        </View>
+        <View style={{ paddingHorizontal: 16, gap: 10 }}>
+          <SettingsRow
+            label="Informativa privacy"
+            value="Apri"
+            onPress={() => openExternal(PRIVACY_URL)}
+          />
+          <SettingsRow
+            label="Termini di servizio"
+            value="Apri"
+            onPress={() => openExternal(TERMS_URL)}
+          />
+          <SettingsRow
+            label="Contatta il supporto"
+            hint={SUPPORT_EMAIL}
+            value="Scrivi"
+            onPress={() => openExternal(SUPPORT_MAILTO)}
+          />
         </View>
 
         {/* Danger zone — premium: warning header + two icon-led cards */}

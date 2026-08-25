@@ -7,6 +7,7 @@ import {
   CreditCard,
   FileText,
   Server,
+  Smartphone,
   Users as UsersIcon,
   type LucideIcon,
 } from "lucide-react-native";
@@ -30,11 +31,29 @@ type Sub = {
 export default function AdminMoreScreen() {
   const user = useAuthStore((s) => s.user);
   const signOut = useAuthStore((s) => s.signOut);
+  const setViewAsUser = useAuthStore((s) => s.setViewAsUser);
 
   const handleSignOut = async () => {
     await signOut();
     router.replace("/(auth)/login");
   };
+
+  // Lets the (single) admin see the consumer surface with their own
+  // account. The flag must be raised BEFORE navigating: the (app) gate reads
+  // it synchronously and would otherwise bounce straight back here.
+  const openAsUser = () => {
+    setViewAsUser(true);
+    router.replace("/(app)/today");
+  };
+
+  const account: Sub[] = [
+    {
+      icon: Smartphone,
+      label: "Apri l'app come utente",
+      hint: "Oggi, Cartelle, Progressi e Impostazioni con il tuo account",
+      onPress: openAsUser,
+    },
+  ];
 
   const operations: Sub[] = [
     { icon: FileText, label: "Template contenuti", hint: "6 pubblicati · 2 bozze" },
@@ -78,7 +97,10 @@ export default function AdminMoreScreen() {
         <View style={{ paddingHorizontal: 22, paddingTop: 22, paddingBottom: 8 }}>
           <SectionLabel>Account</SectionLabel>
         </View>
-        <View style={{ paddingHorizontal: 16 }}>
+        <View style={{ paddingHorizontal: 16, gap: 10 }}>
+          {account.map((s) => (
+            <SubRow key={s.label} sub={s} />
+          ))}
           <View
             className="rounded-card bg-surface"
             style={{

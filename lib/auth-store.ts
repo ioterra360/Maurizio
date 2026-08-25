@@ -62,6 +62,14 @@ type AuthState = {
   updatePassword: (password: string) => Promise<void>;
   /** Clears the recovery flag + link (after success, cancel or sign-out). */
   endPasswordReset: () => void;
+  /**
+   * Admin-only escape hatch: when true the auth gate lets an admin use the
+   * consumer `(app)` surface (Today, Cartelle, Progressi, Impostazioni)
+   * instead of bouncing them to the admin shell. Memory-only on purpose —
+   * a reload lands the admin back on the admin home. Cleared on sign-out.
+   */
+  viewAsUser: boolean;
+  setViewAsUser: (on: boolean) => void;
   /** Updates the cached user name after a successful profile save. */
   setUserName: (name: string) => void;
   signIn: (email: string, password: string) => Promise<void>;
@@ -159,8 +167,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   pendingOnboarding: false,
   pendingPasswordReset: false,
   authLink: null,
+  viewAsUser: false,
 
   setPendingOnboarding: (pending) => set({ pendingOnboarding: pending }),
+  setViewAsUser: (on) => set({ viewAsUser: on }),
 
   receiveAuthLink: async (url) => {
     if (!isSupabaseConfigured) return "ignored";
@@ -350,6 +360,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     // Bump the epoch so any profile fetch started before sign-out is
     // discarded instead of writing a dead user back into the store.
     authEpoch += 1;
-    set({ user: null, pendingOnboarding: false, pendingPasswordReset: false, authLink: null });
+    set({
+      user: null,
+      pendingOnboarding: false,
+      pendingPasswordReset: false,
+      authLink: null,
+      viewAsUser: false,
+    });
   },
 }));

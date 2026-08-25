@@ -19,6 +19,12 @@ export function useAuthGate(surface: Surface) {
   const hydrated = useAuthStore((s) => s.hydrated);
   const pendingOnboarding = useAuthStore((s) => s.pendingOnboarding);
   const pendingPasswordReset = useAuthStore((s) => s.pendingPasswordReset);
+  // Admin "Apri l'app come utente": while set, an admin is treated like a
+  // regular user by the (auth)/(app) surfaces. The admin surface itself
+  // never bounces an admin, so "Torna al pannello admin" only needs to
+  // clear the flag and navigate.
+  const viewAsUser = useAuthStore((s) => s.viewAsUser);
+  const adminViewingAsUser = user?.role === "admin" && viewAsUser;
 
   // The root layout already gates rendering on `hydrated`, but each group
   // re-checks defensively in case a future change to the root forgets to.
@@ -31,15 +37,15 @@ export function useAuthGate(surface: Surface) {
     // A recovery link just created a session: keep the user on
     // /(auth)/reset-password until they save a new password.
     if (user && pendingPasswordReset) return null;
-    if (user?.role === "admin") return <Redirect href="/(admin)/home" />;
-    if (user?.role === "user") return <Redirect href="/(app)/today" />;
+    if (user?.role === "admin" && !adminViewingAsUser) return <Redirect href="/(admin)/home" />;
+    if (user) return <Redirect href="/(app)/today" />;
     return null;
   }
 
   if (surface === "app") {
     if (!user) return <Redirect href="/(auth)/login" />;
     if (pendingPasswordReset) return <Redirect href={"/(auth)/reset-password" as never} />;
-    if (user.role === "admin") return <Redirect href="/(admin)/home" />;
+    if (user.role === "admin" && !adminViewingAsUser) return <Redirect href="/(admin)/home" />;
     return null;
   }
 
