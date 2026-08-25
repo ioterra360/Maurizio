@@ -1,11 +1,11 @@
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import { Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import DraggableFlatList, {
   type RenderItemParams,
 } from "react-native-draggable-flatlist";
 import { Plus } from "lucide-react-native";
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 
 import { HeaderHero } from "@/components/HeaderHero";
 import { FolderRow } from "@/components/FolderRow";
@@ -29,6 +29,22 @@ export default function KnowledgeScreen() {
   useEffect(() => {
     if (!hydrated) void hydrateOrder();
   }, [hydrated, hydrateOrder]);
+
+  // Refetch every time the tab regains focus: the folder created on
+  // /choose-topic (pushed on top of this tab) must show up when the user
+  // comes back, and the FAB must appear. The hook already fetched on
+  // mount, so the very first focus is skipped. No loader flash: the
+  // MascotLoader below only renders while the list is still empty.
+  const firstFocusRef = useRef(true);
+  useFocusEffect(
+    useCallback(() => {
+      if (firstFocusRef.current) {
+        firstFocusRef.current = false;
+        return;
+      }
+      refetch();
+    }, [refetch]),
+  );
 
   const orderedFolders = useMemo(
     () => applyFolderOrder(folders, order),

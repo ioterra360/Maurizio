@@ -36,6 +36,23 @@ import { colors, FONT, radii } from "@/theme/tokens";
 type Selection = TemplateKind | "custom" | null;
 
 /**
+ * Leaves this screen for Today. This route sits in the ROOT stack on top of
+ * the `(app)` group when reached from Knowledge (push) or Add (redirect);
+ * `router.replace("/(app)/today")` from there would REPLACE the focused
+ * root route with a SECOND `(app)` instance — two Tabs navigators alive,
+ * and Android back landing on the stale zero-folder Knowledge underneath.
+ * Popping back to the existing `(app)` keeps a single instance; the plain
+ * replace is only for the onboarding path, where nothing is below us.
+ */
+function goToday() {
+  if (router.canGoBack()) {
+    router.dismissTo("/(app)/today");
+  } else {
+    router.replace("/(app)/today");
+  }
+}
+
+/**
  * "Scegli il tuo argomento" — the one-folder onboarding step.
  *
  * Lives in the ROOT stack (like /add) so it is reachable both from the
@@ -70,7 +87,7 @@ export default function ChooseTopicScreen() {
       .then((n) => {
         if (cancelled) return;
         if (n > 0) {
-          router.replace("/(app)/today");
+          goToday();
         } else {
           setChecking(false);
         }
@@ -111,7 +128,7 @@ export default function ChooseTopicScreen() {
     try {
       const folder = await createFolder(user.id, folderInputFromChoice(choice));
       showToast(`Cartella "${folder.name}" pronta · aggiungi il primo ricordo`);
-      router.replace("/(app)/today");
+      goToday();
     } catch (e) {
       reportError("choose-topic/create-folder", e);
       setError("Non siamo riusciti a creare la cartella. Controlla la connessione e riprova.");
