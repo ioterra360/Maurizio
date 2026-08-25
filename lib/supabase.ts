@@ -4,26 +4,42 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createClient } from "@supabase/supabase-js";
 import { Platform } from "react-native";
 
+import { resolveDemoMode } from "./demo-mode";
+
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL ?? "";
 const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? "";
 
 const hasSupabaseCreds = Boolean(supabaseUrl && supabaseAnonKey);
 
 /**
- * Demo mode is ONLY honored in development builds. A production binary with
- * EXPO_PUBLIC_DEMO_MODE=true accidentally set will ignore it — that flag was
- * an early-dev convenience and must never gate auth in a release.
+ * Demo mode is ONLY honored in development builds — see lib/demo-mode.ts for
+ * the rules. A release build with EXPO_PUBLIC_DEMO_MODE=true ignores the
+ * flag, and a release build WITHOUT credentials refuses to boot rather than
+ * silently serving the seed accounts (which would accept any password).
  */
-const forceDemoMode =
-  __DEV__ && process.env.EXPO_PUBLIC_DEMO_MODE === "true";
+const demoDecision = resolveDemoMode({
+  hasCreds: hasSupabaseCreds,
+  forceFlag: process.env.EXPO_PUBLIC_DEMO_MODE === "true",
+  isDev: __DEV__,
+});
 
-export const isSupabaseConfigured = hasSupabaseCreds && !forceDemoMode;
-export const isDemoMode = !isSupabaseConfigured;
+if (demoDecision.reason === "release-missing-creds") {
+  // Only reachable when eas.json `build.<profile>.env` is wrong. Crashing at
+  // startup is the point: this must be caught on the first install, never in
+  // a store review.
+  throw new Error(
+    "[Memika] EXPO_PUBLIC_SUPABASE_URL / EXPO_PUBLIC_SUPABASE_ANON_KEY are missing " +
+      "in a release build. Set them in eas.json under build.<profile>.env.",
+  );
+}
+
+export const isDemoMode = demoDecision.demo;
+export const isSupabaseConfigured = !demoDecision.demo;
 
 if (__DEV__) {
-  if (!hasSupabaseCreds) {
+  if (demoDecision.reason === "no-creds") {
     console.warn("[Memika] Supabase env vars missing — running in offline demo mode.");
-  } else if (forceDemoMode) {
+  } else if (demoDecision.reason === "forced") {
     console.warn("[Memika] EXPO_PUBLIC_DEMO_MODE=true — Supabase creds present but bypassed.");
   } else {
     console.log("[Memika] Supabase real auth enabled.");
