@@ -6,7 +6,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { router } from "expo-router";
+import { Redirect, router } from "expo-router";
 import {
   ChevronLeft,
   Sparkles,
@@ -20,6 +20,7 @@ import { Tappable } from "@/components/Tappable";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { GhostButton } from "@/components/GhostButton";
 import { useAuthStore } from "@/lib/auth-store";
+import { PREMIUM_ENABLED } from "@/lib/constants";
 import { colors, FONT } from "@/theme/tokens";
 
 const CHECKOUT_URL = "https://memika.app/subscribe";
@@ -50,6 +51,10 @@ const BENEFITS = [
 export default function SubscribeScreen() {
   const userEmail = useAuthStore((s) => s.user?.email ?? "");
   const [opening, setOpening] = useState(false);
+
+  // Kill-switch: a deep link to memika://subscribe must not surface the
+  // external checkout while the paywall is disabled (Apple 3.1.1).
+  if (!PREMIUM_ENABLED) return <Redirect href="/(app)/settings" />;
 
   const openCheckout = async () => {
     setOpening(true);

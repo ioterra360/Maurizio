@@ -39,3 +39,11 @@ export const TIME_BUDGETS = [
 ] as const;
 
 export const DAILY_INPUT_CAP_DEFAULT = 20;
+
+/**
+ * Paywall kill-switch. The "Memika Premium" row in Settings and the
+ * /subscribe route stay hidden until the RevenueCat in-app-purchase paywall
+ * replaces the old external-checkout screen — a store build that links out to
+ * a web checkout is rejected under Apple 3.1.1 / Play Payments policy.
+ */
+export const PREMIUM_ENABLED = false;

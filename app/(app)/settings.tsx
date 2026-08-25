@@ -15,6 +15,7 @@ import { Tappable } from "@/components/Tappable";
 import { useAuthStore } from "@/lib/auth-store";
 import { useUIStore } from "@/lib/ui-store";
 import { fetchProfile, updateProfile } from "@/lib/api";
+import { PREMIUM_ENABLED } from "@/lib/constants";
 import type { Profile } from "@/lib/mappers";
 import { tap, error as errorFeedback } from "@/lib/feedback";
 import { FONT, colors, radii } from "@/theme/tokens";
@@ -184,18 +185,23 @@ export default function SettingsScreen() {
           />
         </View>
 
-        {/* Premium */}
-        <View style={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 8 }}>
-          <SectionLabel>Abbonamento</SectionLabel>
-        </View>
-        <View style={{ paddingHorizontal: 16, gap: 10 }}>
-          <SettingsRow
-            label="Memika Premium"
-            hint="Sblocca ricordi illimitati e insight personalizzati."
-            value="Scopri"
-            onPress={() => router.push("/(app)/subscribe" as never)}
-          />
-        </View>
+        {/* Premium — hidden until the RevenueCat paywall replaces the old
+            external-checkout screen (see PREMIUM_ENABLED). */}
+        {PREMIUM_ENABLED && (
+          <>
+            <View style={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 8 }}>
+              <SectionLabel>Abbonamento</SectionLabel>
+            </View>
+            <View style={{ paddingHorizontal: 16, gap: 10 }}>
+              <SettingsRow
+                label="Memika Premium"
+                hint="Sblocca ricordi illimitati e insight personalizzati."
+                value="Scopri"
+                onPress={() => router.push("/(app)/subscribe" as never)}
+              />
+            </View>
+          </>
+        )}
 
         {/* About */}
         <View style={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 8 }}>
