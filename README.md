@@ -5,8 +5,10 @@
 Memika helps you keep what you've already learned alive, in three rhythms:
 **Scan → Reinforcement → Focus**. A few minutes a day. No streaks. No noise.
 
-> **Naming note.** "Memika" is a working codename. The final consumer-facing
-> name is not yet chosen. See [`docs/PRODUCT.md`](docs/PRODUCT.md).
+> **Publisher.** Memika is published by Maurizio Cocco (ditta individuale,
+> Tresnuraghes, Italy — support: memikaapp@gmail.com) on Apple Developer
+> (Individual) and Google Play (Personal) accounts opened 2026-08-25. Angelo
+> Casula / Tailor App Studio builds it. See [`docs/PRODUCT.md`](docs/PRODUCT.md).
 
 ## Stack
 
@@ -19,10 +21,10 @@ Memika helps you keep what you've already learned alive, in three rhythms:
 | Animations | Reanimated 4 + Moti |
 | Icons | lucide-react-native |
 | Fonts | Inter (400/500/600/700) via `@expo-google-fonts/inter` |
-| Auth & DB | Supabase — Auth + Postgres + Storage + Edge Functions |
-| Payments | Wix Payments (web checkout, Spotify-style pattern) |
-| Push | Expo Notifications (Phase 4) |
-| Monitoring | Sentry (Phase 4) |
+| Auth & DB | Supabase — Auth + Postgres (EU, Frankfurt); Storage / Edge Functions not used yet |
+| Payments | RevenueCat in-app subscriptions (not built yet; `PREMIUM_ENABLED=false`) — freemium: one folder free, Premium = unlimited folders |
+| Push | Expo Notifications (local reminders, not installed yet) |
+| Monitoring | Sentry (`@sentry/react-native` ~7.2, wired; DSN / org placeholders to fill — see `docs/DEPLOY.md`) |
 
 ## Getting started
 
@@ -56,7 +58,7 @@ Open the QR code with **Expo Go** on iOS or Android.
 - [`docs/DESIGN-SYSTEM.md`](docs/DESIGN-SYSTEM.md) — colors, type, components
 - [`docs/ROUTING.md`](docs/ROUTING.md) — Expo Router file map
 - [`docs/SRS.md`](docs/SRS.md) — the spaced-repetition algorithm
-- [`docs/PAYMENTS.md`](docs/PAYMENTS.md) — Wix Payments flow, Spotify pattern
+- [`docs/PAYMENTS.md`](docs/PAYMENTS.md) — RevenueCat IAP model, freemium rules, enforcement plan
 - [`docs/ROADMAP.md`](docs/ROADMAP.md) — phase-by-phase scope and acceptance
 - [`docs/CONTRIBUTING.md`](docs/CONTRIBUTING.md) — branches, commits, code style
 - [`docs/DEPLOY.md`](docs/DEPLOY.md) — EAS Build, TestFlight, Play Internal
@@ -68,13 +70,16 @@ Open the QR code with **Expo Go** on iOS or Android.
 app/                       Expo Router routes (file-based)
   _layout.tsx              Root: font loading + auth hydrate + splash gate
   index.tsx                Smart redirect (login / today / admin home)
-  (auth)/login.tsx         Sign-in screen
+  (auth)/                  login, signup, forgot-password, reset-password, onboarding
+  choose-topic.tsx         One-folder topic pick after onboarding (freemium)
+  auth-callback.tsx        Landing for signup-confirmation deep links
   (app)/                   User shell with bottom tab bar
     today.tsx              Today's review (Phase 2)
     knowledge.tsx          Folders list (Phase 2)
     health.tsx             Memory health (Phase 2)
-    settings.tsx           Settings + sign out
-  (admin)/home.tsx         Admin panel home (Phase 4)
+    settings.tsx           Settings, legal links, sign out, delete account
+    subscribe.tsx          Old external-checkout screen, gated off (PREMIUM_ENABLED)
+  (admin)/home.tsx         Admin panel home
 
 components/                Cross-screen UI primitives
 lib/                       Supabase client, Zustand stores, infra
@@ -91,9 +96,9 @@ assets/brand/              Mascot, icon, logo
 | Phase | Scope | Status |
 |---|---|---|
 | 1 | Foundation — Expo + Supabase wiring, login with demo accounts, tab bar shell, schema | ✅ Done |
-| 2 | User screens — onboarding, Today, Knowledge, folder details, Add, Health, Settings | Next |
-| 3 | Review engine — SRS scheduler + Scan / Reinforcement / Focus + Complete | After Phase 2 |
-| 4 | Admin panel + Wix Payments + push + store builds | After Phase 3 |
+| 2 | User screens — onboarding, Today, Knowledge, folder details, Add, Health, Settings | ✅ Done |
+| 3 | Review engine — SRS scheduler + Scan / Reinforcement / Focus + Complete | ✅ Done (core loop, 2026-07-25) |
+| 4 | Store readiness — accounts, legal, account deletion, password reset, Sentry, icons, EAS | 🚧 In progress (batch 1 + 2 done 2026-08-25; left: RevenueCat, Play closed test, App Review) |
 
 See [`docs/ROADMAP.md`](docs/ROADMAP.md) for acceptance criteria per phase.
 

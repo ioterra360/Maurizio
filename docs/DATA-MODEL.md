@@ -256,7 +256,9 @@ order by completed_at desc;
 
 These are conscious omissions, not oversights:
 
-- **Subscription state** — comes in Phase 4 with Wix webhook integration.
+- **Subscription state** — a future `profiles.premium_until` column written
+  by the RevenueCat webhook Edge Function (`docs/PAYMENTS.md`). Not created
+  until the paywall is built.
 - **Push notification tokens** — Phase 4.
 - **Content templates / "marketplace" folders** — admin shipping pre-built
   decks. Deferred until after launch.

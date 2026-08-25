@@ -96,42 +96,104 @@ review layer at the right time, and recall outcomes update the schedule.
   Health screen
 - The Mascot coach on the Complete screen congratulates appropriately
 
-**Out of scope:** push notifications (Phase 4), Wix billing gating (Phase 4),
+**Out of scope:** push notifications (Phase 4), Premium gating (Phase 4),
 admin tools (Phase 4).
 
 **Estimate:** 1-2 weeks part-time.
 
 ---
 
-## Phase 4 — Admin, payments, store builds
+## Phase 4 — Store readiness, Premium, store builds (IN PROGRESS)
 
-**Goal:** the app is ready to ship to TestFlight and Google Play Internal.
+> **Status 2026-08-25.** Maurizio opened the Apple Developer (Individual) and
+> Google Play (Personal) accounts today. The app will be published
+> unadvertised and tested live, so everything App Review / Play review checks
+> must be real. Two batches landed on `main` today:
+>
+> **Batch 1** — `7ec6467` EAS project `@ioterra/memika`, remote versioning,
+> Supabase env in the `preview`/`production` profiles; `713093a` `.npmrc`
+> legacy-peer-deps for `npm ci` on EAS; `d014aff` supabase-js 2.106.2 (2.106.0
+> broke the Hermes release bundle); `lib/demo-mode.ts` (release builds never run
+> demo); migration `20260825121500` column grants on `profiles`;
+> `PREMIUM_ENABLED=false` kill-switch.
+>
+> **Batch 2** — `1a8cecb` Italian legal drafts (`docs/legal/` privacy, terms,
+> account-deletion, md + html); `a7394bd` + `862d017` real icon / adaptive icon
+> / splash / store icons; `4ef680f` `delete_own_account()` RPC (migrations
+> `20260825152550`, `20260825153500`); `886a3d7` one-folder topic pick at
+> onboarding (`/choose-topic`, templates localized, no auto-seed, no silent
+> no-op without folders); `8184f5b` Settings → Elimina account with live
+> counts; `394f4e9` password reset end-to-end via `memika://reset-password` +
+> hosted Auth URL config (site_url memika.app, allow-list, autoconfirm on,
+> min password 8); `9565d3f` legal links + consent line, honest copy, real
+> version row, admin "view as user"; `9ab550f` Sentry ~7.2 + error boundary +
+> 15 s network timeout + honest error states; this docs sync.
 
-**Scope:**
-- Mobile admin shell inside the iPhone frame (Home / Users / Moderation /
-  Insights / More + sub-pages Content / Notifications / System Health /
-  Team & Billing)
-- Wix Payments integration: webhook handler as a Supabase Edge Function,
-  `subscriptions` table, billing-gate UI when subscription is inactive
-- Push notifications via Expo Notifications: morning + evening nudges,
-  Calm Mode toggle disables badges, Weekly Digest schedules a Sunday push
-- Sentry wired with source maps via EAS Build
-- EAS Build profiles (`development`, `preview`, `production`) configured
-- iOS TestFlight + Google Play Internal Testing tracks live, with at least
-  Angelo + Maurizio as testers
+**Goal:** the app passes App Review and Play review as a real product, then
+gets Premium.
+
+**Scope (done):**
+- [x] Store developer accounts (Apple Individual, Play Personal — Maurizio)
+- [x] EAS Build profiles (`development`, `preview`, `production`) with remote
+      versioning and the Supabase env in the store profiles
+- [x] Release builds can never fall into demo mode
+- [x] Privacy / terms / account-deletion pages drafted in Italian
+      (`docs/legal/`), legal constants in `lib/constants.ts`, consent line on
+      signup, links in Settings
+- [x] In-app account deletion (Apple 5.1.1(v), Play) — RPC + Settings flow
+- [x] Password reset that actually works on a device (deep link + hosted Auth
+      URL configuration)
+- [x] One-folder freemium onboarding; the four-folder auto-seed is gone
+- [x] Sentry wired (init, error boundary, `reportError`), honest error states
+- [x] Real icon / adaptive icon / splash; store icons in `docs/store-assets/`
+- [x] Admin can open the app as a user (`viewAsUser`) for review-style testing
+- [x] Mobile admin shell (Home / Users / Moderation / Insights / More) — built
+      in the earlier admin pass, unchanged today
+
+**Scope (left):**
+- [ ] **RevenueCat Premium** — `react-native-purchases`, rewrite
+      `app/(app)/subscribe.tsx` as the IAP paywall, second-folder sheet,
+      `profiles.premium_until` + webhook Edge Function + insert trigger, then
+      flip `PREMIUM_ENABLED`. Owner prerequisites first (Paid Apps Agreement,
+      W-8BEN, banking; Play payments profile). See `docs/PAYMENTS.md`.
+- [ ] Free-tier **word quota** (number / period undecided — do not implement
+      before the owner decides)
+- [ ] **Play closed test**: Personal developer accounts must run a closed test
+      with **at least 12 testers opted-in for 14 continuous days** before
+      production access is granted — recruit testers (Angelo, Maurizio, friends)
+      and start the clock as early as the first working build.
+- [ ] **App Review** (iOS): TestFlight build, App Store Connect record (Italian
+      listing, screenshots, privacy nutrition labels: email + user content,
+      no tracking), review notes with a test account, demo of account
+      deletion and password reset.
+- [ ] Publish the legal pages on memika.app (`/privacy`, `/terms`,
+      `/account-deletion`) — Maurizio, from `docs/legal/*.html`
+- [ ] Sentry org in the EU region: real slugs in `app.json`, DSN in
+      `eas.json`, `SENTRY_AUTH_TOKEN` as an EAS secret (or
+      `SENTRY_DISABLE_AUTO_UPLOAD=true` per profile until then — a build
+      without either fails)
+- [ ] Local notifications via `expo-notifications` for the morning / evening
+      review reminders (Settings already stores the times; hints say "in un
+      prossimo aggiornamento")
+- [ ] Custom SMTP (e.g. Resend on memika.app) + Italian auth email templates,
+      then re-enable email confirmation — optional for launch, the built-in
+      sender is capped at 2 emails/hour
+- [ ] Remove the `exp://**` / `exp+memika://**` entries from the Supabase
+      redirect allow-list before public marketing
 
 **Done when:**
-- A new user can sign up in the app, get redirected to Wix Payments, complete
-  a test purchase, and come back to a usable app
+- A new user can sign up, pick a topic, add memories, review them, reset a
+  forgotten password and delete the account — all from a store build, no
+  demo data
+- A free user cannot obtain a second folder; a Premium sandbox purchase on
+  both stores unlocks it end-to-end
 - An admin (`maurizio.cocco@memika.app`) sees the admin shell on login and
-  can view the user table
-- Push notifications fire at the configured times
-- The Sentry dashboard receives a deliberate test event from a TestFlight build
-- Both stores have an internal-test build that installs cleanly
+  can open the app as a user
+- The Sentry dashboard receives a deliberate test event from a TestFlight /
+  Play build with symbolicated stack traces
+- Play closed test has 12 testers for 14 days; App Review has approved a build
 
-**Out of scope:** real production launch (Phase 5+).
-
-**Estimate:** 2 weeks part-time.
+**Out of scope:** marketing, public launch push (Phase 5+).
 
 ---
 
@@ -157,9 +219,12 @@ phases above. The product engineering work and the legal/business work run
 in parallel.
 
 What does gate phases:
-- **Phase 4 needs a Wix Payments live account** under Maurizio's P.IVA.
-  Without it, we can't end-to-end test the subscription flow.
-- **Phase 4 needs an Apple Developer account** under Maurizio (or Tailor) and
-  a Google Play developer account. ~$100 + $25 one-time.
-- **Phase 4 needs the real product name decided.** Bundle ID, app name in
-  the stores, marketing assets all depend on this. See `docs/PRODUCT.md`.
+- **Premium needs the store payment prerequisites** under Maurizio: Apple
+  Paid Apps Agreement + W-8BEN + banking, Play payments (merchant) profile,
+  then a RevenueCat project. Without them there is nothing to sandbox-test.
+- ~~Apple Developer + Google Play developer accounts~~ — opened 2026-08-25
+  (Apple Individual, Play Personal, both under Maurizio Cocco).
+- ~~The real product name~~ — **Memika**, decided 2026-05-22. Bundle ID /
+  package stay `studio.tailor.memika`.
+- **Play production access needs the 12 × 14-day closed test** — a calendar
+  gate, not an engineering one. Start it with the first working build.

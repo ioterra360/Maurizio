@@ -48,8 +48,9 @@ Reference codebase: `C:\Users\Angelo\Desktop\IoTerra\Consulenze\The Luxury Club\
   not its implementation.
 - **Deep linking**: TLC has `lib/deepLinks.js` for `theluxuryclub://`
   scheme handling. Memika will need the same for email confirmation /
-  password reset, scheme will be `memika://`. Deferred to Phase 4 (Wix
-  Payments + push + builds).
+  password reset, scheme is `memika://`. Done 2026-08-25: `lib/auth-links.ts`
+  + `auth-store.receiveAuthLink` handle `memika://reset-password` and
+  `memika://auth-callback` (implicit flow, tokens in the URL fragment).
 - **Biometric login**: TLC uses `expo-local-authentication` +
   `expo-secure-store` for stored credentials. Useful UX, deferred until
   there's something worth biometrically protecting (i.e., after Phase 3
@@ -58,8 +59,8 @@ Reference codebase: `C:\Users\Angelo\Desktop\IoTerra\Consulenze\The Luxury Club\
 ## Not adopted (and why)
 
 - **Wix CRM webhook** (`supabase/functions/wix-webhook/`). TLC syncs with
-  a Wix CRM table. Memika has a different Wix integration (Payments only,
-  not CRM) — see `docs/PAYMENTS.md`.
+  a Wix CRM table. Memika has no Wix integration at all — payments are
+  RevenueCat in-app subscriptions, see `docs/PAYMENTS.md`.
 - **Guest day** auth mode. TLC-specific feature (first of the month free
   preview). Memika won't have this.
 - **Role-specific groups** beyond `(app)` and `(admin)`. TLC has

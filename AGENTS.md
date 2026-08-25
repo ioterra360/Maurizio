@@ -7,15 +7,22 @@
 
 ## 1. What this project is
 
-**Memika** (codename — final name TBD) is a calm, editorial spaced-repetition
+**Memika** (final brand name) is a calm, editorial spaced-repetition
 mobile app. Three review rhythms in a fixed order: **Scan → Reinforcement →
 Focus**. It runs on Expo SDK 54 + React Native 0.81 + TypeScript with Supabase
 as the backend. Payments will be **in-app purchases via RevenueCat** (not built yet — decided
 2026-07-25, confirmed 2026-08-25). There is no marketing site and no web
 checkout for Memika.
 
-Owner: Maurizio Cocco (product). Developer: Angelo Casula / Tailor App Studio
+Owner and publisher: Maurizio Cocco (product; ditta individuale, Tresnuraghes;
+Apple Individual + Play Personal developer accounts; support
+memikaapp@gmail.com). Developer: Angelo Casula / Tailor App Studio
 (implementation). See `docs/PRODUCT.md` for full domain context.
+
+Freemium: a free account owns exactly ONE folder; Premium (RevenueCat, not
+built) unlocks unlimited folders. `PREMIUM_ENABLED=false` in
+`lib/constants.ts` keeps the old `app/(app)/subscribe.tsx` unreachable. See
+`docs/PAYMENTS.md`.
 
 ## 2. Read these before touching code
 
@@ -66,7 +73,18 @@ These exist because of past decisions documented elsewhere in `docs/`.
   secrets. The PAT (`SUPABASE_ACCESS_TOKEN`) lives only there.
 - **The `service_role` Supabase key has not been wired into this repo and
   must not be.** If you need server-side privileged ops, write an Edge Function
-  and call it from the client.
+  and call it from the client. Account deletion is the one privileged op that
+  exists today and it is a `security definer` RPC (`delete_own_account()`),
+  not a client-side delete.
+- **Release builds never run demo mode; store profiles carry the Supabase
+  env.** `lib/demo-mode.ts` returns `demo: false` whenever `__DEV__` is false,
+  so a `preview`/`production` build without `EXPO_PUBLIC_SUPABASE_URL` /
+  `_ANON_KEY` in `eas.json` `build.<profile>.env` fails fast instead of
+  shipping the seed accounts. Never add `EXPO_PUBLIC_DEMO_MODE=true` to a
+  store profile; never make the demo branch reachable in release.
+- **Every caught error goes through `reportError(tag, err)`**
+  (`lib/report-error.ts`); no bare `console.warn` in a `catch`. Never put
+  personal data in the `extra` payload.
 
 ## 4. Conventions you must follow
 
@@ -79,7 +97,7 @@ feat(today): add time-budget chip row
 fix(login): handle empty email submission
 chore(deps): bump expo-router to 6.0.24
 refactor(srs): extract scheduler from review-store
-docs(architecture): document Wix payments flow
+docs(payments): describe the RevenueCat entitlement column
 ```
 
 Trailer required when an AI agent authored or co-authored:
@@ -204,8 +222,13 @@ The `--legacy-peer-deps` flag is required because `lucide-react-native` over-dec
 - **Web checkout / external payment links.** Payments are in-app purchases via
   RevenueCat. A store build that links out to a web checkout is rejected under
   Apple 3.1.1 / Play Payments policy — `app/(app)/subscribe.tsx` is gated off by
-  `PREMIUM_ENABLED` until the IAP paywall replaces it. `docs/PAYMENTS.md` still
-  describes the old Wix plan and is stale until then.
+  `PREMIUM_ENABLED` until the IAP paywall replaces it. `docs/PAYMENTS.md`
+  describes the RevenueCat model and the enforcement plan.
+- **Auto-seeding folders at signup.** Replaced (2026-08-25) by the one-folder
+  pick in `/choose-topic`. Do not reintroduce `seedDefaultFolders`.
+- **Fake numbers in loading / error states.** Health, Today and the review
+  screens show honest empty/error states (`ErrorCard`, `DeckErrorScreen`).
+  No placeholder statistics, no "planning…" spinner that never resolves.
 - **Server-side auth roles set from the client.** Roles come from the
   `handle_new_user` trigger, period.
 - **Light/dark mode toggle now.** The editorial design assumes light. Dark
@@ -217,8 +240,8 @@ Don't ask if you can grep or read the docs. Do ask when:
 
 - A task seems to contradict a hard rule above.
 - You'd need to spend tokens / hit external paid APIs to proceed.
-- The final product **name** is involved (currently codename Memika — see
-  `docs/PRODUCT.md`).
+- Store listing text, pricing, or the legal pages under `docs/legal/` (they
+  are drafts for Maurizio to review and publish on memika.app).
 - You'd commit something that touches billing, payments, GDPR, or the deal
   terms with Maurizio.
 
@@ -228,6 +251,9 @@ Don't ask if you can grep or read the docs. Do ask when:
 |---|---|---|
 | GitHub | `gh ...` | Already logged in as `ioterra360`. |
 | Supabase | `npx supabase ...` | Reads `SUPABASE_ACCESS_TOKEN` from `.env`. |
-| Expo / EAS | `npm start` / `eas build --profile <p> -p <platform>` | Logged in as `ioterra`; project `@ioterra/memika` (`extra.eas.projectId` in `app.json`). Store profiles carry the Supabase env in `eas.json`. |
+| Expo / EAS | `npm start` / `eas build --profile <p> -p <platform>` | Logged in as `ioterra`; project `@ioterra/memika` (`extra.eas.projectId` in `app.json`). Store profiles carry the Supabase env in `eas.json`. Agents do not run `eas build` / `eas submit` unless the task says so. |
+| Sentry | `EXPO_PUBLIC_SENTRY_DSN` (env) + `@sentry/react-native/expo` plugin in `app.json` | No org yet — placeholders `memika` / `memika-app` on `https://de.sentry.io/`. Source-map upload needs `SENTRY_AUTH_TOKEN` as an EAS secret, or `SENTRY_DISABLE_AUTO_UPLOAD=true` in the profile env, otherwise the build fails. `docs/DEPLOY.md` § Sentry. |
+| Pre-build sanity | `npx expo export --platform android --no-bytecode` then `hermesc -emit-binary` (recipe in `docs/TROUBLESHOOTING.md` § Hermes compile check); `npx expo config --type introspect --json`; `npx expo-doctor` (18/18) | Run before any EAS build after touching deps, `metro.config.js` or `app.json` plugins. ~1 min locally vs 20 min of failed native build. |
+| Supabase Management API | `curl -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" https://api.supabase.com/v1/projects/taekvxxljtgzsjrlmumo/...` | PAT from `.env`. Read config (`/config/auth`), run SQL (`/database/query`). PATCH only what the task asks; hosted Auth values are recorded in `docs/DEPLOY.md`. |
 
 End of AGENTS.md. Skipping any of section 2 is a fail — read the linked docs.

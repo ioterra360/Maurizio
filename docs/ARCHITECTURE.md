@@ -14,10 +14,10 @@
 | Icons | `lucide-react-native` (1.75 stroke width by default) |
 | Fonts | Inter 400/500/600/700 via `@expo-google-fonts/inter` |
 | Local storage | `@react-native-async-storage/async-storage` + `expo-secure-store` |
-| Backend | Supabase — Auth + Postgres + Storage + Edge Functions |
-| Payments | Wix Payments (external — Spotify pattern, see `PAYMENTS.md`) |
-| Push | Expo Notifications (Phase 4) |
-| Monitoring | Sentry (Phase 4) |
+| Backend | Supabase — Auth + Postgres (eu-central-1). Storage and Edge Functions not used yet |
+| Payments | RevenueCat in-app subscriptions — not built, `PREMIUM_ENABLED=false` (see `PAYMENTS.md`) |
+| Push | Expo Notifications for local reminders — not installed yet |
+| Monitoring | Sentry `@sentry/react-native` ~7.2 — wired in `app/_layout.tsx` + `lib/report-error.ts`, active only in release builds with `EXPO_PUBLIC_SENTRY_DSN` |
 
 ## Project layout
 
@@ -26,14 +26,21 @@ memika-app/
 ├── app/                Expo Router routes — file-based, typed
 │   ├── _layout.tsx     Root: fonts + splash + auth hydrate gate
 │   ├── index.tsx       Smart redirect (login / today / admin)
-│   ├── (auth)/         Unauthenticated routes — `login.tsx`
-│   ├── (app)/          User-side routes — Today, Knowledge, Health, Settings
+│   ├── (auth)/         login, signup, forgot/reset-password, onboarding
+│   ├── choose-topic.tsx  One-folder topic pick (freemium) after onboarding
+│   ├── auth-callback.tsx Landing route for signup-confirmation deep links
+│   ├── (app)/          User-side routes — Today, Knowledge, Health, Settings, review flow
 │   └── (admin)/        Admin-side routes — guarded by role check
 ├── components/         Cross-screen primitives — Mascot, ScreenStub, …
 ├── features/           Feature folders (review, folders, …) — grows in Phase 2+
 ├── lib/
-│   ├── supabase.ts     Supabase JS client + demo-mode toggle
-│   └── auth-store.ts   Zustand store: user + signIn/signOut/hydrate
+│   ├── api.ts          SINGLE point of Supabase access (mappers, demo branch)
+│   ├── supabase.ts     Supabase JS client + SecureStore adapter + 15 s fetch timeout
+│   ├── demo-mode.ts    resolveDemoMode() — release builds never run demo
+│   ├── auth-store.ts   Zustand store: user + signIn/signOut/hydrate + auth deep links
+│   ├── auth-links.ts   Parser for memika://reset-password / auth-callback links
+│   ├── report-error.ts reportError(tag, err) → console.warn (dev) / Sentry (release)
+│   └── network.ts      withRequestTimeout(fetch, ms)
 ├── theme/tokens.ts     Color/radius/layer tokens (mirrors tailwind.config.js)
 ├── tailwind.config.js  Full design token set as Tailwind theme
 ├── global.css          NativeWind entry — Tailwind base/components/utilities
@@ -45,7 +52,8 @@ memika-app/
 ├── .env / .env.example Local secrets (gitignored)
 ├── app.json            Expo app config
 ├── babel.config.js     `babel-preset-expo` + nativewind/babel + reanimated/plugin
-├── metro.config.js     `withNativeWind` wrapping default Expo config
+├── metro.config.js     `withNativeWind(getSentryExpoConfig(__dirname))` — never add withSentryConfig on top
+├── eas.json            Build profiles; preview/production carry the Supabase env
 └── tsconfig.json       Strict, `@/*` path alias to repo root
 ```
 
@@ -81,10 +89,18 @@ memika-app/
                        └──────────────────┘
 ```
 
-**Demo mode**: when `EXPO_PUBLIC_DEMO_MODE=true` (or Supabase env vars are
-missing), the store accepts the two seed emails locally without hitting
-Supabase. Used for first visual test before real users exist. Flip to
-`false` once you provision real auth.
+**Demo mode** (`lib/demo-mode.ts`): in dev, `EXPO_PUBLIC_DEMO_MODE=true` (or
+missing Supabase env vars) makes the store accept the two seed emails locally
+without hitting Supabase. **Release builds never run demo mode**: missing
+credentials there are a build-configuration bug (`eas.json` `env`), the
+client fails fast instead of shipping the seed accounts.
+
+**Auth deep links**: `forgot-password` sends `redirectTo:
+memika://reset-password`; the root layout feeds initial + runtime URLs through
+`auth-store.receiveAuthLink`, which sets the session from the URL fragment
+(implicit flow) and routes to `/(auth)/reset-password` while
+`pendingPasswordReset` is true. Signup confirmation (currently OFF on the
+hosted project) would land on `app/auth-callback.tsx`. See `docs/ROUTING.md`.
 
 ## Data flow (user-facing)
 
@@ -138,17 +154,44 @@ Two triggers:
 - `on_auth_user_created` — auto-creates a profile when someone signs up
 - `*_set_updated_at` — touches `updated_at` on update
 
-One helper function:
+Two helper functions:
 - `public.is_admin()` — `SECURITY DEFINER`, used by RLS policies to avoid
   recursive evaluation on the `profiles` table.
+- `public.delete_own_account()` — `SECURITY DEFINER`, deletes the caller's
+  `auth.users` row (cascade → profile, folders, memories, sessions). Called
+  from Settings → "Elimina account" (Apple 5.1.1(v) / Play account deletion).
+
+Column privileges on `profiles` (migration `20260825121500`): `authenticated`
+can UPDATE only `name, daily_input_cap, calm_mode, weekly_digest,
+morning_review_at, evening_review_at` — no insert/delete, `role` untouchable
+from the client.
+
+## Observability
+
+- `Sentry.init` at module scope in `app/_layout.tsx`, enabled only when
+  `!__DEV__` and `EXPO_PUBLIC_SENTRY_DSN` is set; `Sentry.wrap(RootLayout)` is
+  the default export and a named `ErrorBoundary` (mascot + "Qualcosa è andato
+  storto" + Riprova) is what Expo Router renders on a route crash.
+- Every non-fatal `catch` calls `reportError("area/what", err)` from
+  `lib/report-error.ts` — the only accepted way to log a caught error.
+- `lib/network.ts` wraps the Supabase client's `fetch` with a 15 s timeout;
+  timeouts surface as `RequestTimeoutError` and map to Italian copy.
+- Error states are honest: `components/ErrorCard.tsx`, `DeckErrorScreen.tsx`,
+  `review-store.deckError` — no fake numbers, no auto-advance on a failed load.
 
 ## What lives outside this repo
 
-- **Wix site + Wix Payments** — Maurizio's account, managed via Wix dashboard.
+- **memika.app** — the publisher's site hosting `/privacy`, `/terms` and
+  `/account-deletion` (drafts in `docs/legal/`). No web checkout, no marketing
+  landing inside the app.
+- **RevenueCat** — subscription backend (to be created; `docs/PAYMENTS.md`).
 - **Supabase project dashboard** — schema lives here in `supabase/migrations/`
-  and is the source of truth; the dashboard is a viewer.
-- **Apple App Store + Google Play listings** — created in Phase 4.
-- **Sentry project** — created in Phase 4.
+  and is the source of truth; the dashboard is a viewer. Hosted Auth URL config
+  is documented in `docs/DEPLOY.md`.
+- **Apple App Store Connect + Google Play Console** — Maurizio's Individual /
+  Personal developer accounts (opened 2026-08-25); listings not yet created.
+- **Sentry org** — to be created in the EU region; `app.json` carries
+  placeholder slugs until then.
 - **`_design_drop/memika/`** — the visual mockup from Claude Design. Sits at
   the repo root, ONE LEVEL UP from this app. It is reference material, not
   source — don't import from it.
@@ -165,5 +208,8 @@ One helper function:
   translation layer.
 - **Zustand over Redux/MobX/Recoil** — small surface, no boilerplate, plays
   nicely with React 19 selectors. We're a four-store app, not Reddit.
-- **Wix Payments over Stripe** — Maurizio runs on Wix. Avoids dual-vendor
-  reconciliation and lets him manage subs from the same dashboard as the site.
+- **RevenueCat IAP over a web checkout** — an app that steers to an external
+  checkout is rejected (Apple 3.1.1 / Play Payments policy). RevenueCat wraps
+  StoreKit + Play Billing in one SDK and validates receipts server-side; the
+  15–30 % store cut is the cost of being in the store at all. Details and the
+  enforcement plan in `PAYMENTS.md`.

@@ -11,18 +11,34 @@
 Play **Personal**, both under Maurizio (sole proprietorship — Apple does not
 allow Organization for a ditta individuale).
 
-What.s working today:
+What's working today (2026-08-25):
 - `npm start` for Expo Go dev
-- Supabase CLI for DB migrations
-- `eas build` profiles (see below)
+- Supabase CLI for DB migrations (local = remote through `20260825153500`)
+- `eas build` profiles (see below); `preview`/`production` carry the Supabase
+  env, and `lib/demo-mode.ts` guarantees a release build never falls into demo
+- Hosted Supabase Auth URL configuration (password reset deep link works)
+- Sentry code-side (init, error boundary, `reportError`) — org/DSN pending
+- Real icon / adaptive icon / splash; store icons in `docs/store-assets/`
+- In-app account deletion, legal links, consent line, honest copy
 
-What.s not yet set up:
-- Apple Developer / Play Console accounts (Maurizio, in progress)
-- TestFlight / Play Internal Testing tracks
-- Sentry
+What's not yet set up:
+- First **production Android build** after `d014aff`: the earlier EAS build
+  `e6d35319` failed at `createBundleReleaseJsAndAssets` (Hermes rejected the
+  supabase-js 2.106.0 dynamic `import()`); the fix is verified locally with
+  the Hermes check in `docs/TROUBLESHOOTING.md`, the rebuild has not been
+  re-run yet
+- **iOS signing**: on an Individual Apple account only the Account Holder can
+  create credentials → the first `eas build -p ios` must run with Maurizio's
+  Apple ID (or an App Store Connect API key he generates); EAS stores the
+  certificate afterwards
+- TestFlight / Play Internal + Closed Testing tracks
+- Sentry org (EU), DSN, `SENTRY_AUTH_TOKEN` secret — until then every profile
+  must set `SENTRY_DISABLE_AUTO_UPLOAD=true` or the build fails (see § Sentry)
+- Legal pages live on memika.app (drafts in `docs/legal/`, Maurizio publishes)
+- RevenueCat (`docs/PAYMENTS.md`) — not started
 - OTA updates (`expo-updates` not installed; no `channel` keys in `eas.json` on purpose)
 
-This doc captures the planned setup so we don't reinvent it under deadline.
+This doc captures the setup so we don't reinvent it under deadline.
 
 ## Decision: EAS Build, not bare workflow
 
@@ -43,7 +59,8 @@ Two options for shipping an Expo app:
 
 ## Bundle IDs / package names
 
-Provisional (will change with the final product name — see `PRODUCT.md`):
+Final (brand name Memika, decided 2026-05-22; identifiers registered with the
+EAS project and the store records — do not rename):
 
 | Platform | Identifier |
 |---|---|
@@ -52,9 +69,9 @@ Provisional (will change with the final product name — see `PRODUCT.md`):
 
 Stored in `app.json` under `ios.bundleIdentifier` and `android.package`.
 
-## EAS profiles — planned
+## EAS profiles
 
-`eas.json` will define three profiles:
+`eas.json` defines three profiles:
 
 | Profile | Purpose | Distribution |
 |---|---|---|
@@ -264,21 +281,92 @@ removed on purpose — do not add it back, it silently loses to the plugin). San
 checks after touching any of these: `npx expo config --type introspect --json`
 must resolve without warnings and `npx expo-doctor` must stay at 18/18.
 
-## Release checklist (Phase 4)
+## Release checklist (state as of 2026-08-25)
 
-For when we actually ship to TestFlight or Play Internal:
+Order matters: the Play closed test is a 14-day calendar gate, so get an
+Android build into testers' hands first.
 
-- [ ] Final product name decided
-- [ ] Bundle ID + package name updated in `app.json`
-- [ ] App Store Connect record created (icon, screenshots, description)
-- [ ] Google Play Console listing created (same)
-- [ ] Privacy policy URL live on memika.app
-- [ ] Support email reachable
-- [ ] Apple Developer + Play Developer accounts in good standing
-- [ ] `eas build --profile preview --platform all` produces a working build
-- [ ] At least one sandbox in-app purchase via RevenueCat succeeds end-to-end
-- [ ] Push notifications deliver to a real device
-- [ ] Sentry receives a deliberate test error
-- [ ] Both Angelo and Maurizio have installed the build
+**Done**
+- [x] Product name: Memika. Bundle ID / package `studio.tailor.memika` in `app.json`
+- [x] Apple Developer (Individual) + Google Play (Personal) accounts opened —
+      Maurizio Cocco, memikaapp@gmail.com
+- [x] EAS project `@ioterra/memika`, remote versioning, Supabase env in the
+      `preview` / `production` profiles; release builds cannot run demo mode
+- [x] Hermes release-bundle blocker fixed (supabase-js 2.106.2, `d014aff`)
+- [x] Icon / adaptive icon / splash real; store icons in `docs/store-assets/`
+- [x] Legal pages drafted (`docs/legal/`), URLs in `lib/constants.ts`, consent
+      on signup, links + support mail in Settings
+- [x] In-app account deletion (`delete_own_account()` RPC → Settings)
+- [x] Password reset works from the email link (`memika://reset-password`);
+      hosted Auth `site_url` / allow-list / autoconfirm / min length applied
+- [x] Sentry code-side + error boundary + honest error states
+- [x] `npx expo-doctor` 18/18, `npx expo config --type introspect` clean
 
-After all checked, switch to `production` profile and submit to the stores.
+**Builds**
+- [ ] Add `SENTRY_DISABLE_AUTO_UPLOAD=true` to every `eas.json` profile env
+      (remove from `preview`/`production` once `SENTRY_AUTH_TOKEN` exists)
+- [ ] Run the Hermes check (`docs/TROUBLESHOOTING.md`) after any dep change
+- [ ] `eas build --profile production --platform android` succeeds (the
+      re-run after `d014aff`); `eas submit -p android` to the Internal track
+- [ ] First `eas build --profile production --platform ios` with Maurizio's
+      Apple ID (Individual account: only the Account Holder can create the
+      distribution certificate) — or an App Store Connect API key he generates
+      and Angelo stores in EAS
+- [ ] Both Angelo and Maurizio have installed each build
+
+**Google Play (Personal account gate)**
+- [ ] Play Console listing (Italian): title "Memika", short/long description,
+      screenshots, 512 px icon, feature graphic, category Education, content
+      rating questionnaire, target audience 16+
+- [ ] Data safety form: collects email + user content (memories), no ads, no
+      tracking, data encrypted in transit, deletion path in-app + URL
+      `https://memika.app/account-deletion`
+- [ ] App access: test credentials for the reviewer (a real account created
+      via signup, not a demo account — demo mode does not exist in release)
+- [ ] **Closed test with ≥ 12 opted-in testers for 14 continuous days** before
+      applying for production access (Personal accounts created after
+      Nov 2023 must pass this). Recruit testers now.
+- [ ] After approval: promote to production, unadvertised
+
+**Apple**
+- [ ] App Store Connect record: name "Memika", Italian primary language,
+      1024 px icon, screenshots (6.9" and 6.5"), privacy nutrition labels
+      (email, user content; not used for tracking), age rating, support URL,
+      privacy policy URL `https://memika.app/privacy`
+- [ ] TestFlight internal group (Angelo + Maurizio); external group optional
+- [ ] App Review notes: a test account (email + password), where account
+      deletion lives (Impostazioni → Elimina account), how password reset
+      works, no IAP yet (Premium row hidden)
+- [ ] `ITSAppUsesNonExemptEncryption=false` already in `app.json` — no
+      compliance hold
+
+**Publisher / owner (Maurizio)**
+- [ ] Publish `docs/legal/privacy.html`, `terms.html`, `account-deletion.html`
+      at `https://memika.app/privacy`, `/terms`, `/account-deletion` — the
+      account-deletion page is mandatory for the Play Data safety form
+- [ ] Support inbox memikaapp@gmail.com monitored (it is the address in the
+      legal pages, Settings and both store listings)
+- [ ] Create the Sentry org in the **EU** region + project → real slugs in
+      `app.json`, DSN in `eas.json`, `SENTRY_AUTH_TOKEN` via `eas env:create`
+- [ ] (Premium, later) Paid Apps Agreement + W-8BEN + banking on Apple; Play
+      payments profile; RevenueCat project — `docs/PAYMENTS.md`
+
+**Supabase — manual / open**
+- [ ] Nothing was blocked: migrations through `20260825153500` are pushed and
+      the Auth PATCH was applied and verified. Open decisions: custom SMTP
+      (built-in sender = 2 emails/hour, English templates) and re-enabling
+      email confirmation; remove `exp://**` + `exp+memika://**` from the
+      allow-list before public marketing
+
+**Verification on a store build (not Expo Go)**
+- [ ] Sign up → choose topic → add a memory → Scan / Reinforcement / Focus →
+      Complete, with real data
+- [ ] Forgot password → email → link opens the app → new password → login
+- [ ] Settings → Elimina account → account gone, login refused
+- [ ] Sentry receives a deliberate test error with a symbolicated stack
+- [ ] (Premium, later) a sandbox purchase on both stores unlocks a second
+      folder end-to-end
+- [ ] (Notifications, later) morning / evening local reminders fire on a
+      real device
+
+After all checked, submit the `production` build to the stores.

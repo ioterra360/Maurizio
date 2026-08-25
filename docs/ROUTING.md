@@ -196,8 +196,9 @@ Pattern:
 
 ## What we deliberately don't have
 
-- **No `(public)` group** with a marketing landing inside the app. Marketing
-  lives on Wix.
+- **No `(public)` group** with a marketing landing inside the app. The only
+  public web pages are the legal ones on memika.app (privacy / terms /
+  account-deletion); there is no web checkout.
 - **No nested tab navigators.** Memika is shallow — one tab bar, push from
   there. If you find yourself needing a sub-tab bar, refactor the screen instead.
 - **No drawer.** The mockup uses a side panel for the screen-share demo only.

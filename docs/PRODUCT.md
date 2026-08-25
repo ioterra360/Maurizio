@@ -90,9 +90,10 @@ slightly Studio-Ghibli-via-Stripe. See `docs/DESIGN-SYSTEM.md` for visual specs.
 
 Freemium + one Premium tier, sold as **in-app purchases via RevenueCat**
 (decided 2026-07-25, confirmed 2026-08-25). Pricing TBD. Not built yet —
-`app/(app)/subscribe.tsx` is gated off by `PREMIUM_ENABLED=false`. The old
-Wix/web-checkout plan in `docs/PAYMENTS.md` is stale and must not be
-implemented (Apple 3.1.1 / Play Payments policy).
+`app/(app)/subscribe.tsx` is gated off by `PREMIUM_ENABLED=false`. Free = one
+folder (picked at onboarding); Premium = unlimited folders, plus a future word
+quota for free users (not decided). No web checkout, ever (Apple 3.1.1 / Play
+Payments policy) — model and enforcement plan in `docs/PAYMENTS.md`.
 
 ## Roadmap snapshot
 
@@ -102,7 +103,9 @@ Short version:
 - **Phase 1** ✅ — Foundation (login, tab bar shell, Supabase wiring)
 - **Phase 2** — User screens (onboarding, Today, Knowledge, folders, Add, Health, Settings)
 - **Phase 3** — Review engine (SRS algorithm + Scan/Reinforcement/Focus screens)
-- **Phase 4** — Admin panel + Wix Payments + push + store builds
+- **Phase 4** — Store readiness: accounts, legal, account deletion, password
+  reset, Sentry, icons, EAS (batch 1 + 2 done 2026-08-25); left: RevenueCat
+  paywall, Play closed test, App Review
 
 ## Open questions
 
