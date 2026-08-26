@@ -110,16 +110,26 @@ EAS Build needs production values for `EXPO_PUBLIC_SUPABASE_URL` and
 Choice: option 1 for `EXPO_PUBLIC_*` (they're already public in the bundle),
 option 2 for any server-only values that get added later (none in Phase 1-3).
 
-## OTA updates (`expo-updates`)
+## OTA updates (`expo-updates` / EAS Update)
 
-Decision: **enable only for the `production` channel, after first launch**.
+**Enabled 2026-08-26** (Angelo: testers must get fixes without new builds).
+`expo-updates` is installed, `app.json` has `updates.url` (u.expo.dev/<projectId>)
+and `runtimeVersion: { policy: "fingerprint" }`; `eas.json` maps profiles to
+channels `development` / `preview` / `production`.
 
-Why:
-- Lets us push bug fixes without an app store review for JS-only changes
-- We avoid using it during Phase 4 testing to keep version control honest
-
-Configuration: `expo-updates` package + `app.json` `updates` block. Documented
-in detail when we set it up.
+- First build carrying the module: **production versionCode 9**. Builds 7/8
+  cannot receive updates.
+- Publish a JS-only fix to installed store builds:
+  `eas update --channel production --message "fix: …"` (runs `expo export`,
+  uploads, installed apps fetch on next launch and apply on the launch after —
+  ON_LOAD check, fallbackToCacheTimeout 0).
+- Native changes (new native modules such as RevenueCat or notifications,
+  `app.json` native config, SDK upgrades) change the fingerprint → they need a
+  new build; `eas update` will simply not match old builds. Never bypass this
+  with a manual runtimeVersion.
+- Roll back: `eas update:republish` (or `eas update:roll-back-to-embedded`).
+- Always run the Hermes pre-check (TROUBLESHOOTING.md) before `eas update`:
+  a bundle that hermesc rejects would crash every installed app at launch.
 
 ## Auth URL configuration (hosted Supabase)
 

@@ -10,7 +10,8 @@
       "env": {
         "EXPO_PUBLIC_DEMO_MODE": "true",
         "SENTRY_DISABLE_AUTO_UPLOAD": "true"
-      }
+      },
+      "channel": "development"
     },
     "preview": {
       "distribution": "internal",
@@ -19,7 +20,8 @@
         "EXPO_PUBLIC_SUPABASE_URL": "https://taekvxxljtgzsjrlmumo.supabase.co",
         "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_ov-GrA3U6G8HZ92mMSY8Zw_IkRzTNIG",
         "SENTRY_DISABLE_AUTO_UPLOAD": "true"
-      }
+      },
+      "channel": "preview"
     },
     "production": {
       "autoIncrement": true,
@@ -27,7 +29,8 @@
         "EXPO_PUBLIC_SUPABASE_URL": "https://taekvxxljtgzsjrlmumo.supabase.co",
         "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_ov-GrA3U6G8HZ92mMSY8Zw_IkRzTNIG",
         "SENTRY_DISABLE_AUTO_UPLOAD": "true"
-      }
+      },
+      "channel": "production"
     }
   },
   "submit": {

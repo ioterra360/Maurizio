@@ -24,6 +24,7 @@
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "permissions": [
+        "android.permission.MODIFY_AUDIO_SETTINGS",
         "android.permission.MODIFY_AUDIO_SETTINGS"
       ]
     },
@@ -68,6 +69,14 @@
         "projectId": "feda06bb-a5d4-4985-b897-eb4de1351de7"
       }
     },
-    "owner": "ioterra"
+    "owner": "ioterra",
+    "runtimeVersion": {
+      "policy": "fingerprint"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/feda06bb-a5d4-4985-b897-eb4de1351de7",
+      "fallbackToCacheTimeout": 0,
+      "checkAutomatically": "ON_LOAD"
+    }
   }
 }
