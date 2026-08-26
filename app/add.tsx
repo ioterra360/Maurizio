@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   KeyboardAvoidingView,
   Platform,
@@ -97,6 +97,11 @@ export default function AddScreen() {
   const [example, setExample] = useState("");
   const [saving, setSaving] = useState(false);
   const [savePressed, setSavePressed] = useState(false);
+  // Which required field is empty after a save attempt. Buttons are never
+  // silently disabled: tapping with a missing field explains and focuses it.
+  const [missing, setMissing] = useState<"term" | "definition" | null>(null);
+  const termRef = useRef<TextInput>(null);
+  const definitionRef = useRef<TextInput>(null);
   // Contatore giornaliero vero: inserimenti di oggi + tetto dal profilo.
   const [dailyCount, setDailyCount] = useState<number | null>(null);
   const [dailyMax, setDailyMax] = useState(DAILY_INPUT_CAP_DEFAULT);
@@ -133,10 +138,19 @@ export default function AddScreen() {
   const dailyLimitReached = (dailyCount ?? 0) >= dailyMax;
   // Limite giornaliero = avviso MORBIDO, mai blocco (docs/SRS.md): si può
   // salvare anche oltre il tetto — domani il carico sarà solo più alto.
-  const canSave = term.trim().length > 0 && definition.trim().length > 0 && !saving;
-
   const doSave = async (addAnother: boolean) => {
-    if (!canSave || !user) return;
+    if (saving || !user) return;
+    if (!term.trim()) {
+      setMissing("term");
+      termRef.current?.focus();
+      return;
+    }
+    if (!definition.trim()) {
+      setMissing("definition");
+      definitionRef.current?.focus();
+      return;
+    }
+    setMissing(null);
     const folderRow = folders.find((f) => f.kind === folder);
     if (!folderRow) {
       // Folders still loading or failed to load — say so instead of eating
@@ -167,6 +181,7 @@ export default function AddScreen() {
         setReading("");
         setDefinition("");
         setExample("");
+        termRef.current?.focus();
       } else {
         // Toast is rendered at the root layout — it survives this unmount.
         // safeBack dismisses the keyboard first to avoid an Android race that
@@ -191,7 +206,7 @@ export default function AddScreen() {
         rightSlot={
           <Pressable
             onPress={() => doSave(false)}
-            disabled={!canSave}
+            disabled={saving}
             accessibilityRole="button"
             accessibilityLabel="Salva"
             hitSlop={10}
@@ -200,7 +215,7 @@ export default function AddScreen() {
             style={{
               paddingHorizontal: 8,
               paddingVertical: 8,
-              opacity: !canSave ? 0.35 : savePressed ? 0.6 : 1,
+              opacity: saving ? 0.35 : savePressed ? 0.6 : 1,
             }}
           >
             <Text
@@ -294,8 +309,12 @@ export default function AddScreen() {
           {/* Campi del ricordo — fronte/retro espliciti (spec core-loop §3) */}
           <View style={{ paddingHorizontal: 18, gap: 10 }}>
             <TextInput
+              ref={termRef}
               value={term}
-              onChangeText={setTerm}
+              onChangeText={(t) => {
+                setTerm(t);
+                if (missing === "term") setMissing(null);
+              }}
               placeholder="Termine da ricordare"
               placeholderTextColor={colors.placeholder}
               accessibilityLabel="Termine"
@@ -303,7 +322,7 @@ export default function AddScreen() {
                 backgroundColor: colors.surface,
                 borderRadius: 14,
                 borderWidth: 1,
-                borderColor: colors.hairline,
+                borderColor: missing === "term" ? colors.danger : colors.hairline,
                 paddingHorizontal: 16,
                 paddingVertical: 14,
                 fontFamily: FONT.semibold,
@@ -312,6 +331,9 @@ export default function AddScreen() {
                 letterSpacing: -0.2,
               }}
             />
+            {missing === "term" ? (
+              <FieldHint>Scrivi il termine da ricordare.</FieldHint>
+            ) : null}
             {folder === "jp" ? (
               <TextInput
                 value={reading}
@@ -335,8 +357,12 @@ export default function AddScreen() {
               />
             ) : null}
             <TextInput
+              ref={definitionRef}
               value={definition}
-              onChangeText={setDefinition}
+              onChangeText={(t) => {
+                setDefinition(t);
+                if (missing === "definition") setMissing(null);
+              }}
               placeholder="Cosa significa?"
               placeholderTextColor={colors.placeholder}
               accessibilityLabel="Definizione"
@@ -346,7 +372,7 @@ export default function AddScreen() {
                 backgroundColor: colors.surface,
                 borderRadius: 14,
                 borderWidth: 1,
-                borderColor: colors.hairline,
+                borderColor: missing === "definition" ? colors.danger : colors.hairline,
                 padding: 16,
                 minHeight: 90,
                 fontFamily: FONT.regular,
@@ -356,6 +382,9 @@ export default function AddScreen() {
                 letterSpacing: -0.07,
               }}
             />
+            {missing === "definition" ? (
+              <FieldHint>Scrivi cosa significa: è la parte che ripasserai.</FieldHint>
+            ) : null}
             <TextInput
               value={example}
               onChangeText={setExample}
@@ -576,12 +605,29 @@ export default function AddScreen() {
             label="Salva e aggiungi un altro"
             variant="outline"
             onPress={() => doSave(true)}
-            disabled={!canSave}
+            disabled={saving}
           />
-          <PrimaryButton label="Salva e continua" onPress={() => doSave(false)} disabled={!canSave} />
+          <PrimaryButton label="Salva e continua" onPress={() => doSave(false)} loading={saving} />
         </View>
       </KeyboardAvoidingView>
 
     </SafeAreaView>
+  );
+}
+
+/** Inline reason under a required field that was left empty on save. */
+function FieldHint({ children }: { children: string }) {
+  return (
+    <Text
+      style={{
+        fontFamily: FONT.medium,
+        fontSize: 12.5,
+        color: colors.danger,
+        marginTop: -4,
+        paddingHorizontal: 4,
+      }}
+    >
+      {children}
+    </Text>
   );
 }
