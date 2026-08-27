@@ -1,5 +1,6 @@
 import { Text, View } from "react-native";
-import { FONT, colors, statusTint } from "@/theme/tokens";
+import { Tappable } from "@/components/Tappable";
+import { FONT, colors, radii, statusTint } from "@/theme/tokens";
 import type { FolderItem } from "@/lib/folder-data";
 
 const STATE_META = {
@@ -16,20 +17,32 @@ const isCjk = (s: string) =>
 
 type Props = {
   item: FolderItem;
+  /** Opens the memory detail sheet. Rows without it render as plain cards. */
+  onPress?: () => void;
 };
 
 /**
  * One memory line in the Folder detail list. State dot on the left,
- * term + back text + last-reviewed, and a state chip on the right.
+ * term (+ reading) + last-reviewed, and a state chip on the right. The
+ * meaning is deliberately NOT shown here — only inside the detail sheet
+ * (Angelo, 2026-08-27), so the list itself works as a self-test.
  */
-export function ItemRow({ item }: Props) {
+export function ItemRow({ item, onPress }: Props) {
   const meta = STATE_META[item.state];
   const cjk = isCjk(item.front);
 
   return (
-    <View
-      className="flex-row items-start rounded-input bg-surface"
+    <Tappable
+      onPress={onPress}
+      disabled={!onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`${item.front}: apri la scheda del ricordo`}
+      pressedOpacity={0.85}
       style={{
+        flexDirection: "row",
+        alignItems: "flex-start",
+        borderRadius: radii.input,
+        backgroundColor: colors.surface,
         paddingHorizontal: 14,
         paddingVertical: 13,
         gap: 12,
@@ -73,18 +86,6 @@ export function ItemRow({ item }: Props) {
           ) : null}
         </View>
         <Text
-          numberOfLines={1}
-          style={{
-            fontFamily: FONT.regular,
-            fontSize: 13,
-            color: colors.midGrey,
-            marginTop: 3,
-            lineHeight: 18,
-          }}
-        >
-          {item.back}
-        </Text>
-        <Text
           style={{
             fontFamily: FONT.regular,
             fontSize: 11.5,
@@ -116,6 +117,6 @@ export function ItemRow({ item }: Props) {
           {meta.label}
         </Text>
       </View>
-    </View>
+    </Tappable>
   );
 }

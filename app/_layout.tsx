@@ -332,6 +332,15 @@ function RootLayout() {
                 contentStyle: { backgroundColor: colors.warmWhite },
               }}
             />
+            <Stack.Screen
+              name="memory/[id]"
+              options={{
+                // Same sheet treatment as Add (see above for the Android note).
+                presentation: Platform.OS === "ios" ? "modal" : "card",
+                animation: "slide_from_bottom",
+                contentStyle: { backgroundColor: colors.warmWhite },
+              }}
+            />
           </Stack>
           <GlobalToast />
         </View>

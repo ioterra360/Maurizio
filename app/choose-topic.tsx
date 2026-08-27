@@ -17,6 +17,7 @@ import { MascotLoader } from "@/components/MascotLoader";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { SectionLabel } from "@/components/SectionLabel";
 import { Tappable } from "@/components/Tappable";
+import { TopBar } from "@/components/TopBar";
 import { countFolders, createFolder, fetchFolders } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
 import {
@@ -176,6 +177,10 @@ export default function ChooseTopicScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-canvas" edges={["top", "bottom"]}>
+      {/* Reached from Knowledge: give the user a way back (Angelo, 2026-08-27). */}
+      {addingAnother ? (
+        <TopBar onBack={() => (router.canGoBack() ? router.back() : goToday())} />
+      ) : null}
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={{ flex: 1 }}

@@ -211,3 +211,5 @@ Pattern:
   there. If you find yourself needing a sub-tab bar, refactor the screen instead.
 - **No drawer.** The mockup uses a side panel for the screen-share demo only.
   Production app uses tabs + push.
+
+- `app/memory/[id].tsx` — memory detail sheet (term, reading, meaning, example, dates, notes). Root stack, presented like `/add`. Opened by tapping a row in `/folder/[kind]` (2026-08-27).

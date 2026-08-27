@@ -137,6 +137,8 @@ export type MemoryRow = {
   reading: string | null;
   definition: string;
   example: string | null;
+  /** Free-text user notes ("appunti"); column added 2026-08-27. */
+  notes?: string | null;
   item_type: string | null;
   state: MemoryState;
   srs_interval_days: number;
@@ -156,6 +158,8 @@ export type Memory = {
   reading: string | null;
   definition: string;
   example: string | null;
+  /** Free-text user notes ("appunti"), edited in the memory detail sheet. */
+  notes?: string | null;
   itemType: string | null;
   state: MemoryState;
   srs: {
@@ -178,6 +182,7 @@ export function mapMemory(row: MemoryRow): Memory {
     reading: row.reading,
     definition: row.definition,
     example: row.example,
+    notes: row.notes ?? null,
     itemType: row.item_type,
     state: row.state,
     srs: {

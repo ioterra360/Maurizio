@@ -81,6 +81,7 @@ when it's `<= now()`, the memory is due.
 | `term` | text | Primary surface (e.g. "中心", "Tachycardia") |
 | `reading` | text | Pronunciation / romaji, optional |
 | `definition` | text | Body — what to remember |
+| `notes` | text | null | Free-text user notes ("appunti"), edited in the memory detail sheet (migration 20260827160000). |
 | `example` | text | Example sentence, optional |
 | `item_type` | text | Folder-specific subtype (word/kanji/concept/drug/…) |
 | `state` | enum `memory_state` | `active` / `fading` / `archived` |

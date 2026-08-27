@@ -272,6 +272,37 @@ export async function fetchMemoriesForFolder(folderId: string): Promise<Memory[]
 }
 
 /**
+ * One memory by id — the detail sheet (app/memory/[id].tsx). RLS limits the
+ * read to the user's own rows. Demo: ids are `demo-<kind>-<i>` (see
+ * fetchFolderDetail), so the row is rebuilt from the folder seed.
+ */
+export async function fetchMemoryById(id: string): Promise<Memory | null> {
+  if (isDemoMode) {
+    const m = /^demo-([a-z]+)-(\d+)$/.exec(id);
+    if (!m) return null;
+    const detail = await fetchFolderDetail("demo", m[1] as FolderKind);
+    return detail?.items.find((it) => it.id === id) ?? null;
+  }
+  const { data, error } = await supabase
+    .from("memories")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle<MemoryRow>();
+  if (error) throw error;
+  return data ? mapMemory(data) : null;
+}
+
+/** Save the user's notes on a memory (null clears them). Demo: no-op. */
+export async function updateMemoryNotes(id: string, notes: string | null): Promise<void> {
+  if (isDemoMode) return;
+  const { error } = await supabase
+    .from("memories")
+    .update({ notes, updated_at: new Date().toISOString() })
+    .eq("id", id);
+  if (error) throw error;
+}
+
+/**
  * Crea un ricordo con lo stato SRS iniziale ESPLICITO da initialSrsState()
  * (il default DB di srs_interval_days è 1, non 0 — non fidarsi dei default
  * per i campi che l'algoritmo legge). next_review_at = now(): entra subito

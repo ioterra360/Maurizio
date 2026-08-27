@@ -46,6 +46,7 @@ export default function FolderDetailScreen() {
   const displayItems = useMemo<FolderItem[]>(
     () =>
       items.map((m) => ({
+        id: m.id,
         front: m.term,
         reading: m.reading ?? undefined,
         back: m.definition,
@@ -298,7 +299,18 @@ export default function FolderDetailScreen() {
               Nessun ricordo in questo stato.
             </Text>
           ) : (
-            filtered.map((item, i) => <ItemRow key={item.front + i} item={item} />)
+            filtered.map((item, i) => (
+              <ItemRow
+                key={item.id ?? item.front + i}
+                item={item}
+                onPress={
+                  item.id
+                    ? () =>
+                        router.push({ pathname: "/memory/[id]", params: { id: item.id } } as never)
+                    : undefined
+                }
+              />
+            ))
           )}
         </View>
       </ScrollView>

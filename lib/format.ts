@@ -27,6 +27,19 @@ export function dateBadge(date: Date = new Date()): string {
   return `${DAY_SHORT[date.getDay()]} · ${date.getDate()} ${MONTH_SHORT[date.getMonth()]}`;
 }
 
+const MONTH_LONG = [
+  "gennaio", "febbraio", "marzo", "aprile", "maggio", "giugno",
+  "luglio", "agosto", "settembre", "ottobre", "novembre", "dicembre",
+] as const;
+
+/** "27 agosto 2026" — full date for the memory detail sheet. Invalid input → "". */
+export function longDate(iso: string | null | undefined): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  return `${d.getDate()} ${MONTH_LONG[d.getMonth()]} ${d.getFullYear()}`;
+}
+
 export function timeGreeting(date: Date = new Date()): string {
   const h = date.getHours();
   // "Buongiorno" covers the whole day in everyday Italian; "Buon pomeriggio"

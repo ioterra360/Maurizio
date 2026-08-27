@@ -16,6 +16,8 @@ import {
 } from "./constants";
 
 export type FolderItem = {
+  /** Memory id — present for real rows and demo rows built by fetchFolderDetail. */
+  id?: string;
   front: string;
   reading?: string;
   back: string;
