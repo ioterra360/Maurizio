@@ -291,6 +291,20 @@ a Metro/Sentry serializer error during export). `npx expo config --type
 introspect --json` in the same session confirms every config plugin still
 resolves (`_internal.pluginHistory` lists them).
 
+## "Runtime version mismatch" in the Configure expo-updates phase
+
+EAS compares the fingerprint runtime version computed by `eas build` on your
+machine with the one computed on the worker; any difference fails the build
+in ~3 minutes with the diff printed in the log. Seen 2026-08-27 (build
+d8525c8c): `react-native-web` had been installed locally with `--no-save`
+for the store screenshots, which made `expo config` report
+`platforms: ["ios","android","web"]` — part of the `expoConfig` fingerprint
+source. Fix: `npm prune --legacy-peer-deps`, then confirm
+`npx expo-updates fingerprint:generate --platform android` prints the same
+hash EAS reported, then rebuild. An `android` "bareNativeDir" entry with
+`hash: null` in the diff is noise (prebuild output on the worker) — it does
+not change the hash.
+
 ## Where to log when nothing works
 
 - App console: shake device in Expo Go → "Show Inspector" → console tab

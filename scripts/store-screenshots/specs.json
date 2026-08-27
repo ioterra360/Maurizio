@@ -1,0 +1,67 @@
+[
+ {
+  "slug": "oggi",
+  "file": "today.png",
+  "dark": true,
+  "accent": "#6DA8E5",
+  "kicker": "Ogni giorno",
+  "headline": "Il piano di ripasso, pronto quando lo sei",
+  "subline": "Scegli quanto tempo hai — 5, 15 o 30 minuti — e Memika prepara il resto."
+ },
+ {
+  "slug": "scan",
+  "file": "scan.png",
+  "accent": "#6DA8E5",
+  "kicker": "Scan · primo ritmo",
+  "headline": "Un controllo rapido: lo ricordi o no",
+  "subline": "I ricordi più vecchi passano in pochi secondi, senza fatica."
+ },
+ {
+  "slug": "reinforcement",
+  "file": "reinforcement.png",
+  "accent": "#9B8CE8",
+  "kicker": "Reinforcement · secondo ritmo",
+  "headline": "Un indizio prima della risposta",
+  "subline": "Richiamo guidato per ciò che hai visto negli ultimi giorni."
+ },
+ {
+  "slug": "focus",
+  "file": "focus.png",
+  "accent": "#1A2C4F",
+  "kicker": "Focus · terzo ritmo",
+  "headline": "Ripasso profondo, giudizio onesto",
+  "subline": "Dimenticato, faticoso o ricordato: decidi tu, Memika ricalcola quando rivederlo."
+ },
+ {
+  "slug": "cartelle",
+  "file": "knowledge.png",
+  "accent": "#3EC07B",
+  "kicker": "Cartelle",
+  "headline": "I tuoi ricordi, per argomento",
+  "subline": "Lingue, medicina, diritto: ogni cartella con la sua priorità."
+ },
+ {
+  "slug": "ricordi",
+  "file": "folder-es.png",
+  "accent": "#F5A89C",
+  "kicker": "Ogni ricordo",
+  "headline": "Con la sua spiegazione e il suo stato",
+  "subline": "Stabile, in dissolvenza o archiviato — sempre sotto controllo."
+ },
+ {
+  "slug": "salute",
+  "file": "health.png",
+  "accent": "#3EC07B",
+  "kicker": "Salute della memoria",
+  "headline": "Vedi cosa sta sbiadendo, prima di dimenticarlo",
+  "subline": "Una vista calma. Niente streak, niente classifiche."
+ },
+ {
+  "slug": "aggiungi",
+  "file": "add.png",
+  "accent": "#6DA8E5",
+  "kicker": "Aggiungi",
+  "headline": "Una parola, un termine, un concetto",
+  "subline": "Fronte, retro, un esempio. Il primo ripasso è già in agenda per domani."
+ }
+]

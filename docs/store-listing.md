@@ -1,7 +1,7 @@
 # Scheda Google Play — Memika
 
 > Testi e risposte pronti per compilare Play Console (2026-08-26). Stessi testi riutilizzabili per App Store Connect.
-> Asset: `docs/store-assets/play-icon-512.png`, `docs/store-assets/feature-graphic-1024x500.png`, `docs/store-assets/appstore-icon-1024.png`.
+> Asset: `docs/store-assets/play-icon-512.png`, `docs/store-assets/feature-graphic-1024x500.png`, `docs/store-assets/appstore-icon-1024.png`, screenshot in `docs/store-assets/screenshots/phone/`.
 
 ## Scheda principale (Crescita → Presenza sullo store → Scheda principale)
 
@@ -50,7 +50,7 @@ I ricordi sono tuoi: puoi esportare ed eliminare tutto in qualsiasi momento dall
 **Grafica**
 - Icona 512×512: `docs/store-assets/play-icon-512.png`
 - Grafica in evidenza 1024×500: `docs/store-assets/feature-graphic-1024x500.png`
-- Screenshot telefono: minimo 2, massimo 8, PNG/JPEG, 9:16, lato tra 320 e 3840 px. Da fare dal telefono di Maurizio con la build interna installata: Oggi · Scegli il tuo argomento · Scan · Cartelle · Salute della memoria · Impostazioni.
+- Screenshot telefono (8, PNG 1080×1920, 9:16, senza alpha — vincoli Play verificati): `docs/store-assets/screenshots/phone/01-oggi.png … 08-aggiungi.png`. Generati il 2026-08-27 dall'app vera in demo mode (Expo web + Playwright) e impaginati con titolo: Oggi (apertura navy) · Scan · Reinforcement · Focus · Cartelle · Cartella Spagnolo · Salute della memoria · Aggiungi. Pipeline e testi in `scripts/store-screenshots/` (README con la ricetta e il gotcha fingerprint). Caricarli nell'ordine dei numeri.
 - Tablet 7"/10": non richiesti (`supportsTablet: false`, nessun layout tablet).
 
 ## Contenuti dell'app (Monitoraggio norme → Contenuti dell'app)
