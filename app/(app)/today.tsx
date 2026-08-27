@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ScrollView, Text, View } from "react-native";
+import { ScrollView, Text, View, useWindowDimensions } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useFocusEffect } from "expo-router";
@@ -91,6 +91,16 @@ export default function TodayScreen() {
   // doesn't leave a stale "MON · MAY 18" header.
   const greeting = timeGreeting();
   const dateLabel = dateBadge();
+  // Hero sizing by screen width. adjustsFontSizeToFit does not shrink on
+  // Android, so a 32 pt greeting next to the mascot broke mid-word on 360 dp
+  // phones ("Buon pome / riggio"). Keep the widest greeting on one line.
+  const { width: screenW } = useWindowDimensions();
+  const hero =
+    screenW < 340
+      ? { fontSize: 24, lineHeight: 31, paddingRight: 96, mascot: 96 }
+      : screenW < 390
+        ? { fontSize: 27, lineHeight: 35, paddingRight: 100, mascot: 108 }
+        : { fontSize: 32, lineHeight: 42, paddingRight: 128, mascot: 136 };
 
   // Piano del giorno derivato: coda vera × budget scelto. In demo i conteggi
   // sono quelli dei mazzi statici; in reale restano null ("…") finché il
@@ -147,12 +157,12 @@ export default function TodayScreen() {
             numberOfLines={2}
             style={{
               fontFamily: FONT.bold,
-              fontSize: 32,
+              fontSize: hero.fontSize,
               color: colors.navy,
-              lineHeight: 42,
+              lineHeight: hero.lineHeight,
               letterSpacing: -1,
               paddingBottom: 2,
-              paddingRight: 128,
+              paddingRight: hero.paddingRight,
             }}
           >
             {greeting}
@@ -174,7 +184,7 @@ export default function TodayScreen() {
             pointerEvents="none"
             style={{ position: "absolute", top: -4, right: 4 }}
           >
-            <Mascot variant="idea" size={136} withShadow={false} />
+            <Mascot variant="idea" size={hero.mascot} withShadow={false} />
           </View>
         </View>
 

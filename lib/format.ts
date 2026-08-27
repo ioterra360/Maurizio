@@ -29,8 +29,9 @@ export function dateBadge(date: Date = new Date()): string {
 
 export function timeGreeting(date: Date = new Date()): string {
   const h = date.getHours();
-  if (h < 12) return "Buongiorno,";
-  if (h < 18) return "Buon pomeriggio,";
+  // "Buongiorno" covers the whole day in everyday Italian; "Buon pomeriggio"
+  // was also the one greeting too wide for the Today hero on 360 dp phones.
+  if (h < 18) return "Buongiorno,";
   return "Buonasera,";
 }
 
