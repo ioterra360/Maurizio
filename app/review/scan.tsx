@@ -37,8 +37,9 @@ export default function ScanScreen() {
   // (Angelo, 2026-08-27). Vedere la sola lettura non conta come reveal per
   // lo scheduler: solo il significato porta a "struggled".
   const [readingShown, setReadingShown] = useState(false);
-  // Frase d'esempio: terzo passo dello stesso bottone ("Mostra esempio"),
-  // solo per le carte che ne hanno una (Angelo, 2026-08-27).
+  // Frase d'esempio: passo intermedio dello stesso bottone ("Mostra
+  // esempio"), PRIMA del significato — è un aiuto, non la risposta
+  // (Angelo, 2026-08-27). Solo per le carte che ne hanno una.
   const [exampleShown, setExampleShown] = useState(false);
   // Flash di conferma dopo "Lo ricordo": mostra la soluzione della carta
   // appena risposta per la finestra di amend, poi prosegue.
@@ -130,33 +131,28 @@ export default function ScanScreen() {
   const hasReading = Boolean(card?.reading);
   const hasExample = Boolean(card?.example);
   // One secondary button that steps through what the card can show:
-  // reading (Japanese) → meaning → example. Disabled once nothing is left.
-  const canShowExample = revealed && hasExample && !exampleShown;
+  // reading (Japanese) → example → meaning. Disabled once the meaning is out.
   const handleShowMe = () => {
     tap();
     if (hasReading && !readingShown) {
       setReadingShown(true);
       return;
     }
-    if (!revealed) {
-      setRevealed(true);
+    if (hasExample && !exampleShown) {
+      setExampleShown(true);
       return;
     }
-    if (canShowExample) setExampleShown(true);
+    setRevealed(true);
   };
-  const showMeDisabled = revealed && !canShowExample;
+  const showMeDisabled = revealed;
   const showMeLabel =
     hasReading && !readingShown
       ? "Mostrami la lettura"
-      : !revealed
-        ? hasReading
+      : hasExample && !exampleShown
+        ? "Mostra esempio"
+        : hasReading || hasExample
           ? "Mostrami il significato"
-          : "Mostrami"
-        : hasExample
-          ? "Mostra esempio"
-          : hasReading
-            ? "Mostrami il significato"
-            : "Mostrami";
+          : "Mostrami";
 
   // Flash di conferma — sostituisce interamente la carta (regge anche
   // sull'ultima carta del mazzo, quando l'indice è già oltre la fine).
@@ -341,6 +337,23 @@ export default function ScanScreen() {
           </Text>
         ) : null}
 
+        {exampleShown && card.example ? (
+          <Text
+            style={{
+              marginTop: 22,
+              paddingHorizontal: 12,
+              fontFamily: FONT.regular,
+              fontSize: 16.5,
+              lineHeight: 24,
+              fontStyle: "italic",
+              color: colors.navySoft,
+              textAlign: "center",
+            }}
+          >
+            {card.example}
+          </Text>
+        ) : null}
+
         {revealed ? (
           <View
             style={{
@@ -363,20 +376,6 @@ export default function ScanScreen() {
             >
               {card.back}
             </Text>
-            {exampleShown && card.example ? (
-              <Text
-                style={{
-                  marginTop: 12,
-                  fontFamily: FONT.regular,
-                  fontSize: 15.5,
-                  lineHeight: 22,
-                  fontStyle: "italic",
-                  color: colors.navySoft,
-                }}
-              >
-                {card.example}
-              </Text>
-            ) : null}
           </View>
         ) : null}
       </View>
