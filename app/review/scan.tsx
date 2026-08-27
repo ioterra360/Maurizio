@@ -10,9 +10,11 @@ import { FolderPill } from "@/components/FolderPill";
 import { Tappable } from "@/components/Tappable";
 import { AMEND_WINDOW_MS, useReviewStore } from "@/lib/review-store";
 import { success, tap } from "@/lib/feedback";
+import { useT } from "@/lib/i18n";
 import { FONT, colors, layerTint, radii } from "@/theme/tokens";
 
 export default function ScanScreen() {
+  const { t } = useT();
   const ensureSession = useReviewStore((s) => s.ensureSession);
   // Never call s.cards() inside the selector: folder-scoped decks are
   // rebuilt via filter() on every call, and an ever-new snapshot sends
@@ -147,12 +149,12 @@ export default function ScanScreen() {
   const showMeDisabled = revealed;
   const showMeLabel =
     hasReading && !readingShown
-      ? "Mostrami la lettura"
+      ? t("scan.showMeReading")
       : hasExample && !exampleShown
-        ? "Mostra esempio"
+        ? t("scan.showExample")
         : hasReading || hasExample
-          ? "Mostrami il significato"
-          : "Mostrami";
+          ? t("scan.showMeMeaning")
+          : t("scan.showMe");
 
   // Flash di conferma — sostituisce interamente la carta (regge anche
   // sull'ultima carta del mazzo, quando l'indice è già oltre la fine).
@@ -169,8 +171,8 @@ export default function ScanScreen() {
           accessibilityRole="button"
           accessibilityLabel={
             flash.amended
-              ? "Segnato come difficile"
-              : "Non lo ricordavo — segna come difficile"
+              ? t("scan.markedStruggledA11y")
+              : t("scan.amendA11y")
           }
           style={{ flex: 1, paddingHorizontal: 24, alignItems: "center", paddingTop: 48 }}
         >
@@ -234,8 +236,8 @@ export default function ScanScreen() {
             }}
           >
             {flash.amended
-              ? "✓ Segnato come difficile"
-              : "Sbagliato? Tocca per segnarlo come difficile"}
+              ? t("scan.markedStruggled")
+              : t("scan.amendHint")}
           </Text>
         </Pressable>
       </SafeAreaView>
@@ -253,7 +255,7 @@ export default function ScanScreen() {
     return (
       <SafeAreaView className="flex-1 bg-warm-white" edges={["top"]}>
         <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-          <MascotLoader label="Preparo il ripasso…" />
+          <MascotLoader label={t("scan.preparingReview")} />
         </View>
       </SafeAreaView>
     );
@@ -274,12 +276,12 @@ export default function ScanScreen() {
               textAlign: "center",
             }}
           >
-            Nessun ricordo da ripassare qui.
+            {t("scan.emptyDeck")}
           </Text>
           <Tappable
             onPress={() => router.back()}
             accessibilityRole="button"
-            accessibilityLabel="Torna indietro"
+            accessibilityLabel={t("scan.goBack")}
             pressedOpacity={0.88}
             containerStyle={{ marginTop: 24 }}
             style={{
@@ -292,7 +294,7 @@ export default function ScanScreen() {
             }}
           >
             <Text style={{ fontFamily: FONT.semibold, fontSize: 16, color: colors.warmWhite }}>
-              Torna indietro
+              {t("scan.goBack")}
             </Text>
           </Tappable>
         </View>
@@ -412,7 +414,7 @@ export default function ScanScreen() {
         <Tappable
           onPress={handleRemember}
           accessibilityRole="button"
-          accessibilityLabel="Lo ricordo"
+          accessibilityLabel={t("scan.iRemember")}
           pressedOpacity={0.88}
           style={{
             alignItems: "center",
@@ -436,7 +438,7 @@ export default function ScanScreen() {
               letterSpacing: -0.16,
             }}
           >
-            Lo ricordo
+            {t("scan.iRemember")}
           </Text>
         </Tappable>
       </View>

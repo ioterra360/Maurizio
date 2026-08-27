@@ -22,17 +22,22 @@ import { useAuthStore } from "@/lib/auth-store";
 import { authErrorMessage } from "@/lib/auth-errors";
 import { AUTH_LINK_PATHS } from "@/lib/auth-links";
 import { PRIVACY_URL, TERMS_URL } from "@/lib/constants";
+import { useT, type TKey } from "@/lib/i18n";
 import { reportError } from "@/lib/report-error";
 import { colors, FONT } from "@/theme/tokens";
 
 /** True, verifiable trust signals — no offline/encryption claims the app can't keep. */
-const SIGNUP_BENEFITS = [
-  "Tre ritmi di ripasso: Scan, Reinforcement, Focus",
-  "I tuoi ricordi salvati nel cloud, sotto il tuo controllo",
-  "Nessuna pubblicità, nessun tracciamento",
-] as const;
+const SIGNUP_BENEFIT_KEYS = [
+  "signup.benefitThreeRhythms",
+  "signup.benefitCloud",
+  "signup.benefitNoAds",
+] as const satisfies readonly TKey[];
+
+/** Placeholders of `signup.consent`; each one renders as a tappable legal link. */
+const CONSENT_LINK_PATTERN = /(\{terms\}|\{privacy\})/;
 
 export default function SignupScreen() {
+  const { t } = useT();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -48,32 +53,30 @@ export default function SignupScreen() {
   const openLegal = (url: string) => {
     Linking.openURL(url).catch((err) => {
       reportError("signup/open-legal-page", err, { url });
-      setError("Impossibile aprire la pagina. Riprova più tardi.");
+      setError(t("signup.cannotOpenPage"));
     });
   };
 
   const handleSubmit = async () => {
     setError(null);
     if (!name.trim()) {
-      setError("Inserisci il tuo nome.");
+      setError(t("signup.enterName"));
       return;
     }
     if (!email.trim()) {
-      setError("Inserisci la tua email.");
+      setError(t("signup.enterEmail"));
       return;
     }
     if (password.length < 8) {
-      setError("La password deve avere almeno 8 caratteri.");
+      setError(t("signup.passwordTooShort"));
       return;
     }
     if (password !== confirm) {
-      setError("Le password non coincidono.");
+      setError(t("signup.passwordsDontMatch"));
       return;
     }
     if (isDemoMode) {
-      setError(
-        "Demo mode attivo: la registrazione reale è disabilitata. Usa gli account demo nella pagina di accesso.",
-      );
+      setError(t("signup.demoModeDisabled"));
       return;
     }
     setSubmitting(true);
@@ -104,9 +107,7 @@ export default function SignupScreen() {
         // onboarding (which creates the folder) cannot run. Be honest
         // instead of dropping the user into a broken carousel.
         useAuthStore.getState().setPendingOnboarding(false);
-        setError(
-          "Ti abbiamo inviato un'email: apri il link per confermare l'account, poi accedi.",
-        );
+        setError(t("signup.confirmEmailSent"));
         return;
       }
       router.replace("/(auth)/onboarding" as never);
@@ -138,7 +139,7 @@ export default function SignupScreen() {
             <Tappable
               onPress={() => router.back()}
               accessibilityRole="button"
-              accessibilityLabel="Indietro"
+              accessibilityLabel={t("common.back")}
               hitSlop={10}
               pressedOpacity={0.6}
               style={{
@@ -167,7 +168,7 @@ export default function SignupScreen() {
                 textAlign: "center",
               }}
             >
-              Crea il tuo account
+              {t("signup.title")}
             </Text>
             <Text
               style={{
@@ -180,23 +181,25 @@ export default function SignupScreen() {
                 paddingHorizontal: 18,
               }}
             >
-              Cominciamo a prendere cura della tua memoria, un ricordo alla volta.
+              {t("signup.subtitle")}
             </Text>
           </View>
 
-          <FieldLabel>Nome</FieldLabel>
+          <FieldLabel>{t("signup.nameLabel")}</FieldLabel>
           <AuthTextInput
             value={name}
             onChangeText={setName}
             autoCapitalize="words"
             autoComplete="name"
-            placeholder="Il tuo nome"
+            placeholder={t("signup.namePlaceholder")}
             returnKeyType="next"
             submitBehavior="submit"
             onSubmitEditing={() => emailRef.current?.focus()}
           />
 
-          <FieldLabel style={{ marginTop: 18 }}>Email</FieldLabel>
+          <FieldLabel style={{ marginTop: 18 }}>
+            {t("signup.emailLabel")}
+          </FieldLabel>
           <AuthTextInput
             ref={emailRef}
             value={email}
@@ -205,33 +208,37 @@ export default function SignupScreen() {
             autoCorrect={false}
             autoComplete="email"
             keyboardType="email-address"
-            placeholder="tu@esempio.com"
+            placeholder={t("signup.emailPlaceholder")}
             returnKeyType="next"
             submitBehavior="submit"
             onSubmitEditing={() => passwordRef.current?.focus()}
           />
 
-          <FieldLabel style={{ marginTop: 18 }}>Password</FieldLabel>
+          <FieldLabel style={{ marginTop: 18 }}>
+            {t("signup.passwordLabel")}
+          </FieldLabel>
           <AuthTextInput
             ref={passwordRef}
             value={password}
             onChangeText={setPassword}
             autoComplete="new-password"
             secureTextEntry
-            placeholder="Almeno 8 caratteri"
+            placeholder={t("signup.passwordPlaceholder")}
             returnKeyType="next"
             submitBehavior="submit"
             onSubmitEditing={() => confirmRef.current?.focus()}
           />
 
-          <FieldLabel style={{ marginTop: 18 }}>Conferma password</FieldLabel>
+          <FieldLabel style={{ marginTop: 18 }}>
+            {t("signup.confirmPasswordLabel")}
+          </FieldLabel>
           <AuthTextInput
             ref={confirmRef}
             value={confirm}
             onChangeText={setConfirm}
             autoComplete="new-password"
             secureTextEntry
-            placeholder="Ripeti la password"
+            placeholder={t("signup.confirmPasswordPlaceholder")}
             returnKeyType="done"
             onSubmitEditing={() => {
               if (!submitting) void handleSubmit();
@@ -253,7 +260,7 @@ export default function SignupScreen() {
 
           <View style={{ marginTop: 28 }}>
             <PrimaryButton
-              label="Crea account"
+              label={t("signup.createAccount")}
               loading={submitting}
               onPress={handleSubmit}
             />
@@ -271,30 +278,33 @@ export default function SignupScreen() {
               paddingHorizontal: 8,
             }}
           >
-            Creando l'account accetti i{" "}
-            <Text
-              accessibilityRole="link"
-              onPress={() => openLegal(TERMS_URL)}
-              style={{ fontFamily: FONT.semibold, color: colors.navy }}
-            >
-              Termini
-            </Text>{" "}
-            e l'
-            <Text
-              accessibilityRole="link"
-              onPress={() => openLegal(PRIVACY_URL)}
-              style={{ fontFamily: FONT.semibold, color: colors.navy }}
-            >
-              Informativa privacy
-            </Text>
-            .
+            {t("signup.consent")
+              .split(CONSENT_LINK_PATTERN)
+              .map((part, i) => {
+                if (part !== "{terms}" && part !== "{privacy}") return part;
+                const isTerms = part === "{terms}";
+                return (
+                  <Text
+                    key={i}
+                    accessibilityRole="link"
+                    onPress={() =>
+                      openLegal(isTerms ? TERMS_URL : PRIVACY_URL)
+                    }
+                    style={{ fontFamily: FONT.semibold, color: colors.navy }}
+                  >
+                    {isTerms
+                      ? t("signup.consentTerms")
+                      : t("signup.consentPrivacy")}
+                  </Text>
+                );
+              })}
           </Text>
 
           {/* Benefits row — soft trust signals under the CTA */}
           <View style={{ marginTop: 22, gap: 10 }}>
-            {SIGNUP_BENEFITS.map((b) => (
+            {SIGNUP_BENEFIT_KEYS.map((k) => (
               <View
-                key={b}
+                key={k}
                 style={{ flexDirection: "row", alignItems: "center", gap: 10 }}
               >
                 <CheckCircle2
@@ -310,7 +320,7 @@ export default function SignupScreen() {
                     color: colors.navy,
                   }}
                 >
-                  {b}
+                  {t(k)}
                 </Text>
               </View>
             ))}
@@ -328,14 +338,14 @@ export default function SignupScreen() {
             <Text
               style={{ fontFamily: FONT.regular, fontSize: 14, color: colors.midGrey }}
             >
-              Hai già un account?{" "}
+              {t("signup.alreadyHaveAccount")}{" "}
             </Text>
             <Link href={"/(auth)/login" as never} asChild>
               <Pressable hitSlop={8} accessibilityRole="link">
                 <Text
                   style={{ fontFamily: FONT.semibold, fontSize: 14, color: colors.navy }}
                 >
-                  Accedi
+                  {t("signup.signInLink")}
                 </Text>
               </Pressable>
             </Link>

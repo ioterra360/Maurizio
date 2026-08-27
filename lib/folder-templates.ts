@@ -16,6 +16,7 @@ import {
   type ItemTypeOption,
   type TemplateKind,
 } from "./constants";
+import { t } from "@/lib/i18n";
 
 /** What createFolder needs. itemTypes are client-side (keyed by kind). */
 export type NewFolderInput = {
@@ -34,10 +35,10 @@ export function isTemplateKind(kind: string | null | undefined): kind is Templat
 }
 
 export function getTemplate(kind: TemplateKind): FolderTemplate {
-  const t = FOLDER_TEMPLATES.find((x) => x.kind === kind);
+  const tpl = FOLDER_TEMPLATES.find((x) => x.kind === kind);
   // FOLDER_TEMPLATES covers every TemplateKind by construction.
-  if (!t) throw new Error(`Unknown folder template: ${kind}`);
-  return t;
+  if (!tpl) throw new Error(`Unknown folder template: ${kind}`);
+  return tpl;
 }
 
 /** Item-type chips for any folder kind (templates + custom). */
@@ -56,13 +57,13 @@ export type FolderNameValidation =
 export function validateFolderName(raw: string): FolderNameValidation {
   const name = raw.replace(/\s+/g, " ").trim();
   if (name.length === 0) {
-    return { ok: false, reason: "empty", message: "Dai un nome al tuo argomento." };
+    return { ok: false, reason: "empty", message: t("folderTemplates.nameEmpty") };
   }
   if (name.length > FOLDER_NAME_MAX_LENGTH) {
     return {
       ok: false,
       reason: "too-long",
-      message: `Massimo ${FOLDER_NAME_MAX_LENGTH} caratteri.`,
+      message: t("folderTemplates.nameTooLong", { max: FOLDER_NAME_MAX_LENGTH }),
     };
   }
   return { ok: true, name };
@@ -85,8 +86,8 @@ export function nextFolderPriority(existing: ReadonlyArray<{ priority: number }>
  */
 export function folderInputFromChoice(choice: TopicChoice): NewFolderInput {
   if (choice.type === "template") {
-    const t = getTemplate(choice.kind);
-    return { kind: t.kind, name: t.name, itemTypes: t.itemTypes };
+    const tpl = getTemplate(choice.kind);
+    return { kind: tpl.kind, name: tpl.name, itemTypes: tpl.itemTypes };
   }
   const v = validateFolderName(choice.name);
   if (!v.ok) throw new Error(v.message);

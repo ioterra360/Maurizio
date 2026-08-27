@@ -15,6 +15,7 @@ import { useReviewStore } from "@/lib/review-store";
 import { fetchDueCounts } from "@/lib/api";
 import { reportError } from "@/lib/report-error";
 import { isDemoMode } from "@/lib/supabase";
+import { useT } from "@/lib/i18n";
 import {
   DEMO_DUE_COUNTS,
   layerMinutes,
@@ -30,8 +31,9 @@ import { FONT, colors } from "@/theme/tokens";
 const BUDGET_KEY = "memika.time-budget-minutes";
 
 export default function TodayScreen() {
+  const { t, tp } = useT();
   const user = useAuthStore((s) => s.user);
-  const display = firstName(user?.name ?? "", "Benvenuto");
+  const display = firstName(user?.name ?? "", t("today.welcomeFallbackName"));
   const [budget, setBudget] = useState(15);
   const [dueCounts, setDueCounts] = useState<LayerCounts | null>(null);
   // Stato del fetch della coda: la schermata non deve mai restare su
@@ -115,12 +117,12 @@ export default function TodayScreen() {
   // resta visibile e il refetch fallito è solo riportato.
   const showPlanError = dueError && !plan;
   const minutesLabel = (l: "scan" | "reinforcement" | "focus") =>
-    plan ? `~${layerMinutes(l, plan[l])} min` : "…";
+    plan ? t("today.approxMinutes", { minutes: layerMinutes(l, plan[l]) }) : "…";
   // Recommended flow subtitle pulled out so we can localize cleanly.
   const PLAN_LABELS = {
-    scan:          `Ricordi più vecchi · ${minutesLabel("scan")}`,
-    reinforcement: `Ultimi 3–7 giorni · ${minutesLabel("reinforcement")}`,
-    focus:         `Ricordi di ieri · ${minutesLabel("focus")}`,
+    scan:          t("today.scanSubtitle", { minutes: minutesLabel("scan") }),
+    reinforcement: t("today.reinforcementSubtitle", { minutes: minutesLabel("reinforcement") }),
+    focus:         t("today.focusSubtitle", { minutes: minutesLabel("focus") }),
   } as const;
   const startSession = useReviewStore((s) => s.start);
 
@@ -195,7 +197,7 @@ export default function TodayScreen() {
 
         {/* Recommended flow */}
         <View style={{ paddingHorizontal: 28, paddingTop: 28, paddingBottom: 8 }}>
-          <SectionLabel>Flusso consigliato</SectionLabel>
+          <SectionLabel>{t("today.recommendedFlow")}</SectionLabel>
         </View>
         <View style={{ paddingHorizontal: 20, gap: 10 }}>
           <LayerCard
@@ -223,10 +225,10 @@ export default function TodayScreen() {
         <View style={{ paddingHorizontal: 20, marginTop: 28, alignItems: "center", gap: 12 }}>
           {showPlanError ? (
             <ErrorCard
-              title="Non siamo riusciti a preparare il piano di oggi."
+              title={t("today.planErrorTitle")}
               onRetry={loadDueCounts}
               retrying={dueLoading}
-              retryAccessibilityLabel="Riprova a caricare il piano di oggi"
+              retryAccessibilityLabel={t("today.planRetryAccessibility")}
               style={{ alignSelf: "stretch" }}
             />
           ) : (
@@ -241,11 +243,11 @@ export default function TodayScreen() {
                 }}
               >
                 {plan
-                  ? `Totale · ${totItems} ricordi · circa ${totMin} min`
-                  : "Sto preparando il piano di oggi…"}
+                  ? tp("today.planTotal", totItems ?? 0, { minutes: totMin ?? 0 })
+                  : t("today.preparingPlan")}
               </Text>
               <PrimaryButton
-                label={plan && totItems === 0 ? "Niente da ripassare ora" : "Inizia il ripasso di oggi"}
+                label={plan && totItems === 0 ? t("today.nothingToReview") : t("today.startReview")}
                 onPress={startReview}
                 disabled={!plan || totItems === 0}
               />

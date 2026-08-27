@@ -2,17 +2,42 @@
  * Phase 2 admin mock data. Lives here so the admin screens stay declarative.
  * Replaced by real Supabase queries in Phase 4 (along with the actual admin
  * RPC functions backed by the is_admin() helper).
+ *
+ * User-visible text fields are getters that resolve `t()` at access time, so
+ * the Settings language switch applies at once (never cache translations in
+ * module-level constants).
  */
 
+import { t } from "@/lib/i18n";
 import { colors, folderTint } from "@/theme/tokens";
 
 export type KPI = { label: string; value: string; delta: string; accent: string };
 
 export const KPIS: KPI[] = [
-  { label: "Attivi al giorno", value: "12,8K", delta: "+8,4%",  accent: colors.navy },
-  { label: "Ricordi",          value: "2,41M", delta: "+3,1%",  accent: colors.navy },
-  { label: "Ritenzione",       value: "68%",   delta: "+1,2pt", accent: colors.active },
-  { label: "MRR",              value: "€24,3K", delta: "+12%",  accent: colors.navy },
+  {
+    get label() { return t("adminData.kpiDailyActiveLabel"); },
+    get value() { return t("adminData.kpiDailyActiveValue"); },
+    get delta() { return t("adminData.kpiDailyActiveDelta"); },
+    accent: colors.navy,
+  },
+  {
+    get label() { return t("adminData.kpiMemoriesLabel"); },
+    get value() { return t("adminData.kpiMemoriesValue"); },
+    get delta() { return t("adminData.kpiMemoriesDelta"); },
+    accent: colors.navy,
+  },
+  {
+    get label() { return t("adminData.kpiRetentionLabel"); },
+    get value() { return t("adminData.kpiRetentionValue"); },
+    get delta() { return t("adminData.kpiRetentionDelta"); },
+    accent: colors.active,
+  },
+  {
+    get label() { return t("adminData.kpiMrrLabel"); },
+    get value() { return t("adminData.kpiMrrValue"); },
+    get delta() { return t("adminData.kpiMrrDelta"); },
+    accent: colors.navy,
+  },
 ];
 
 export type ActivityItem = {
@@ -24,10 +49,34 @@ export type ActivityItem = {
 };
 
 export const ACTIVITY: ActivityItem[] = [
-  { iconKind: "folder", color: colors.active, title: "Mara Bianchi", body: "è passata a Pro Annuale", time: "3m" },
-  { iconKind: "warn", color: colors.fading, title: "2 carte segnalate", body: "Medicine · auto-quarantena", time: "14m" },
-  { iconKind: "sparkle", color: colors.reinforcement, title: "Riepilogo settimanale", body: "inviato a 10.238 utenti", time: "2h" },
-  { iconKind: "check", color: colors.navy, title: "Coorte 12 maggio", body: "87% ritenzione W1", time: "1d" },
+  {
+    iconKind: "folder",
+    color: colors.active,
+    title: "Mara Bianchi",
+    get body() { return t("adminData.activityUpgradeBody"); },
+    get time() { return t("adminData.activityUpgradeTime"); },
+  },
+  {
+    iconKind: "warn",
+    color: colors.fading,
+    get title() { return t("adminData.activityFlaggedTitle"); },
+    get body() { return t("adminData.activityFlaggedBody"); },
+    get time() { return t("adminData.activityFlaggedTime"); },
+  },
+  {
+    iconKind: "sparkle",
+    color: colors.reinforcement,
+    get title() { return t("adminData.activityDigestTitle"); },
+    get body() { return t("adminData.activityDigestBody"); },
+    get time() { return t("adminData.activityDigestTime"); },
+  },
+  {
+    iconKind: "check",
+    color: colors.navy,
+    get title() { return t("adminData.activityCohortTitle"); },
+    get body() { return t("adminData.activityCohortBody"); },
+    get time() { return t("adminData.activityCohortTime"); },
+  },
 ];
 
 export type AdminUser = {
@@ -42,14 +91,14 @@ export type AdminUser = {
 };
 
 export const USERS: AdminUser[] = [
-  { id: "1", name: "Mara Bianchi",   email: "mara.bianchi@gmail.com",    plan: "Pro",     retention: 88, lastSeen: "5m",  joined: "Jan 2026", initials: "MB" },
-  { id: "2", name: "Luca Vitti",     email: "lvitti@hey.com",            plan: "Pro",     retention: 92, lastSeen: "12m", joined: "Feb 2026", initials: "LV" },
-  { id: "3", name: "Ada Rinaldi",    email: "ada.r@studenti.it",         plan: "Free",    retention: 41, lastSeen: "1h",  joined: "Apr 2026", initials: "AR" },
-  { id: "4", name: "Giulia Romano",  email: "giulia.romano@me.com",      plan: "At risk", retention: 22, lastSeen: "9d",  joined: "Nov 2025", initials: "GR" },
-  { id: "5", name: "Tommaso Greco",  email: "tom.greco@duck.com",        plan: "Pro",     retention: 76, lastSeen: "32m", joined: "Mar 2026", initials: "TG" },
-  { id: "6", name: "Sara Marini",    email: "sara@marini.studio",        plan: "Pro",     retention: 81, lastSeen: "2h",  joined: "Jan 2026", initials: "SM" },
-  { id: "7", name: "Davide Conti",   email: "dconti@uni.it",             plan: "Free",    retention: 52, lastSeen: "3d",  joined: "Mar 2026", initials: "DC" },
-  { id: "8", name: "Elena Akeyama",  email: "elena.akeyama@gmail.com",   plan: "Pro",     retention: 95, lastSeen: "ora", joined: "Feb 2026", initials: "EA" },
+  { id: "1", name: "Mara Bianchi",   email: "mara.bianchi@gmail.com",    plan: "Pro",     retention: 88, get lastSeen() { return t("adminData.userLastSeen1"); }, joined: "Jan 2026", initials: "MB" },
+  { id: "2", name: "Luca Vitti",     email: "lvitti@hey.com",            plan: "Pro",     retention: 92, get lastSeen() { return t("adminData.userLastSeen2"); }, joined: "Feb 2026", initials: "LV" },
+  { id: "3", name: "Ada Rinaldi",    email: "ada.r@studenti.it",         plan: "Free",    retention: 41, get lastSeen() { return t("adminData.userLastSeen3"); }, joined: "Apr 2026", initials: "AR" },
+  { id: "4", name: "Giulia Romano",  email: "giulia.romano@me.com",      plan: "At risk", retention: 22, get lastSeen() { return t("adminData.userLastSeen4"); }, joined: "Nov 2025", initials: "GR" },
+  { id: "5", name: "Tommaso Greco",  email: "tom.greco@duck.com",        plan: "Pro",     retention: 76, get lastSeen() { return t("adminData.userLastSeen5"); }, joined: "Mar 2026", initials: "TG" },
+  { id: "6", name: "Sara Marini",    email: "sara@marini.studio",        plan: "Pro",     retention: 81, get lastSeen() { return t("adminData.userLastSeen6"); }, joined: "Jan 2026", initials: "SM" },
+  { id: "7", name: "Davide Conti",   email: "dconti@uni.it",             plan: "Free",    retention: 52, get lastSeen() { return t("adminData.userLastSeen7"); }, joined: "Mar 2026", initials: "DC" },
+  { id: "8", name: "Elena Akeyama",  email: "elena.akeyama@gmail.com",   plan: "Pro",     retention: 95, get lastSeen() { return t("adminData.userLastSeen8"); }, joined: "Feb 2026", initials: "EA" },
 ];
 
 export type FlagSeverity = "low" | "med" | "high";
@@ -66,11 +115,56 @@ export type FlagItem = {
 };
 
 export const FLAGS: FlagItem[] = [
-  { id: "f1", severity: "high", reason: "Possibile copia da fonte esterna",     user: "Mara Bianchi",  folder: "Medicine", source: "auto", ageHours: 4, preview: "Parafrasi da Wikipedia, sovrapposizione >90%" },
-  { id: "f2", severity: "high", reason: "Identificatore personale nella carta", user: "Luca Vitti",    folder: "Japanese", source: "user", ageHours: 6, preview: "Numero di telefono rilevato" },
-  { id: "f3", severity: "high", reason: "Pattern di incitamento all'odio",      user: "Anonimo",       folder: "Law",      source: "auto", ageHours: 9, preview: "Insulto nel corpo della definizione" },
-  { id: "f4", severity: "med",  reason: "Dosaggio medico obsoleto",             user: "Sara Marini",   folder: "Medicine", source: "user", ageHours: 14, preview: "Schema antibiotico da linee guida pre-2020" },
-  { id: "f5", severity: "low",  reason: "Corpo della carta vuoto",              user: "Tommaso Greco", folder: "Spanish",  source: "auto", ageHours: 22, preview: "Fronte compilato, retro vuoto" },
+  {
+    id: "f1",
+    severity: "high",
+    get reason() { return t("adminData.flagReasonExternalCopy"); },
+    user: "Mara Bianchi",
+    get folder() { return t("adminData.folderMedicine"); },
+    source: "auto",
+    ageHours: 4,
+    get preview() { return t("adminData.flagPreviewExternalCopy"); },
+  },
+  {
+    id: "f2",
+    severity: "high",
+    get reason() { return t("adminData.flagReasonPersonalIdentifier"); },
+    user: "Luca Vitti",
+    get folder() { return t("adminData.folderJapanese"); },
+    source: "user",
+    ageHours: 6,
+    get preview() { return t("adminData.flagPreviewPersonalIdentifier"); },
+  },
+  {
+    id: "f3",
+    severity: "high",
+    get reason() { return t("adminData.flagReasonHateSpeech"); },
+    get user() { return t("adminData.flagUserAnonymous"); },
+    get folder() { return t("adminData.folderLaw"); },
+    source: "auto",
+    ageHours: 9,
+    get preview() { return t("adminData.flagPreviewHateSpeech"); },
+  },
+  {
+    id: "f4",
+    severity: "med",
+    get reason() { return t("adminData.flagReasonOutdatedDosage"); },
+    user: "Sara Marini",
+    get folder() { return t("adminData.folderMedicine"); },
+    source: "user",
+    ageHours: 14,
+    get preview() { return t("adminData.flagPreviewOutdatedDosage"); },
+  },
+  {
+    id: "f5",
+    severity: "low",
+    get reason() { return t("adminData.flagReasonEmptyBody"); },
+    user: "Tommaso Greco",
+    get folder() { return t("adminData.folderSpanish"); },
+    source: "auto",
+    ageHours: 22,
+    get preview() { return t("adminData.flagPreviewEmptyBody"); },
+  },
 ];
 
 export type ModerationRule = {
@@ -81,11 +175,36 @@ export type ModerationRule = {
 };
 
 export const RULES: ModerationRule[] = [
-  { id: "r1", label: "Auto-quarantena PII",                  hint: "Numeri di telefono, email, codici fiscali nel testo", enabled: true },
-  { id: "r2", label: "Blocca linguaggio tossico",            hint: "Insulti, incitamento all'odio, minacce",              enabled: true },
-  { id: "r3", label: "Segnala sovrapposizioni esterne",      hint: "Corrispondenza >85% con Wikipedia / Wikiquote",       enabled: true },
-  { id: "r4", label: "Quarantena contenuti medici obsoleti", hint: "Linee guida dosaggi / diagnosi pre-2020",             enabled: false },
-  { id: "r5", label: "Deroga al limite giornaliero",         hint: "Consenti ai Pro di superare 20/giorno",               enabled: true },
+  {
+    id: "r1",
+    get label() { return t("adminData.rulePiiLabel"); },
+    get hint() { return t("adminData.rulePiiHint"); },
+    enabled: true,
+  },
+  {
+    id: "r2",
+    get label() { return t("adminData.ruleToxicLabel"); },
+    get hint() { return t("adminData.ruleToxicHint"); },
+    enabled: true,
+  },
+  {
+    id: "r3",
+    get label() { return t("adminData.ruleExternalOverlapLabel"); },
+    get hint() { return t("adminData.ruleExternalOverlapHint"); },
+    enabled: true,
+  },
+  {
+    id: "r4",
+    get label() { return t("adminData.ruleOutdatedMedicalLabel"); },
+    get hint() { return t("adminData.ruleOutdatedMedicalHint"); },
+    enabled: false,
+  },
+  {
+    id: "r5",
+    get label() { return t("adminData.ruleDailyLimitLabel"); },
+    get hint() { return t("adminData.ruleDailyLimitHint"); },
+    enabled: true,
+  },
 ];
 
 // pct is numeric so screens can localize the label (it-IT comma) while the
@@ -93,20 +212,20 @@ export const RULES: ModerationRule[] = [
 export type FunnelStep = { label: string; value: number; pct: number };
 
 export const FUNNEL: FunnelStep[] = [
-  { label: "Registrazione",       value: 14_320, pct: 100 },
-  { label: "Onboarding completato", value: 11_847, pct: 82.7 },
-  { label: "Primo ricordo",       value: 9_438,  pct: 65.9 },
-  { label: "Ritenzione giorno 7", value: 6_204,  pct: 43.3 },
-  { label: "Ritenzione giorno 30", value: 3_892, pct: 27.2 },
+  { get label() { return t("adminData.funnelSignup"); },         value: 14_320, pct: 100 },
+  { get label() { return t("adminData.funnelOnboardingDone"); }, value: 11_847, pct: 82.7 },
+  { get label() { return t("adminData.funnelFirstMemory"); },    value: 9_438,  pct: 65.9 },
+  { get label() { return t("adminData.funnelDay7Retention"); },  value: 6_204,  pct: 43.3 },
+  { get label() { return t("adminData.funnelDay30Retention"); }, value: 3_892,  pct: 27.2 },
 ];
 
 export type RecallByFolder = { folder: string; accuracy: number; color: string };
 
 export const RECALL: RecallByFolder[] = [
-  { folder: "Japanese", accuracy: 84, color: folderTint.jp },
-  { folder: "Medicine", accuracy: 78, color: folderTint.medicine },
-  { folder: "Spanish",  accuracy: 72, color: folderTint.es },
-  { folder: "Law",      accuracy: 65, color: folderTint.law },
+  { get folder() { return t("adminData.folderJapanese"); }, accuracy: 84, color: folderTint.jp },
+  { get folder() { return t("adminData.folderMedicine"); }, accuracy: 78, color: folderTint.medicine },
+  { get folder() { return t("adminData.folderSpanish"); },  accuracy: 72, color: folderTint.es },
+  { get folder() { return t("adminData.folderLaw"); },      accuracy: 65, color: folderTint.law },
 ];
 
 export type SystemService = {

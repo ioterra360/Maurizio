@@ -1,5 +1,6 @@
 import { View, type DimensionValue } from "react-native";
 import { colors } from "@/theme/tokens";
+import { useT } from "@/lib/i18n";
 
 type Props = {
   active: number;
@@ -21,10 +22,11 @@ export function RetentionBar({
   width = 96,
   height = 8,
 }: Props) {
+  const { t } = useT();
   return (
     <View
       accessibilityRole="progressbar"
-      accessibilityLabel={`Salute della memoria: ${active}% stabili, ${fading}% in dissolvenza, ${archived}% archiviati`}
+      accessibilityLabel={t("retentionBar.a11y", { active, fading, archived })}
       style={{
         width,
         height,

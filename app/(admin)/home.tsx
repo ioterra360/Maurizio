@@ -20,6 +20,7 @@ import { Mascot } from "@/components/Mascot";
 import { useAuthStore } from "@/lib/auth-store";
 import { ACTIVITY, FLAGS, KPIS, type KPI } from "@/lib/admin-data";
 import { dateBadge, firstName } from "@/lib/format";
+import { useT } from "@/lib/i18n";
 import { FONT, colors, layerTint, radii, statusTint } from "@/theme/tokens";
 
 const ICONS: Record<"folder" | "warn" | "sparkle" | "check", LucideIcon> = {
@@ -30,11 +31,16 @@ const ICONS: Record<"folder" | "warn" | "sparkle" | "check", LucideIcon> = {
 };
 
 export default function AdminHomeScreen() {
+  const { t, tp } = useT();
   const user = useAuthStore((s) => s.user);
-  const display = firstName(user?.name, "Admin");
+  const display = firstName(user?.name, t("adminHome.adminFallbackName"));
   const highCount = FLAGS.filter((f) => f.severity === "high").length;
   // Reduce with a 0 seed avoids -Infinity on empty FLAGS.
   const oldestHours = FLAGS.reduce((max, f) => Math.max(max, f.ageHours), 0);
+  // "{count} elementi in coda di moderazione": the first two words ("{count} elementi")
+  // are the bold fragment in every catalog, so split there instead of hardcoding it.
+  const queueLine = tp("adminHome.itemsInModerationQueue", FLAGS.length);
+  const queueBoldEnd = queueLine.split(" ", 2).join(" ").length;
   // Measured card width so the retention chart fills the fluid card.
   const [w, setW] = useState(0);
 
@@ -45,12 +51,12 @@ export default function AdminHomeScreen() {
         showsVerticalScrollIndicator={false}
       >
         <AdminTopBar
-          title={`Ciao, ${display}`}
-          subtitle={`Produzione · ${dateBadge()}`}
+          title={t("adminHome.greeting", { name: display })}
+          subtitle={t("adminHome.subtitle", { date: dateBadge() })}
           rightSlot={
             <Tappable
               accessibilityRole="button"
-              accessibilityLabel="Apri avvisi"
+              accessibilityLabel={t("adminHome.openAlertsA11y")}
               pressedOpacity={0.75}
               style={{
                 width: 38,
@@ -98,7 +104,7 @@ export default function AdminHomeScreen() {
           <Tappable
             onPress={() => router.push("/(admin)/moderation")}
             accessibilityRole="button"
-            accessibilityLabel="Apri la coda di moderazione"
+            accessibilityLabel={t("adminHome.openModerationQueueA11y")}
             style={{
               flexDirection: "row",
               alignItems: "center",
@@ -122,7 +128,8 @@ export default function AdminHomeScreen() {
                   letterSpacing: -0.1,
                 }}
               >
-                <Text style={{ fontFamily: FONT.bold }}>{FLAGS.length} elementi</Text> in coda di moderazione
+                <Text style={{ fontFamily: FONT.bold }}>{queueLine.slice(0, queueBoldEnd)}</Text>
+                {queueLine.slice(queueBoldEnd)}
               </Text>
               <Text
                 style={{
@@ -132,7 +139,7 @@ export default function AdminHomeScreen() {
                   marginTop: 3,
                 }}
               >
-                {`${highCount} ad alta gravità · la più vecchia ${oldestHours}h fa`}
+                {t("adminHome.moderationSummary", { highCount, hours: oldestHours })}
               </Text>
             </View>
             <ChevronRight size={18} color={colors.placeholder} strokeWidth={1.8} />
@@ -151,7 +158,7 @@ export default function AdminHomeScreen() {
             }}
           >
             <View className="flex-row items-center justify-between">
-              <SectionLabel size="lg">Ritenzione · 30g</SectionLabel>
+              <SectionLabel size="lg">{t("adminHome.retentionTitle")}</SectionLabel>
               <Text
                 style={{
                   fontFamily: FONT.regular,
@@ -160,7 +167,7 @@ export default function AdminHomeScreen() {
                   fontVariant: ["tabular-nums"],
                 }}
               >
-                sopravvivenza per layer
+                {t("adminHome.retentionSubtitle")}
               </Text>
             </View>
             <View
@@ -170,16 +177,20 @@ export default function AdminHomeScreen() {
               {w > 0 && <RetentionCurves width={w} height={90} />}
             </View>
             <View className="mt-2 flex-row justify-between" style={{ marginTop: 10 }}>
-              <CompactLegend color={colors.scan} label="Scan" val="62%" />
-              <CompactLegend color={colors.reinforcement} label="Reinforcement" val="74%" />
-              <CompactLegend color={colors.focus} label="Focus" val="91%" />
+              <CompactLegend color={colors.scan} label={t("adminHome.legendScan")} val="62%" />
+              <CompactLegend
+                color={colors.reinforcement}
+                label={t("adminHome.legendReinforcement")}
+                val="74%"
+              />
+              <CompactLegend color={colors.focus} label={t("adminHome.legendFocus")} val="91%" />
             </View>
           </View>
         </View>
 
         {/* Activity feed */}
         <View style={{ paddingHorizontal: 22, paddingTop: 22, paddingBottom: 8 }}>
-          <SectionLabel size="lg">Attività</SectionLabel>
+          <SectionLabel size="lg">{t("adminHome.activityTitle")}</SectionLabel>
         </View>
         <View style={{ paddingHorizontal: 16, gap: 10 }}>
           {ACTIVITY.map((a, i) => {

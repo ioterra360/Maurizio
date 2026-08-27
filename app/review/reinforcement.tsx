@@ -11,6 +11,7 @@ import { FolderPill } from "@/components/FolderPill";
 import { Tappable } from "@/components/Tappable";
 import { useReviewStore } from "@/lib/review-store";
 import { success, error, tap } from "@/lib/feedback";
+import { useT } from "@/lib/i18n";
 import { FONT, colors, radii, statusTint } from "@/theme/tokens";
 
 type Stage = "pre" | "hint" | "answer";
@@ -31,6 +32,7 @@ export default function ReinforcementScreen() {
   const index = useReviewStore((s) => s.index);
   const recordAndAdvance = useReviewStore((s) => s.recordAndAdvance);
   const [stage, setStage] = useState<Stage>("pre");
+  const { t } = useT();
 
   useFocusEffect(
     useCallback(() => {
@@ -63,7 +65,7 @@ export default function ReinforcementScreen() {
     return (
       <SafeAreaView className="flex-1 bg-warm-white" edges={["top"]}>
         <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-          <MascotLoader label="Preparo il ripasso…" />
+          <MascotLoader label={t("reinforcement.preparingReview")} />
         </View>
       </SafeAreaView>
     );
@@ -82,12 +84,12 @@ export default function ReinforcementScreen() {
               textAlign: "center",
             }}
           >
-            Nessun ricordo da rinforzare ora.
+            {t("reinforcement.emptyDeck")}
           </Text>
           <Tappable
             onPress={() => router.back()}
             accessibilityRole="button"
-            accessibilityLabel="Torna indietro"
+            accessibilityLabel={t("reinforcement.goBack")}
             pressedOpacity={0.88}
             containerStyle={{ marginTop: 24 }}
             style={{
@@ -100,7 +102,7 @@ export default function ReinforcementScreen() {
             }}
           >
             <Text style={{ fontFamily: FONT.semibold, fontSize: 16, color: colors.warmWhite }}>
-              Torna indietro
+              {t("reinforcement.goBack")}
             </Text>
           </Tappable>
         </View>
@@ -126,7 +128,8 @@ export default function ReinforcementScreen() {
   // a truncation). A single-sense back yields no hint at all, so the hint
   // can never leak the full answer.
   const senses = card.back.split(" · ");
-  const hint = card.hint ?? (senses.length > 1 ? `${senses[0]}…` : null);
+  const hint =
+    card.hint ?? (senses.length > 1 ? t("reinforcement.derivedHint", { sense: senses[0] }) : null);
 
   return (
     <SafeAreaView className="flex-1 bg-warm-white" edges={["top"]}>
@@ -231,7 +234,7 @@ export default function ReinforcementScreen() {
               <Tappable
                 onPress={() => reveal("hint")}
                 accessibilityRole="button"
-                accessibilityLabel="Dammi un indizio"
+                accessibilityLabel={t("reinforcement.giveMeHint")}
                 style={{
                   alignItems: "center",
                   justifyContent: "center",
@@ -243,14 +246,14 @@ export default function ReinforcementScreen() {
                 }}
               >
                 <Text style={{ fontFamily: FONT.semibold, fontSize: 17, color: colors.navy }}>
-                  Dammi un indizio
+                  {t("reinforcement.giveMeHint")}
                 </Text>
               </Tappable>
             ) : null}
             <Tappable
               onPress={() => advance("remembered")}
               accessibilityRole="button"
-              accessibilityLabel="Continua, lo ricordo"
+              accessibilityLabel={t("reinforcement.continueRememberA11y")}
               style={{
                 alignItems: "center",
                 justifyContent: "center",
@@ -262,13 +265,13 @@ export default function ReinforcementScreen() {
               }}
             >
               <Text style={{ fontFamily: FONT.semibold, fontSize: 17, color: colors.navy }}>
-                Continua
+                {t("common.continue")}
               </Text>
             </Tappable>
             <Tappable
               onPress={() => reveal("answer")}
               accessibilityRole="button"
-              accessibilityLabel="Mostra risposta"
+              accessibilityLabel={t("reinforcement.showAnswer")}
               pressedOpacity={0.88}
               style={{
                 alignItems: "center",
@@ -285,7 +288,7 @@ export default function ReinforcementScreen() {
               }}
             >
               <Text style={{ fontFamily: FONT.bold, fontSize: 19, color: colors.warmWhite, letterSpacing: -0.16 }}>
-                Mostra risposta
+                {t("reinforcement.showAnswer")}
               </Text>
             </Tappable>
           </>
@@ -295,7 +298,7 @@ export default function ReinforcementScreen() {
           <Tappable
             onPress={() => reveal("answer")}
             accessibilityRole="button"
-            accessibilityLabel="Mostra risposta"
+            accessibilityLabel={t("reinforcement.showAnswer")}
             pressedOpacity={0.88}
             style={{
               alignItems: "center",
@@ -312,7 +315,7 @@ export default function ReinforcementScreen() {
             }}
           >
             <Text style={{ fontFamily: FONT.bold, fontSize: 19, color: colors.warmWhite, letterSpacing: -0.16 }}>
-              Mostra risposta
+              {t("reinforcement.showAnswer")}
             </Text>
           </Tappable>
         ) : null}
@@ -322,7 +325,7 @@ export default function ReinforcementScreen() {
             <Tappable
               onPress={() => advance("forgot")}
               accessibilityRole="button"
-              accessibilityLabel="Da ripassare"
+              accessibilityLabel={t("reinforcement.reviewAgain")}
               style={{
                 alignItems: "center",
                 justifyContent: "center",
@@ -334,13 +337,13 @@ export default function ReinforcementScreen() {
               }}
             >
               <Text style={{ fontFamily: FONT.semibold, fontSize: 17, color: statusTint.fading.text }}>
-                Da ripassare
+                {t("reinforcement.reviewAgain")}
               </Text>
             </Tappable>
             <Tappable
               onPress={() => advance("struggled")}
               accessibilityRole="button"
-              accessibilityLabel="Continua"
+              accessibilityLabel={t("common.continue")}
               pressedOpacity={0.88}
               style={{
                 alignItems: "center",
@@ -357,7 +360,7 @@ export default function ReinforcementScreen() {
               }}
             >
               <Text style={{ fontFamily: FONT.bold, fontSize: 19, color: colors.warmWhite, letterSpacing: -0.16 }}>
-                Continua
+                {t("common.continue")}
               </Text>
             </Tappable>
           </>

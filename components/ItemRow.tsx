@@ -1,12 +1,15 @@
 import { Text, View } from "react-native";
 import { Tappable } from "@/components/Tappable";
 import { FONT, colors, radii, statusTint } from "@/theme/tokens";
+import { useT } from "@/lib/i18n";
 import type { FolderItem } from "@/lib/folder-data";
 
+// Labels are catalog KEYS, resolved with t() at render so the runtime
+// language switch applies at once.
 const STATE_META = {
-  active:   { dot: colors.active,   ...statusTint.active,   label: "Stabile" },
-  fading:   { dot: colors.fading,   ...statusTint.fading,   label: "In dissolvenza" },
-  archived: { dot: colors.archived, ...statusTint.archived, label: "Archiviato" },
+  active:   { dot: colors.active,   ...statusTint.active,   labelKey: "itemRow.stateStable" },
+  fading:   { dot: colors.fading,   ...statusTint.fading,   labelKey: "itemRow.stateFading" },
+  archived: { dot: colors.archived, ...statusTint.archived, labelKey: "itemRow.stateArchived" },
 } as const;
 
 // CJK detection: Hiragana (3040-309F), Katakana (30A0-30FF), CJK Unified
@@ -28,6 +31,7 @@ type Props = {
  * (Angelo, 2026-08-27), so the list itself works as a self-test.
  */
 export function ItemRow({ item, onPress }: Props) {
+  const { t } = useT();
   const meta = STATE_META[item.state];
   const cjk = isCjk(item.front);
 
@@ -36,7 +40,7 @@ export function ItemRow({ item, onPress }: Props) {
       onPress={onPress}
       disabled={!onPress}
       accessibilityRole="button"
-      accessibilityLabel={`${item.front}: apri la scheda del ricordo`}
+      accessibilityLabel={t("itemRow.a11yOpen", { front: item.front })}
       pressedOpacity={0.85}
       style={{
         flexDirection: "row",
@@ -94,7 +98,7 @@ export function ItemRow({ item, onPress }: Props) {
             fontVariant: ["tabular-nums"],
           }}
         >
-          Ripassato {item.reviewed}
+          {t("itemRow.reviewed", { reviewed: item.reviewed })}
         </Text>
       </View>
 
@@ -114,7 +118,7 @@ export function ItemRow({ item, onPress }: Props) {
             letterSpacing: 0.2,
           }}
         >
-          {meta.label}
+          {t(meta.labelKey)}
         </Text>
       </View>
     </Tappable>

@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { clearPersistedSession, supabase, isSupabaseConfigured } from "./supabase";
+import { t } from "@/lib/i18n";
 import { reportError } from "./report-error";
 import { decideAuthEvent } from "./auth-events";
 import {
@@ -57,7 +58,7 @@ type AuthState = {
   /**
    * Exchanges the PKCE code carried by a link for a Supabase session.
    * Implicit-flow token links are refused (see the implementation). Resolves
-   * with a user-facing Italian error message on failure, null on success.
+   * with a user-facing, localised error message on failure, null on success.
    * Drops `authLink` from the store as its first step, so it is idempotent
    * across screen remounts.
    */
@@ -124,7 +125,7 @@ function deriveName(email: string): string {
     .filter(Boolean)
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(" ");
-  return cleaned || "Memika user";
+  return cleaned || t("authStore.fallbackUserName");
 }
 
 function safeMetaName(metadata: unknown): string | null {
@@ -200,7 +201,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   applyAuthLink: async (link) => {
-    if (!isSupabaseConfigured) return "Demo mode attivo: i link email non sono disponibili.";
+    if (!isSupabaseConfigured) return t("authStore.demoLinksUnavailable");
     const action = classifyAuthLink(link);
     if (action.kind === "error") return authLinkErrorMessage(action.code);
     if (action.kind === "ignore") return authLinkErrorMessage(null);

@@ -12,8 +12,10 @@ import {
 
 import { useAuthGate } from "@/lib/auth-gate";
 import { colors } from "@/theme/tokens";
+import { useT } from "@/lib/i18n";
 
 export default function AdminLayout() {
+  const { t } = useT();
   const gate = useAuthGate("admin");
   const insets = useSafeAreaInsets();
   if (gate) return gate;
@@ -50,35 +52,35 @@ export default function AdminLayout() {
       <Tabs.Screen
         name="home"
         options={{
-          title: "Home",
+          title: t("adminTabs.home"),
           tabBarIcon: ({ color }) => <Home size={22} color={color} strokeWidth={1.75} />,
         }}
       />
       <Tabs.Screen
         name="users"
         options={{
-          title: "Utenti",
+          title: t("adminTabs.users"),
           tabBarIcon: ({ color }) => <Users size={22} color={color} strokeWidth={1.75} />,
         }}
       />
       <Tabs.Screen
         name="moderation"
         options={{
-          title: "Moderazione",
+          title: t("adminTabs.moderation"),
           tabBarIcon: ({ color }) => <ShieldAlert size={22} color={color} strokeWidth={1.75} />,
         }}
       />
       <Tabs.Screen
         name="insights"
         options={{
-          title: "Insight",
+          title: t("adminTabs.insights"),
           tabBarIcon: ({ color }) => <BarChart3 size={22} color={color} strokeWidth={1.75} />,
         }}
       />
       <Tabs.Screen
         name="more"
         options={{
-          title: "Altro",
+          title: t("adminTabs.more"),
           tabBarIcon: ({ color }) => <MoreHorizontal size={22} color={color} strokeWidth={1.75} />,
         }}
       />

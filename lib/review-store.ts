@@ -12,6 +12,7 @@ import {
 } from "./api";
 import { isDemoMode } from "./supabase";
 import { reportError } from "./report-error";
+import { t } from "@/lib/i18n";
 import { toReviewCard, type LayerCounts } from "./queue";
 import { update as scheduleUpdate } from "@/features/srs/scheduler";
 import {
@@ -43,23 +44,102 @@ export type ReviewCard = {
   srs?: SrsState;
 };
 
+/**
+ * Static demo decks (demo mode only). Text fields are getters so `card.back`,
+ * `card.folder`, … resolve in the CURRENT language at access time — the
+ * runtime language switch must apply to demo cards too, and a translated
+ * string cached in a module constant would not. Target-language content
+ * (kanji, readings, Latin, Spanish terms, Japanese example sentences) stays
+ * literal. Card objects keep their identity so current() stays referentially
+ * stable between renders.
+ */
 const SCAN_CARDS: ReviewCard[] = [
-  { id: "demo-scan-0", front: "sendero",     back: "Sentiero · percorso",                    folder: "Spagnolo",   folderKind: "es" },
-  { id: "demo-scan-1", front: "Prurito",     back: "Sensazione che induce a grattarsi",      folder: "Medicina",   folderKind: "medicine" },
-  { id: "demo-scan-2", front: "難しい", reading: "muzukashii", back: "Difficile · complicato · impegnativo", folder: "Giapponese", folderKind: "jp" },
-  { id: "demo-scan-3", front: "Caveat emptor", back: "Il compratore stia attento — il rischio è dell'acquirente", folder: "Diritto", folderKind: "law" },
+  {
+    id: "demo-scan-0",
+    front: "sendero",
+    get back() { return t("reviewStore.demoScanSenderoBack"); },
+    get folder() { return t("constants.templateEsName"); },
+    folderKind: "es",
+  },
+  {
+    id: "demo-scan-1",
+    get front() { return t("folderData.medPruritusFront"); },
+    get back() { return t("folderData.medPruritusBack"); },
+    get folder() { return t("constants.templateMedicineName"); },
+    folderKind: "medicine",
+  },
+  {
+    id: "demo-scan-2",
+    front: "難しい",
+    reading: "muzukashii",
+    get back() { return t("folderData.jpMuzukashiiBack"); },
+    get folder() { return t("constants.templateJpName"); },
+    folderKind: "jp",
+  },
+  {
+    id: "demo-scan-3",
+    front: "Caveat emptor",
+    get back() { return t("folderData.lawCaveatEmptorBack"); },
+    get folder() { return t("constants.templateLawName"); },
+    folderKind: "law",
+  },
 ];
 
 const REINF_CARDS: ReviewCard[] = [
-  { id: "demo-reinf-0", front: "amanecer", back: "Alba · aurora · il sorgere del sole",       hint: "Da 'mañana': il giorno che arriva",                folder: "Spagnolo",   folderKind: "es" },
-  { id: "demo-reinf-1", front: "Sinapsi",  back: "Giunzione tra due neuroni",                hint: "Greco: syn (insieme) + haptein (stringere)",      folder: "Medicina",   folderKind: "medicine" },
-  { id: "demo-reinf-2", front: "希望", reading: "kibō", back: "Speranza · desiderio · aspirazione", hint: "Due kanji: desiderio + speranza",           folder: "Giapponese", folderKind: "jp" },
+  {
+    id: "demo-reinf-0",
+    front: "amanecer",
+    get back() { return t("folderData.esAmanecerBack"); },
+    get hint() { return t("reviewStore.demoReinfAmanecerHint"); },
+    get folder() { return t("constants.templateEsName"); },
+    folderKind: "es",
+  },
+  {
+    id: "demo-reinf-1",
+    get front() { return t("folderData.medSynapseFront"); },
+    get back() { return t("folderData.medSynapseBack"); },
+    get hint() { return t("reviewStore.demoReinfSinapsiHint"); },
+    get folder() { return t("constants.templateMedicineName"); },
+    folderKind: "medicine",
+  },
+  {
+    id: "demo-reinf-2",
+    front: "希望",
+    reading: "kibō",
+    get back() { return t("folderData.jpKibouBack"); },
+    get hint() { return t("reviewStore.demoReinfKibouHint"); },
+    get folder() { return t("constants.templateJpName"); },
+    folderKind: "jp",
+  },
 ];
 
 const FOCUS_CARDS: ReviewCard[] = [
-  { id: "demo-focus-0", front: "中心",   reading: "chūshin",  back: "Centro · nucleo · il punto centrale",     example: "Memika は学習の中心です",                 folder: "Giapponese", folderKind: "jp" },
-  { id: "demo-focus-1", front: "完璧",   reading: "kanpeki", back: "Perfetto · impeccabile · completo",        example: "完璧な仕事です",                            folder: "Giapponese", folderKind: "jp" },
-  { id: "demo-focus-2", front: "Estoppel", back: "Preclusione: non ci si può contraddire in giudizio", example: "Il giudice ha applicato l'estoppel.",  folder: "Diritto",    folderKind: "law" },
+  {
+    id: "demo-focus-0",
+    front: "中心",
+    reading: "chūshin",
+    get back() { return t("folderData.jpChushinBack"); },
+    example: "Memika は学習の中心です",
+    get folder() { return t("constants.templateJpName"); },
+    folderKind: "jp",
+  },
+  {
+    id: "demo-focus-1",
+    front: "完璧",
+    reading: "kanpeki",
+    get back() { return t("folderData.jpKanpekiBack"); },
+    example: "完璧な仕事です",
+    get folder() { return t("constants.templateJpName"); },
+    folderKind: "jp",
+  },
+  {
+    id: "demo-focus-2",
+    front: "Estoppel",
+    get back() { return t("folderData.lawEstoppelBack"); },
+    get example() { return t("reviewStore.demoFocusEstoppelExample"); },
+    get folder() { return t("constants.templateLawName"); },
+    folderKind: "law",
+  },
 ];
 
 const DECKS: Record<LayerKey, ReviewCard[]> = {
@@ -334,7 +414,7 @@ async function loadDeckFor(
         const kind = kindById.get(m.folderId);
         return toReviewCard(
           m,
-          nameById.get(m.folderId) ?? "Memika",
+          nameById.get(m.folderId) ?? t("reviewStore.fallbackFolderName"),
           (FOLDER_KINDS as readonly string[]).includes(kind ?? "")
             ? (kind as FolderKind)
             : undefined,

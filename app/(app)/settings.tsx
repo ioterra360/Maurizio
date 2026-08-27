@@ -17,7 +17,7 @@ import { LogOut, Trash2, AlertTriangle, ExternalLink } from "lucide-react-native
 import { HeaderHero } from "@/components/HeaderHero";
 import { InitialsAvatar } from "@/components/FolderTile";
 import { SectionLabel } from "@/components/SectionLabel";
-import { useLocaleStore, useT, type LocalePreference } from "@/lib/i18n";
+import { useLocaleStore, useT, type LocalePreference, type TKey } from "@/lib/i18n";
 import { SettingsRow, SettingsToggle } from "@/components/SettingsRow";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { GhostButton } from "@/components/GhostButton";
@@ -35,7 +35,7 @@ import {
   SUPPORT_EMAIL,
   TERMS_URL,
 } from "@/lib/constants";
-import { formatAppVersion, memberSinceLabel } from "@/lib/app-version";
+import { formatAppVersion } from "@/lib/app-version";
 import {
   deletionErrorMessage,
   deletionPreviewMessage,
@@ -69,7 +69,42 @@ const APP_VERSION_LABEL = formatAppVersion({
         : null,
 });
 
-const SUPPORT_MAILTO = `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent("Supporto Memika")}`;
+/**
+ * Long-month keys indexed by `Date#getMonth()`; resolved through `tr` at
+ * render so the "with Memika since" line follows the language switch.
+ */
+const MONTH_LONG_KEYS: readonly TKey[] = [
+  "format.monthLongJanuary",
+  "format.monthLongFebruary",
+  "format.monthLongMarch",
+  "format.monthLongApril",
+  "format.monthLongMay",
+  "format.monthLongJune",
+  "format.monthLongJuly",
+  "format.monthLongAugust",
+  "format.monthLongSeptember",
+  "format.monthLongOctober",
+  "format.monthLongNovember",
+  "format.monthLongDecember",
+];
+
+/**
+ * Month key + year from a profiles.created_at ISO timestamp; null for a
+ * missing or unparsable value so the caller can hide the line instead of
+ * inventing a date. Uses the device's local time zone — an account created
+ * at 23:30 UTC on the last day of a month shows the month the user
+ * actually experienced.
+ */
+function memberSinceParts(
+  createdAt: string | null | undefined,
+): { monthKey: TKey; year: number } | null {
+  if (!createdAt) return null;
+  const date = new Date(createdAt);
+  if (Number.isNaN(date.getTime())) return null;
+  const monthKey = MONTH_LONG_KEYS[date.getMonth()];
+  if (!monthKey) return null;
+  return { monthKey, year: date.getFullYear() };
+}
 
 export default function SettingsScreen() {
   const user = useAuthStore((s) => s.user);
@@ -165,21 +200,26 @@ export default function SettingsScreen() {
     await signOut();
     setDeleting(false);
     router.replace("/(auth)/login");
-    showToast("Account eliminato");
+    showToast(tr("settings.accountDeletedToast"));
   };
 
   const openDeletionWebPage = () => openExternal(ACCOUNT_DELETION_URL);
 
   // Legal pages + support mailto. System browser / mail client; failures
   // (no mail app configured, URL blocked) surface as a toast, never a crash.
+  // The mail subject is built here, not at module level, so it follows the
+  // language switch.
+  const supportMailto = `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(
+    tr("settings.supportMailSubject"),
+  )}`;
   const openExternal = (url: string) => {
     tap();
     Linking.openURL(url).catch((err) => {
       reportError("settings/open-url", err, { url });
       showToast(
         url.startsWith("mailto:")
-          ? `Nessuna app di posta disponibile. Scrivi a ${SUPPORT_EMAIL}.`
-          : "Impossibile aprire la pagina. Riprova.",
+          ? tr("settings.noMailAppToast", { email: SUPPORT_EMAIL })
+          : tr("settings.openPageError"),
       );
     });
   };
@@ -192,10 +232,12 @@ export default function SettingsScreen() {
     router.replace("/(admin)/home");
   };
 
-  // "da agosto 2026" from profiles.created_at; null in demo mode / before
-  // the profile loads → fall back to the email, never to an invented date.
-  const memberSince = memberSinceLabel(profile?.createdAt);
-  const profileSubtitle = memberSince ? `Con Memika ${memberSince}` : (user?.email ?? "");
+  // "Con Memika da agosto 2026" from profiles.created_at; null in demo mode /
+  // before the profile loads → fall back to the email, never to an invented date.
+  const memberSince = memberSinceParts(profile?.createdAt);
+  const profileSubtitle = memberSince
+    ? tr("settings.memberSince", { month: tr(memberSince.monthKey), year: memberSince.year })
+    : (user?.email ?? "");
 
   return (
     <SafeAreaView className="flex-1 bg-warm-white" edges={["top"]}>
@@ -204,7 +246,7 @@ export default function SettingsScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={{ position: "relative" }}>
-          <HeaderHero title="Impostazioni" reservedRight={108} />
+          <HeaderHero title={tr("settings.title")} reservedRight={108} />
           <View
             pointerEvents="none"
             style={{ position: "absolute", top: 2, right: 14 }}
@@ -235,7 +277,7 @@ export default function SettingsScreen() {
                 value={name}
                 onChangeText={setName}
                 onEndEditing={handleNameEndEditing}
-                placeholder="Il tuo nome"
+                placeholder={tr("settings.namePlaceholder")}
                 placeholderTextColor={colors.placeholder}
                 style={{
                   fontFamily: FONT.semibold,
@@ -262,38 +304,38 @@ export default function SettingsScreen() {
 
         {/* Schedule */}
         <View style={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 8 }}>
-          <SectionLabel>Orari</SectionLabel>
+          <SectionLabel>{tr("settings.scheduleSection")}</SectionLabel>
         </View>
         <View style={{ paddingHorizontal: 16, gap: 10 }}>
           {/* Time values are HH:MM:SS from Postgres — show HH:MM. Rows stay
               non-interactive until real time pickers exist. */}
-          <SettingsRow label="Ripasso mattutino" value={(profile?.morningReviewAt ?? "08:00").slice(0, 5)} />
-          <SettingsRow label="Ripasso serale"    value={(profile?.eveningReviewAt ?? "21:30").slice(0, 5)} />
+          <SettingsRow label={tr("settings.morningReview")} value={(profile?.morningReviewAt ?? "08:00").slice(0, 5)} />
+          <SettingsRow label={tr("settings.eveningReview")} value={(profile?.eveningReviewAt ?? "21:30").slice(0, 5)} />
         </View>
 
         {/* Limits */}
         <View style={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 8 }}>
-          <SectionLabel>Limiti</SectionLabel>
+          <SectionLabel>{tr("settings.limitsSection")}</SectionLabel>
         </View>
         <View style={{ paddingHorizontal: 16, gap: 10 }}>
           <SettingsRow
-            label="Limite giornaliero"
-            hint="Numero massimo di nuovi ricordi da aggiungere al giorno."
+            label={tr("settings.dailyLimit")}
+            hint={tr("settings.dailyLimitHint")}
             value={profile ? String(profile.dailyInputCap) : "20"}
           />
         </View>
 
         {/* Notifications */}
         <View style={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 8 }}>
-          <SectionLabel>Notifiche</SectionLabel>
+          <SectionLabel>{tr("settings.notificationsSection")}</SectionLabel>
         </View>
         <View style={{ paddingHorizontal: 16, gap: 10 }}>
           {/* Toggles are uncontrolled — the key remounts them once the real
               profile loads so defaultOn reflects the stored value. */}
           <SettingsToggle
             key={profile ? `calm-${profile.calmMode}` : "calm"}
-            label="Modalità calma"
-            hint="Niente contatori rossi né promemoria insistenti. Le notifiche di ripasso arriveranno in un prossimo aggiornamento: la preferenza viene salvata già ora."
+            label={tr("settings.calmMode")}
+            hint={tr("settings.calmModeHint")}
             defaultOn={profile ? profile.calmMode : true}
             onChange={(v) => {
               if (!user) return;
@@ -304,8 +346,8 @@ export default function SettingsScreen() {
           />
           <SettingsToggle
             key={profile ? `digest-${profile.weeklyDigest}` : "digest"}
-            label="Riepilogo settimanale"
-            hint="Un riassunto settimanale di cosa si è consolidato e cosa sta sfumando. Non è ancora attivo: arriverà in un prossimo aggiornamento."
+            label={tr("settings.weeklyDigest")}
+            hint={tr("settings.weeklyDigestHint")}
             defaultOn={profile ? profile.weeklyDigest : false}
             onChange={(v) => {
               if (!user) return;
@@ -329,13 +371,13 @@ export default function SettingsScreen() {
         {PREMIUM_ENABLED && (
           <>
             <View style={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 8 }}>
-              <SectionLabel>Abbonamento</SectionLabel>
+              <SectionLabel>{tr("settings.subscriptionSection")}</SectionLabel>
             </View>
             <View style={{ paddingHorizontal: 16, gap: 10 }}>
               <SettingsRow
-                label="Memika Premium"
-                hint="Sblocca ricordi illimitati e insight personalizzati."
-                value="Scopri"
+                label={tr("settings.premiumLabel")}
+                hint={tr("settings.premiumHint")}
+                value={tr("settings.premiumDiscover")}
                 onPress={() => router.push("/(app)/subscribe" as never)}
               />
             </View>
@@ -344,15 +386,15 @@ export default function SettingsScreen() {
 
         {/* About */}
         <View style={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 8 }}>
-          <SectionLabel>Informazioni</SectionLabel>
+          <SectionLabel>{tr("settings.aboutSection")}</SectionLabel>
         </View>
         <View style={{ paddingHorizontal: 16, gap: 10 }}>
-          <SettingsRow label="Versione" value={APP_VERSION_LABEL} />
+          <SettingsRow label={tr("settings.version")} value={APP_VERSION_LABEL} />
           {user?.role === "admin" && viewAsUser ? (
             <SettingsRow
-              label="Torna al pannello admin"
-              hint="Stai usando l'app come utente con il tuo account admin."
-              value="Apri"
+              label={tr("settings.backToAdmin")}
+              hint={tr("settings.backToAdminHint")}
+              value={tr("settings.open")}
               onPress={backToAdmin}
             />
           ) : null}
@@ -360,24 +402,24 @@ export default function SettingsScreen() {
 
         {/* Legal + support — real pages on GitHub Pages (ioterra360.github.io/memika-legal), mailto for support */}
         <View style={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 8 }}>
-          <SectionLabel>Privacy e termini</SectionLabel>
+          <SectionLabel>{tr("settings.legalSection")}</SectionLabel>
         </View>
         <View style={{ paddingHorizontal: 16, gap: 10 }}>
           <SettingsRow
-            label="Informativa privacy"
-            value="Apri"
+            label={tr("settings.privacyPolicy")}
+            value={tr("settings.open")}
             onPress={() => openExternal(PRIVACY_URL)}
           />
           <SettingsRow
-            label="Termini di servizio"
-            value="Apri"
+            label={tr("settings.termsOfService")}
+            value={tr("settings.open")}
             onPress={() => openExternal(TERMS_URL)}
           />
           <SettingsRow
-            label="Contatta il supporto"
+            label={tr("settings.contactSupport")}
             hint={SUPPORT_EMAIL}
-            value="Scrivi"
-            onPress={() => openExternal(SUPPORT_MAILTO)}
+            value={tr("settings.write")}
+            onPress={() => openExternal(supportMailto)}
           />
         </View>
 
@@ -394,7 +436,7 @@ export default function SettingsScreen() {
                 textTransform: "uppercase",
               }}
             >
-              Zona pericolosa
+              {tr("settings.dangerZone")}
             </Text>
           </View>
         </View>
@@ -403,8 +445,8 @@ export default function SettingsScreen() {
             icon={LogOut}
             iconColor={colors.navy}
             iconBg={colors.tagUserBg}
-            title="Esci dall'account"
-            body="Servirà email e password per rientrare."
+            title={tr("settings.signOut")}
+            body={tr("settings.signOutBody")}
             onPress={() => {
               tap();
               handleSignOut();
@@ -414,8 +456,8 @@ export default function SettingsScreen() {
             icon={Trash2}
             iconColor={colors.danger}
             iconBg={colors.dangerSoft}
-            title="Elimina account"
-            body="Cancella tutti i ricordi, le cartelle e la cronologia. Non recuperabile."
+            title={tr("settings.deleteAccount")}
+            body={tr("settings.deleteAccountBody")}
             danger
             onPress={openDeleteConfirm}
           />
@@ -424,7 +466,7 @@ export default function SettingsScreen() {
           <Tappable
             onPress={openDeletionWebPage}
             accessibilityRole="link"
-            accessibilityLabel="Richiesta di eliminazione via web"
+            accessibilityLabel={tr("settings.deletionWebRequestA11y")}
             pressedOpacity={0.6}
             style={{
               flexDirection: "row",
@@ -442,7 +484,7 @@ export default function SettingsScreen() {
                 color: colors.midGrey,
               }}
             >
-              Richiesta via web:{" "}
+              {tr("settings.deletionWebRequest")}{" "}
               <Text style={{ fontFamily: FONT.semibold, color: colors.navy }}>
                 ioterra360.github.io/memika-legal/account-deletion/
               </Text>
@@ -468,7 +510,7 @@ export default function SettingsScreen() {
         <View style={{ flex: 1, justifyContent: "flex-end" }}>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Chiudi"
+            accessibilityLabel={tr("common.close")}
             onPress={() => {
               if (!deleting) setConfirmDelete(false);
             }}
@@ -515,7 +557,7 @@ export default function SettingsScreen() {
                 letterSpacing: -0.4,
               }}
             >
-              Eliminare il tuo account Memika?
+              {tr("settings.deleteConfirmTitle")}
             </Text>
             <Text
               style={{
@@ -526,14 +568,15 @@ export default function SettingsScreen() {
                 lineHeight: 22,
               }}
             >
-              {deletionPreviewMessage(deletionPreview)} Verrai disconnesso da ogni
-              dispositivo. Non si può annullare.
+              {tr("settings.deleteConfirmBody", {
+                preview: deletionPreviewMessage(deletionPreview),
+              })}
             </Text>
             <View style={{ marginTop: 22, gap: 10 }}>
               {/* Real deletion: delete_own_account() RPC (SECURITY DEFINER,
                   target = auth.uid()), then local sign-out → login. */}
               <PrimaryButton
-                label={deleting ? "Elimino…" : "Sì, elimina tutto"}
+                label={deleting ? tr("settings.deleting") : tr("settings.deleteAll")}
                 onPress={() => {
                   errorFeedback();
                   void handleDeleteAccount();
@@ -542,7 +585,7 @@ export default function SettingsScreen() {
                 loading={deleting}
               />
               <GhostButton
-                label="Annulla"
+                label={tr("common.cancel")}
                 onPress={() => setConfirmDelete(false)}
                 variant="link"
                 disabled={deleting}

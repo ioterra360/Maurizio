@@ -5,6 +5,7 @@ import { Eye, EyeOff } from "lucide-react-native";
 
 import { Tappable } from "@/components/Tappable";
 import { colors, FONT } from "@/theme/tokens";
+import { useT } from "@/lib/i18n";
 
 type AuthTextInputProps = ComponentProps<typeof TextInput> & {
   ref?: Ref<TextInput>;
@@ -32,6 +33,7 @@ export function AuthTextInput({
   secureTextEntry,
   ...rest
 }: AuthTextInputProps) {
+  const { t } = useT();
   const [focused, setFocused] = useState(false);
   const [revealed, setRevealed] = useState(false);
   const isPassword = Boolean(secureTextEntry);
@@ -72,7 +74,7 @@ export function AuthTextInput({
       <Tappable
         onPress={() => setRevealed((v) => !v)}
         accessibilityRole="button"
-        accessibilityLabel={revealed ? "Nascondi password" : "Mostra password"}
+        accessibilityLabel={revealed ? t("authTextInput.hidePassword") : t("authTextInput.showPassword")}
         hitSlop={8}
         pressedOpacity={0.6}
         containerStyle={{ position: "absolute", right: 4, top: 0 }}

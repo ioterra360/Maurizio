@@ -17,9 +17,11 @@ import { PrimaryButton } from "@/components/PrimaryButton";
 import { useAuthStore, DEMO_ACCOUNTS, type DemoAccount } from "@/lib/auth-store";
 import { isDemoMode } from "@/lib/supabase";
 import { authErrorMessage } from "@/lib/auth-errors";
+import { useT } from "@/lib/i18n";
 import { colors, FONT, radii } from "@/theme/tokens";
 
 export default function LoginScreen() {
+  const { t } = useT();
   const signIn = useAuthStore((s) => s.signIn);
   const loading = useAuthStore((s) => s.loading);
 
@@ -31,7 +33,7 @@ export default function LoginScreen() {
   const handleSubmit = async () => {
     setError(null);
     if (!email.trim() || !password) {
-      setError("Inserisci email e password.");
+      setError(t("login.enterEmailAndPassword"));
       return;
     }
     try {
@@ -77,12 +79,12 @@ export default function LoginScreen() {
                 color: colors.navy,
               }}
             >
-              Memika
+              {t("login.appName")}
             </Text>
           </View>
 
           {/* Email */}
-          <FieldLabel>Email</FieldLabel>
+          <FieldLabel>{t("login.emailLabel")}</FieldLabel>
           <AuthTextInput
             value={email}
             onChangeText={setEmail}
@@ -90,7 +92,7 @@ export default function LoginScreen() {
             autoCorrect={false}
             autoComplete="email"
             keyboardType="email-address"
-            placeholder="tu@esempio.com"
+            placeholder={t("login.emailPlaceholder")}
             returnKeyType="next"
             submitBehavior="submit"
             onSubmitEditing={() => passwordRef.current?.focus()}
@@ -101,7 +103,7 @@ export default function LoginScreen() {
             className="mt-5 flex-row items-end justify-between"
             style={{ marginBottom: 8 }}
           >
-            <FieldLabel style={{ marginBottom: 0 }}>Password</FieldLabel>
+            <FieldLabel style={{ marginBottom: 0 }}>{t("login.passwordLabel")}</FieldLabel>
             <Link href={"/(auth)/forgot-password" as never} asChild>
               <Pressable hitSlop={8} accessibilityRole="link">
                 <Text
@@ -112,7 +114,7 @@ export default function LoginScreen() {
                     letterSpacing: -0.06,
                   }}
                 >
-                  Password dimenticata?
+                  {t("login.forgotPassword")}
                 </Text>
               </Pressable>
             </Link>
@@ -151,11 +153,11 @@ export default function LoginScreen() {
 
           {/* CTAs — Accedi (primary outlined) + Registrati (outline secondary) */}
           <View style={{ marginTop: 26, gap: 12 }}>
-            <PrimaryButton label="Accedi" onPress={handleSubmit} loading={loading} />
+            <PrimaryButton label={t("login.signIn")} onPress={handleSubmit} loading={loading} />
             <Link href={"/(auth)/signup" as never} asChild>
               <Pressable accessibilityRole="link">
                 <View pointerEvents="none">
-                  <PrimaryButton label="Crea un nuovo account" variant="tonal" />
+                  <PrimaryButton label={t("login.createNewAccount")} variant="tonal" />
                 </View>
               </Pressable>
             </Link>
@@ -183,7 +185,7 @@ export default function LoginScreen() {
                     color: colors.midGrey,
                   }}
                 >
-                  Demo accounts
+                  {t("login.demoAccountsHeading")}
                 </Text>
                 <View style={{ flex: 1, height: 1, backgroundColor: colors.divider }} />
               </View>
@@ -248,6 +250,7 @@ function DemoCard({
   account: DemoAccount;
   onPress: () => void;
 }) {
+  const { t } = useT();
   const isAdmin = account.role === "admin";
   const [pressed, setPressed] = useState(false);
   return (
@@ -256,7 +259,10 @@ function DemoCard({
       onPressIn={() => setPressed(true)}
       onPressOut={() => setPressed(false)}
       accessibilityRole="button"
-      accessibilityLabel={`Usa account demo ${account.name}, ${isAdmin ? "admin" : "utente"}`}
+      accessibilityLabel={t("login.useDemoAccount", {
+        name: account.name,
+        role: isAdmin ? t("login.demoRoleAdmin") : t("login.demoRoleUser"),
+      })}
     >
       <View
         style={{
@@ -309,7 +315,7 @@ function DemoCard({
           }}
         >
           <Text style={{ fontFamily: FONT.bold, fontSize: 11, letterSpacing: 0.6, color: colors.navy }}>
-            {isAdmin ? "ADMIN" : "USER"}
+            {isAdmin ? t("login.demoTagAdmin") : t("login.demoTagUser")}
           </Text>
         </View>
       </View>

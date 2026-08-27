@@ -1,6 +1,7 @@
 import { Text, View } from "react-native";
 import { Check, TriangleAlert, X, type LucideIcon } from "lucide-react-native";
 import { Tappable } from "@/components/Tappable";
+import { useT, type TKey } from "@/lib/i18n";
 import { FONT, colors, radii, statusTint } from "@/theme/tokens";
 
 export type Recall = "remembered" | "struggled" | "forgot";
@@ -12,16 +13,18 @@ type Props = {
 
 const META: Record<
   Recall,
-  { label: string; icon: LucideIcon; bg: string; border: string; text: string; iconColor: string; shadowColor?: string }
+  { labelKey: TKey; icon: LucideIcon; bg: string; border: string; text: string; iconColor: string; shadowColor?: string }
 > = {
   // Per the Claude Design contract (reviews.jsx:410): the primary confirm
   // is filled GREEN with a green glow shadow. Layer-local color, not navy.
   // Deliberate a11y deviation from the mockup (screens.jsx:731): "forgot"
   // keeps the peach border but uses statusTint.fading.text as ink — peach
   // text on warm-white is ~1.8:1, far below the WCAG 3:1 large-text bar.
-  remembered: { label: "Ricordato",  icon: Check,         bg: colors.active,    border: colors.active,         text: colors.warmWhite, iconColor: colors.warmWhite, shadowColor: colors.active },
-  struggled:  { label: "Faticoso",   icon: TriangleAlert, bg: "transparent",    border: colors.hairlineStrong, text: colors.navy,      iconColor: colors.navy },
-  forgot:     { label: "Dimenticato",icon: X,             bg: "transparent",    border: colors.fading,         text: statusTint.fading.text, iconColor: statusTint.fading.text },
+  // Labels are catalog keys, resolved at render via useT() so the Settings
+  // language switch applies at once.
+  remembered: { labelKey: "recallButton.remembered", icon: Check,         bg: colors.active,    border: colors.active,         text: colors.warmWhite, iconColor: colors.warmWhite, shadowColor: colors.active },
+  struggled:  { labelKey: "recallButton.struggled",  icon: TriangleAlert, bg: "transparent",    border: colors.hairlineStrong, text: colors.navy,      iconColor: colors.navy },
+  forgot:     { labelKey: "recallButton.forgot",     icon: X,             bg: "transparent",    border: colors.fading,         text: statusTint.fading.text, iconColor: statusTint.fading.text },
 };
 
 /**
@@ -29,13 +32,15 @@ const META: Record<
  * the green "Remembered" gets a glow, the others are outlined.
  */
 export function RecallButton({ variant, onPress }: Props) {
+  const { t } = useT();
   const m = META[variant];
   const Icon = m.icon;
+  const label = t(m.labelKey);
   return (
     <Tappable
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={m.label}
+      accessibilityLabel={label}
       containerStyle={{ width: "100%" }}
       style={{
         width: "100%",
@@ -64,7 +69,7 @@ export function RecallButton({ variant, onPress }: Props) {
           letterSpacing: -0.1,
         }}
       >
-        {m.label}
+        {label}
       </Text>
     </Tappable>
   );

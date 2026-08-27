@@ -31,6 +31,7 @@ import { useUIStore } from "@/lib/ui-store";
 import { reportError } from "@/lib/report-error";
 import { safeBack } from "@/lib/safe-back";
 import { consumeIntentionalAddOpen } from "@/lib/add-gate";
+import { useT } from "@/lib/i18n";
 
 export default function AddScreen() {
   // Add is a root-level modal (declared in app/_layout.tsx so it can slide
@@ -108,6 +109,7 @@ export default function AddScreen() {
   const [dailyCount, setDailyCount] = useState<number | null>(null);
   const [dailyMax, setDailyMax] = useState(DAILY_INPUT_CAP_DEFAULT);
   const showToast = useUIStore((s) => s.showToast);
+  const { t } = useT();
 
   useEffect(() => {
     if (!user) return;
@@ -159,8 +161,8 @@ export default function AddScreen() {
       // the tap (the zero-folder case is redirected above).
       showToast(
         foldersError
-          ? "Cartelle non caricate. Controlla la connessione e riprova."
-          : "Un attimo, sto caricando le tue cartelle…",
+          ? t("add.foldersNotLoaded")
+          : t("add.loadingFolders"),
       );
       return;
     }
@@ -176,7 +178,7 @@ export default function AddScreen() {
         itemType: type,
       });
       setDailyCount((c) => (c ?? 0) + 1);
-      showToast(`Salvato in ${folderRow.name} · primo ripasso domani`);
+      showToast(t("add.savedToast", { name: folderRow.name }));
       if (addAnother) {
         // Keep the fields cleared for fast successive adds; no nav.
         setTerm("");
@@ -192,7 +194,7 @@ export default function AddScreen() {
       }
     } catch (e) {
       reportError("add/save", e);
-      showToast("Salvataggio non riuscito. Riprova.");
+      showToast(t("add.saveFailed"));
     } finally {
       setSaving(false);
     }
@@ -203,14 +205,14 @@ export default function AddScreen() {
   return (
     <SafeAreaView className="flex-1 bg-warm-white" edges={["top"]}>
       <TopBar
-        title="Nuovo ricordo"
+        title={t("add.title")}
         onBack={handleBack}
         rightSlot={
           <Pressable
             onPress={() => doSave(false)}
             disabled={saving}
             accessibilityRole="button"
-            accessibilityLabel="Salva"
+            accessibilityLabel={t("common.save")}
             hitSlop={10}
             onPressIn={() => setSavePressed(true)}
             onPressOut={() => setSavePressed(false)}
@@ -229,7 +231,7 @@ export default function AddScreen() {
                 letterSpacing: -0.1,
               }}
             >
-              Salva
+              {t("common.save")}
             </Text>
           </Pressable>
         }
@@ -326,9 +328,9 @@ export default function AddScreen() {
                 setTerm(t);
                 if (missing === "term") setMissing(null);
               }}
-              placeholder="Termine da ricordare"
+              placeholder={t("add.termPlaceholder")}
               placeholderTextColor={colors.placeholder}
-              accessibilityLabel="Termine"
+              accessibilityLabel={t("add.termLabel")}
               style={{
                 backgroundColor: colors.surface,
                 borderRadius: 14,
@@ -343,15 +345,15 @@ export default function AddScreen() {
               }}
             />
             {missing === "term" ? (
-              <FieldHint>Scrivi il termine da ricordare.</FieldHint>
+              <FieldHint>{t("add.termMissingHint")}</FieldHint>
             ) : null}
             {folder === "jp" ? (
               <TextInput
                 value={reading}
                 onChangeText={setReading}
-                placeholder="Lettura (opzionale) — es. muzukashii"
+                placeholder={t("add.readingPlaceholder")}
                 placeholderTextColor={colors.placeholder}
-                accessibilityLabel="Lettura"
+                accessibilityLabel={t("add.readingLabel")}
                 autoCapitalize="none"
                 style={{
                   backgroundColor: colors.surface,
@@ -374,9 +376,9 @@ export default function AddScreen() {
                 setDefinition(t);
                 if (missing === "definition") setMissing(null);
               }}
-              placeholder="Cosa significa?"
+              placeholder={t("add.definitionPlaceholder")}
               placeholderTextColor={colors.placeholder}
-              accessibilityLabel="Definizione"
+              accessibilityLabel={t("add.definitionLabel")}
               multiline
               textAlignVertical="top"
               style={{
@@ -394,14 +396,14 @@ export default function AddScreen() {
               }}
             />
             {missing === "definition" ? (
-              <FieldHint>Scrivi cosa significa: è la parte che ripasserai.</FieldHint>
+              <FieldHint>{t("add.definitionMissingHint")}</FieldHint>
             ) : null}
             <TextInput
               value={example}
               onChangeText={setExample}
-              placeholder="Frase d'esempio (opzionale)"
+              placeholder={t("add.examplePlaceholder")}
               placeholderTextColor={colors.placeholder}
-              accessibilityLabel="Frase d'esempio"
+              accessibilityLabel={t("add.exampleLabel")}
               multiline
               textAlignVertical="top"
               style={{
@@ -482,7 +484,7 @@ export default function AddScreen() {
                     textTransform: "uppercase",
                   }}
                 >
-                  Fronte
+                  {t("add.previewFront")}
                 </Text>
                 <Text
                   style={{
@@ -520,7 +522,7 @@ export default function AddScreen() {
                     textTransform: "uppercase",
                   }}
                 >
-                  Retro
+                  {t("add.previewBack")}
                 </Text>
                 <Text
                   style={{
@@ -565,7 +567,7 @@ export default function AddScreen() {
                     fontVariant: ["tabular-nums"],
                   }}
                 >
-                  Primo ripasso · domani, 8:00
+                  {t("add.previewFirstReview")}
                 </Text>
               </View>
             </View>
@@ -581,7 +583,7 @@ export default function AddScreen() {
               lineHeight: 17,
             }}
           >
-            Prova a usarlo nella vita reale oggi — il primo ripasso è domani.
+            {t("add.useItTodayHint")}
           </Text>
 
         {/* Bottom actions — pushed to the bottom of the (min-height) content */}
@@ -607,16 +609,16 @@ export default function AddScreen() {
             {dailyCount === null
               ? "…"
               : dailyLimitReached
-                ? `Oltre il limite di oggi (${dailyCount}/${dailyMax}) — puoi salvare comunque, ma domani il carico sarà più alto.`
-                : `${dailyCount} / ${dailyMax} ricordi oggi`}
+                ? t("add.overDailyLimit", { count: dailyCount, max: dailyMax })
+                : t("add.dailyCounter", { count: dailyCount, max: dailyMax })}
           </Text>
           <GhostButton
-            label="Salva e aggiungi un altro"
+            label={t("add.saveAndAddAnother")}
             variant="outline"
             onPress={() => doSave(true)}
             disabled={saving}
           />
-          <PrimaryButton label="Salva e continua" onPress={() => doSave(false)} loading={saving} />
+          <PrimaryButton label={t("add.saveAndContinue")} onPress={() => doSave(false)} loading={saving} />
         </View>
         </ScrollView>
       </KeyboardAvoidingView>

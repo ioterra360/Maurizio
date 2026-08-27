@@ -3,6 +3,7 @@ import { ChevronLeft } from "lucide-react-native";
 import { Tappable } from "@/components/Tappable";
 import { FONT, colors } from "@/theme/tokens";
 import { safeBack } from "@/lib/safe-back";
+import { useT } from "@/lib/i18n";
 
 type Props = {
   title: string;
@@ -21,6 +22,7 @@ type Props = {
  * sub-pages drilled into from the More tab.
  */
 export function AdminTopBar({ title, subtitle, rightSlot, onBack }: Props) {
+  const { t } = useT();
   const handleBack = () => {
     if (typeof onBack === "function") onBack();
     else safeBack();
@@ -38,7 +40,7 @@ export function AdminTopBar({ title, subtitle, rightSlot, onBack }: Props) {
         <Tappable
           onPress={handleBack}
           accessibilityRole="button"
-          accessibilityLabel="Indietro"
+          accessibilityLabel={t("common.back")}
           pressedOpacity={0.5}
           containerStyle={{ marginLeft: -4, marginBottom: 4 }}
           style={{

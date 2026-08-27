@@ -3,6 +3,7 @@ import { ChevronLeft } from "lucide-react-native";
 import { Tappable } from "@/components/Tappable";
 import { FONT, colors } from "@/theme/tokens";
 import { safeBack } from "@/lib/safe-back";
+import { useT } from "@/lib/i18n";
 
 type Props = {
   title?: string;
@@ -19,6 +20,7 @@ type Props = {
  * before navigation — see lib/safe-back.ts for the Android race this fixes.
  */
 export function TopBar({ title, onBack, rightSlot }: Props) {
+  const { t } = useT();
   const handleBack = () => {
     if (onBack) onBack();
     else safeBack();
@@ -39,7 +41,7 @@ export function TopBar({ title, onBack, rightSlot }: Props) {
       <Tappable
         onPress={handleBack}
         accessibilityRole="button"
-        accessibilityLabel="Indietro"
+        accessibilityLabel={t("common.back")}
         pressedOpacity={0.6}
         style={{
           width: 40,

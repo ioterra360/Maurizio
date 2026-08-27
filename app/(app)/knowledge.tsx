@@ -16,10 +16,12 @@ import { useFoldersWithStats } from "@/lib/use-folders";
 import type { FolderWithStats } from "@/lib/mappers";
 import { applyFolderOrder, useFolderOrderStore } from "@/lib/folder-order-store";
 import { markAddOpenedIntentionally } from "@/lib/add-gate";
+import { useT } from "@/lib/i18n";
 import { FONT, colors } from "@/theme/tokens";
 import { FOLDER_LIMIT_ENFORCED, FOLDER_TEMPLATES, type FolderKind } from "@/lib/constants";
 
 export default function KnowledgeScreen() {
+  const { t, tp } = useT();
   const { folders, loading, error, refetch } = useFoldersWithStats();
   const order = useFolderOrderStore((s) => s.order);
   const hydrated = useFolderOrderStore((s) => s.hydrated);
@@ -86,15 +88,13 @@ export default function KnowledgeScreen() {
   const header = (
     <View style={{ position: "relative" }}>
       <HeaderHero
-        title="Le tue cartelle"
+        title={t("knowledge.title")}
         subtitle={
           loading
-            ? "Caricamento delle tue cartelle…"
+            ? t("knowledge.loadingSubtitle")
             : folders.length === 0
-              ? "Nessuna cartella attiva"
-              : folders.length === 1
-                ? "1 cartella attiva"
-                : `${folders.length} cartelle attive · trascina per cambiare priorità`
+              ? t("knowledge.noActiveFolders")
+              : tp("knowledge.activeFolders", folders.length)
         }
         reservedRight={108}
       />
@@ -111,7 +111,7 @@ export default function KnowledgeScreen() {
               router.push({ pathname: "/choose-topic", params: { mode: "new" } } as never)
             }
             accessibilityRole="button"
-            accessibilityLabel="Nuova cartella"
+            accessibilityLabel={t("knowledge.newFolder")}
             containerStyle={{ alignSelf: "flex-start" }}
             style={{
               flexDirection: "row",
@@ -127,7 +127,7 @@ export default function KnowledgeScreen() {
           >
             <Plus size={16} color={colors.navy} strokeWidth={2.2} />
             <Text style={{ fontFamily: FONT.semibold, fontSize: 14, color: colors.navy }}>
-              Nuova cartella
+              {t("knowledge.newFolder")}
             </Text>
           </Tappable>
         </View>
@@ -138,7 +138,7 @@ export default function KnowledgeScreen() {
   const empty =
     loading && folders.length === 0 ? (
       <View style={{ paddingVertical: 48, alignItems: "center" }}>
-        <MascotLoader label="Carico le tue cartelle…" />
+        <MascotLoader label={t("knowledge.loadingFolders")} />
       </View>
     ) : error ? (
       <View style={{ paddingHorizontal: 16 }}>
@@ -160,7 +160,7 @@ export default function KnowledgeScreen() {
               textAlign: "center",
             }}
           >
-            Non siamo riusciti a caricare le tue cartelle.
+            {t("knowledge.loadErrorTitle")}
           </Text>
           <Text
             style={{
@@ -170,12 +170,12 @@ export default function KnowledgeScreen() {
               textAlign: "center",
             }}
           >
-            Controlla la connessione e riprova.
+            {t("knowledge.loadErrorBody")}
           </Text>
           <Tappable
             onPress={refetch}
             accessibilityRole="button"
-            accessibilityLabel="Riprova a caricare le cartelle"
+            accessibilityLabel={t("knowledge.retryLoadAccessibility")}
             containerStyle={{ marginTop: 4 }}
             style={{
               paddingHorizontal: 18,
@@ -189,7 +189,7 @@ export default function KnowledgeScreen() {
             <Text
               style={{ fontFamily: FONT.semibold, fontSize: 14, color: colors.navy }}
             >
-              Riprova
+              {t("common.retry")}
             </Text>
           </Tappable>
         </View>
@@ -215,7 +215,7 @@ export default function KnowledgeScreen() {
               textAlign: "center",
             }}
           >
-            Nessuna cartella, per ora.
+            {t("knowledge.emptyTitle")}
           </Text>
           <Text
             style={{
@@ -225,13 +225,12 @@ export default function KnowledgeScreen() {
               textAlign: "center",
             }}
           >
-            Scegli l'argomento che vuoi proteggere dall'oblio: Memika creerà
-            la tua cartella e potrai aggiungere il primo ricordo.
+            {t("knowledge.emptyBody")}
           </Text>
           <Tappable
             onPress={() => router.push("/choose-topic" as never)}
             accessibilityRole="button"
-            accessibilityLabel="Scegli il tuo argomento"
+            accessibilityLabel={t("knowledge.chooseTopic")}
             containerStyle={{ marginTop: 4 }}
             style={{
               paddingHorizontal: 18,
@@ -245,7 +244,7 @@ export default function KnowledgeScreen() {
             <Text
               style={{ fontFamily: FONT.semibold, fontSize: 14, color: colors.navy }}
             >
-              Scegli il tuo argomento
+              {t("knowledge.chooseTopic")}
             </Text>
           </Tappable>
         </View>
@@ -276,7 +275,7 @@ export default function KnowledgeScreen() {
           router.push("/add");
         }}
         accessibilityRole="button"
-        accessibilityLabel="Aggiungi un nuovo ricordo"
+        accessibilityLabel={t("knowledge.addMemoryAccessibility")}
         containerStyle={{
           position: "absolute",
           right: 22,

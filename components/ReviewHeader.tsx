@@ -3,6 +3,7 @@ import { ChevronLeft, Radar, Repeat, Target, type LucideIcon } from "lucide-reac
 import { FONT, colors, layer as layerTokens, type LayerKey } from "@/theme/tokens";
 import { Tappable } from "@/components/Tappable";
 import { safeBack } from "@/lib/safe-back";
+import { useT } from "@/lib/i18n";
 
 const ICONS: Record<LayerKey, LucideIcon> = {
   scan: Radar,
@@ -21,6 +22,7 @@ type Props = {
  * (extending the active one), and the layer label + icon on the right.
  */
 export function ReviewHeader({ layerKey, index, total }: Props) {
+  const { t } = useT();
   const { color, label } = layerTokens[layerKey];
   const Icon = ICONS[layerKey];
 
@@ -32,7 +34,7 @@ export function ReviewHeader({ layerKey, index, total }: Props) {
       <Tappable
         onPress={() => safeBack("/(app)/today")}
         accessibilityRole="button"
-        accessibilityLabel="Esci dal ripasso"
+        accessibilityLabel={t("reviewHeader.exitA11y")}
         hitSlop={10}
         pressedOpacity={0.5}
         style={{

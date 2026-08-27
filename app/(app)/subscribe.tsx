@@ -21,34 +21,47 @@ import { PrimaryButton } from "@/components/PrimaryButton";
 import { GhostButton } from "@/components/GhostButton";
 import { useAuthStore } from "@/lib/auth-store";
 import { PREMIUM_ENABLED } from "@/lib/constants";
+import { useT, type TKey } from "@/lib/i18n";
 import { colors, FONT } from "@/theme/tokens";
 
 const CHECKOUT_URL = "https://ioterra360.github.io/memika-legal/";
 
-const BENEFITS = [
+// Catalog keys only — the text is resolved at render so the Settings
+// language switch applies at once.
+const BENEFITS: {
+  id: string;
+  icon: typeof InfinityIcon;
+  titleKey: TKey;
+  bodyKey: TKey;
+}[] = [
   {
+    id: "unlimited",
     icon: InfinityIcon,
-    title: "Ricordi illimitati",
-    body: "Aggiungi tutto quello che vuoi memorizzare, senza limiti.",
+    titleKey: "subscribe.benefitUnlimitedTitle",
+    bodyKey: "subscribe.benefitUnlimitedBody",
   },
   {
+    id: "rhythms",
     icon: Radar,
-    title: "Scan / Reinforcement / Focus",
-    body: "I tre ritmi di ripasso, sempre disponibili.",
+    titleKey: "subscribe.benefitRhythmsTitle",
+    bodyKey: "subscribe.benefitRhythmsBody",
   },
   {
+    id: "insights",
     icon: Sparkles,
-    title: "Insight personalizzati",
-    body: "Suggerimenti su quando rivedere e dove rallentare.",
+    titleKey: "subscribe.benefitInsightsTitle",
+    bodyKey: "subscribe.benefitInsightsBody",
   },
   {
+    id: "safe",
     icon: ShieldCheck,
-    title: "I tuoi ricordi al sicuro",
-    body: "Salvataggio sicuro nel cloud, sempre sotto il tuo controllo.",
+    titleKey: "subscribe.benefitSafeTitle",
+    bodyKey: "subscribe.benefitSafeBody",
   },
 ];
 
 export default function SubscribeScreen() {
+  const { t } = useT();
   const userEmail = useAuthStore((s) => s.user?.email ?? "");
   const [opening, setOpening] = useState(false);
 
@@ -80,7 +93,7 @@ export default function SubscribeScreen() {
           <Tappable
             onPress={() => router.back()}
             accessibilityRole="button"
-            accessibilityLabel="Indietro"
+            accessibilityLabel={t("common.back")}
             hitSlop={10}
             pressedOpacity={0.6}
             style={{
@@ -133,7 +146,7 @@ export default function SubscribeScreen() {
                 textTransform: "uppercase",
               }}
             >
-              Memika Premium
+              {t("subscribe.premiumBadge")}
             </Text>
           </View>
           <Text
@@ -145,7 +158,7 @@ export default function SubscribeScreen() {
               color: colors.warmWhite,
             }}
           >
-            Sblocca la tua memoria,{"\n"}senza compromessi.
+            {t("subscribe.heroTitle")}
           </Text>
           <Text
             style={{
@@ -156,7 +169,7 @@ export default function SubscribeScreen() {
               color: "rgba(255,255,255,0.78)",
             }}
           >
-            Tre ritmi di ripasso, ricordi illimitati, insight personalizzati. Disdici quando vuoi.
+            {t("subscribe.heroBody")}
           </Text>
 
           <View
@@ -175,7 +188,7 @@ export default function SubscribeScreen() {
                 letterSpacing: -0.8,
               }}
             >
-              €4,99
+              {t("subscribe.price")}
             </Text>
             <Text
               style={{
@@ -184,7 +197,7 @@ export default function SubscribeScreen() {
                 color: "rgba(255,255,255,0.7)",
               }}
             >
-              / mese
+              {t("subscribe.perMonth")}
             </Text>
           </View>
         </View>
@@ -195,7 +208,7 @@ export default function SubscribeScreen() {
             const Icon = b.icon;
             return (
               <View
-                key={b.title}
+                key={b.id}
                 style={{
                   flexDirection: "row",
                   gap: 14,
@@ -226,7 +239,7 @@ export default function SubscribeScreen() {
                       color: colors.navy,
                     }}
                   >
-                    {b.title}
+                    {t(b.titleKey)}
                   </Text>
                   <Text
                     style={{
@@ -237,7 +250,7 @@ export default function SubscribeScreen() {
                       color: colors.midGrey,
                     }}
                   >
-                    {b.body}
+                    {t(b.bodyKey)}
                   </Text>
                 </View>
               </View>
@@ -248,12 +261,12 @@ export default function SubscribeScreen() {
         {/* CTA */}
         <View style={{ marginTop: 32, paddingHorizontal: 20, gap: 12 }}>
           <PrimaryButton
-            label="Continua sul sito"
+            label={t("subscribe.continueOnWebsite")}
             loading={opening}
             onPress={openCheckout}
           />
           <GhostButton
-            label="Forse più tardi"
+            label={t("subscribe.maybeLater")}
             onPress={() => router.back()}
             variant="link"
           />
@@ -270,7 +283,7 @@ export default function SubscribeScreen() {
             color: colors.midGrey,
           }}
         >
-          Il pagamento avviene sul nostro sito web. Disdici quando vuoi dal tuo account.
+          {t("subscribe.paymentNote")}
         </Text>
       </ScrollView>
     </SafeAreaView>

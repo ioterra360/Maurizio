@@ -2,6 +2,7 @@ import { Text, View } from "react-native";
 import { ChevronRight, Radar, Repeat, Target, type LucideIcon } from "lucide-react-native";
 import { Tappable } from "@/components/Tappable";
 import { FONT, colors, layer, radii, type LayerKey } from "@/theme/tokens";
+import { useT } from "@/lib/i18n";
 
 type Props = {
   layerKey: LayerKey;
@@ -21,6 +22,7 @@ const ICONS: Record<LayerKey, LucideIcon> = {
  * Color stripe on the left, layer icon, label + item count + sub-line.
  */
 export function LayerCard({ layerKey, items, subtitle, onPress }: Props) {
+  const { t } = useT();
   const { color, label } = layer[layerKey];
   const Icon = ICONS[layerKey];
 
@@ -28,7 +30,7 @@ export function LayerCard({ layerKey, items, subtitle, onPress }: Props) {
     <Tappable
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={`${label}, ${items} ricordi, ${subtitle}`}
+      accessibilityLabel={t("layerCard.a11y", { label, items, subtitle })}
       style={{
         flexDirection: "row",
         alignItems: "center",

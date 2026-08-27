@@ -5,6 +5,7 @@ import { ChevronLeft, Settings as SettingsIcon } from "lucide-react-native";
 import { FolderTile } from "@/components/FolderTile";
 import { Tappable } from "@/components/Tappable";
 import { FONT, colors } from "@/theme/tokens";
+import { useT } from "@/lib/i18n";
 import type { FolderKind } from "@/lib/constants";
 
 type Props = {
@@ -22,6 +23,7 @@ type Props = {
  * editorial calm.
  */
 export function FolderTopBar({ kind, name, priority }: Props) {
+  const { t } = useT();
   return (
     <View
       className="flex-row items-center justify-between"
@@ -37,7 +39,7 @@ export function FolderTopBar({ kind, name, priority }: Props) {
         // Progressi). navigate is deterministic and dedupes in-history tabs.
         onPress={() => router.navigate("/(app)/knowledge")}
         accessibilityRole="button"
-        accessibilityLabel="Torna alle cartelle"
+        accessibilityLabel={t("folderTopBar.backToFolders")}
         pressedOpacity={0.6}
         style={{
           width: 40,
@@ -79,7 +81,7 @@ export function FolderTopBar({ kind, name, priority }: Props) {
               fontVariant: ["tabular-nums"],
             }}
           >
-            #{priority}
+            {t("folderTopBar.priorityBadge", { priority })}
           </Text>
         </View>
       </View>
@@ -87,7 +89,7 @@ export function FolderTopBar({ kind, name, priority }: Props) {
       <Tappable
         onPress={() => router.push({ pathname: "/folder-settings", params: { kind } } as never)}
         accessibilityRole="button"
-        accessibilityLabel="Impostazioni cartella"
+        accessibilityLabel={t("folderTopBar.settingsA11y")}
         pressedOpacity={0.6}
         style={{
           width: 40,

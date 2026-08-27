@@ -140,6 +140,8 @@ export const it = {
 
   // ---- adminInsights -------------------------------------------------------
   "adminInsights.d7d30Callout": "La perdita D7 → D30 è del 37%. I clienti che hanno aggiunto 3+ ricordi nella prima settimana mantengono il 78% al D30 contro il 22% di base. Spingere il primo add nella settimana 1.",
+  "adminInsights.d7d30CalloutBody": "I clienti che hanno aggiunto 3+ ricordi nella prima settimana mantengono il 78% al D30 contro il 22% di base. Spingere il primo add nella settimana 1.",
+  "adminInsights.d7d30CalloutLead": "La perdita D7 → D30 è del 37%.",
   "adminInsights.funnelTitle": "Funnel di onboarding",
   "adminInsights.layerAdoptionTitle": "Adozione layer di ripasso · 14g",
   "adminInsights.layerFocus": "Focus",
@@ -150,6 +152,12 @@ export const it = {
   "adminInsights.sessions_other": "{count} sessioni",
   "adminInsights.subtitle": "Finestra 14g · clienti dal 12 maggio",
   "adminInsights.title": "Insight",
+
+  // ---- adminModeration -----------------------------------------------------
+  "adminModeration.subtitle": "{queue} in coda · {resolved} risolte questa settimana",
+  "adminModeration.tabQueue": "Coda",
+  "adminModeration.tabRules": "Regole auto",
+  "adminModeration.title": "Moderazione",
 
   // ---- adminMore -----------------------------------------------------------
   "adminMore.accountSection": "Account",
@@ -175,6 +183,22 @@ export const it = {
   "adminMore.teamLabel": "Team",
   "adminMore.title": "Altro",
   "adminMore.workspaceSection": "Spazio di lavoro",
+
+  // ---- adminTabs -----------------------------------------------------------
+  "adminTabs.home": "Home",
+  "adminTabs.insights": "Insight",
+  "adminTabs.moderation": "Moderazione",
+  "adminTabs.more": "Altro",
+  "adminTabs.users": "Utenti",
+
+  // ---- adminUsers ----------------------------------------------------------
+  "adminUsers.filterAll": "Tutti",
+  "adminUsers.filterAtRisk": "A rischio",
+  "adminUsers.openDetailsA11y": "Apri i dettagli di {name}",
+  "adminUsers.searchPlaceholder": "Cerca nome o email",
+  "adminUsers.subtitle": "{all} totali · {atRisk} a rischio",
+  "adminUsers.tagAtRisk": "A RISCHIO",
+  "adminUsers.title": "Utenti",
 
   // ---- authCallback --------------------------------------------------------
   "authCallback.goToSignIn": "Vai all'accesso",
@@ -205,6 +229,10 @@ export const it = {
   // ---- authStore -----------------------------------------------------------
   "authStore.demoLinksUnavailable": "Demo mode attivo: i link email non sono disponibili.",
   "authStore.fallbackUserName": "Memika user",
+
+  // ---- authTextInput -------------------------------------------------------
+  "authTextInput.hidePassword": "Nascondi password",
+  "authTextInput.showPassword": "Mostra password",
 
   // ---- chooseTopic ---------------------------------------------------------
   "chooseTopic.alreadyOwned": "Già presente",
@@ -384,6 +412,9 @@ export const it = {
   // ---- errorCard -----------------------------------------------------------
   "errorCard.defaultHint": "Controlla la connessione e riprova.",
   "errorCard.retrying": "Riprovo…",
+
+  // ---- filterChip ----------------------------------------------------------
+  "filterChip.a11y": "Filtro {label}, {count} ricordi",
 
   // ---- focus ---------------------------------------------------------------
   "focus.emptyDeck": "Nessun ricordo per il ripasso profondo, per ora.",
@@ -609,6 +640,11 @@ export const it = {
   "health.stable": "Stabili",
   "health.title": "Salute della memoria",
 
+  // ---- healthRow -----------------------------------------------------------
+  "healthRow.high": "Alta",
+  "healthRow.low": "Bassa",
+  "healthRow.medium": "Media",
+
   // ---- itemRow -------------------------------------------------------------
   "itemRow.a11yOpen": "{front}: apri la scheda del ricordo",
   "itemRow.reviewed": "Ripassato {reviewed}",
@@ -631,6 +667,9 @@ export const it = {
   "knowledge.noActiveFolders": "Nessuna cartella attiva",
   "knowledge.retryLoadAccessibility": "Riprova a caricare le cartelle",
   "knowledge.title": "Le tue cartelle",
+
+  // ---- layerCard -----------------------------------------------------------
+  "layerCard.a11y": "{label}, {items} ricordi, {subtitle}",
 
   // ---- login ---------------------------------------------------------------
   "login.appName": "Memika",
@@ -716,6 +755,12 @@ export const it = {
   "resetPassword.title": "Nuova password",
   "resetPassword.verifyingLink": "Stiamo verificando il link che hai aperto.",
   "resetPassword.verifyingLoader": "Verifica del link…",
+
+  // ---- retentionBar --------------------------------------------------------
+  "retentionBar.a11y": "Salute della memoria: {active}% stabili, {fading}% in dissolvenza, {archived}% archiviati",
+
+  // ---- reviewHeader --------------------------------------------------------
+  "reviewHeader.exitA11y": "Esci dal ripasso",
 
   // ---- reviewStore ---------------------------------------------------------
   "reviewStore.demoFocusEstoppelExample": "Il giudice ha applicato l'estoppel.",
@@ -845,6 +890,9 @@ export const it = {
   "tabs.progress": "Progressi",
   "tabs.settings": "Impostazioni",
   "tabs.today": "Oggi",
+
+  // ---- timeBudgetChips -----------------------------------------------------
+  "timeBudgetChips.setA11y": "Imposta tempo di studio a {label}",
 
   // ---- today ---------------------------------------------------------------
   "today.approxMinutes": "~{minutes} min",

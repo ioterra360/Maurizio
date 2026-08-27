@@ -5,6 +5,7 @@ import { X } from "lucide-react-native";
 
 import { Mascot } from "./Mascot";
 import { Tappable } from "@/components/Tappable";
+import { useT } from "@/lib/i18n";
 import { FONT, colors } from "@/theme/tokens";
 import type { CoachTip as Tip } from "@/lib/coach-tips";
 
@@ -25,6 +26,7 @@ type Props = {
  * doesn't re-appear (unless persistDismiss is false).
  */
 export function CoachTip({ tip, persistDismiss = true, accent = colors.navy }: Props) {
+  const { t } = useT();
   const [dismissed, setDismissed] = useState(false);
   const [checked, setChecked] = useState(!persistDismiss);
 
@@ -117,7 +119,7 @@ export function CoachTip({ tip, persistDismiss = true, accent = colors.navy }: P
           <Tappable
             onPress={close}
             accessibilityRole="button"
-            accessibilityLabel="Chiudi suggerimento"
+            accessibilityLabel={t("coachTip.closeTip")}
             hitSlop={8}
             pressedOpacity={0.5 / 0.7}
             containerStyle={{ marginTop: -2 }}

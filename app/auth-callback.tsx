@@ -6,6 +6,7 @@ import { Redirect, router } from "expo-router";
 import { MascotLoader } from "@/components/MascotLoader";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { useAuthStore } from "@/lib/auth-store";
+import { useT } from "@/lib/i18n";
 import { colors, FONT } from "@/theme/tokens";
 
 /**
@@ -21,6 +22,7 @@ import { colors, FONT } from "@/theme/tokens";
  * `pendingPasswordReset` and opens /(auth)/reset-password instead.
  */
 export default function AuthCallbackScreen() {
+  const { t } = useT();
   const authLink = useAuthStore((s) => s.authLink);
   const pendingPasswordReset = useAuthStore((s) => s.pendingPasswordReset);
   const applyAuthLink = useAuthStore((s) => s.applyAuthLink);
@@ -82,7 +84,7 @@ export default function AuthCallbackScreen() {
                 textAlign: "center",
               }}
             >
-              Link non utilizzabile
+              {t("authCallback.linkUnusableTitle")}
             </Text>
             <Text
               style={{
@@ -97,13 +99,13 @@ export default function AuthCallbackScreen() {
             </Text>
             <View style={{ marginTop: 16 }}>
               <PrimaryButton
-                label="Vai all'accesso"
+                label={t("authCallback.goToSignIn")}
                 onPress={() => router.replace("/(auth)/login")}
               />
             </View>
           </View>
         ) : (
-          <MascotLoader label="Accesso in corso…" />
+          <MascotLoader label={t("authCallback.signingIn")} />
         )}
       </View>
     </SafeAreaView>

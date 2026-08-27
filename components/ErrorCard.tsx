@@ -1,17 +1,18 @@
 import { Text, View, type StyleProp, type ViewStyle } from "react-native";
 
 import { Tappable } from "@/components/Tappable";
+import { useT } from "@/lib/i18n";
 import { FONT, colors } from "@/theme/tokens";
 
 type Props = {
   /** One honest sentence about what did not load. */
   title: string;
-  /** Default: "Controlla la connessione e riprova." */
+  /** Default: t("errorCard.defaultHint") — "Controlla la connessione e riprova." */
   hint?: string;
-  /** Default: "Riprova". */
+  /** Default: t("common.retry") — "Riprova". */
   actionLabel?: string;
   onRetry?: () => void;
-  /** While a retry is in flight the button is disabled and reads "Riprovo…". */
+  /** While a retry is in flight the button is disabled and reads t("errorCard.retrying"). */
   retrying?: boolean;
   /** Accessibility label for the retry button — say WHAT is retried. */
   retryAccessibilityLabel?: string;
@@ -26,13 +27,17 @@ type Props = {
  */
 export function ErrorCard({
   title,
-  hint = "Controlla la connessione e riprova.",
-  actionLabel = "Riprova",
+  hint: hintProp,
+  actionLabel: actionLabelProp,
   onRetry,
   retrying = false,
   retryAccessibilityLabel,
   style,
 }: Props) {
+  const { t } = useT();
+  // Defaults resolve at render so the Settings language switch applies at once.
+  const hint = hintProp ?? t("errorCard.defaultHint");
+  const actionLabel = actionLabelProp ?? t("common.retry");
   return (
     <View
       className="rounded-card bg-surface"
@@ -91,7 +96,7 @@ export function ErrorCard({
           }}
         >
           <Text style={{ fontFamily: FONT.semibold, fontSize: 14, color: colors.navy }}>
-            {retrying ? "Riprovo…" : actionLabel}
+            {retrying ? t("errorCard.retrying") : actionLabel}
           </Text>
         </Tappable>
       ) : null}

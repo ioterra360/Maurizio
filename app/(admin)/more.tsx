@@ -17,10 +17,12 @@ import { AdminTopBar } from "@/components/AdminTopBar";
 import { SectionLabel } from "@/components/SectionLabel";
 import { InitialsAvatar } from "@/components/FolderTile";
 import { useAuthStore } from "@/lib/auth-store";
+import { useT } from "@/lib/i18n";
 import { Tappable } from "@/components/Tappable";
 import { FONT, colors, radii } from "@/theme/tokens";
 
 type Sub = {
+  id: string;
   icon: LucideIcon;
   label: string;
   hint: string;
@@ -29,6 +31,7 @@ type Sub = {
 };
 
 export default function AdminMoreScreen() {
+  const { t } = useT();
   const user = useAuthStore((s) => s.user);
   const signOut = useAuthStore((s) => s.signOut);
   const setViewAsUser = useAuthStore((s) => s.setViewAsUser);
@@ -48,23 +51,55 @@ export default function AdminMoreScreen() {
 
   const account: Sub[] = [
     {
+      id: "openAsUser",
       icon: Smartphone,
-      label: "Apri l'app come utente",
-      hint: "Oggi, Cartelle, Progressi e Impostazioni con il tuo account",
+      label: t("adminMore.openAsUserLabel"),
+      hint: t("adminMore.openAsUserHint"),
       onPress: openAsUser,
     },
   ];
 
   const operations: Sub[] = [
-    { icon: FileText, label: "Template contenuti", hint: "6 pubblicati · 2 bozze" },
-    { icon: Bell, label: "Notifiche", hint: "Broadcast · pianificazione campagne" },
-    { icon: Server, label: "Stato del sistema", hint: "1 servizio degradato", badge: 1 },
+    {
+      id: "contentTemplates",
+      icon: FileText,
+      label: t("adminMore.contentTemplatesLabel"),
+      hint: t("adminMore.contentTemplatesHint"),
+    },
+    {
+      id: "notifications",
+      icon: Bell,
+      label: t("adminMore.notificationsLabel"),
+      hint: t("adminMore.notificationsHint"),
+    },
+    {
+      id: "systemStatus",
+      icon: Server,
+      label: t("adminMore.systemStatusLabel"),
+      hint: t("adminMore.systemStatusHint"),
+      badge: 1,
+    },
   ];
 
   const workspace: Sub[] = [
-    { icon: UsersIcon, label: "Team", hint: "5 membri · 1 owner" },
-    { icon: CreditCard, label: "Fatturazione", hint: "Piano Growth · €349/mese" },
-    { icon: Activity, label: "Chiavi API", hint: "2 attive · ultimo uso 3h fa" },
+    {
+      id: "team",
+      icon: UsersIcon,
+      label: t("adminMore.teamLabel"),
+      hint: t("adminMore.teamHint"),
+    },
+    {
+      id: "billing",
+      icon: CreditCard,
+      label: t("adminMore.billingLabel"),
+      hint: t("adminMore.billingHint"),
+    },
+    {
+      id: "apiKeys",
+      icon: Activity,
+      label: t("adminMore.apiKeysLabel"),
+      hint: t("adminMore.apiKeysHint"),
+    },
   ];
 
   return (
@@ -73,33 +108,33 @@ export default function AdminMoreScreen() {
         contentContainerStyle={{ paddingBottom: 140 }}
         showsVerticalScrollIndicator={false}
       >
-        <AdminTopBar title="Altro" subtitle="Operazioni · spazio di lavoro · account" />
+        <AdminTopBar title={t("adminMore.title")} subtitle={t("adminMore.subtitle")} />
 
         <View style={{ paddingHorizontal: 22, paddingBottom: 8 }}>
-          <SectionLabel>Operazioni</SectionLabel>
+          <SectionLabel>{t("adminMore.operationsSection")}</SectionLabel>
         </View>
         <View style={{ paddingHorizontal: 16, gap: 10 }}>
           {operations.map((s) => (
-            <SubRow key={s.label} sub={s} />
+            <SubRow key={s.id} sub={s} />
           ))}
         </View>
 
         <View style={{ paddingHorizontal: 22, paddingTop: 20, paddingBottom: 8 }}>
-          <SectionLabel>Spazio di lavoro</SectionLabel>
+          <SectionLabel>{t("adminMore.workspaceSection")}</SectionLabel>
         </View>
         <View style={{ paddingHorizontal: 16, gap: 8 }}>
           {workspace.map((s) => (
-            <SubRow key={s.label} sub={s} />
+            <SubRow key={s.id} sub={s} />
           ))}
         </View>
 
         {/* Account card */}
         <View style={{ paddingHorizontal: 22, paddingTop: 22, paddingBottom: 8 }}>
-          <SectionLabel>Account</SectionLabel>
+          <SectionLabel>{t("adminMore.accountSection")}</SectionLabel>
         </View>
         <View style={{ paddingHorizontal: 16, gap: 10 }}>
           {account.map((s) => (
-            <SubRow key={s.label} sub={s} />
+            <SubRow key={s.id} sub={s} />
           ))}
           <View
             className="rounded-card bg-surface"
@@ -113,7 +148,7 @@ export default function AdminMoreScreen() {
           >
             <View className="flex-row items-center" style={{ gap: 12 }}>
               <InitialsAvatar
-                initials={(user?.name ?? "M")
+                initials={(user?.name ?? t("adminMore.avatarInitialsFallback"))
                   .split(" ")
                   .filter(Boolean)
                   .slice(0, 2)
@@ -132,7 +167,7 @@ export default function AdminMoreScreen() {
                       letterSpacing: -0.1,
                     }}
                   >
-                    {user?.name ?? "Admin"}
+                    {user?.name ?? t("adminMore.adminFallbackName")}
                   </Text>
                   <View
                     className="rounded-tag"
@@ -146,7 +181,7 @@ export default function AdminMoreScreen() {
                         letterSpacing: 0.7,
                       }}
                     >
-                      OWNER
+                      {t("adminMore.ownerBadge")}
                     </Text>
                   </View>
                 </View>
@@ -166,7 +201,7 @@ export default function AdminMoreScreen() {
             <Tappable
               onPress={handleSignOut}
               accessibilityRole="button"
-              accessibilityLabel="Esci"
+              accessibilityLabel={t("adminMore.signOut")}
               pressedOpacity={0.7}
               style={{
                 alignItems: "center",
@@ -185,7 +220,7 @@ export default function AdminMoreScreen() {
                   letterSpacing: -0.05,
                 }}
               >
-                Esci
+                {t("adminMore.signOut")}
               </Text>
             </Tappable>
           </View>

@@ -1,6 +1,7 @@
 import { Text, View } from "react-native";
 import { Tappable } from "@/components/Tappable";
 import { FONT, colors, radii } from "@/theme/tokens";
+import { useT } from "@/lib/i18n";
 
 type Props = {
   label: string;
@@ -15,10 +16,11 @@ type Props = {
  * Fading / Archived" toggle row.
  */
 export function FilterChip({ label, count, active, dot, onPress }: Props) {
+  const { t } = useT();
   return (
     <Tappable
       onPress={onPress}
-      accessibilityLabel={`Filtro ${label}, ${count} ricordi`}
+      accessibilityLabel={t("filterChip.a11y", { label, count })}
       accessibilityState={{ selected: active }}
       pressedOpacity={0.6}
       style={{

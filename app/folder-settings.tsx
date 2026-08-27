@@ -25,6 +25,7 @@ import { reportError } from "@/lib/report-error";
 import { safeBack } from "@/lib/safe-back";
 import { relativeReviewed } from "@/lib/format";
 import { FOLDER_KINDS, type FolderKind } from "@/lib/constants";
+import { useT } from "@/lib/i18n";
 import { FONT, colors } from "@/theme/tokens";
 
 /**
@@ -34,6 +35,7 @@ import { FONT, colors } from "@/theme/tokens";
  * back pops naturally onto it.
  */
 export default function FolderSettingsScreen() {
+  const { t, tp } = useT();
   const params = useLocalSearchParams<{ kind: string }>();
   const kind = (FOLDER_KINDS as readonly string[]).includes(params.kind ?? "")
     ? (params.kind as FolderKind)
@@ -50,11 +52,11 @@ export default function FolderSettingsScreen() {
   const lastReviewLabel = useMemo(() => {
     const ts = items
       .map((i) => i.lastReviewedAt)
-      .filter((t): t is string => !!t)
+      .filter((v): v is string => !!v)
       .sort()
       .at(-1);
-    return ts ? relativeReviewed(ts) : "mai";
-  }, [items]);
+    return ts ? relativeReviewed(ts) : t("common.never");
+  }, [items, t]);
 
   // Seed the input once per folder row — keyed on id so a background
   // refetch can't clobber what the user is typing.
@@ -81,11 +83,11 @@ export default function FolderSettingsScreen() {
     setDeleting(true);
     try {
       await deleteFolder(folder.id);
-      showToast(`Cartella ${folder.name} eliminata`);
+      showToast(t("folderSettings.toastDeleted", { name: folder.name }));
       router.replace("/(app)/knowledge");
     } catch (err) {
       reportError("folder-settings/delete", err);
-      showToast("Eliminazione non riuscita. Riprova.");
+      showToast(t("folderSettings.toastDeleteFailed"));
       setDeleting(false);
       setConfirmDelete(false);
     }
@@ -96,12 +98,12 @@ export default function FolderSettingsScreen() {
     setSaving(true);
     try {
       await updateFolderName(folder.id, trimmed);
-      showToast("Nome della cartella aggiornato");
+      showToast(t("folderSettings.toastRenamed"));
       // Folder detail refetches on focus, so the new name shows on return.
       safeBack("/(app)/knowledge");
     } catch (err) {
       reportError("folder-settings/rename", err);
-      showToast("Salvataggio non riuscito. Riprova.");
+      showToast(t("folderSettings.toastSaveFailed"));
       setSaving(false);
     }
   };
@@ -112,7 +114,7 @@ export default function FolderSettingsScreen() {
         <TopBar />
         <View style={{ padding: 24 }}>
           <Text style={{ fontFamily: FONT.semibold, fontSize: 18, color: colors.navy }}>
-            Cartella non trovata.
+            {t("folderSettings.notFound")}
           </Text>
         </View>
       </SafeAreaView>
@@ -122,9 +124,9 @@ export default function FolderSettingsScreen() {
   if (loading && !folder) {
     return (
       <SafeAreaView className="flex-1 bg-warm-white" edges={["top"]}>
-        <TopBar title="Impostazioni cartella" />
+        <TopBar title={t("folderSettings.title")} />
         <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-          <MascotLoader label="Un attimo…" />
+          <MascotLoader label={t("common.oneMoment")} />
         </View>
       </SafeAreaView>
     );
@@ -132,7 +134,7 @@ export default function FolderSettingsScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-warm-white" edges={["top"]}>
-      <TopBar title="Impostazioni cartella" />
+      <TopBar title={t("folderSettings.title")} />
       <ScrollView
         contentContainerStyle={{ paddingBottom: 160 }}
         keyboardShouldPersistTaps="handled"
@@ -140,7 +142,7 @@ export default function FolderSettingsScreen() {
       >
         {/* Statistiche della cartella — stessi rollup del dettaglio */}
         <View style={{ paddingHorizontal: 24, paddingTop: 20, paddingBottom: 8 }}>
-          <SectionLabel>Statistiche</SectionLabel>
+          <SectionLabel>{t("folderSettings.statsSection")}</SectionLabel>
         </View>
         <View style={{ paddingHorizontal: 16 }}>
           <View
@@ -163,19 +165,19 @@ export default function FolderSettingsScreen() {
             <View className="mt-4 flex-row" style={{ justifyContent: "space-between" }}>
               <StatBlock
                 dot={colors.active}
-                label="Stabili"
+                label={t("folderSettings.stateStable")}
                 pct={folder?.active ?? 0}
                 count={Math.round(((folder?.count ?? 0) * (folder?.active ?? 0)) / 100)}
               />
               <StatBlock
                 dot={colors.fading}
-                label="In dissolvenza"
+                label={t("folderSettings.stateFading")}
                 pct={folder?.fading ?? 0}
                 count={Math.round(((folder?.count ?? 0) * (folder?.fading ?? 0)) / 100)}
               />
               <StatBlock
                 dot={colors.archived}
-                label="Archiviati"
+                label={t("folderSettings.stateArchived")}
                 pct={folder?.archived ?? 0}
                 count={Math.round(((folder?.count ?? 0) * (folder?.archived ?? 0)) / 100)}
               />
@@ -189,14 +191,16 @@ export default function FolderSettingsScreen() {
                 fontVariant: ["tabular-nums"],
               }}
             >
-              {folder?.count ?? 0} ricordi · {folder?.addedThisWeek ?? 0} aggiunti questa
-              settimana · ultimo ripasso {lastReviewLabel}
+              {tp("folderSettings.statsSummary", folder?.count ?? 0, {
+                addedThisWeek: folder?.addedThisWeek ?? 0,
+                lastReview: lastReviewLabel,
+              })}
             </Text>
           </View>
         </View>
 
         <View style={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 8 }}>
-          <SectionLabel>Nome</SectionLabel>
+          <SectionLabel>{t("folderSettings.nameSection")}</SectionLabel>
         </View>
         <View style={{ paddingHorizontal: 16 }}>
           <View
@@ -214,9 +218,9 @@ export default function FolderSettingsScreen() {
               value={name}
               onChangeText={setName}
               editable={!loading && !saving}
-              placeholder="Nome della cartella"
+              placeholder={t("folderSettings.namePlaceholder")}
               placeholderTextColor={colors.placeholder}
-              accessibilityLabel="Nome della cartella"
+              accessibilityLabel={t("folderSettings.namePlaceholder")}
               style={{
                 flex: 1,
                 fontFamily: FONT.semibold,
@@ -231,31 +235,33 @@ export default function FolderSettingsScreen() {
 
         {/* Ritmo — cartella dormiente */}
         <View style={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 8 }}>
-          <SectionLabel>Ritmo</SectionLabel>
+          <SectionLabel>{t("folderSettings.rhythmSection")}</SectionLabel>
         </View>
         <View style={{ paddingHorizontal: 16 }}>
           <SettingsToggle
             key={folder ? `paused-${folder.paused}` : "paused"}
-            label="Metti in pausa"
-            hint="La cartella esce dai ripassi finché non la riattivi. Nessun ricordo va perso."
+            label={t("folderSettings.pauseLabel")}
+            hint={t("folderSettings.pauseHint")}
             defaultOn={folder?.paused ?? false}
             onChange={(v) => {
               if (!folder) return;
               updateFolderPaused(folder.id, v)
                 .then(() => {
-                  showToast(v ? "Cartella in pausa" : "Cartella riattivata");
+                  showToast(
+                    v ? t("folderSettings.toastPaused") : t("folderSettings.toastResumed"),
+                  );
                   refetch();
                 })
                 .catch((err) => {
                   reportError("folder-settings/pause", err);
-                  showToast("Operazione non riuscita. Riprova.");
+                  showToast(t("folderSettings.toastPauseFailed"));
                 });
             }}
           />
         </View>
 
         <View style={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 8 }}>
-          <SectionLabel>Ordine</SectionLabel>
+          <SectionLabel>{t("folderSettings.orderSection")}</SectionLabel>
         </View>
         <View style={{ paddingHorizontal: 16 }}>
           <View
@@ -275,15 +281,14 @@ export default function FolderSettingsScreen() {
                 lineHeight: 20,
               }}
             >
-              La posizione nella lista si cambia da Cartelle: tieni premuta una
-              cartella e trascinala dove vuoi.
+              {t("folderSettings.orderHint")}
             </Text>
           </View>
         </View>
 
         <View style={{ paddingHorizontal: 20, marginTop: 28 }}>
           <PrimaryButton
-            label={saving ? "Salvataggio…" : "Salva"}
+            label={saving ? t("folderSettings.saving") : t("common.save")}
             onPress={handleSave}
             disabled={!canSave}
           />
@@ -294,12 +299,12 @@ export default function FolderSettingsScreen() {
           <Tappable
             onPress={openDeleteConfirm}
             accessibilityRole="button"
-            accessibilityLabel="Elimina cartella"
+            accessibilityLabel={t("folderSettings.deleteFolder")}
             pressedOpacity={0.6}
             style={{ paddingVertical: 8, paddingHorizontal: 12 }}
           >
             <Text style={{ fontFamily: FONT.semibold, fontSize: 14.5, color: colors.danger }}>
-              Elimina cartella
+              {t("folderSettings.deleteFolder")}
             </Text>
           </Tappable>
         </View>
@@ -340,7 +345,9 @@ export default function FolderSettingsScreen() {
                 letterSpacing: -0.3,
               }}
             >
-              Eliminare {folder?.name ?? "questa cartella"}?
+              {t("folderSettings.deleteConfirmTitle", {
+                name: folder?.name ?? t("folderSettings.thisFolderFallback"),
+              })}
             </Text>
             <Text
               style={{
@@ -351,21 +358,18 @@ export default function FolderSettingsScreen() {
               }}
             >
               {memoryCount === null
-                ? "Tutti i ricordi della cartella verranno eliminati per sempre."
-                : memoryCount === 1
-                  ? "1 ricordo verrà eliminato per sempre."
-                  : `${memoryCount} ricordi verranno eliminati per sempre.`}{" "}
-              Non si può annullare.
+                ? t("folderSettings.deleteConfirmBodyUnknown")
+                : tp("folderSettings.deleteConfirmBody", memoryCount)}
             </Text>
             <View style={{ gap: 10, marginTop: 6 }}>
               <PrimaryButton
-                label={deleting ? "Elimino…" : "Elimina cartella"}
+                label={deleting ? t("folderSettings.deleting") : t("folderSettings.deleteFolder")}
                 color={colors.danger}
                 onPress={handleDelete}
                 disabled={deleting}
               />
               <GhostButton
-                label="Annulla"
+                label={t("common.cancel")}
                 onPress={() => setConfirmDelete(false)}
                 disabled={deleting}
               />

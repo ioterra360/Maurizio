@@ -1,19 +1,21 @@
 /**
  * Pure helpers for the "Elimina account" sheet in Settings. Kept out of the
- * screen so the Italian copy (singular/plural, error mapping) is unit-tested
- * and the RPC call in lib/api.ts stays a one-liner.
+ * screen so the copy (singular/plural, error mapping) is unit-tested and the
+ * RPC call in lib/api.ts stays a one-liner. Every string resolves through
+ * lib/i18n at call time so the Settings language switch applies at once.
  */
+import { t, tp } from "@/lib/i18n";
 
 export type DeletionPreview = { memories: number; folders: number };
 
-/** "1 ricordo" / "N ricordi" — Italian plural of "ricordo". */
+/** "1 ricordo" / "N ricordi" — plural of "memory" in the current language. */
 export function formatMemoryCount(n: number): string {
-  return n === 1 ? "1 ricordo" : `${n} ricordi`;
+  return tp("accountDeletion.memoryCount", n);
 }
 
 /** "1 cartella" / "N cartelle". */
 export function formatFolderCount(n: number): string {
-  return n === 1 ? "1 cartella" : `${n} cartelle`;
+  return tp("accountDeletion.folderCount", n);
 }
 
 /**
@@ -23,24 +25,21 @@ export function formatFolderCount(n: number): string {
  */
 export function deletionPreviewMessage(preview: DeletionPreview | null): string {
   if (!preview) {
-    return "Tutti i tuoi ricordi, le cartelle e la cronologia dei ripassi verranno eliminati per sempre.";
+    return t("accountDeletion.previewUnknown");
   }
   if (preview.memories === 0 && preview.folders === 0) {
-    return "Il tuo profilo e la cronologia dei ripassi verranno eliminati per sempre.";
+    return t("accountDeletion.previewEmpty");
   }
   if (preview.memories === 0) {
-    return `${capitalize(formatFolderCount(preview.folders))} e la cronologia dei ripassi verranno eliminate per sempre.`;
+    return tp("accountDeletion.previewFoldersOnly", preview.folders);
   }
-  const verb = preview.memories === 1 ? "verrà eliminato" : "verranno eliminati";
-  return `${capitalize(formatMemoryCount(preview.memories))} in ${formatFolderCount(preview.folders)} ${verb} per sempre.`;
-}
-
-function capitalize(s: string): string {
-  return s.charAt(0).toUpperCase() + s.slice(1);
+  return tp("accountDeletion.previewFull", preview.memories, {
+    folders: formatFolderCount(preview.folders),
+  });
 }
 
 /**
- * Italian, user-safe message for a failed deletion. Never echoes the raw
+ * Localised, user-safe message for a failed deletion. Never echoes the raw
  * error: Postgres/PostgREST strings are English and may leak schema names.
  *
  * 42501 is what delete_own_account() raises when there is no authenticated
@@ -50,12 +49,12 @@ export function deletionErrorMessage(err: unknown): string {
   const code = readCode(err);
   const msg = readMessage(err).toLowerCase();
   if (code === "42501" || code === "PGRST301" || msg.includes("jwt") || msg.includes("not authenticated")) {
-    return "La sessione è scaduta. Accedi di nuovo e riprova.";
+    return t("accountDeletion.sessionExpired");
   }
   if (msg.includes("network") || msg.includes("fetch") || msg.includes("timeout")) {
-    return "Nessuna connessione. Controlla la rete e riprova.";
+    return t("accountDeletion.noConnection");
   }
-  return "Eliminazione non riuscita. Riprova tra poco.";
+  return t("accountDeletion.deleteFailed");
 }
 
 function readCode(err: unknown): string | null {

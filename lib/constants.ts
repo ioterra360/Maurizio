@@ -5,13 +5,15 @@
  * Slugs MUST match the database. UI labels can localize freely.
  */
 
+import { t, type TKey } from "@/lib/i18n";
 import type { LayerKey } from "@/theme/tokens";
 
 /**
  * The four folder TEMPLATES a user can pick at onboarding. These slugs are
  * the database identifiers (folders.kind) and never change; the UI labels
- * are Italian. Nothing is auto-seeded any more: the user starts with ONE
- * folder — a template or a custom one — chosen in /choose-topic.
+ * are localized via lib/i18n. Nothing is auto-seeded any more: the user
+ * starts with ONE folder — a template or a custom one — chosen in
+ * /choose-topic.
  */
 export const TEMPLATE_KINDS = ["jp", "medicine", "es", "law"] as const;
 export type TemplateKind = (typeof TEMPLATE_KINDS)[number];
@@ -23,72 +25,103 @@ export const CUSTOM_FOLDER_KIND = "custom" as const;
 export const FOLDER_KINDS = [...TEMPLATE_KINDS, CUSTOM_FOLDER_KIND] as const;
 export type FolderKind = (typeof FOLDER_KINDS)[number];
 
-/** Item-type option: stable English slug (`value`) + Italian UI label. */
+/** Item-type option: stable English slug (`value`) + localized UI label. */
 export type ItemTypeOption = { value: string; label: string };
 
 export type FolderTemplate = {
   kind: TemplateKind;
-  /** Italian display name — becomes folders.name when the template is picked. */
+  /**
+   * Localized display name (resolved on access, in the current language) —
+   * becomes folders.name when the template is picked.
+   */
   name: string;
   /** One-line hint shown on the template card at onboarding. */
   hint: string;
-  /** Item-type chips offered by Add for this template (Italian labels). */
+  /** Item-type chips offered by Add for this template (localized labels). */
   itemTypes: readonly ItemTypeOption[];
 };
+
+/**
+ * Text fields below are getters that call `t()` on every access, so the
+ * objects keep their plain `{ name, hint, label }` shape while following the
+ * runtime language switch — never cache the resolved strings.
+ */
+const itemType = (value: string, labelKey: TKey): ItemTypeOption => ({
+  value,
+  get label() {
+    return t(labelKey);
+  },
+});
 
 export const FOLDER_TEMPLATES: ReadonlyArray<FolderTemplate> = [
   {
     kind: "jp",
-    name: "Giapponese",
-    hint: "Parole, kanji, grammatica",
+    get name() {
+      return t("constants.templateJpName");
+    },
+    get hint() {
+      return t("constants.templateJpHint");
+    },
     itemTypes: [
-      { value: "word", label: "Parola" },
-      { value: "kanji", label: "Kanji" },
-      { value: "grammar", label: "Grammatica" },
-      { value: "phrase", label: "Frase" },
+      itemType("word", "constants.itemTypeWord"),
+      itemType("kanji", "constants.itemTypeKanji"),
+      itemType("grammar", "constants.itemTypeGrammar"),
+      itemType("phrase", "constants.itemTypePhrase"),
     ],
   },
   {
     kind: "medicine",
-    name: "Medicina",
-    hint: "Termini, concetti, farmaci",
+    get name() {
+      return t("constants.templateMedicineName");
+    },
+    get hint() {
+      return t("constants.templateMedicineHint");
+    },
     itemTypes: [
-      { value: "term", label: "Termine" },
-      { value: "concept", label: "Concetto" },
-      { value: "drug", label: "Farmaco" },
-      { value: "fact", label: "Nozione" },
+      itemType("term", "constants.itemTypeTerm"),
+      itemType("concept", "constants.itemTypeConcept"),
+      itemType("drug", "constants.itemTypeDrug"),
+      itemType("fact", "constants.itemTypeFact"),
     ],
   },
   {
     kind: "es",
-    name: "Spagnolo",
-    hint: "Parole, verbi, grammatica",
+    get name() {
+      return t("constants.templateEsName");
+    },
+    get hint() {
+      return t("constants.templateEsHint");
+    },
     itemTypes: [
-      { value: "word", label: "Parola" },
-      { value: "verb", label: "Verbo" },
-      { value: "grammar", label: "Grammatica" },
-      { value: "phrase", label: "Frase" },
+      itemType("word", "constants.itemTypeWord"),
+      itemType("verb", "constants.itemTypeVerb"),
+      itemType("grammar", "constants.itemTypeGrammar"),
+      itemType("phrase", "constants.itemTypePhrase"),
     ],
   },
   {
     kind: "law",
-    name: "Diritto",
-    hint: "Dottrina, casi, norme",
+    get name() {
+      return t("constants.templateLawName");
+    },
+    get hint() {
+      return t("constants.templateLawHint");
+    },
     itemTypes: [
-      { value: "doctrine", label: "Dottrina" },
-      { value: "case", label: "Caso" },
-      { value: "statute", label: "Norma" },
-      { value: "term", label: "Termine" },
+      itemType("doctrine", "constants.itemTypeDoctrine"),
+      itemType("case", "constants.itemTypeCase"),
+      itemType("statute", "constants.itemTypeStatute"),
+      itemType("term", "constants.itemTypeTerm"),
     ],
   },
 ];
 
 /** Generic chips for a custom folder — no domain assumption. */
 export const CUSTOM_ITEM_TYPES: readonly ItemTypeOption[] = [
-  { value: "term", label: "Termine" },
-  { value: "concept", label: "Concetto" },
-  { value: "fact", label: "Nozione" },
-  { value: "phrase", label: "Frase" },
+  itemType("term", "constants.itemTypeTerm"),
+  itemType("concept", "constants.itemTypeConcept"),
+  itemType("fact", "constants.itemTypeFact"),
+  itemType("phrase", "constants.itemTypePhrase"),
 ];
 
 /** Custom folder names: 1–40 chars after trimming (lib/folder-templates.ts). */
@@ -118,12 +151,51 @@ export const REVIEW_LAYERS: ReadonlyArray<LayerKey> = ["scan", "reinforcement", 
 export const REVIEW_RESPONSES = ["remembered", "struggled", "forgot", "skipped"] as const;
 export type ReviewResponse = (typeof REVIEW_RESPONSES)[number];
 
-/** Time-budget options on Today. Four cards: 5 / 15 / 30 / 60+ minutes. */
+/**
+ * Time-budget options on Today. Four cards: 5 / 15 / 30 / 60+ minutes.
+ * `label` / `sublabel` are getters resolved in the current language on access.
+ */
 export const TIME_BUDGETS = [
-  { label: "5 min",   sublabel: "Veloce",     minutes: 5,  estItems: 8   },
-  { label: "15 min",  sublabel: "Standard",   minutes: 15, estItems: 28  },
-  { label: "30 min",  sublabel: "Approfondita", minutes: 30, estItems: 55  },
-  { label: "1+ ora",  sublabel: "Maratona",   minutes: 60, estItems: 110 },
+  {
+    get label() {
+      return t("constants.budget5Label");
+    },
+    get sublabel() {
+      return t("constants.budget5Sublabel");
+    },
+    minutes: 5,
+    estItems: 8,
+  },
+  {
+    get label() {
+      return t("constants.budget15Label");
+    },
+    get sublabel() {
+      return t("constants.budget15Sublabel");
+    },
+    minutes: 15,
+    estItems: 28,
+  },
+  {
+    get label() {
+      return t("constants.budget30Label");
+    },
+    get sublabel() {
+      return t("constants.budget30Sublabel");
+    },
+    minutes: 30,
+    estItems: 55,
+  },
+  {
+    get label() {
+      return t("constants.budget60Label");
+    },
+    get sublabel() {
+      return t("constants.budget60Sublabel");
+    },
+    minutes: 60,
+    estItems: 110,
+  },
 ] as const;
 
 export const DAILY_INPUT_CAP_DEFAULT = 20;

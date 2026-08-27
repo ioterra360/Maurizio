@@ -17,6 +17,7 @@ import { PrimaryButton } from "@/components/PrimaryButton";
 import { SectionLabel } from "@/components/SectionLabel";
 import { useReviewStore, type RecapEntry } from "@/lib/review-store";
 import { success } from "@/lib/feedback";
+import { useT, type TKey } from "@/lib/i18n";
 import { FONT, colors, layer as layerTokens, statusTint, type LayerKey } from "@/theme/tokens";
 
 /**
@@ -34,26 +35,27 @@ const OUTCOME_COLOR: Record<Outcome, string> = {
   forgot: statusTint.fading.text,
 };
 
-const OUTCOME_LABEL: Record<Outcome, string> = {
-  remembered: "Ricordato",
-  struggled: "Difficile",
-  forgot: "Dimenticato",
+/** Catalog keys — resolved with t() at render so the language switch applies at once. */
+const OUTCOME_LABEL_KEY: Record<Outcome, TKey> = {
+  remembered: "complete.outcomeRemembered",
+  struggled: "complete.outcomeStruggled",
+  forgot: "complete.outcomeForgot",
 };
 
-const TIER_COPY = {
+const TIER_KEYS: Record<"top" | "mid" | "low", { title: TKey; body: TKey }> = {
   top: {
-    title: "Sessione brillante!",
-    body: "La tua memoria di lungo termine ringrazia. Torna domani per consolidare.",
+    title: "complete.tierTopTitle",
+    body: "complete.tierTopBody",
   },
   mid: {
-    title: "Buon lavoro, si costruisce così.",
-    body: "Qualche ricordo ha avuto bisogno di una mano — è esattamente ciò che serve all'algoritmo per aiutarti.",
+    title: "complete.tierMidTitle",
+    body: "complete.tierMidBody",
   },
   low: {
-    title: "Giornata dura? Va benissimo.",
-    body: "Dimenticare fa parte del processo: questi ricordi torneranno presto e saranno più leggeri.",
+    title: "complete.tierLowTitle",
+    body: "complete.tierLowBody",
   },
-} as const;
+};
 
 function AnimatedMascot() {
   const enter = useSharedValue(0);
@@ -94,6 +96,7 @@ function OutcomeBar({
   value: number;
   max: number;
 }) {
+  const { t } = useT();
   const pct = max > 0 ? (value / max) * 100 : 0;
   return (
     <View className="flex-row items-center" style={{ gap: 10, paddingVertical: 6 }}>
@@ -114,7 +117,7 @@ function OutcomeBar({
           letterSpacing: -0.05,
         }}
       >
-        {OUTCOME_LABEL[outcome]}
+        {t(OUTCOME_LABEL_KEY[outcome])}
       </Text>
       <View
         style={{
@@ -151,6 +154,7 @@ function OutcomeBar({
 }
 
 export default function CompleteScreen() {
+  const { t, tp } = useT();
   const totals = useReviewStore((s) => s.totals);
   const results = useReviewStore((s) => s.results);
   const mode = useReviewStore((s) => s.mode);
@@ -159,7 +163,7 @@ export default function CompleteScreen() {
   const total = totals.reviewed || results.length;
   const pct = total > 0 ? totals.remembered / total : 0;
   const tier = pct >= 0.8 ? "top" : pct >= 0.5 ? "mid" : "low";
-  const copy = TIER_COPY[tier];
+  const copy = TIER_KEYS[tier];
   const maxOutcome = Math.max(totals.remembered, totals.struggled, totals.forgot, 1);
 
   // Breakdown per livello — solo in flow, dove i livelli sono più di uno.
@@ -199,7 +203,7 @@ export default function CompleteScreen() {
               marginTop: 12,
             }}
           >
-            Niente da ripassare, per ora.
+            {t("complete.emptyTitle")}
           </Text>
           <Text
             style={{
@@ -212,11 +216,11 @@ export default function CompleteScreen() {
               textAlign: "center",
             }}
           >
-            La tua coda è vuota — aggiungi nuovi ricordi o torna più tardi.
+            {t("complete.emptyBody")}
           </Text>
         </View>
         <View style={{ paddingHorizontal: 22, paddingBottom: 36 }}>
-          <PrimaryButton label="Torna a Oggi" onPress={goHome} />
+          <PrimaryButton label={t("complete.backToToday")} onPress={goHome} />
         </View>
       </SafeAreaView>
     );
@@ -241,7 +245,7 @@ export default function CompleteScreen() {
               marginTop: 12,
             }}
           >
-            {mode === "single" ? "Sessione completata!" : copy.title}
+            {mode === "single" ? t("complete.sessionCompleteTitle") : t(copy.title)}
           </Text>
           <Text
             style={{
@@ -254,13 +258,13 @@ export default function CompleteScreen() {
               textAlign: "center",
             }}
           >
-            {copy.body}
+            {t(copy.body)}
           </Text>
         </View>
 
         {/* Esiti della sessione */}
         <View style={{ paddingHorizontal: 24, paddingTop: 28, paddingBottom: 6 }}>
-          <SectionLabel>Come è andata</SectionLabel>
+          <SectionLabel>{t("complete.sectionHowItWent")}</SectionLabel>
         </View>
         <View style={{ paddingHorizontal: 16 }}>
           <View
@@ -284,8 +288,8 @@ export default function CompleteScreen() {
                 fontVariant: ["tabular-nums"],
               }}
             >
-              {total} ricordi ripassati
-              {mode === "flow" && byLayer.size > 1 ? " · tre livelli" : ""}
+              {tp("complete.reviewedCount", total)}
+              {mode === "flow" && byLayer.size > 1 ? t("complete.threeLayersSuffix") : ""}
             </Text>
           </View>
         </View>
@@ -294,7 +298,7 @@ export default function CompleteScreen() {
         {mode === "flow" && byLayer.size > 1 ? (
           <>
             <View style={{ paddingHorizontal: 24, paddingTop: 22, paddingBottom: 6 }}>
-              <SectionLabel>Per livello</SectionLabel>
+              <SectionLabel>{t("complete.sectionByLayer")}</SectionLabel>
             </View>
             <View style={{ paddingHorizontal: 16 }}>
               <View
@@ -344,7 +348,11 @@ export default function CompleteScreen() {
                         }}
                         numberOfLines={1}
                       >
-                        {c.remembered} ricordati · {c.struggled} difficili · {c.forgot} dimenticati
+                        {t("complete.layerBreakdown", {
+                          remembered: c.remembered,
+                          struggled: c.struggled,
+                          forgot: c.forgot,
+                        })}
                       </Text>
                     </View>
                   );
@@ -356,7 +364,7 @@ export default function CompleteScreen() {
 
         {/* Carta per carta */}
         <View style={{ paddingHorizontal: 24, paddingTop: 22, paddingBottom: 6 }}>
-          <SectionLabel>Carta per carta</SectionLabel>
+          <SectionLabel>{t("complete.sectionCardByCard")}</SectionLabel>
         </View>
         <View style={{ paddingHorizontal: 16 }}>
           <View
@@ -409,7 +417,7 @@ export default function CompleteScreen() {
                       color: colors.midGrey,
                     }}
                   >
-                    Mostrami
+                    {t("complete.revealedTag")}
                   </Text>
                 ) : null}
                 <Text
@@ -419,7 +427,7 @@ export default function CompleteScreen() {
                     color: colors.midGrey,
                   }}
                 >
-                  {OUTCOME_LABEL[r.response]}
+                  {t(OUTCOME_LABEL_KEY[r.response])}
                 </Text>
               </View>
             ))}
@@ -427,7 +435,7 @@ export default function CompleteScreen() {
         </View>
 
         <View style={{ paddingHorizontal: 22, paddingTop: 28 }}>
-          <PrimaryButton label="Torna a Oggi" onPress={goHome} />
+          <PrimaryButton label={t("complete.backToToday")} onPress={goHome} />
         </View>
       </ScrollView>
     </SafeAreaView>

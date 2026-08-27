@@ -4,20 +4,23 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { AdminTopBar } from "@/components/AdminTopBar";
 import { SectionLabel } from "@/components/SectionLabel";
 import { FUNNEL, RECALL } from "@/lib/admin-data";
+import { useT } from "@/lib/i18n";
 import { FONT, colors } from "@/theme/tokens";
 
 export default function AdminInsightsScreen() {
+  const { t, locale } = useT();
+
   return (
     <SafeAreaView className="flex-1 bg-warm-white" edges={["top"]}>
       <ScrollView
         contentContainerStyle={{ paddingBottom: 120 }}
         showsVerticalScrollIndicator={false}
       >
-        <AdminTopBar title="Insight" subtitle="Finestra 14g · clienti dal 12 maggio" />
+        <AdminTopBar title={t("adminInsights.title")} subtitle={t("adminInsights.subtitle")} />
 
         {/* Onboarding funnel */}
         <View style={{ paddingHorizontal: 22, paddingBottom: 8 }}>
-          <SectionLabel>Funnel di onboarding</SectionLabel>
+          <SectionLabel>{t("adminInsights.funnelTitle")}</SectionLabel>
         </View>
         <View style={{ paddingHorizontal: 16 }}>
           <View
@@ -67,7 +70,7 @@ export default function AdminInsightsScreen() {
                           fontVariant: ["tabular-nums"],
                         }}
                       >
-                        {`${step.pct.toLocaleString("it-IT")}%`}
+                        {`${step.pct.toLocaleString(locale)}%`}
                       </Text>
                     </View>
                     <View
@@ -97,8 +100,8 @@ export default function AdminInsightsScreen() {
                         fontVariant: ["tabular-nums"],
                       }}
                     >
-                      {step.value.toLocaleString("it-IT")}
-                      {drop !== null ? ` · -${drop.toLocaleString("it-IT")}` : ""}
+                      {step.value.toLocaleString(locale)}
+                      {drop !== null ? ` · -${drop.toLocaleString(locale)}` : ""}
                     </Text>
                   </View>
                 </View>
@@ -129,16 +132,15 @@ export default function AdminInsightsScreen() {
                 letterSpacing: -0.04,
               }}
             >
-              <Text style={{ fontFamily: FONT.bold }}>La perdita D7 → D30 è del 37%.</Text> I
-              clienti che hanno aggiunto 3+ ricordi nella prima settimana mantengono il 78% al D30
-              contro il 22% di base. Spingere il primo add nella settimana 1.
+              <Text style={{ fontFamily: FONT.bold }}>{t("adminInsights.d7d30CalloutLead")}</Text>{" "}
+              {t("adminInsights.d7d30CalloutBody")}
             </Text>
           </View>
         </View>
 
         {/* Recall accuracy by folder */}
         <View style={{ paddingHorizontal: 22, paddingTop: 22, paddingBottom: 8 }}>
-          <SectionLabel>Accuratezza del richiamo per cartella</SectionLabel>
+          <SectionLabel>{t("adminInsights.recallByFolderTitle")}</SectionLabel>
         </View>
         <View style={{ paddingHorizontal: 16, gap: 10 }}>
           {RECALL.map((row) => (
@@ -197,12 +199,17 @@ export default function AdminInsightsScreen() {
 
         {/* Review layer adoption */}
         <View style={{ paddingHorizontal: 22, paddingTop: 22, paddingBottom: 8 }}>
-          <SectionLabel>Adozione layer di ripasso · 14g</SectionLabel>
+          <SectionLabel>{t("adminInsights.layerAdoptionTitle")}</SectionLabel>
         </View>
         <View style={{ paddingHorizontal: 16, gap: 10 }}>
-          <LayerAdoption color={colors.scan} label="Scan" sessions={42_810} share={0.48} />
-          <LayerAdoption color={colors.reinforcement} label="Reinforcement" sessions={28_410} share={0.32} />
-          <LayerAdoption color={colors.focus} label="Focus" sessions={17_840} share={0.20} />
+          <LayerAdoption color={colors.scan} label={t("adminInsights.layerScan")} sessions={42_810} share={0.48} />
+          <LayerAdoption
+            color={colors.reinforcement}
+            label={t("adminInsights.layerReinforcement")}
+            sessions={28_410}
+            share={0.32}
+          />
+          <LayerAdoption color={colors.focus} label={t("adminInsights.layerFocus")} sessions={17_840} share={0.20} />
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -220,6 +227,8 @@ function LayerAdoption({
   sessions: number;
   share: number;
 }) {
+  const { tp, locale } = useT();
+
   return (
     <View
       className="rounded-chip bg-surface"
@@ -281,7 +290,7 @@ function LayerAdoption({
           fontVariant: ["tabular-nums"],
         }}
       >
-        {sessions.toLocaleString("it-IT")} sessioni
+        {tp("adminInsights.sessions", sessions, { count: sessions.toLocaleString(locale) })}
       </Text>
     </View>
   );

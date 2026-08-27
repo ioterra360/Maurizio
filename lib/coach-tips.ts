@@ -15,7 +15,13 @@
  *   - Ebbinghaus (1885) — forgetting curve.
  *   - Walker (2017) "Why We Sleep" — sleep and consolidation.
  *   - Bjork & Bjork (2011) — desirable difficulties.
+ *
+ * Copy lives in the i18n catalog (`coachTips.*`). Each tip's text fields are
+ * getters resolving `t()` at access time, so a language switch applies at
+ * once and nothing translated is cached at module load.
  */
+
+import { t, type TKey } from "@/lib/i18n";
 
 export type CoachTip = {
   id: string;
@@ -25,63 +31,79 @@ export type CoachTip = {
   source?: string;
 };
 
+/**
+ * Build a tip whose `title` / `body` / `source` resolve through `t()` on every
+ * read (the object stays a plain `CoachTip`; `source` is only defined when a
+ * citation key is given, matching the previous literal shape).
+ */
+function defineTip(id: string, titleKey: TKey, bodyKey: TKey, sourceKey?: TKey): CoachTip {
+  const tip: CoachTip = {
+    id,
+    get title() {
+      return t(titleKey);
+    },
+    get body() {
+      return t(bodyKey);
+    },
+  };
+  if (sourceKey) {
+    Object.defineProperty(tip, "source", {
+      enumerable: true,
+      get: () => t(sourceKey),
+    });
+  }
+  return tip;
+}
+
 export const GENERAL_TIPS: CoachTip[] = [
-  {
-    id: "gen.spacing",
-    title: "Il potere dell'intervallo",
-    body:
-      "Studiare poco e spesso batte le maratone: ripassi distribuiti nel tempo creano memorie più durature.",
-    source: "Cepeda et al., 2008",
-  },
-  {
-    id: "gen.testing",
-    title: "Provare a ricordare insegna",
-    body:
-      "Lo sforzo di richiamare un'informazione la fissa più del rileggerla. È l'effetto del test.",
-    source: "Karpicke & Roediger, 2008",
-  },
-  {
-    id: "gen.sleep",
-    title: "Il sonno consolida",
-    body:
-      "Durante il sonno profondo il cervello riorganizza i ricordi. Dormire bene è parte dello studio.",
-    source: "Walker, Why We Sleep, 2017",
-  },
-  {
-    id: "gen.forgetting-curve",
-    title: "Anticipa l'oblio",
-    body:
-      "Ricordiamo la metà di ciò che impariamo nelle prime ore se non lo rivediamo. Un breve ripasso prima fa la differenza.",
-    source: "Ebbinghaus, 1885",
-  },
-  {
-    id: "gen.desirable-difficulty",
-    title: "La fatica giusta",
-    body:
-      "Quando ricordare richiede uno sforzo (ma ci riesci), la memoria migliora. Non temere le difficoltà desiderabili.",
-    source: "Bjork & Bjork, 2011",
-  },
-  {
-    id: "gen.context",
-    title: "Cambia ambiente, fissa meglio",
-    body:
-      "Studiare la stessa cosa in luoghi diversi crea più \"agganci\" mentali e riduce le dimenticanze.",
-    source: "Smith, Glenberg & Bjork, 1978",
-  },
-  {
-    id: "gen.elaborate",
-    title: "Collega per ricordare",
-    body:
-      "Lega un'informazione nuova a qualcosa che già sai. Più connessioni, più stabile diventa il ricordo.",
-    source: "Craik & Lockhart, 1972 (Levels of processing)",
-  },
-  {
-    id: "gen.health",
-    title: "La mente segue il corpo",
-    body:
-      "30 minuti di movimento al giorno migliorano memoria di lavoro e attenzione: bene per te, bene per i tuoi ricordi.",
-    source: "Erickson et al., PNAS 2011",
-  },
+  defineTip(
+    "gen.spacing",
+    "coachTips.genSpacingTitle",
+    "coachTips.genSpacingBody",
+    "coachTips.genSpacingSource",
+  ),
+  defineTip(
+    "gen.testing",
+    "coachTips.genTestingTitle",
+    "coachTips.genTestingBody",
+    "coachTips.genTestingSource",
+  ),
+  defineTip(
+    "gen.sleep",
+    "coachTips.genSleepTitle",
+    "coachTips.genSleepBody",
+    "coachTips.genSleepSource",
+  ),
+  defineTip(
+    "gen.forgetting-curve",
+    "coachTips.genForgettingCurveTitle",
+    "coachTips.genForgettingCurveBody",
+    "coachTips.genForgettingCurveSource",
+  ),
+  defineTip(
+    "gen.desirable-difficulty",
+    "coachTips.genDesirableDifficultyTitle",
+    "coachTips.genDesirableDifficultyBody",
+    "coachTips.genDesirableDifficultySource",
+  ),
+  defineTip(
+    "gen.context",
+    "coachTips.genContextTitle",
+    "coachTips.genContextBody",
+    "coachTips.genContextSource",
+  ),
+  defineTip(
+    "gen.elaborate",
+    "coachTips.genElaborateTitle",
+    "coachTips.genElaborateBody",
+    "coachTips.genElaborateSource",
+  ),
+  defineTip(
+    "gen.health",
+    "coachTips.genHealthTitle",
+    "coachTips.genHealthBody",
+    "coachTips.genHealthSource",
+  ),
 ];
 
 /**
@@ -102,163 +124,98 @@ export type StudyCategory =
 
 export const CATEGORY_TIPS: Record<StudyCategory, CoachTip[]> = {
   languages: [
-    {
-      id: "lang.shadowing",
-      title: "Ripeti subito ad alta voce",
-      body:
-        "Sentire e ripetere una parola entro 1 secondo (shadowing) attiva pronuncia e memoria insieme. Funziona per qualsiasi lingua.",
-      source: "Murphey, ELT Journal 2001",
-    },
-    {
-      id: "lang.context",
-      title: "Frasi, non parole singole",
-      body:
-        "Memorizza le parole dentro una frase: il contesto è una scorciatoia gratis per richiamarle quando ti servono.",
-    },
-    {
-      id: "lang.daily",
-      title: "Meglio 10 minuti al giorno",
-      body:
-        "Per le lingue la frequenza batte la durata: piccoli incontri quotidiani consolidano più di sessioni lunghe e rare.",
-      source: "DeKeyser, Studies in Second Language Acquisition, 2007",
-    },
-    {
-      id: "lang.errors",
-      title: "Sbagliare aiuta",
-      body:
-        "Tentare di tradurre prima di vedere la risposta crea una traccia di memoria più forte di quella di una lettura passiva.",
-      source: "Karpicke & Blunt, Science 2011",
-    },
+    defineTip(
+      "lang.shadowing",
+      "coachTips.langShadowingTitle",
+      "coachTips.langShadowingBody",
+      "coachTips.langShadowingSource",
+    ),
+    defineTip("lang.context", "coachTips.langContextTitle", "coachTips.langContextBody"),
+    defineTip(
+      "lang.daily",
+      "coachTips.langDailyTitle",
+      "coachTips.langDailyBody",
+      "coachTips.langDailySource",
+    ),
+    defineTip(
+      "lang.errors",
+      "coachTips.langErrorsTitle",
+      "coachTips.langErrorsBody",
+      "coachTips.langErrorsSource",
+    ),
   ],
   math: [
-    {
-      id: "math.spaced-problems",
-      title: "Distanzia i problemi",
-      body:
-        "Alterna tipi di esercizio invece di farne 20 dello stesso tipo: l'\"interleaving\" rende l'apprendimento più solido.",
-      source: "Rohrer & Taylor, Instructional Science 2007",
-    },
-    {
-      id: "math.explain",
-      title: "Spiegalo come a un bambino",
-      body:
-        "Se riesci a spiegare un concetto matematico con parole semplici, l'hai capito. È la tecnica di Feynman.",
-    },
-    {
-      id: "math.retrieval",
-      title: "Risolvi senza guardare",
-      body:
-        "Prova a risolvere il problema a mente prima di vedere la formula: il richiamo crea memoria.",
-      source: "Karpicke & Roediger, 2008",
-    },
+    defineTip(
+      "math.spaced-problems",
+      "coachTips.mathSpacedProblemsTitle",
+      "coachTips.mathSpacedProblemsBody",
+      "coachTips.mathSpacedProblemsSource",
+    ),
+    defineTip("math.explain", "coachTips.mathExplainTitle", "coachTips.mathExplainBody"),
+    // Same citation as gen.testing (Karpicke & Roediger, 2008) — key reused.
+    defineTip(
+      "math.retrieval",
+      "coachTips.mathRetrievalTitle",
+      "coachTips.mathRetrievalBody",
+      "coachTips.genTestingSource",
+    ),
   ],
   history: [
-    {
-      id: "hist.timeline",
-      title: "Costruisci una linea del tempo",
-      body:
-        "Le date isolate sfuggono. Connessione causa-effetto: ogni evento è meglio ricordato se sai cosa lo ha provocato.",
-    },
-    {
-      id: "hist.story",
-      title: "Trasforma in storia",
-      body:
-        "Il cervello ricorda le narrazioni meglio delle liste. Racconta gli eventi come fossero una trama.",
-      source: "Bower & Clark, 1969",
-    },
-    {
-      id: "hist.places",
-      title: "Palazzo della memoria",
-      body:
-        "Associa ogni evento a un luogo familiare. Tecnica usata da retori romani, ancora oggi tra le più potenti.",
-      source: "Yates, The Art of Memory 1966",
-    },
+    defineTip("hist.timeline", "coachTips.histTimelineTitle", "coachTips.histTimelineBody"),
+    defineTip(
+      "hist.story",
+      "coachTips.histStoryTitle",
+      "coachTips.histStoryBody",
+      "coachTips.histStorySource",
+    ),
+    defineTip(
+      "hist.places",
+      "coachTips.histPlacesTitle",
+      "coachTips.histPlacesBody",
+      "coachTips.histPlacesSource",
+    ),
   ],
   medicine: [
-    {
-      id: "med.mnemonic",
-      title: "Mnemonici medici",
-      body:
-        "Acronimi e immagini bizzarre velocizzano il richiamo dei sistemi anatomici e farmaci.",
-    },
-    {
-      id: "med.cases",
-      title: "Studia per casi clinici",
-      body:
-        "Collega ogni concetto a un paziente immaginario: sintomo → ipotesi → trattamento. Il caso è il contesto.",
-      source: "Norman, Medical Education 2000",
-    },
-    {
-      id: "med.spaced-anki",
-      title: "Ripasso spaziato e selettivo",
-      body:
-        "Per il volume di nozioni in medicina la spaced repetition è il metodo più studiato. Anki nasce in questo contesto.",
-    },
+    defineTip("med.mnemonic", "coachTips.medMnemonicTitle", "coachTips.medMnemonicBody"),
+    defineTip(
+      "med.cases",
+      "coachTips.medCasesTitle",
+      "coachTips.medCasesBody",
+      "coachTips.medCasesSource",
+    ),
+    defineTip("med.spaced-anki", "coachTips.medSpacedAnkiTitle", "coachTips.medSpacedAnkiBody"),
   ],
   law: [
-    {
-      id: "law.irac",
-      title: "Metodo IRAC",
-      body:
-        "Issue · Rule · Application · Conclusion. Catalogare ogni caso secondo questi 4 punti rende il richiamo automatico in esame.",
-    },
-    {
-      id: "law.outline",
-      title: "Outline prima dei dettagli",
-      body:
-        "Sapere la struttura di un codice prima di studiarne gli articoli aiuta il cervello a collocarli correttamente.",
-    },
-    {
-      id: "law.cases",
-      title: "Una sentenza, una storia",
-      body:
-        "I casi che restano impressi sono quelli con dettagli umani. Cerca il fatto concreto dietro la massima giuridica.",
-    },
+    defineTip("law.irac", "coachTips.lawIracTitle", "coachTips.lawIracBody"),
+    defineTip("law.outline", "coachTips.lawOutlineTitle", "coachTips.lawOutlineBody"),
+    defineTip("law.cases", "coachTips.lawCasesTitle", "coachTips.lawCasesBody"),
   ],
   science: [
-    {
-      id: "sci.diagrams",
-      title: "Disegna anche se non sai",
-      body:
-        "Provare a disegnare un meccanismo prima di vederlo lo fissa meglio di copiarlo dal libro.",
-      source: "Van Meter, Educational Psychology 2001",
-    },
-    {
-      id: "sci.connect",
-      title: "Collega le scale",
-      body:
-        "In scienze, lega il micro (cellula, atomo) al macro (organismo, sistema). I ponti tra livelli stabilizzano la memoria.",
-    },
+    defineTip(
+      "sci.diagrams",
+      "coachTips.sciDiagramsTitle",
+      "coachTips.sciDiagramsBody",
+      "coachTips.sciDiagramsSource",
+    ),
+    defineTip("sci.connect", "coachTips.sciConnectTitle", "coachTips.sciConnectBody"),
   ],
   art: [
-    {
-      id: "art.attribution",
-      title: "Riconosci, non solo nomina",
-      body:
-        "Per opere e stili allena il riconoscimento visivo: guarda 20 dipinti dello stesso autore prima di leggere la teoria.",
-    },
+    defineTip("art.attribution", "coachTips.artAttributionTitle", "coachTips.artAttributionBody"),
   ],
   code: [
-    {
-      id: "code.recall-syntax",
-      title: "Scrivi senza autocomplete",
-      body:
-        "Disattiva la copia: forza la mente a ricordare la sintassi. Il richiamo attivo batte la lettura.",
-    },
-    {
-      id: "code.read-good-code",
-      title: "Leggi codice scritto bene",
-      body:
-        "Il cervello impara per imitazione. Esponilo ogni giorno a esempi puliti dei pattern che vuoi padroneggiare.",
-    },
+    defineTip(
+      "code.recall-syntax",
+      "coachTips.codeRecallSyntaxTitle",
+      "coachTips.codeRecallSyntaxBody",
+    ),
+    defineTip(
+      "code.read-good-code",
+      "coachTips.codeReadGoodCodeTitle",
+      "coachTips.codeReadGoodCodeBody",
+    ),
   ],
   generic: [
-    {
-      id: "gen.start-easy",
-      title: "Parti dal facile",
-      body:
-        "Le prime ripetizioni di una sessione dovrebbero darti fiducia: il cervello si \"riscalda\" come un muscolo.",
-    },
+    defineTip("gen.start-easy", "coachTips.genStartEasyTitle", "coachTips.genStartEasyBody"),
   ],
 };
 
@@ -299,50 +256,30 @@ export function pickCategoryTip(
 
 export const SCREEN_TIPS: Record<string, CoachTip[]> = {
   today: [
-    {
-      id: "today.flow",
-      title: "Un giro al giorno",
-      body:
-        "Il flow Scan → Reinforcement → Focus è pensato per coprire tutto in pochi minuti. Prova a farlo ogni giorno alla stessa ora.",
-    },
-    {
-      id: "today.budget",
-      title: "Scegli quanto tempo hai",
-      body:
-        "Anche 5 minuti contano. La costanza vince sulla quantità: meglio breve oggi che lungo \"domani\".",
-    },
+    defineTip("today.flow", "coachTips.todayFlowTitle", "coachTips.todayFlowBody"),
+    defineTip("today.budget", "coachTips.todayBudgetTitle", "coachTips.todayBudgetBody"),
   ],
   knowledge: [
-    {
-      id: "knowledge.priority",
-      title: "L'ordine conta",
-      body:
-        "Le cartelle più in alto vengono proposte per prime. Sposta in cima quelle su cui vuoi concentrarti.",
-    },
-    {
-      id: "knowledge.categories",
-      title: "Catalogare aiuta",
-      body:
-        "Suddividere i ricordi per cartelle facilita il richiamo: il cervello li raggruppa già da solo.",
-      source: "Bower et al., 1969",
-    },
+    defineTip(
+      "knowledge.priority",
+      "coachTips.knowledgePriorityTitle",
+      "coachTips.knowledgePriorityBody",
+    ),
+    defineTip(
+      "knowledge.categories",
+      "coachTips.knowledgeCategoriesTitle",
+      "coachTips.knowledgeCategoriesBody",
+      "coachTips.knowledgeCategoriesSource",
+    ),
   ],
   health: [
-    {
-      id: "health.attention",
-      title: "Guarda la curva",
-      body:
-        "Una memoria che sbiadisce non è persa: torna verde con uno o due ripassi mirati.",
-    },
+    defineTip(
+      "health.attention",
+      "coachTips.healthAttentionTitle",
+      "coachTips.healthAttentionBody",
+    ),
   ],
-  add: [
-    {
-      id: "add.short",
-      title: "Meno è meglio",
-      body:
-        "Un ricordo breve e specifico si fissa più di un paragrafo. Scrivi solo ciò che ti serve davvero ricordare.",
-    },
-  ],
+  add: [defineTip("add.short", "coachTips.addShortTitle", "coachTips.addShortBody")],
 };
 
 /**

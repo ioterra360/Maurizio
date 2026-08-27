@@ -16,6 +16,7 @@ import { AuthTextInput } from "@/components/AuthTextInput";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { useAuthStore } from "@/lib/auth-store";
 import { authErrorMessage } from "@/lib/auth-errors";
+import { useT } from "@/lib/i18n";
 import { useUIStore } from "@/lib/ui-store";
 import { colors, FONT } from "@/theme/tokens";
 
@@ -40,6 +41,7 @@ type LinkStatus = "verifying" | "ready" | "invalid";
  * email is needed and offers to request one.
  */
 export default function ResetPasswordScreen() {
+  const { t } = useT();
   const user = useAuthStore((s) => s.user);
   const authLink = useAuthStore((s) => s.authLink);
   const pendingPasswordReset = useAuthStore((s) => s.pendingPasswordReset);
@@ -94,27 +96,27 @@ export default function ResetPasswordScreen() {
     // URL, while the root layout stores the link a tick later (async
     // dedupe). Give it a moment before declaring the visit link-less.
     const timer = setTimeout(() => {
-      setLinkError("Apri il link che hai ricevuto via email per impostare una nuova password.");
+      setLinkError(t("resetPassword.openEmailLink"));
       setStatus("invalid");
     }, 1500);
     return () => clearTimeout(timer);
-  }, [authLink, user, pendingPasswordReset, applyAuthLink]);
+  }, [authLink, user, pendingPasswordReset, applyAuthLink, t]);
 
   const handleSubmit = async () => {
     setError(null);
     if (password.length < MIN_PASSWORD_LENGTH) {
-      setError(`La password deve avere almeno ${MIN_PASSWORD_LENGTH} caratteri.`);
+      setError(t("resetPassword.passwordTooShort", { count: MIN_PASSWORD_LENGTH }));
       return;
     }
     if (password !== confirm) {
-      setError("Le password non coincidono.");
+      setError(t("resetPassword.passwordsDontMatch"));
       return;
     }
     setSubmitting(true);
     try {
       await updatePassword(password);
       endPasswordReset();
-      showToast("Password aggiornata");
+      showToast(t("resetPassword.passwordUpdatedToast"));
       // `/` redirects by role (user → Today, admin → admin home).
       router.replace("/");
     } catch (e) {
@@ -168,7 +170,7 @@ export default function ResetPasswordScreen() {
                 textAlign: "center",
               }}
             >
-              Nuova password
+              {t("resetPassword.title")}
             </Text>
             <Text
               style={{
@@ -182,16 +184,19 @@ export default function ResetPasswordScreen() {
               }}
             >
               {status === "ready"
-                ? `Scegli una password di almeno ${MIN_PASSWORD_LENGTH} caratteri${
-                    user?.email ? ` per ${user.email}` : ""
-                  }.`
-                : "Stiamo verificando il link che hai aperto."}
+                ? user?.email
+                  ? t("resetPassword.chooseWithEmail", {
+                      count: MIN_PASSWORD_LENGTH,
+                      email: user.email,
+                    })
+                  : t("resetPassword.chooseNoEmail", { count: MIN_PASSWORD_LENGTH })
+                : t("resetPassword.verifyingLink")}
             </Text>
           </View>
 
           {status === "verifying" ? (
             <View className="items-center" style={{ paddingTop: 12 }}>
-              <MascotLoader label="Verifica del link…" />
+              <MascotLoader label={t("resetPassword.verifyingLoader")} />
             </View>
           ) : null}
 
@@ -208,7 +213,7 @@ export default function ResetPasswordScreen() {
                 }}
               >
                 <Text style={{ fontFamily: FONT.semibold, fontSize: 15, color: colors.navy }}>
-                  Link non utilizzabile
+                  {t("resetPassword.linkUnusableTitle")}
                 </Text>
                 <Text
                   style={{
@@ -222,9 +227,9 @@ export default function ResetPasswordScreen() {
                 </Text>
               </View>
               <View style={{ marginTop: 28, gap: 12 }}>
-                <PrimaryButton label="Richiedi un nuovo link" onPress={requestNewLink} />
+                <PrimaryButton label={t("resetPassword.requestNewLink")} onPress={requestNewLink} />
                 <PrimaryButton
-                  label="Torna all'accesso"
+                  label={t("resetPassword.backToSignIn")}
                   variant="outline"
                   onPress={() => {
                     void handleCancel();
@@ -236,26 +241,26 @@ export default function ResetPasswordScreen() {
 
           {status === "ready" ? (
             <>
-              <FieldLabel>Nuova password</FieldLabel>
+              <FieldLabel>{t("resetPassword.newPasswordLabel")}</FieldLabel>
               <AuthTextInput
                 value={password}
                 onChangeText={setPassword}
                 autoComplete="new-password"
                 secureTextEntry
-                placeholder={`Almeno ${MIN_PASSWORD_LENGTH} caratteri`}
+                placeholder={t("resetPassword.passwordPlaceholder", { count: MIN_PASSWORD_LENGTH })}
                 returnKeyType="next"
                 submitBehavior="submit"
                 onSubmitEditing={() => confirmRef.current?.focus()}
               />
 
-              <FieldLabel style={{ marginTop: 18 }}>Conferma password</FieldLabel>
+              <FieldLabel style={{ marginTop: 18 }}>{t("resetPassword.confirmPasswordLabel")}</FieldLabel>
               <AuthTextInput
                 ref={confirmRef}
                 value={confirm}
                 onChangeText={setConfirm}
                 autoComplete="new-password"
                 secureTextEntry
-                placeholder="Ripeti la password"
+                placeholder={t("resetPassword.confirmPasswordPlaceholder")}
                 returnKeyType="done"
                 onSubmitEditing={() => {
                   if (!submitting) void handleSubmit();
@@ -277,12 +282,12 @@ export default function ResetPasswordScreen() {
 
               <View style={{ marginTop: 28, gap: 12 }}>
                 <PrimaryButton
-                  label="Salva la nuova password"
+                  label={t("resetPassword.saveNewPassword")}
                   loading={submitting}
                   onPress={handleSubmit}
                 />
                 <PrimaryButton
-                  label="Annulla"
+                  label={t("common.cancel")}
                   variant="outline"
                   disabled={submitting}
                   onPress={() => {

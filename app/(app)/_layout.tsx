@@ -7,11 +7,13 @@ import { Home, Folder, BarChart3, Settings as SettingsIcon } from "lucide-react-
 
 import { useAuthGate } from "@/lib/auth-gate";
 import { useFolderOrderStore } from "@/lib/folder-order-store";
+import { useT } from "@/lib/i18n";
 import { colors } from "@/theme/tokens";
 
 export default function AppLayout() {
   const gate = useAuthGate("app");
   const insets = useSafeAreaInsets();
+  const { t } = useT();
   // Hydrate the persisted folder order once for every (app) surface, so
   // folder detail (and anything else reading priorities) doesn't depend on
   // Knowledge having mounted first.
@@ -61,28 +63,28 @@ export default function AppLayout() {
       <Tabs.Screen
         name="today"
         options={{
-          title: "Oggi",
+          title: t("tabs.today"),
           tabBarIcon: ({ color }) => <Home size={22} color={color} strokeWidth={1.75} />,
         }}
       />
       <Tabs.Screen
         name="knowledge"
         options={{
-          title: "Cartelle",
+          title: t("tabs.folders"),
           tabBarIcon: ({ color }) => <Folder size={22} color={color} strokeWidth={1.75} />,
         }}
       />
       <Tabs.Screen
         name="health"
         options={{
-          title: "Progressi",
+          title: t("tabs.progress"),
           tabBarIcon: ({ color }) => <BarChart3 size={22} color={color} strokeWidth={1.75} />,
         }}
       />
       <Tabs.Screen
         name="settings"
         options={{
-          title: "Impostazioni",
+          title: t("tabs.settings"),
           tabBarIcon: ({ color }) => <SettingsIcon size={22} color={color} strokeWidth={1.75} />,
         }}
       />

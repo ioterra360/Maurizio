@@ -15,6 +15,7 @@ import { ItemRow } from "@/components/ItemRow";
 import { SectionLabel } from "@/components/SectionLabel";
 import { Tappable } from "@/components/Tappable";
 import { FONT, colors } from "@/theme/tokens";
+import { useT } from "@/lib/i18n";
 import { FOLDER_KINDS, type FolderKind, type MemoryState } from "@/lib/constants";
 import { useFolderDetail } from "@/lib/use-folders";
 import { priorityOf, useFolderOrderStore } from "@/lib/folder-order-store";
@@ -24,6 +25,7 @@ import { markAddOpenedIntentionally } from "@/lib/add-gate";
 import type { FolderItem } from "@/lib/folder-data";
 
 export default function FolderDetailScreen() {
+  const { t, tp } = useT();
   const params = useLocalSearchParams<{ kind: string }>();
   const kind = (FOLDER_KINDS as readonly string[]).includes(params.kind ?? "")
     ? (params.kind as FolderKind)
@@ -77,7 +79,7 @@ export default function FolderDetailScreen() {
         <TopBar />
         <View style={{ padding: 24 }}>
           <Text style={{ fontFamily: FONT.semibold, fontSize: 18, color: colors.navy }}>
-            Cartella non trovata.
+            {t("folder.notFound")}
           </Text>
         </View>
       </SafeAreaView>
@@ -89,7 +91,7 @@ export default function FolderDetailScreen() {
       <SafeAreaView className="flex-1 bg-warm-white" edges={["top"]}>
         <TopBar />
         <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-          <MascotLoader label="Apro la cartella…" />
+          <MascotLoader label={t("folder.openingFolder")} />
         </View>
       </SafeAreaView>
     );
@@ -101,11 +103,11 @@ export default function FolderDetailScreen() {
         <TopBar />
         <View style={{ padding: 24, gap: 12 }}>
           <Text style={{ fontFamily: FONT.semibold, fontSize: 18, color: colors.navy }}>
-            Non siamo riusciti a caricare questa cartella.
+            {t("folder.loadFailed")}
           </Text>
           <Tappable
             onPress={refetch}
-            accessibilityLabel="Riprova a caricare la cartella"
+            accessibilityLabel={t("folder.retryLoadA11y")}
             containerStyle={{ alignSelf: "flex-start" }}
             style={{
               paddingHorizontal: 18,
@@ -117,7 +119,7 @@ export default function FolderDetailScreen() {
             }}
           >
             <Text style={{ fontFamily: FONT.semibold, fontSize: 14, color: colors.navy }}>
-              Riprova
+              {t("common.retry")}
             </Text>
           </Tappable>
         </View>
@@ -171,7 +173,7 @@ export default function FolderDetailScreen() {
               fontVariant: ["tabular-nums"],
             }}
           >
-            {data.count} ricordi · {data.addedThisWeek} aggiunti questa settimana
+            {tp("folder.heroSummary", data.count, { addedThisWeek: data.addedThisWeek })}
           </Text>
         </View>
 
@@ -197,19 +199,19 @@ export default function FolderDetailScreen() {
             <View className="mt-4 flex-row" style={{ justifyContent: "space-between" }}>
               <StatBlock
                 dot={colors.active}
-                label="Stabili"
+                label={t("folder.stateStable")}
                 pct={data.active}
                 count={Math.round((data.count * data.active) / 100)}
               />
               <StatBlock
                 dot={colors.fading}
-                label="In dissolvenza"
+                label={t("folder.stateFading")}
                 pct={data.fading}
                 count={Math.round((data.count * data.fading) / 100)}
               />
               <StatBlock
                 dot={colors.archived}
-                label="Archiviati"
+                label={t("folder.stateArchived")}
                 pct={data.archived}
                 count={Math.round((data.count * data.archived) / 100)}
               />
@@ -224,12 +226,12 @@ export default function FolderDetailScreen() {
         >
           <ActionPill
             icon={Repeat}
-            label="Ripassa ora"
+            label={t("folder.reviewNow")}
             color={colors.reinforcement}
             disabled={data.paused}
             onPress={startReview}
           />
-          <ActionPill icon={Plus} label="Aggiungi" color={colors.navy} onPress={addItem} />
+          <ActionPill icon={Plus} label={t("folder.add")} color={colors.navy} onPress={addItem} />
         </View>
         {data.paused ? (
           <Text
@@ -241,13 +243,13 @@ export default function FolderDetailScreen() {
               color: colors.midGrey,
             }}
           >
-            Cartella in pausa — riattivala dalle impostazioni per ripassarla.
+            {t("folder.pausedNotice")}
           </Text>
         ) : null}
 
         {/* Filters */}
         <View style={{ paddingHorizontal: 22, paddingTop: 20, paddingBottom: 10 }}>
-          <SectionLabel>Ricordi</SectionLabel>
+          <SectionLabel>{t("folder.memoriesSection")}</SectionLabel>
         </View>
         <ScrollView
           horizontal
@@ -255,27 +257,27 @@ export default function FolderDetailScreen() {
           contentContainerStyle={{ paddingHorizontal: 16, gap: 6, paddingBottom: 12 }}
         >
           <FilterChip
-            label="Tutti"
+            label={t("folder.filterAll")}
             count={counts.all}
             active={filter === "all"}
             onPress={() => setFilter("all")}
           />
           <FilterChip
-            label="Stabili"
+            label={t("folder.stateStable")}
             count={counts.active}
             active={filter === "active"}
             dot={colors.active}
             onPress={() => setFilter("active")}
           />
           <FilterChip
-            label="In dissolvenza"
+            label={t("folder.stateFading")}
             count={counts.fading}
             active={filter === "fading"}
             dot={colors.fading}
             onPress={() => setFilter("fading")}
           />
           <FilterChip
-            label="Archiviati"
+            label={t("folder.stateArchived")}
             count={counts.archived}
             active={filter === "archived"}
             dot={colors.archived}
@@ -296,7 +298,7 @@ export default function FolderDetailScreen() {
                 paddingVertical: 32,
               }}
             >
-              Nessun ricordo in questo stato.
+              {t("folder.emptyState")}
             </Text>
           ) : (
             filtered.map((item, i) => (
@@ -320,7 +322,7 @@ export default function FolderDetailScreen() {
           "Impostazioni" — Angelo, 2026-08-27). */}
       <Tappable
         onPress={addItem}
-        accessibilityLabel="Aggiungi un ricordo a questa cartella"
+        accessibilityLabel={t("folder.fabAddA11y")}
         containerStyle={{
           position: "absolute",
           right: 22,

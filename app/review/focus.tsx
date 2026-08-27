@@ -10,10 +10,12 @@ import { FolderPill } from "@/components/FolderPill";
 import { RecallButton } from "@/components/RecallButton";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { useReviewStore } from "@/lib/review-store";
+import { useT } from "@/lib/i18n";
 import { success, error } from "@/lib/feedback";
 import { FONT, colors } from "@/theme/tokens";
 
 export default function FocusScreen() {
+  const { t } = useT();
   const ensureSession = useReviewStore((s) => s.ensureSession);
   // s.cards() in the selector loops zustand v5 on folder-scoped decks —
   // see the note in review/scan.tsx.
@@ -61,7 +63,7 @@ export default function FocusScreen() {
     return (
       <SafeAreaView className="flex-1 bg-warm-white" edges={["top"]}>
         <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-          <MascotLoader label="Preparo il ripasso…" />
+          <MascotLoader label={t("focus.preparingReview")} />
         </View>
       </SafeAreaView>
     );
@@ -80,10 +82,10 @@ export default function FocusScreen() {
               textAlign: "center",
             }}
           >
-            Nessun ricordo per il ripasso profondo, per ora.
+            {t("focus.emptyDeck")}
           </Text>
           <View style={{ alignSelf: "stretch", marginTop: 24 }}>
-            <PrimaryButton label="Torna indietro" onPress={() => router.back()} />
+            <PrimaryButton label={t("focus.goBack")} onPress={() => router.back()} />
           </View>
         </View>
       </SafeAreaView>
@@ -188,7 +190,7 @@ export default function FocusScreen() {
             <RecallButton variant="remembered" onPress={() => advance("remembered")} />
           </>
         ) : (
-          <PrimaryButton label="Mostra risposta" onPress={() => setRevealed(true)} />
+          <PrimaryButton label={t("focus.showAnswer")} onPress={() => setRevealed(true)} />
         )}
       </View>
     </SafeAreaView>

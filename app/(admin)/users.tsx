@@ -9,6 +9,7 @@ import { FilterChip } from "@/components/FilterChip";
 import { Tappable } from "@/components/Tappable";
 import { USERS, type AdminUser } from "@/lib/admin-data";
 import { FONT, colors, radii, statusTint } from "@/theme/tokens";
+import { t, useT } from "@/lib/i18n";
 
 type PlanFilter = "all" | "Pro" | "Free" | "At risk";
 
@@ -22,7 +23,7 @@ const PLAN_TINT: Record<AdminUser["plan"], { bg: string; text: string }> = {
 const PLAN_LABEL: Record<AdminUser["plan"], string> = {
   Pro: "PRO",
   Free: "FREE",
-  "At risk": "A RISCHIO",
+  get "At risk"() { return t("adminUsers.tagAtRisk"); },
 };
 
 const RETENTION_PILL: Record<"high" | "med" | "low", { bg: string; text: string }> = {
@@ -32,6 +33,7 @@ const RETENTION_PILL: Record<"high" | "med" | "low", { bg: string; text: string 
 };
 
 export default function AdminUsersScreen() {
+  const { t: tr } = useT();
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<PlanFilter>("all");
 
@@ -57,7 +59,7 @@ export default function AdminUsersScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-warm-white" edges={["top"]}>
-      <AdminTopBar title="Utenti" subtitle={`${counts.all} totali · ${counts.atRisk} a rischio`} />
+      <AdminTopBar title={tr("adminUsers.title")} subtitle={tr("adminUsers.subtitle", { all: counts.all, atRisk: counts.atRisk })} />
 
       {/* Search */}
       <View style={{ paddingHorizontal: 16, paddingTop: 4, paddingBottom: 12 }}>
@@ -75,7 +77,7 @@ export default function AdminUsersScreen() {
           <TextInput
             value={query}
             onChangeText={setQuery}
-            placeholder="Cerca nome o email"
+            placeholder={tr("adminUsers.searchPlaceholder")}
             placeholderTextColor={colors.placeholder}
             autoCapitalize="none"
             autoCorrect={false}
@@ -98,7 +100,7 @@ export default function AdminUsersScreen() {
         contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}
       >
         <FilterChip
-          label="Tutti"
+          label={tr("adminUsers.filterAll")}
           count={counts.all}
           active={filter === "all"}
           onPress={() => setFilter("all")}
@@ -118,7 +120,7 @@ export default function AdminUsersScreen() {
           onPress={() => setFilter("Free")}
         />
         <FilterChip
-          label="A rischio"
+          label={tr("adminUsers.filterAtRisk")}
           count={counts.atRisk}
           active={filter === "At risk"}
           dot={colors.fading}
@@ -161,7 +163,7 @@ function UserRow({ user }: { user: AdminUser }) {
   return (
     <Tappable
       accessibilityRole="button"
-      accessibilityLabel={`Apri i dettagli di ${user.name}`}
+      accessibilityLabel={t("adminUsers.openDetailsA11y", { name: user.name })}
       style={{
         flexDirection: "row",
         alignItems: "center",

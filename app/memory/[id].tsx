@@ -20,16 +20,19 @@ import { Tappable } from "@/components/Tappable";
 import { TopBar } from "@/components/TopBar";
 import { deleteMemory, fetchMemoryById, updateMemoryNotes } from "@/lib/api";
 import { longDate, relativeReviewed } from "@/lib/format";
+import { useT } from "@/lib/i18n";
+import type { TKey } from "@/lib/i18n";
 import type { Memory } from "@/lib/mappers";
 import { reportError } from "@/lib/report-error";
 import { useUIStore } from "@/lib/ui-store";
 import { FONT, colors, radii, statusTint } from "@/theme/tokens";
 
-const STATE_META = {
-  active: { ...statusTint.active, label: "Stabile" },
-  fading: { ...statusTint.fading, label: "In dissolvenza" },
-  archived: { ...statusTint.archived, label: "Archiviato" },
-} as const;
+// Labels are catalog keys, resolved with t() at render so the language switch applies.
+const STATE_META: Record<Memory["state"], { bg: string; text: string; labelKey: TKey }> = {
+  active: { ...statusTint.active, labelKey: "memory.stateActive" },
+  fading: { ...statusTint.fading, labelKey: "memory.stateFading" },
+  archived: { ...statusTint.archived, labelKey: "memory.stateArchived" },
+};
 
 const NOTES_MAX = 2000;
 
@@ -41,6 +44,7 @@ const NOTES_MAX = 2000;
  * (Angelo, 2026-08-27).
  */
 export default function MemoryDetailScreen() {
+  const { t } = useT();
   const { id } = useLocalSearchParams<{ id: string }>();
   const showToast = useUIStore((s) => s.showToast);
 
@@ -82,11 +86,11 @@ export default function MemoryDetailScreen() {
       const next = notes.trim();
       await updateMemoryNotes(memory.id, next.length ? next : null);
       setMemory({ ...memory, notes: next.length ? next : null });
-      showToast("Appunti salvati");
+      showToast(t("memory.notesSaved"));
       if (router.canGoBack()) router.back();
     } catch (e) {
       reportError("memory-detail/save-notes", e);
-      showToast("Non siamo riusciti a salvare gli appunti. Riprova.");
+      showToast(t("memory.notesSaveFailed"));
     } finally {
       setSaving(false);
     }
@@ -100,12 +104,12 @@ export default function MemoryDetailScreen() {
   const confirmDelete = () => {
     if (!memory || deleting) return;
     Alert.alert(
-      `Eliminare "${memory.term}"?`,
-      "Il ricordo e la sua storia di ripasso spariscono per sempre. Non si può annullare.",
+      t("memory.deleteConfirmTitle", { term: memory.term }),
+      t("memory.deleteConfirmMessage"),
       [
-        { text: "Annulla", style: "cancel" },
+        { text: t("common.cancel"), style: "cancel" },
         {
-          text: "Elimina",
+          text: t("common.delete"),
           style: "destructive",
           onPress: () => void doDelete(),
         },
@@ -118,11 +122,11 @@ export default function MemoryDetailScreen() {
     setDeleting(true);
     try {
       await deleteMemory(memory.id);
-      showToast("Ricordo eliminato");
+      showToast(t("memory.deleted"));
       back(); // the folder list refetches on focus
     } catch (e) {
       reportError("memory-detail/delete", e);
-      showToast("Non siamo riusciti a eliminare il ricordo. Riprova.");
+      showToast(t("memory.deleteFailed"));
       setDeleting(false);
     }
   };
@@ -132,7 +136,7 @@ export default function MemoryDetailScreen() {
   return (
     <SafeAreaView className="flex-1 bg-warm-white" edges={["top"]}>
       <TopBar
-        title="Ricordo"
+        title={t("memory.title")}
         onBack={back}
         rightSlot={
           memory ? (
@@ -140,7 +144,7 @@ export default function MemoryDetailScreen() {
               onPress={save}
               disabled={saving || !dirty}
               accessibilityRole="button"
-              accessibilityLabel="Salva appunti"
+              accessibilityLabel={t("memory.saveNotes")}
               hitSlop={10}
               onPressIn={() => setSavePressed(true)}
               onPressOut={() => setSavePressed(false)}
@@ -159,7 +163,7 @@ export default function MemoryDetailScreen() {
                   letterSpacing: -0.1,
                 }}
               >
-                Salva
+                {t("common.save")}
               </Text>
             </Pressable>
           ) : undefined
@@ -168,19 +172,19 @@ export default function MemoryDetailScreen() {
 
       {loading ? (
         <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-          <MascotLoader label="Apro il ricordo…" />
+          <MascotLoader label={t("memory.opening")} />
         </View>
       ) : error || !memory || !meta ? (
         <View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 28, gap: 12 }}>
           <Text
             style={{ fontFamily: FONT.semibold, fontSize: 15, color: colors.navy, textAlign: "center" }}
           >
-            Non siamo riusciti ad aprire questo ricordo.
+            {t("memory.openFailed")}
           </Text>
           <Tappable
             onPress={() => void load()}
             accessibilityRole="button"
-            accessibilityLabel="Riprova"
+            accessibilityLabel={t("common.retry")}
             style={{
               paddingHorizontal: 18,
               paddingVertical: 10,
@@ -190,7 +194,9 @@ export default function MemoryDetailScreen() {
               backgroundColor: colors.warmWhite,
             }}
           >
-            <Text style={{ fontFamily: FONT.semibold, fontSize: 14, color: colors.navy }}>Riprova</Text>
+            <Text style={{ fontFamily: FONT.semibold, fontSize: 14, color: colors.navy }}>
+              {t("common.retry")}
+            </Text>
           </Tappable>
         </View>
       ) : (
@@ -242,13 +248,13 @@ export default function MemoryDetailScreen() {
                 }}
               >
                 <Text style={{ fontFamily: FONT.semibold, fontSize: 12, color: meta.text, letterSpacing: 0.2 }}>
-                  {meta.label}
+                  {t(meta.labelKey)}
                 </Text>
               </View>
             </View>
 
             {/* Meaning + example */}
-            <SectionLabel topMargin={22}>Significato</SectionLabel>
+            <SectionLabel topMargin={22}>{t("memory.sectionMeaning")}</SectionLabel>
             <View
               style={{
                 marginTop: 10,
@@ -280,7 +286,7 @@ export default function MemoryDetailScreen() {
             </View>
 
             {/* Dates */}
-            <SectionLabel topMargin={22}>Storia</SectionLabel>
+            <SectionLabel topMargin={22}>{t("memory.sectionHistory")}</SectionLabel>
             <View
               style={{
                 marginTop: 10,
@@ -290,24 +296,26 @@ export default function MemoryDetailScreen() {
                 borderColor: colors.hairline,
               }}
             >
-              <MetaRow label="Aggiunto il" value={longDate(memory.createdAt)} />
+              <MetaRow label={t("memory.addedOn")} value={longDate(memory.createdAt)} />
               <MetaRow
-                label="Ultimo ripasso"
-                value={memory.lastReviewedAt ? `${relativeReviewed(memory.lastReviewedAt)}` : "mai"}
+                label={t("memory.lastReview")}
+                value={
+                  memory.lastReviewedAt ? `${relativeReviewed(memory.lastReviewedAt)}` : t("common.never")
+                }
               />
-              <MetaRow label="Prossimo ripasso" value={longDate(memory.nextReviewAt)} last />
+              <MetaRow label={t("memory.nextReview")} value={longDate(memory.nextReviewAt)} last />
             </View>
 
             {/* Notes */}
-            <SectionLabel topMargin={22}>Appunti</SectionLabel>
+            <SectionLabel topMargin={22}>{t("memory.notes")}</SectionLabel>
             <TextInput
               value={notes}
               onChangeText={(v) => setNotes(v.slice(0, NOTES_MAX))}
               multiline
               textAlignVertical="top"
-              placeholder="Frasi tue, trucchi per ricordare, quando ti è servita questa parola…"
+              placeholder={t("memory.notesPlaceholder")}
               placeholderTextColor={colors.placeholder}
-              accessibilityLabel="Appunti"
+              accessibilityLabel={t("memory.notes")}
               style={{
                 marginTop: 10,
                 minHeight: 140,
@@ -337,7 +345,7 @@ export default function MemoryDetailScreen() {
             </Text>
 
             <View style={{ marginTop: 18 }}>
-              <PrimaryButton label="Salva appunti" onPress={save} loading={saving} disabled={!dirty} />
+              <PrimaryButton label={t("memory.saveNotes")} onPress={save} loading={saving} disabled={!dirty} />
             </View>
 
             {/* Danger zone */}
@@ -345,7 +353,7 @@ export default function MemoryDetailScreen() {
               onPress={confirmDelete}
               disabled={deleting || saving}
               accessibilityRole="button"
-              accessibilityLabel="Elimina ricordo"
+              accessibilityLabel={t("memory.deleteMemory")}
               pressedOpacity={0.8}
               containerStyle={{ marginTop: 34, opacity: deleting ? 0.5 : 1 }}
               style={{
@@ -362,7 +370,7 @@ export default function MemoryDetailScreen() {
             >
               <Trash2 size={17} color={colors.danger} strokeWidth={2} />
               <Text style={{ fontFamily: FONT.semibold, fontSize: 15.5, color: colors.danger }}>
-                {deleting ? "Elimino…" : "Elimina ricordo"}
+                {deleting ? t("memory.deleting") : t("memory.deleteMemory")}
               </Text>
             </Tappable>
           </ScrollView>

@@ -3,6 +3,7 @@ import { Tappable } from "@/components/Tappable";
 import { FONT, colors, radii } from "@/theme/tokens";
 import { TIME_BUDGETS } from "@/lib/constants";
 import { tap } from "@/lib/feedback";
+import { useT } from "@/lib/i18n";
 
 type Props = {
   value: number;
@@ -16,6 +17,7 @@ type Props = {
  * active, warm-white with hairline border when idle.
  */
 export function TimeBudgetChips({ value, onChange }: Props) {
+  const { t } = useT();
   return (
     <View>
       <Text
@@ -40,7 +42,7 @@ export function TimeBudgetChips({ value, onChange }: Props) {
                 tap();
                 onChange(b.minutes);
               }}
-              accessibilityLabel={`Imposta tempo di studio a ${b.label}`}
+              accessibilityLabel={t("timeBudgetChips.setA11y", { label: b.label })}
               accessibilityState={{ selected: on }}
               hitSlop={6}
               pressedOpacity={0.7}

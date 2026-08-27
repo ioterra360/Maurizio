@@ -4,6 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 
 import { Mascot } from "@/components/Mascot";
+import { useT } from "@/lib/i18n";
 import { useReviewStore } from "@/lib/review-store";
 import { success } from "@/lib/feedback";
 import { FONT, colors, layer as layerTokens, type LayerKey } from "@/theme/tokens";
@@ -14,6 +15,7 @@ import { FONT, colors, layer as layerTokens, type LayerKey } from "@/theme/token
  * solo dopo un momento (spec core-loop §5).
  */
 export default function ReviewHandoffScreen() {
+  const { t } = useT();
   const layer = useReviewStore((s) => s.layer);
   const layerCaps = useReviewStore((s) => s.layerCaps);
   const advanceToLayer = useReviewStore((s) => s.advanceToLayer);
@@ -54,8 +56,8 @@ export default function ReviewHandoffScreen() {
   // Interstitial automatico: goNext è idempotente via ranRef, quindi un
   // unmount anticipato non può double-fire.
   useEffect(() => {
-    const t = setTimeout(goNext, 1100);
-    return () => clearTimeout(t);
+    const timer = setTimeout(goNext, 1100);
+    return () => clearTimeout(timer);
   }, [goNext]);
 
   if (!nextLayer) return null;
@@ -81,7 +83,7 @@ export default function ReviewHandoffScreen() {
             textTransform: "uppercase",
           }}
         >
-          {finishedLabel} completato
+          {t("handoff.layerCompleted", { layer: finishedLabel })}
         </Text>
 
         {/* Next title */}
@@ -96,7 +98,7 @@ export default function ReviewHandoffScreen() {
             textAlign: "center",
           }}
         >
-          Avanti con {next.label}
+          {t("handoff.nextUp", { layer: next.label })}
         </Text>
         <Text
           style={{
@@ -110,8 +112,8 @@ export default function ReviewHandoffScreen() {
           }}
         >
           {nextLayer === "reinforcement"
-            ? "Richiamo guidato — ultimi 3–7 giorni, con suggerimenti quando servono."
-            : "Ripasso profondo — ricordi di ieri, valutazione su tre livelli."}
+            ? t("handoff.reinforcementBlurb")
+            : t("handoff.focusBlurb")}
         </Text>
 
         {/* Puntini di transizione col colore del livello in arrivo */}

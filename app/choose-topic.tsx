@@ -31,6 +31,7 @@ import {
   validateFolderName,
   type TopicChoice,
 } from "@/lib/folder-templates";
+import { useT } from "@/lib/i18n";
 import { useUIStore } from "@/lib/ui-store";
 import { reportError } from "@/lib/report-error";
 import { colors, FONT, radii } from "@/theme/tokens";
@@ -68,6 +69,7 @@ function goToday() {
  * creating we pop back to Knowledge instead of going to Today.
  */
 export default function ChooseTopicScreen() {
+  const { t } = useT();
   const user = useAuthStore((s) => s.user);
   const hydrated = useAuthStore((s) => s.hydrated);
   // An admin browsing the consumer app ("Apri l'app come utente") may own
@@ -151,7 +153,7 @@ export default function ChooseTopicScreen() {
     setSaving(true);
     try {
       const folder = await createFolder(user.id, folderInputFromChoice(choice));
-      showToast(`Cartella "${folder.name}" pronta · aggiungi il primo ricordo`);
+      showToast(t("chooseTopic.folderReadyToast", { name: folder.name }));
       if (addingAnother && router.canGoBack()) {
         router.back(); // Knowledge refetches on focus
       } else {
@@ -159,7 +161,7 @@ export default function ChooseTopicScreen() {
       }
     } catch (e) {
       reportError("choose-topic/create-folder", e);
-      setError("Non siamo riusciti a creare la cartella. Controlla la connessione e riprova.");
+      setError(t("chooseTopic.createFailed"));
     } finally {
       setSaving(false);
     }
@@ -169,7 +171,7 @@ export default function ChooseTopicScreen() {
     return (
       <SafeAreaView className="flex-1 bg-canvas" edges={["top", "bottom"]}>
         <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-          <MascotLoader label="Un attimo…" />
+          <MascotLoader label={t("common.oneMoment")} />
         </View>
       </SafeAreaView>
     );
@@ -215,7 +217,7 @@ export default function ChooseTopicScreen() {
                 textAlign: "center",
               }}
             >
-              {addingAnother ? "Nuova cartella" : "Scegli il tuo argomento"}
+              {addingAnother ? t("chooseTopic.titleNewFolder") : t("chooseTopic.titleChooseTopic")}
             </Text>
             <Text
               style={{
@@ -229,14 +231,14 @@ export default function ChooseTopicScreen() {
               }}
             >
               {addingAnother
-                ? "Un modello, oppure un argomento tuo. Ogni tipo di cartella una volta sola."
+                ? t("chooseTopic.subtitleNewFolder")
                 : FOLDER_LIMIT_ENFORCED
-                  ? "Memika parte da una cartella sola: quella che vuoi proteggere dall'oblio. Altre cartelle arriveranno con Premium."
-                  : "L'argomento da cui partire. Potrai aggiungerne altri dalla schermata Cartelle."}
+                  ? t("chooseTopic.subtitleLimitEnforced")
+                  : t("chooseTopic.subtitleLimitOff")}
             </Text>
           </View>
 
-          <SectionLabel>Modelli</SectionLabel>
+          <SectionLabel>{t("chooseTopic.sectionTemplates")}</SectionLabel>
 
           {/* 2×2 template grid */}
           <View
@@ -247,20 +249,24 @@ export default function ChooseTopicScreen() {
               marginTop: 10,
             }}
           >
-            {FOLDER_TEMPLATES.map((t) => {
-              const on = selected === t.kind;
-              const owned = ownedKinds.has(t.kind);
+            {FOLDER_TEMPLATES.map((tpl) => {
+              const on = selected === tpl.kind;
+              const owned = ownedKinds.has(tpl.kind);
               return (
                 <Tappable
-                  key={t.kind}
+                  key={tpl.kind}
                   onPress={() => {
                     if (owned) return;
-                    setSelected(t.kind);
+                    setSelected(tpl.kind);
                     setError(null);
                   }}
                   disabled={owned}
                   accessibilityRole="button"
-                  accessibilityLabel={owned ? `${t.name} — già presente` : `${t.name} — ${t.hint}`}
+                  accessibilityLabel={
+                    owned
+                      ? t("chooseTopic.templateOwnedLabel", { name: tpl.name })
+                      : t("chooseTopic.templateLabel", { name: tpl.name, hint: tpl.hint })
+                  }
                   accessibilityState={{ selected: on, disabled: owned }}
                   pressedOpacity={0.8}
                   containerStyle={{ width: "48%", flexGrow: 1, opacity: owned ? 0.45 : 1 }}
@@ -274,7 +280,7 @@ export default function ChooseTopicScreen() {
                     minHeight: 112,
                   }}
                 >
-                  <FolderTile kind={t.kind} size={36} />
+                  <FolderTile kind={tpl.kind} size={36} />
                   <View>
                     <Text
                       style={{
@@ -284,7 +290,7 @@ export default function ChooseTopicScreen() {
                         letterSpacing: -0.15,
                       }}
                     >
-                      {t.name}
+                      {tpl.name}
                     </Text>
                     <Text
                       numberOfLines={2}
@@ -296,7 +302,7 @@ export default function ChooseTopicScreen() {
                         color: colors.midGrey,
                       }}
                     >
-                      {owned ? "Già presente" : t.hint}
+                      {owned ? t("chooseTopic.alreadyOwned") : tpl.hint}
                     </Text>
                   </View>
                 </Tappable>
@@ -304,7 +310,7 @@ export default function ChooseTopicScreen() {
             })}
           </View>
 
-          <SectionLabel topMargin={22}>Oppure</SectionLabel>
+          <SectionLabel topMargin={22}>{t("chooseTopic.sectionOr")}</SectionLabel>
 
           {/* "Altro…" — custom folder name */}
           <Tappable
@@ -315,7 +321,7 @@ export default function ChooseTopicScreen() {
             }}
             disabled={customOwned}
             accessibilityRole="button"
-            accessibilityLabel={customOwned ? "Altro: già presente" : "Altro: scegli un nome personalizzato"}
+            accessibilityLabel={customOwned ? t("chooseTopic.customOwnedLabel") : t("chooseTopic.customLabel")}
             accessibilityState={{ selected: selected === "custom", disabled: customOwned }}
             pressedOpacity={0.85}
             containerStyle={{ marginTop: 10, opacity: customOwned ? 0.45 : 1 }}
@@ -353,7 +359,7 @@ export default function ChooseTopicScreen() {
                     letterSpacing: -0.15,
                   }}
                 >
-                  Altro…
+                  {t("chooseTopic.other")}
                 </Text>
                 <Text
                   style={{
@@ -365,8 +371,8 @@ export default function ChooseTopicScreen() {
                   }}
                 >
                   {customOwned
-                    ? "Già presente (una cartella personalizzata per account, per ora)"
-                    : "Un argomento tuo: storia, chimica, un esame…"}
+                    ? t("chooseTopic.customAlreadyOwned")
+                    : t("chooseTopic.customHint")}
                 </Text>
               </View>
             </View>
@@ -382,9 +388,9 @@ export default function ChooseTopicScreen() {
                   autoFocus
                   autoCapitalize="sentences"
                   maxLength={FOLDER_NAME_MAX_LENGTH + 10}
-                  placeholder="Nome della cartella"
+                  placeholder={t("chooseTopic.folderNamePlaceholder")}
                   placeholderTextColor={colors.placeholder}
-                  accessibilityLabel="Nome della cartella"
+                  accessibilityLabel={t("chooseTopic.folderNamePlaceholder")}
                   returnKeyType="done"
                   onSubmitEditing={() => {
                     if (canCreate) void create();
@@ -435,7 +441,7 @@ export default function ChooseTopicScreen() {
 
           <View style={{ marginTop: 26 }}>
             <PrimaryButton
-              label="Crea la cartella"
+              label={t("chooseTopic.createFolder")}
               onPress={create}
               loading={saving}
               disabled={!canCreate}
@@ -451,7 +457,7 @@ export default function ChooseTopicScreen() {
               textAlign: "center",
             }}
           >
-            Potrai rinominarla quando vuoi dalle impostazioni della cartella.
+            {t("chooseTopic.renameLaterHint")}
           </Text>
         </ScrollView>
       </KeyboardAvoidingView>

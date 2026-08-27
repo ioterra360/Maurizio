@@ -4,6 +4,7 @@ import { router } from "expo-router";
 
 import { ErrorCard } from "@/components/ErrorCard";
 import { Tappable } from "@/components/Tappable";
+import { useT } from "@/lib/i18n";
 import { FONT, colors } from "@/theme/tokens";
 
 type Props = {
@@ -20,6 +21,7 @@ type Props = {
  * Complete with 0 cards. The user can retry in place or leave.
  */
 export function DeckErrorScreen({ onRetry, fallbackHref = "/(app)/today" }: Props) {
+  const { t } = useT();
   const goBack = () => {
     if (router.canGoBack()) router.back();
     else router.replace(fallbackHref as never);
@@ -28,20 +30,20 @@ export function DeckErrorScreen({ onRetry, fallbackHref = "/(app)/today" }: Prop
     <SafeAreaView className="flex-1 bg-warm-white" edges={["top"]}>
       <View style={{ flex: 1, justifyContent: "center", paddingHorizontal: 24, gap: 18 }}>
         <ErrorCard
-          title="Non siamo riusciti a caricare i ricordi da ripassare."
-          hint="Nessuna risposta è stata registrata. Controlla la connessione e riprova."
+          title={t("deckError.title")}
+          hint={t("deckError.hint")}
           onRetry={onRetry}
-          retryAccessibilityLabel="Riprova a caricare il ripasso"
+          retryAccessibilityLabel={t("deckError.retryA11y")}
         />
         <Tappable
           onPress={goBack}
           accessibilityRole="button"
-          accessibilityLabel="Torna indietro"
+          accessibilityLabel={t("deckError.goBack")}
           containerStyle={{ alignSelf: "center" }}
           style={{ paddingVertical: 8, paddingHorizontal: 12 }}
         >
           <Text style={{ fontFamily: FONT.semibold, fontSize: 14.5, color: colors.midGrey }}>
-            Torna indietro
+            {t("deckError.goBack")}
           </Text>
         </Tappable>
       </View>

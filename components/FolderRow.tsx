@@ -5,6 +5,7 @@ import { FONT, colors, radii } from "@/theme/tokens";
 import { FolderTile } from "./FolderTile";
 import { RetentionBar } from "./RetentionBar";
 import type { FolderKind } from "@/lib/constants";
+import { useT } from "@/lib/i18n";
 
 type Props = {
   kind: FolderKind;
@@ -46,6 +47,7 @@ export function FolderRow({
   onDrag,
   isActive,
 }: Props) {
+  const { t, tp } = useT();
   const showReorder = !!onDrag;
   const [pressed, setPressed] = useState(false);
   const [reorderPressed, setReorderPressed] = useState(false);
@@ -57,8 +59,11 @@ export function FolderRow({
       onPressIn={() => setPressed(true)}
       onPressOut={() => setPressed(false)}
       accessibilityRole="button"
-      accessibilityLabel={`${name}${paused ? ", in pausa" : ""}, priorità ${priority}, ${count} ricordi`}
-      accessibilityHint={showReorder ? "Tieni premuta la maniglia per riordinare" : undefined}
+      accessibilityLabel={tp(paused ? "folderRow.a11yLabelPaused" : "folderRow.a11yLabel", count, {
+        name,
+        priority,
+      })}
+      accessibilityHint={showReorder ? t("folderRow.a11yReorderHint") : undefined}
       style={{
         flexDirection: "row",
         alignItems: "center",
@@ -117,7 +122,7 @@ export function FolderRow({
                 fontVariant: ["tabular-nums"],
               }}
             >
-              #{priority}
+              {t("folderRow.priorityBadge", { priority })}
             </Text>
           </View>
           {paused ? (
@@ -138,7 +143,7 @@ export function FolderRow({
                   letterSpacing: 0.2,
                 }}
               >
-                In pausa
+                {t("folderRow.pausedBadge")}
               </Text>
             </View>
           ) : null}
@@ -153,7 +158,7 @@ export function FolderRow({
             fontVariant: ["tabular-nums"],
           }}
         >
-          {count} ricordi · {active}% attivi
+          {tp("folderRow.summary", count, { active })}
         </Text>
       </View>
 
@@ -166,7 +171,7 @@ export function FolderRow({
           onPressIn={() => setReorderPressed(true)}
           onPressOut={() => setReorderPressed(false)}
           accessibilityRole="button"
-          accessibilityLabel="Trascina per riordinare"
+          accessibilityLabel={t("folderRow.a11yDragHandle")}
           hitSlop={10}
           style={{
             marginLeft: 2,

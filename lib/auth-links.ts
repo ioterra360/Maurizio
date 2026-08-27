@@ -18,6 +18,7 @@
  *     path in `hostname`, so a hand-rolled splitter is both simpler and more
  *     predictable across the RN URL polyfill and Node.
  */
+import { t } from "@/lib/i18n";
 
 /** Route paths the app recognizes as auth-link targets. */
 export const AUTH_LINK_PATHS = {
@@ -181,8 +182,9 @@ export function classifyAuthLink(link: AuthLink): AuthLinkAction {
 }
 
 /**
- * Italian copy for a Supabase error code carried by the link. Kept vague on
- * purpose — the codes are English internals and sometimes leak details.
+ * User-facing copy (via lib/i18n, resolved at call time) for a Supabase error
+ * code carried by the link. Kept vague on purpose — the codes are English
+ * internals and sometimes leak details.
  */
 export function authLinkErrorMessage(code: string | null | undefined): string {
   const c = (code ?? "").toLowerCase();
@@ -190,15 +192,15 @@ export function authLinkErrorMessage(code: string | null | undefined): string {
   // Opening the link elsewhere (another phone, a reinstalled app) cannot
   // complete the exchange — say so instead of a generic failure.
   if (c.includes("code verifier") || c.includes("code_verifier")) {
-    return "Apri il link dallo stesso telefono da cui hai richiesto il reset, oppure richiedi un nuovo link.";
+    return t("authLinks.openOnSamePhone");
   }
   if (c.includes("otp_expired") || c.includes("expired")) {
-    return "Il link è scaduto. Richiedi un nuovo link di reset.";
+    return t("authLinks.linkExpired");
   }
   if (c.includes("access_denied") || c.includes("invalid")) {
-    return "Il link non è valido o è già stato usato. Richiedi un nuovo link.";
+    return t("authLinks.linkInvalid");
   }
-  return "Non è stato possibile aprire il link. Richiedi un nuovo link di reset.";
+  return t("authLinks.linkOpenFailed");
 }
 
 /**

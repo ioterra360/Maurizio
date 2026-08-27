@@ -140,6 +140,8 @@ export const en: Record<keyof typeof it, string> = {
 
   // ---- adminInsights -------------------------------------------------------
   "adminInsights.d7d30Callout": "D7 → D30 drop is 37%. Customers who added 3+ memories in their first week retain 78% at D30 versus a 22% baseline. Push the first add in week 1.",
+  "adminInsights.d7d30CalloutBody": "Customers who added 3+ memories in their first week retain 78% at D30 versus a 22% baseline. Push the first add in week 1.",
+  "adminInsights.d7d30CalloutLead": "D7 → D30 drop is 37%.",
   "adminInsights.funnelTitle": "Onboarding funnel",
   "adminInsights.layerAdoptionTitle": "Review layer adoption · 14d",
   "adminInsights.layerFocus": "Focus",
@@ -150,6 +152,12 @@ export const en: Record<keyof typeof it, string> = {
   "adminInsights.sessions_other": "{count} sessions",
   "adminInsights.subtitle": "14-day window · customers since 12 May",
   "adminInsights.title": "Insights",
+
+  // ---- adminModeration -----------------------------------------------------
+  "adminModeration.subtitle": "{queue} queued · {resolved} resolved this week",
+  "adminModeration.tabQueue": "Queue",
+  "adminModeration.tabRules": "Auto rules",
+  "adminModeration.title": "Moderation",
 
   // ---- adminMore -----------------------------------------------------------
   "adminMore.accountSection": "Account",
@@ -175,6 +183,22 @@ export const en: Record<keyof typeof it, string> = {
   "adminMore.teamLabel": "Team",
   "adminMore.title": "More",
   "adminMore.workspaceSection": "Workspace",
+
+  // ---- adminTabs -----------------------------------------------------------
+  "adminTabs.home": "Home",
+  "adminTabs.insights": "Insights",
+  "adminTabs.moderation": "Moderation",
+  "adminTabs.more": "More",
+  "adminTabs.users": "Users",
+
+  // ---- adminUsers ----------------------------------------------------------
+  "adminUsers.filterAll": "All",
+  "adminUsers.filterAtRisk": "At risk",
+  "adminUsers.openDetailsA11y": "Open {name}'s details",
+  "adminUsers.searchPlaceholder": "Search name or email",
+  "adminUsers.subtitle": "{all} total · {atRisk} at risk",
+  "adminUsers.tagAtRisk": "AT RISK",
+  "adminUsers.title": "Users",
 
   // ---- authCallback --------------------------------------------------------
   "authCallback.goToSignIn": "Go to sign in",
@@ -205,6 +229,10 @@ export const en: Record<keyof typeof it, string> = {
   // ---- authStore -----------------------------------------------------------
   "authStore.demoLinksUnavailable": "Demo mode is on: email links are not available.",
   "authStore.fallbackUserName": "Memika user",
+
+  // ---- authTextInput -------------------------------------------------------
+  "authTextInput.hidePassword": "Hide password",
+  "authTextInput.showPassword": "Show password",
 
   // ---- chooseTopic ---------------------------------------------------------
   "chooseTopic.alreadyOwned": "Already added",
@@ -384,6 +412,9 @@ export const en: Record<keyof typeof it, string> = {
   // ---- errorCard -----------------------------------------------------------
   "errorCard.defaultHint": "Check your connection and try again.",
   "errorCard.retrying": "Retrying…",
+
+  // ---- filterChip ----------------------------------------------------------
+  "filterChip.a11y": "Filter {label}, {count} memories",
 
   // ---- focus ---------------------------------------------------------------
   "focus.emptyDeck": "No memories for deep review, for now.",
@@ -609,6 +640,11 @@ export const en: Record<keyof typeof it, string> = {
   "health.stable": "Stable",
   "health.title": "Memory health",
 
+  // ---- healthRow -----------------------------------------------------------
+  "healthRow.high": "High",
+  "healthRow.low": "Low",
+  "healthRow.medium": "Medium",
+
   // ---- itemRow -------------------------------------------------------------
   "itemRow.a11yOpen": "{front}: open the memory card",
   "itemRow.reviewed": "Reviewed {reviewed}",
@@ -631,6 +667,9 @@ export const en: Record<keyof typeof it, string> = {
   "knowledge.noActiveFolders": "No active folders",
   "knowledge.retryLoadAccessibility": "Retry loading folders",
   "knowledge.title": "Your folders",
+
+  // ---- layerCard -----------------------------------------------------------
+  "layerCard.a11y": "{label}, {items} memories, {subtitle}",
 
   // ---- login ---------------------------------------------------------------
   "login.appName": "Memika",
@@ -716,6 +755,12 @@ export const en: Record<keyof typeof it, string> = {
   "resetPassword.title": "New password",
   "resetPassword.verifyingLink": "We're checking the link you opened.",
   "resetPassword.verifyingLoader": "Checking the link…",
+
+  // ---- retentionBar --------------------------------------------------------
+  "retentionBar.a11y": "Memory health: {active}% stable, {fading}% fading, {archived}% archived",
+
+  // ---- reviewHeader --------------------------------------------------------
+  "reviewHeader.exitA11y": "Leave the review",
 
   // ---- reviewStore ---------------------------------------------------------
   "reviewStore.demoFocusEstoppelExample": "The judge applied estoppel.",
@@ -845,6 +890,9 @@ export const en: Record<keyof typeof it, string> = {
   "tabs.progress": "Progress",
   "tabs.settings": "Settings",
   "tabs.today": "Today",
+
+  // ---- timeBudgetChips -----------------------------------------------------
+  "timeBudgetChips.setA11y": "Set study time to {label}",
 
   // ---- today ---------------------------------------------------------------
   "today.approxMinutes": "~{minutes} min",

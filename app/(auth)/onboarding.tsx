@@ -13,16 +13,19 @@ import { Mascot, type MascotVariant } from "@/components/Mascot";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { Tappable } from "@/components/Tappable";
 import { useAuthStore } from "@/lib/auth-store";
+import { useT, type TKey } from "@/lib/i18n";
 import { colors, FONT, layerTint } from "@/theme/tokens";
 
 const { width: SCREEN_W } = Dimensions.get("window");
 
+// Copy is stored as catalog keys and resolved at render (useT) so the
+// runtime language switch applies without a remount.
 type Step = {
   key: string;
   mascot: MascotVariant;
   haloBg: string;
-  title: string;
-  body: string;
+  titleKey: TKey;
+  bodyKey: TKey;
 };
 
 const STEPS: Step[] = [
@@ -36,33 +39,34 @@ const STEPS: Step[] = [
     // A plain white disc reads as deliberate next to the tinted discs of
     // the three layer steps; warmWhite on canvas was a muddy near-match.
     haloBg: colors.surface,
-    title: "Benvenuto in Memika",
-    body: "La tua memoria, ben curata. Tre ritmi di ripasso che lavorano insieme per te.",
+    titleKey: "onboarding.welcomeTitle",
+    bodyKey: "onboarding.welcomeBody",
   },
   {
     key: "scan",
     mascot: "investigate",
     haloBg: layerTint.scan,
-    title: "Scan",
-    body: "Una rapida occhiata ai ricordi più vecchi: pochi secondi, tanta consapevolezza.",
+    titleKey: "onboarding.scanTitle",
+    bodyKey: "onboarding.scanBody",
   },
   {
     key: "reinforcement",
     mascot: "checklist",
     haloBg: layerTint.reinforcement,
-    title: "Reinforcement",
-    body: "Consolidi quello che hai visto negli ultimi giorni. Più rifletti, più si fissa.",
+    titleKey: "onboarding.reinforcementTitle",
+    bodyKey: "onboarding.reinforcementBody",
   },
   {
     key: "focus",
     mascot: "idea",
     haloBg: layerTint.focus,
-    title: "Focus",
-    body: "Lavoro profondo sui ricordi di ieri. Qui la memoria diventa duratura.",
+    titleKey: "onboarding.focusTitle",
+    bodyKey: "onboarding.focusBody",
   },
 ];
 
 export default function OnboardingScreen() {
+  const { t } = useT();
   const [step, setStep] = useState(0);
   const scrollRef = useRef<ScrollView>(null);
   const user = useAuthStore((s) => s.user);
@@ -118,7 +122,7 @@ export default function OnboardingScreen() {
               letterSpacing: 0.2,
             }}
           >
-            Salta
+            {t("common.skip")}
           </Text>
         </Tappable>
       </View>
@@ -168,7 +172,7 @@ export default function OnboardingScreen() {
                 textAlign: "center",
               }}
             >
-              {s.title}
+              {t(s.titleKey)}
             </Text>
             <Text
               style={{
@@ -181,7 +185,7 @@ export default function OnboardingScreen() {
                 maxWidth: 320,
               }}
             >
-              {s.body}
+              {t(s.bodyKey)}
             </Text>
           </View>
         ))}
@@ -213,7 +217,7 @@ export default function OnboardingScreen() {
         </View>
 
         <PrimaryButton
-          label={step === STEPS.length - 1 ? "Inizia ora" : "Continua"}
+          label={step === STEPS.length - 1 ? t("onboarding.startNow") : t("common.continue")}
           onPress={goNext}
         />
       </View>

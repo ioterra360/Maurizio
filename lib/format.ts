@@ -1,7 +1,13 @@
 /**
  * Tiny formatting helpers shared across screens. Extracted to kill the
  * duplicated split/initials logic in today.tsx, settings.tsx, home.tsx, more.tsx.
+ *
+ * Every label resolves through `t()` at call time — the module only holds
+ * catalog KEYS, never translated text, so the Settings language switch
+ * applies on the next render.
  */
+
+import { t, tp, type TKey } from "@/lib/i18n";
 
 export function firstName(fullName: string | undefined | null, fallback = ""): string {
   if (!fullName) return fallback;
@@ -16,36 +22,51 @@ export function initials(fullName: string | undefined | null, fallback = "M"): s
   return parts.map((p) => p.charAt(0).toUpperCase()).join("");
 }
 
-const DAY_SHORT = ["DOM", "LUN", "MAR", "MER", "GIO", "VEN", "SAB"] as const;
-const MONTH_SHORT = [
-  "GEN", "FEB", "MAR", "APR", "MAG", "GIU",
-  "LUG", "AGO", "SET", "OTT", "NOV", "DIC",
-] as const;
+const DAY_SHORT: readonly TKey[] = [
+  "format.dayShortSun", "format.dayShortMon", "format.dayShortTue", "format.dayShortWed",
+  "format.dayShortThu", "format.dayShortFri", "format.dayShortSat",
+];
+const MONTH_SHORT: readonly TKey[] = [
+  "format.monthShortJan", "format.monthShortFeb", "format.monthShortMar",
+  "format.monthShortApr", "format.monthShortMay", "format.monthShortJun",
+  "format.monthShortJul", "format.monthShortAug", "format.monthShortSep",
+  "format.monthShortOct", "format.monthShortNov", "format.monthShortDec",
+];
 
 /** "LUN · 19 MAG" — used as a date kicker badge on Today and Admin Home. */
 export function dateBadge(date: Date = new Date()): string {
-  return `${DAY_SHORT[date.getDay()]} · ${date.getDate()} ${MONTH_SHORT[date.getMonth()]}`;
+  return t("format.dateBadge", {
+    day: t(DAY_SHORT[date.getDay()]),
+    date: date.getDate(),
+    month: t(MONTH_SHORT[date.getMonth()]),
+  });
 }
 
-const MONTH_LONG = [
-  "gennaio", "febbraio", "marzo", "aprile", "maggio", "giugno",
-  "luglio", "agosto", "settembre", "ottobre", "novembre", "dicembre",
-] as const;
+const MONTH_LONG: readonly TKey[] = [
+  "format.monthLongJanuary", "format.monthLongFebruary", "format.monthLongMarch",
+  "format.monthLongApril", "format.monthLongMay", "format.monthLongJune",
+  "format.monthLongJuly", "format.monthLongAugust", "format.monthLongSeptember",
+  "format.monthLongOctober", "format.monthLongNovember", "format.monthLongDecember",
+];
 
 /** "27 agosto 2026" — full date for the memory detail sheet. Invalid input → "". */
 export function longDate(iso: string | null | undefined): string {
   if (!iso) return "";
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "";
-  return `${d.getDate()} ${MONTH_LONG[d.getMonth()]} ${d.getFullYear()}`;
+  return t("format.longDate", {
+    date: d.getDate(),
+    month: t(MONTH_LONG[d.getMonth()]),
+    year: d.getFullYear(),
+  });
 }
 
 export function timeGreeting(date: Date = new Date()): string {
   const h = date.getHours();
   // "Buongiorno" covers the whole day in everyday Italian; "Buon pomeriggio"
   // was also the one greeting too wide for the Today hero on 360 dp phones.
-  if (h < 18) return "Buongiorno,";
-  return "Buonasera,";
+  if (h < 18) return t("format.greetingDay");
+  return t("format.greetingEvening");
 }
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -60,21 +81,21 @@ export function relativeReviewed(
   iso: string | null,
   now: Date = new Date(),
 ): string {
-  if (!iso) return "Mai ripassato";
+  if (!iso) return t("format.neverReviewed");
   const then = new Date(iso).getTime();
-  if (Number.isNaN(then)) return "Mai ripassato";
+  if (Number.isNaN(then)) return t("format.neverReviewed");
   const diff = now.getTime() - then;
-  if (diff < 0) return "Adesso";
+  if (diff < 0) return t("format.justNow");
   const days = Math.floor(diff / DAY_MS);
-  if (days === 0) return "Oggi";
-  if (days === 1) return "Ieri";
-  if (days < 7) return `${days} giorni fa`;
+  if (days === 0) return t("format.today");
+  if (days === 1) return t("format.yesterday");
+  if (days < 7) return tp("format.daysAgo", days);
   if (days < 30) {
     const w = Math.floor(days / 7);
-    return w === 1 ? "1 settimana fa" : `${w} settimane fa`;
+    return tp("format.weeksAgo", w);
   }
   const m = Math.floor(days / 30);
-  return m === 1 ? "1 mese fa" : `${m} mesi fa`;
+  return tp("format.monthsAgo", m);
 }
 
 /**

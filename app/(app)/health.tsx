@@ -13,6 +13,7 @@ import { MascotLoader } from "@/components/MascotLoader";
 import { Tappable } from "@/components/Tappable";
 import { Mascot } from "@/components/Mascot";
 import { useAuthStore } from "@/lib/auth-store";
+import { useT } from "@/lib/i18n";
 import { useFoldersWithStats } from "@/lib/use-folders";
 import { applyFolderOrder, useFolderOrderStore } from "@/lib/folder-order-store";
 import { fetchDueCounts } from "@/lib/api";
@@ -25,6 +26,7 @@ import { FONT, colors } from "@/theme/tokens";
 const LOAD_CEILING_ITEMS = 120;
 
 export default function HealthScreen() {
+  const { t, tp } = useT();
   const user = useAuthStore((s) => s.user);
   const { folders, loading, error, refetch } = useFoldersWithStats();
   const order = useFolderOrderStore((s) => s.order);
@@ -104,7 +106,7 @@ export default function HealthScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={{ position: "relative" }}>
-          <HeaderHero title="Salute della memoria" reservedRight={108} />
+          <HeaderHero title={t("health.title")} reservedRight={108} />
           <View
             pointerEvents="none"
             style={{ position: "absolute", top: 2, right: 14 }}
@@ -117,14 +119,14 @@ export default function HealthScreen() {
         <View style={{ paddingHorizontal: 16 }}>
           {foldersLoading ? (
             <View style={{ paddingVertical: 36, alignItems: "center" }}>
-              <MascotLoader label="Calcolo la salute della memoria…" />
+              <MascotLoader label={t("health.loadingHealth")} />
             </View>
           ) : error ? (
             <ErrorCard
-              title="Non siamo riusciti a caricare la salute della memoria."
+              title={t("health.loadHealthError")}
               onRetry={refetch}
               retrying={loading}
-              retryAccessibilityLabel="Riprova a caricare la salute della memoria"
+              retryAccessibilityLabel={t("health.retryLoadHealthA11y")}
             />
           ) : agg.count === 0 ? (
             <View
@@ -145,7 +147,7 @@ export default function HealthScreen() {
                   textAlign: "center",
                 }}
               >
-                Nessun ricordo ancora.
+                {t("health.emptyTitle")}
               </Text>
               <Text
                 style={{
@@ -156,8 +158,7 @@ export default function HealthScreen() {
                   textAlign: "center",
                 }}
               >
-                La salute della memoria si calcola sui ricordi che salvi e ripassi. Aggiungi il
-                primo e torna qui.
+                {t("health.emptyBody")}
               </Text>
             </View>
           ) : (
@@ -174,7 +175,7 @@ export default function HealthScreen() {
                 <RingChart
                   size={156}
                   centerValue={String(agg.active)}
-                  centerLabel="Stabili"
+                  centerLabel={t("health.stable")}
                   segments={[
                     { color: colors.active, pct: agg.active },
                     { color: colors.fading, pct: agg.fading },
@@ -194,7 +195,7 @@ export default function HealthScreen() {
                   fontVariant: ["tabular-nums"],
                 }}
               >
-                {agg.count} {agg.count === 1 ? "ricordo monitorato" : "ricordi monitorati"}
+                {tp("health.memoriesMonitored", agg.count)}
               </Text>
               <View
                 style={{
@@ -206,9 +207,9 @@ export default function HealthScreen() {
                   columnGap: 14,
                 }}
               >
-                <LegendDot color={colors.active} label="Stabili" pct={`${agg.active}%`} />
-                <LegendDot color={colors.fading} label="In dissolvenza" pct={`${agg.fading}%`} />
-                <LegendDot color={colors.archived} label="Archiviati" pct={`${agg.archived}%`} />
+                <LegendDot color={colors.active} label={t("health.stable")} pct={`${agg.active}%`} />
+                <LegendDot color={colors.fading} label={t("health.fading")} pct={`${agg.fading}%`} />
+                <LegendDot color={colors.archived} label={t("health.archived")} pct={`${agg.archived}%`} />
               </View>
             </View>
           )}
@@ -218,7 +219,7 @@ export default function HealthScreen() {
         {!error && orderedFolders.length > 0 ? (
           <>
             <View style={{ paddingHorizontal: 24, paddingTop: 22, paddingBottom: 8 }}>
-              <SectionLabel>Per cartella</SectionLabel>
+              <SectionLabel>{t("health.byFolder")}</SectionLabel>
             </View>
             <View style={{ paddingHorizontal: 16, gap: 8 }}>
               {orderedFolders.map((f) => (
@@ -228,7 +229,7 @@ export default function HealthScreen() {
                   active={f.active}
                   fading={f.fading}
                   archived={f.archived}
-                  chip={f.active >= 70 ? "Alta" : f.active >= 45 ? "Media" : "Bassa"}
+                  chip={f.active >= 70 ? "high" : f.active >= 45 ? "medium" : "low"}
                 />
               ))}
             </View>
@@ -258,15 +259,13 @@ export default function HealthScreen() {
                   letterSpacing: -0.05,
                 }}
               >
-                {worst.f.name} ha {worst.fadingCount}{" "}
-                {worst.fadingCount === 1 ? "ricordo" : "ricordi"} in dissolvenza —
-                una sessione mirata li può recuperare.
+                {tp("health.insightFading", worst.fadingCount, { name: worst.f.name })}
               </Text>
               <Tappable
                 onPress={() =>
                   router.push({ pathname: "/folder/[kind]", params: { kind: worst.f.kind } })
                 }
-                accessibilityLabel={`Riequilibra ora, vai alla cartella ${worst.f.name}`}
+                accessibilityLabel={t("health.rebalanceNowA11y", { name: worst.f.name })}
                 containerStyle={{ marginTop: 6, alignSelf: "flex-end" }}
                 style={{ paddingVertical: 4 }}
               >
@@ -278,7 +277,7 @@ export default function HealthScreen() {
                     letterSpacing: -0.05,
                   }}
                 >
-                  Riequilibra ora →
+                  {t("health.rebalanceNow")}
                 </Text>
               </Tappable>
             </View>
@@ -287,17 +286,17 @@ export default function HealthScreen() {
 
         {/* Cognitive load — barra solo con la coda vera */}
         <View style={{ paddingHorizontal: 24, paddingTop: 22, paddingBottom: 8 }}>
-          <SectionLabel>Carico cognitivo</SectionLabel>
+          <SectionLabel>{t("health.cognitiveLoad")}</SectionLabel>
         </View>
         <View style={{ paddingHorizontal: dueError ? 16 : 24 }}>
           {loadPct !== null ? (
             <CognitiveLoadBar pct={loadPct} />
           ) : dueError ? (
             <ErrorCard
-              title="Non siamo riusciti a calcolare il carico cognitivo."
+              title={t("health.loadCognitiveError")}
               onRetry={loadDue}
               retrying={dueLoading}
-              retryAccessibilityLabel="Riprova a calcolare il carico cognitivo"
+              retryAccessibilityLabel={t("health.retryCognitiveA11y")}
             />
           ) : (
             <Text
@@ -308,7 +307,7 @@ export default function HealthScreen() {
                 marginTop: 6,
               }}
             >
-              Calcolo il carico cognitivo dalla coda di oggi…
+              {t("health.loadingCognitive")}
             </Text>
           )}
         </View>

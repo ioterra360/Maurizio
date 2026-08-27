@@ -29,7 +29,7 @@ import {
 } from "@expo-google-fonts/inter";
 
 import { useAuthStore } from "@/lib/auth-store";
-import { useLocaleStore } from "@/lib/i18n";
+import { useLocaleStore, useT } from "@/lib/i18n";
 import { parseDevSignOutToken } from "@/lib/auth-links";
 import { SUPPORT_EMAIL } from "@/lib/constants";
 import { reportError } from "@/lib/report-error";
@@ -121,9 +121,12 @@ async function handleDevSignOutLink(url: string): Promise<void> {
  * boundary and re-renders the route — the store state survives, so a
  * transient failure (a bad network response mid-render) recovers in place.
  *
- * Rendered OUTSIDE SafeAreaProvider / fonts guard: keep it dependency-free.
+ * Rendered OUTSIDE SafeAreaProvider / fonts guard: keep it dependency-free
+ * (`useT()` is a plain zustand hook — no provider — so it is safe here).
  */
 export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
+  const { t } = useT();
+
   useEffect(() => {
     // A crash during the very first render would otherwise leave the
     // native splash on screen forever.
@@ -154,7 +157,7 @@ export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
             marginTop: 18,
           }}
         >
-          Qualcosa è andato storto
+          {t("root.errorTitle")}
         </Text>
         <Text
           style={{
@@ -166,8 +169,7 @@ export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
             marginTop: 10,
           }}
         >
-          Non è colpa tua. Riprova: se succede di nuovo, scrivici a {SUPPORT_EMAIL} e
-          racconta cosa stavi facendo.
+          {t("root.errorBody", { email: SUPPORT_EMAIL })}
         </Text>
         {__DEV__ ? (
           <Text
@@ -186,7 +188,7 @@ export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
         ) : null}
         <View style={{ alignSelf: "stretch", marginTop: 28 }}>
           <PrimaryButton
-            label="Riprova"
+            label={t("common.retry")}
             onPress={() => {
               retry().catch(() => {});
             }}

@@ -6,6 +6,7 @@ import { AdminTopBar } from "@/components/AdminTopBar";
 import { Tappable } from "@/components/Tappable";
 import { FLAGS, RULES, type FlagItem, type FlagSeverity } from "@/lib/admin-data";
 import { FONT, colors, palette, radii, severityTint, statusTint } from "@/theme/tokens";
+import { useT } from "@/lib/i18n";
 
 const SEVERITY_TINT: Record<FlagSeverity, { bg: string; text: string; label: string }> = {
   high: { bg: statusTint.fading.bg,   text: statusTint.fading.text,   label: "ALTA" },
@@ -14,6 +15,7 @@ const SEVERITY_TINT: Record<FlagSeverity, { bg: string; text: string; label: str
 };
 
 export default function AdminModerationScreen() {
+  const { t } = useT();
   const [tab, setTab] = useState<"queue" | "rules">("queue");
   // Lifted rule-toggle state so switches survive Queue <-> Auto-rules tab switches.
   const [enabled, setEnabled] = useState<Record<string, boolean>>(() =>
@@ -28,20 +30,20 @@ export default function AdminModerationScreen() {
   return (
     <SafeAreaView className="flex-1 bg-warm-white" edges={["top"]}>
       <AdminTopBar
-        title="Moderazione"
-        subtitle={`${counts.queue} in coda · ${counts.resolved} risolte questa settimana`}
+        title={t("adminModeration.title")}
+        subtitle={t("adminModeration.subtitle", { queue: counts.queue, resolved: counts.resolved })}
       />
 
       {/* Paired pill toggle (mockup pattern), embedded count badge per tab */}
       <View className="flex-row" style={{ marginHorizontal: 16, gap: 8 }}>
         <TabPill
-          label="Coda"
+          label={t("adminModeration.tabQueue")}
           count={counts.queue}
           active={tab === "queue"}
           onPress={() => setTab("queue")}
         />
         <TabPill
-          label="Regole auto"
+          label={t("adminModeration.tabRules")}
           count={counts.auto}
           active={tab === "rules"}
           onPress={() => setTab("rules")}

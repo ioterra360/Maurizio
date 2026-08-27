@@ -19,9 +19,11 @@ import { Tappable } from "@/components/Tappable";
 import { isDemoMode, supabase } from "@/lib/supabase";
 import { authErrorMessage } from "@/lib/auth-errors";
 import { AUTH_LINK_PATHS } from "@/lib/auth-links";
+import { useT } from "@/lib/i18n";
 import { colors, FONT } from "@/theme/tokens";
 
 export default function ForgotPasswordScreen() {
+  const { t } = useT();
   const [email, setEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [sent, setSent] = useState(false);
@@ -30,13 +32,11 @@ export default function ForgotPasswordScreen() {
   const handleSubmit = async () => {
     setError(null);
     if (!email.trim()) {
-      setError("Inserisci la tua email.");
+      setError(t("forgotPassword.enterEmail"));
       return;
     }
     if (isDemoMode) {
-      setError(
-        "Demo mode attivo: l'invio email è disabilitato. In produzione riceverai un link via email.",
-      );
+      setError(t("forgotPassword.demoModeDisabled"));
       return;
     }
     setSubmitting(true);
@@ -65,6 +65,10 @@ export default function ForgotPasswordScreen() {
     }
   };
 
+  // The catalog keeps `{email}` inside the sentence so each language can
+  // place it naturally; split around it to render the address in semibold.
+  const [sentBodyBefore, sentBodyAfter] = t("forgotPassword.sentBody").split("{email}");
+
   return (
     <SafeAreaView className="flex-1 bg-canvas" edges={["top", "bottom"]}>
       <KeyboardAvoidingView
@@ -85,7 +89,7 @@ export default function ForgotPasswordScreen() {
             <Tappable
               onPress={() => router.back()}
               accessibilityRole="button"
-              accessibilityLabel="Indietro"
+              accessibilityLabel={t("common.back")}
               hitSlop={10}
               pressedOpacity={0.6}
               style={{
@@ -114,7 +118,7 @@ export default function ForgotPasswordScreen() {
                 textAlign: "center",
               }}
             >
-              Password dimenticata?
+              {t("forgotPassword.title")}
             </Text>
             <Text
               style={{
@@ -127,7 +131,7 @@ export default function ForgotPasswordScreen() {
                 paddingHorizontal: 12,
               }}
             >
-              Inserisci la tua email, ti invieremo un link per reimpostarla.
+              {t("forgotPassword.subtitle")}
             </Text>
           </View>
 
@@ -150,16 +154,16 @@ export default function ForgotPasswordScreen() {
               <Text
                 style={{ fontFamily: FONT.semibold, fontSize: 15, color: colors.navy }}
               >
-                Controlla la tua email
+                {t("forgotPassword.checkEmailTitle")}
               </Text>
               <Text
                 style={{ fontFamily: FONT.regular, fontSize: 13.5, color: colors.midGrey, lineHeight: 20 }}
               >
-                Se{" "}
+                {sentBodyBefore}
                 <Text style={{ fontFamily: FONT.semibold, color: colors.navy }}>
                   {email}
-                </Text>{" "}
-                corrisponde a un account, riceverai un link entro qualche minuto.
+                </Text>
+                {sentBodyAfter}
               </Text>
             </View>
           ) : (
@@ -174,7 +178,7 @@ export default function ForgotPasswordScreen() {
                   color: colors.midGrey,
                 }}
               >
-                Email
+                {t("forgotPassword.emailLabel")}
               </Text>
               <AuthTextInput
                 value={email}
@@ -183,7 +187,7 @@ export default function ForgotPasswordScreen() {
                 autoCorrect={false}
                 autoComplete="email"
                 keyboardType="email-address"
-                placeholder="tu@esempio.com"
+                placeholder={t("forgotPassword.emailPlaceholder")}
                 returnKeyType="send"
                 onSubmitEditing={() => {
                   if (!submitting) void handleSubmit();
@@ -205,7 +209,7 @@ export default function ForgotPasswordScreen() {
 
               <View style={{ marginTop: 28 }}>
                 <PrimaryButton
-                  label="Invia link di reset"
+                  label={t("forgotPassword.sendResetLink")}
                   loading={submitting}
                   onPress={handleSubmit}
                 />
@@ -225,14 +229,14 @@ export default function ForgotPasswordScreen() {
             <Text
               style={{ fontFamily: FONT.regular, fontSize: 14, color: colors.midGrey }}
             >
-              Ricordi la password?{" "}
+              {t("forgotPassword.rememberPassword")}{" "}
             </Text>
             <Link href={"/(auth)/login" as never} asChild>
               <Pressable hitSlop={8} accessibilityRole="link">
                 <Text
                   style={{ fontFamily: FONT.semibold, fontSize: 14, color: colors.navy }}
                 >
-                  Accedi
+                  {t("forgotPassword.signInLink")}
                 </Text>
               </Pressable>
             </Link>
