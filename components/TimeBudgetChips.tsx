@@ -30,7 +30,7 @@ export function TimeBudgetChips({ value, onChange }: Props) {
           marginBottom: 10,
         }}
       >
-        Quanto tempo hai oggi?
+        {t("timeBudgetChips.title")}
       </Text>
       <View style={{ flexDirection: "row", gap: 8 }}>
         {TIME_BUDGETS.map((b) => {

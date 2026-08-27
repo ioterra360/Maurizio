@@ -350,6 +350,11 @@ export const it = {
   "coachTips.todayFlowBody": "Il flow Scan → Reinforcement → Focus è pensato per coprire tutto in pochi minuti. Prova a farlo ogni giorno alla stessa ora.",
   "coachTips.todayFlowTitle": "Un giro al giorno",
 
+  // ---- cognitiveLoadBar ----------------------------------------------------
+  "cognitiveLoadBar.demanding": "Impegnativo",
+  "cognitiveLoadBar.overloaded": "Sovraccarico",
+  "cognitiveLoadBar.sustainable": "Sostenibile",
+
   // ---- complete ------------------------------------------------------------
   "complete.backToToday": "Torna a Oggi",
   "complete.emptyBody": "La tua coda è vuota — aggiungi nuovi ricordi o torna più tardi.",
@@ -670,6 +675,8 @@ export const it = {
 
   // ---- layerCard -----------------------------------------------------------
   "layerCard.a11y": "{label}, {items} ricordi, {subtitle}",
+  "layerCard.items_one": "{count} ricordo",
+  "layerCard.items_other": "{count} ricordi",
 
   // ---- login ---------------------------------------------------------------
   "login.appName": "Memika",
@@ -893,6 +900,7 @@ export const it = {
 
   // ---- timeBudgetChips -----------------------------------------------------
   "timeBudgetChips.setA11y": "Imposta tempo di studio a {label}",
+  "timeBudgetChips.title": "Quanto tempo hai oggi?",
 
   // ---- today ---------------------------------------------------------------
   "today.approxMinutes": "~{minutes} min",

@@ -22,7 +22,7 @@ const ICONS: Record<LayerKey, LucideIcon> = {
  * Color stripe on the left, layer icon, label + item count + sub-line.
  */
 export function LayerCard({ layerKey, items, subtitle, onPress }: Props) {
-  const { t } = useT();
+  const { t, tp } = useT();
   const { color, label } = layer[layerKey];
   const Icon = ICONS[layerKey];
 
@@ -67,7 +67,7 @@ export function LayerCard({ layerKey, items, subtitle, onPress }: Props) {
               className="text-caption text-mid-grey"
               style={{ fontFamily: FONT.regular, fontVariant: ["tabular-nums"], flexShrink: 0 }}
             >
-              {items} ricordi
+              {tp("layerCard.items", items)}
             </Text>
           </View>
           <Text

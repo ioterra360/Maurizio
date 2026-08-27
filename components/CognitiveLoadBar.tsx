@@ -1,5 +1,6 @@
 import { Text, View } from "react-native";
 import { FONT, colors } from "@/theme/tokens";
+import { useT } from "@/lib/i18n";
 
 type Props = {
   /** 0–100. */
@@ -11,11 +12,12 @@ type Props = {
  * Green (0-60 sustainable) → peach (60-85 heavy) → navy (85-100 overload).
  */
 export function CognitiveLoadBar({ pct }: Props) {
+  const { t } = useT();
   const clamped = Math.max(0, Math.min(100, pct));
   const zone =
-    clamped < 60 ? { color: colors.active, label: "Sostenibile" }
-    : clamped < 85 ? { color: colors.fading, label: "Impegnativo" }
-    : { color: colors.navy, label: "Sovraccarico" };
+    clamped < 60 ? { color: colors.active, label: t("cognitiveLoadBar.sustainable") }
+    : clamped < 85 ? { color: colors.fading, label: t("cognitiveLoadBar.demanding") }
+    : { color: colors.navy, label: t("cognitiveLoadBar.overloaded") };
 
   return (
     <View>
@@ -57,7 +59,7 @@ export function CognitiveLoadBar({ pct }: Props) {
             letterSpacing: 0.6,
           }}
         >
-          Sostenibile
+          {t("cognitiveLoadBar.sustainable")}
         </Text>
         <Text
           style={{
@@ -67,7 +69,7 @@ export function CognitiveLoadBar({ pct }: Props) {
             letterSpacing: 0.6,
           }}
         >
-          Impegnativo
+          {t("cognitiveLoadBar.demanding")}
         </Text>
         <Text
           style={{
@@ -77,7 +79,7 @@ export function CognitiveLoadBar({ pct }: Props) {
             letterSpacing: 0.6,
           }}
         >
-          Sovraccarico
+          {t("cognitiveLoadBar.overloaded")}
         </Text>
       </View>
 

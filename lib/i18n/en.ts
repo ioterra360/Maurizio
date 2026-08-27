@@ -350,6 +350,11 @@ export const en: Record<keyof typeof it, string> = {
   "coachTips.todayFlowBody": "The Scan → Reinforcement → Focus flow is designed to cover everything in a few minutes. Try doing it at the same time every day.",
   "coachTips.todayFlowTitle": "One round a day",
 
+  // ---- cognitiveLoadBar ----------------------------------------------------
+  "cognitiveLoadBar.demanding": "Demanding",
+  "cognitiveLoadBar.overloaded": "Overloaded",
+  "cognitiveLoadBar.sustainable": "Sustainable",
+
   // ---- complete ------------------------------------------------------------
   "complete.backToToday": "Back to Today",
   "complete.emptyBody": "Your queue is empty — add new memories or come back later.",
@@ -670,6 +675,8 @@ export const en: Record<keyof typeof it, string> = {
 
   // ---- layerCard -----------------------------------------------------------
   "layerCard.a11y": "{label}, {items} memories, {subtitle}",
+  "layerCard.items_one": "{count} memory",
+  "layerCard.items_other": "{count} memories",
 
   // ---- login ---------------------------------------------------------------
   "login.appName": "Memika",
@@ -893,6 +900,7 @@ export const en: Record<keyof typeof it, string> = {
 
   // ---- timeBudgetChips -----------------------------------------------------
   "timeBudgetChips.setA11y": "Set study time to {label}",
+  "timeBudgetChips.title": "How much time do you have today?",
 
   // ---- today ---------------------------------------------------------------
   "today.approxMinutes": "~{minutes} min",
