@@ -17,7 +17,7 @@ import type { FolderWithStats } from "@/lib/mappers";
 import { applyFolderOrder, useFolderOrderStore } from "@/lib/folder-order-store";
 import { markAddOpenedIntentionally } from "@/lib/add-gate";
 import { FONT, colors } from "@/theme/tokens";
-import type { FolderKind } from "@/lib/constants";
+import { FOLDER_LIMIT_ENFORCED, FOLDER_TEMPLATES, type FolderKind } from "@/lib/constants";
 
 export default function KnowledgeScreen() {
   const { folders, loading, error, refetch } = useFoldersWithStats();
@@ -74,6 +74,15 @@ export default function KnowledgeScreen() {
     [],
   );
 
+  // Test phase (FOLDER_LIMIT_ENFORCED=false): one folder per kind, so the
+  // button disappears once the 4 templates + the custom one all exist.
+  const canAddFolder =
+    !FOLDER_LIMIT_ENFORCED &&
+    !loading &&
+    !error &&
+    folders.length > 0 &&
+    folders.length < FOLDER_TEMPLATES.length + 1;
+
   const header = (
     <View style={{ position: "relative" }}>
       <HeaderHero
@@ -95,6 +104,34 @@ export default function KnowledgeScreen() {
       >
         <Mascot variant="checklist" size={92} withShadow={false} />
       </View>
+      {canAddFolder ? (
+        <View style={{ paddingHorizontal: 16, paddingBottom: 14 }}>
+          <Tappable
+            onPress={() =>
+              router.push({ pathname: "/choose-topic", params: { mode: "new" } } as never)
+            }
+            accessibilityRole="button"
+            accessibilityLabel="Nuova cartella"
+            containerStyle={{ alignSelf: "flex-start" }}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 6,
+              paddingHorizontal: 14,
+              paddingVertical: 9,
+              borderRadius: 999,
+              backgroundColor: colors.surface,
+              borderWidth: 1.5,
+              borderColor: colors.navy,
+            }}
+          >
+            <Plus size={16} color={colors.navy} strokeWidth={2.2} />
+            <Text style={{ fontFamily: FONT.semibold, fontSize: 14, color: colors.navy }}>
+              Nuova cartella
+            </Text>
+          </Tappable>
+        </View>
+      ) : null}
     </View>
   );
 
@@ -229,8 +266,9 @@ export default function KnowledgeScreen() {
         containerStyle={{ flex: 1 }}
       />
 
-      {/* FAB — opens Add MEMORY (it never creates folders: freemium = one
-          folder, chosen at onboarding). Hidden while the user has none. */}
+      {/* FAB — opens Add MEMORY. Folders are created from the "Nuova
+          cartella" pill in the header (test phase) or at onboarding.
+          Hidden while the user has none. */}
       {!loading && !error && folders.length === 0 ? null : (
       <Tappable
         onPress={() => {

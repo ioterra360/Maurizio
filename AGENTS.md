@@ -63,8 +63,12 @@ These exist because of past decisions documented elsewhere in `docs/`.
   unchanged); a user-named folder has kind `custom`. Nothing is auto-seeded:
   a user starts with **ONE folder chosen at onboarding** (`/choose-topic`,
   helpers in `lib/folder-templates.ts`). Freemium = one folder per free
-  account; no create-folder affordance exists elsewhere until the Premium
-  (RevenueCat) sheet lands. Demo mode still shows all four for UI review.
+  account, gated by `FOLDER_LIMIT_ENFORCED` in `lib/constants.ts`. **Test
+  phase (2026-08-27, Angelo): the flag is `false`** — Knowledge shows a
+  "Nuova cartella" pill that pushes `/choose-topic?mode=new`; owned kinds are
+  greyed out because `folders` has `unique(user_id, kind)` and the app keys
+  folders by kind (max 4 templates + 1 custom). Flip the flag back when the
+  Premium (RevenueCat) sheet lands. Demo mode still shows all four.
 - **Demo accounts are: `angelo.casula@gmail.com` (user) and
   `memikaapp@gmail.com` (admin).** Admin role is granted ONLY by the
   `public.admin_emails` allowlist (seeded with `memikaapp@gmail.com`, migration

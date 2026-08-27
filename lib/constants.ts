@@ -101,6 +101,15 @@ export const FOLDER_NAME_MAX_LENGTH = 40;
  */
 export const FREE_FOLDER_LIMIT = 1;
 
+/**
+ * 2026-08-27 (Angelo): during the test phase the app behaves like the full
+ * version — any signed-in user can add folders from Knowledge, one per kind
+ * (the DB has unique(user_id, kind) and the app keys folders by kind, so the
+ * ceiling is the 4 templates + 1 custom). Flip to true when the RevenueCat
+ * paywall lands and FREE_FOLDER_LIMIT becomes the gate again.
+ */
+export const FOLDER_LIMIT_ENFORCED = false;
+
 export const MEMORY_STATES = ["active", "fading", "archived"] as const;
 export type MemoryState = (typeof MEMORY_STATES)[number];
 

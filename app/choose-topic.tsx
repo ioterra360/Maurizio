@@ -8,7 +8,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Redirect, router } from "expo-router";
+import { Redirect, router, useLocalSearchParams } from "expo-router";
 import { PenLine } from "lucide-react-native";
 
 import { FolderTile } from "@/components/FolderTile";
@@ -17,9 +17,10 @@ import { MascotLoader } from "@/components/MascotLoader";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { SectionLabel } from "@/components/SectionLabel";
 import { Tappable } from "@/components/Tappable";
-import { countFolders, createFolder } from "@/lib/api";
+import { countFolders, createFolder, fetchFolders } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
 import {
+  FOLDER_LIMIT_ENFORCED,
   FOLDER_NAME_MAX_LENGTH,
   FOLDER_TEMPLATES,
   type TemplateKind,
@@ -60,8 +61,10 @@ function goToday() {
  * send here any signed-in user who owns zero folders instead of silently
  * no-op'ing. A returning user with ≥1 folder is bounced straight to Today.
  *
- * Freemium: exactly one folder. There is no "add another folder" affordance
- * anywhere else in the app until the Premium sheet (RevenueCat) lands.
+ * Freemium: exactly one folder — while FOLDER_LIMIT_ENFORCED is true. In the
+ * test phase (2026-08-27) Knowledge pushes this screen with `?mode=new`:
+ * the owned kinds are greyed out (unique user_id+kind in the DB), and after
+ * creating we pop back to Knowledge instead of going to Today.
  */
 export default function ChooseTopicScreen() {
   const user = useAuthStore((s) => s.user);
@@ -72,17 +75,36 @@ export default function ChooseTopicScreen() {
   const viewAsUser = useAuthStore((s) => s.viewAsUser);
   const adminOnly = user?.role === "admin" && !viewAsUser;
   const showToast = useUIStore((s) => s.showToast);
+  const { mode } = useLocalSearchParams<{ mode?: string }>();
+  const addingAnother = mode === "new" && !FOLDER_LIMIT_ENFORCED;
 
   const [checking, setChecking] = useState(true);
+  const [ownedKinds, setOwnedKinds] = useState<ReadonlySet<string>>(() => new Set());
   const [selected, setSelected] = useState<Selection>(null);
   const [customName, setCustomName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
   // Returning user (already has a folder) → skip this step entirely.
+  // "Add another" mode instead loads the owned kinds to grey them out.
   useEffect(() => {
     if (!user || adminOnly) return;
     let cancelled = false;
+    if (addingAnother) {
+      fetchFolders(user.id)
+        .then((fs) => {
+          if (cancelled) return;
+          setOwnedKinds(new Set(fs.map((f) => f.kind)));
+          setChecking(false);
+        })
+        .catch((e) => {
+          reportError("choose-topic/fetch-folders", e);
+          if (!cancelled) setChecking(false);
+        });
+      return () => {
+        cancelled = true;
+      };
+    }
     countFolders(user.id)
       .then((n) => {
         if (cancelled) return;
@@ -101,12 +123,13 @@ export default function ChooseTopicScreen() {
     return () => {
       cancelled = true;
     };
-  }, [user, adminOnly]);
+  }, [user, adminOnly, addingAnother]);
 
   if (!hydrated) return null;
   if (!user) return <Redirect href="/(auth)/login" />;
   if (adminOnly) return <Redirect href="/(admin)/home" />;
 
+  const customOwned = ownedKinds.has("custom");
   const customValidation = validateFolderName(customName);
   const canCreate =
     !saving &&
@@ -128,7 +151,11 @@ export default function ChooseTopicScreen() {
     try {
       const folder = await createFolder(user.id, folderInputFromChoice(choice));
       showToast(`Cartella "${folder.name}" pronta · aggiungi il primo ricordo`);
-      goToday();
+      if (addingAnother && router.canGoBack()) {
+        router.back(); // Knowledge refetches on focus
+      } else {
+        goToday();
+      }
     } catch (e) {
       reportError("choose-topic/create-folder", e);
       setError("Non siamo riusciti a creare la cartella. Controlla la connessione e riprova.");
@@ -183,7 +210,7 @@ export default function ChooseTopicScreen() {
                 textAlign: "center",
               }}
             >
-              Scegli il tuo argomento
+              {addingAnother ? "Nuova cartella" : "Scegli il tuo argomento"}
             </Text>
             <Text
               style={{
@@ -196,8 +223,11 @@ export default function ChooseTopicScreen() {
                 maxWidth: 320,
               }}
             >
-              Memika parte da una cartella sola: quella che vuoi proteggere
-              dall'oblio. Altre cartelle arriveranno con Premium.
+              {addingAnother
+                ? "Un modello, oppure un argomento tuo. Ogni tipo di cartella una volta sola."
+                : FOLDER_LIMIT_ENFORCED
+                  ? "Memika parte da una cartella sola: quella che vuoi proteggere dall'oblio. Altre cartelle arriveranno con Premium."
+                  : "L'argomento da cui partire. Potrai aggiungerne altri dalla schermata Cartelle."}
             </Text>
           </View>
 
@@ -214,18 +244,21 @@ export default function ChooseTopicScreen() {
           >
             {FOLDER_TEMPLATES.map((t) => {
               const on = selected === t.kind;
+              const owned = ownedKinds.has(t.kind);
               return (
                 <Tappable
                   key={t.kind}
                   onPress={() => {
+                    if (owned) return;
                     setSelected(t.kind);
                     setError(null);
                   }}
+                  disabled={owned}
                   accessibilityRole="button"
-                  accessibilityLabel={`${t.name} — ${t.hint}`}
-                  accessibilityState={{ selected: on }}
+                  accessibilityLabel={owned ? `${t.name} — già presente` : `${t.name} — ${t.hint}`}
+                  accessibilityState={{ selected: on, disabled: owned }}
                   pressedOpacity={0.8}
-                  containerStyle={{ width: "48%", flexGrow: 1 }}
+                  containerStyle={{ width: "48%", flexGrow: 1, opacity: owned ? 0.45 : 1 }}
                   style={{
                     borderRadius: radii.card,
                     backgroundColor: on ? colors.tagUserBg : colors.surface,
@@ -258,7 +291,7 @@ export default function ChooseTopicScreen() {
                         color: colors.midGrey,
                       }}
                     >
-                      {t.hint}
+                      {owned ? "Già presente" : t.hint}
                     </Text>
                   </View>
                 </Tappable>
@@ -271,14 +304,16 @@ export default function ChooseTopicScreen() {
           {/* "Altro…" — custom folder name */}
           <Tappable
             onPress={() => {
+              if (customOwned) return;
               setSelected("custom");
               setError(null);
             }}
+            disabled={customOwned}
             accessibilityRole="button"
-            accessibilityLabel="Altro: scegli un nome personalizzato"
-            accessibilityState={{ selected: selected === "custom" }}
+            accessibilityLabel={customOwned ? "Altro: già presente" : "Altro: scegli un nome personalizzato"}
+            accessibilityState={{ selected: selected === "custom", disabled: customOwned }}
             pressedOpacity={0.85}
-            containerStyle={{ marginTop: 10 }}
+            containerStyle={{ marginTop: 10, opacity: customOwned ? 0.45 : 1 }}
             style={{
               borderRadius: radii.card,
               backgroundColor: selected === "custom" ? colors.tagUserBg : colors.surface,
@@ -324,7 +359,9 @@ export default function ChooseTopicScreen() {
                     color: colors.midGrey,
                   }}
                 >
-                  Un argomento tuo: storia, chimica, un esame…
+                  {customOwned
+                    ? "Già presente (una cartella personalizzata per account, per ora)"
+                    : "Un argomento tuo: storia, chimica, un esame…"}
                 </Text>
               </View>
             </View>
