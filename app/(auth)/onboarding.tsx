@@ -28,8 +28,14 @@ type Step = {
 const STEPS: Step[] = [
   {
     key: "welcome",
-    mascot: "default",
-    haloBg: colors.warmWhite,
+    // "announce" (waving + megaphone) instead of "default": the default
+    // mascot is a 130 px cutout with a patchy alpha channel — at hero size
+    // the halo disc bled through the brain and read as a dark blob on top
+    // of it. Keep the hero on one of the ~500 px variants.
+    mascot: "announce",
+    // A plain white disc reads as deliberate next to the tinted discs of
+    // the three layer steps; warmWhite on canvas was a muddy near-match.
+    haloBg: colors.surface,
     title: "Benvenuto in Memika",
     body: "La tua memoria, ben curata. Tre ritmi di ripasso che lavorano insieme per te.",
   },
