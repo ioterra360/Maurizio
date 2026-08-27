@@ -18,6 +18,11 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "."),
+      // lib/i18n reads the device locale from react-native and persists the
+      // preference in AsyncStorage; neither loads in Node. Stubs keep the
+      // pure-TS tests pure (see test/stubs/).
+      "react-native": path.resolve(__dirname, "test/stubs/react-native.ts"),
+      "@react-native-async-storage/async-storage": path.resolve(__dirname, "test/stubs/async-storage.ts"),
     },
   },
 });
