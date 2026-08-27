@@ -29,6 +29,7 @@ import {
 } from "@expo-google-fonts/inter";
 
 import { useAuthStore } from "@/lib/auth-store";
+import { useLocaleStore } from "@/lib/i18n";
 import { parseDevSignOutToken } from "@/lib/auth-links";
 import { SUPPORT_EMAIL } from "@/lib/constants";
 import { reportError } from "@/lib/report-error";
@@ -243,6 +244,9 @@ function RootLayout() {
       } catch (err) {
         reportError("root/initial-url", err);
       }
+      // Locale first (a few ms from AsyncStorage) so the first frame is
+      // already in the user's chosen language, then auth.
+      await useLocaleStore.getState().hydrate();
       hydrate();
     })();
   }, [hydrate, receiveAuthLink]);

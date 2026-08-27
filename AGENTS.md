@@ -87,6 +87,12 @@ These exist because of past decisions documented elsewhere in `docs/`.
   `_ANON_KEY` in `eas.json` `build.<profile>.env` fails fast instead of
   shipping the seed accounts. Never add `EXPO_PUBLIC_DEMO_MODE=true` to a
   store profile; never make the demo branch reachable in release.
+- **Every user-facing string goes through `lib/i18n`** (`useT()` in
+  components, `t()` in non-React code, `tp()` for plurals). Italian catalog
+  `lib/i18n/it.ts` is the key source; `en.ts` must carry every key (compile
+  error otherwise). Never keep translated text in module-level constants —
+  resolve at render/call time so the Settings language switch applies at
+  once. No Italian literals in TSX (2026-08-27, Angelo: app in more languages).
 - **Every caught error goes through `reportError(tag, err)`**
   (`lib/report-error.ts`); no bare `console.warn` in a `catch`. Never put
   personal data in the `extra` payload.

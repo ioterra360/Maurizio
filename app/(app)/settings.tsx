@@ -17,6 +17,7 @@ import { LogOut, Trash2, AlertTriangle, ExternalLink } from "lucide-react-native
 import { HeaderHero } from "@/components/HeaderHero";
 import { InitialsAvatar } from "@/components/FolderTile";
 import { SectionLabel } from "@/components/SectionLabel";
+import { useLocaleStore, useT, type LocalePreference } from "@/lib/i18n";
 import { SettingsRow, SettingsToggle } from "@/components/SettingsRow";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { GhostButton } from "@/components/GhostButton";
@@ -72,6 +73,7 @@ const SUPPORT_MAILTO = `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent("Su
 
 export default function SettingsScreen() {
   const user = useAuthStore((s) => s.user);
+  const { t: tr } = useT();
   const signOut = useAuthStore((s) => s.signOut);
   const setUserName = useAuthStore((s) => s.setUserName);
   const viewAsUser = useAuthStore((s) => s.viewAsUser);
@@ -312,6 +314,14 @@ export default function SettingsScreen() {
               });
             }}
           />
+        </View>
+
+        {/* Language — device language by default, forced from here. */}
+        <View style={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 8 }}>
+          <SectionLabel>{tr("settings.languageSection")}</SectionLabel>
+        </View>
+        <View style={{ paddingHorizontal: 16 }}>
+          <LanguagePicker />
         </View>
 
         {/* Premium — hidden until the RevenueCat paywall replaces the old
@@ -616,5 +626,66 @@ function DangerCard({
         </Text>
       </View>
     </Tappable>
+  );
+}
+
+/**
+ * Three pills: follow the phone / Italiano / English. Changes apply at once
+ * (every screen reads strings through useT) and persist in AsyncStorage.
+ */
+function LanguagePicker() {
+  const { t: tr } = useT();
+  const preference = useLocaleStore((s) => s.preference);
+  const setPreference = useLocaleStore((s) => s.setPreference);
+  const options: ReadonlyArray<{ value: LocalePreference; label: string }> = [
+    { value: "system", label: tr("settings.languageSystem") },
+    { value: "it", label: tr("settings.languageIt") },
+    { value: "en", label: tr("settings.languageEn") },
+  ];
+  return (
+    <View
+      className="rounded-card bg-surface"
+      style={{ padding: 12, borderWidth: 1, borderColor: colors.hairline, gap: 10 }}
+    >
+      <View style={{ flexDirection: "row", gap: 8 }}>
+        {options.map((o) => {
+          const on = preference === o.value;
+          return (
+            <Tappable
+              key={o.value}
+              onPress={() => void setPreference(o.value)}
+              accessibilityRole="button"
+              accessibilityLabel={o.label}
+              accessibilityState={{ selected: on }}
+              pressedOpacity={0.8}
+              containerStyle={{ flex: 1 }}
+              style={{
+                alignItems: "center",
+                justifyContent: "center",
+                paddingVertical: 10,
+                borderRadius: 999,
+                backgroundColor: on ? colors.navy : colors.warmWhite,
+                borderWidth: 1,
+                borderColor: on ? colors.navy : colors.hairlineStrong,
+              }}
+            >
+              <Text
+                numberOfLines={1}
+                style={{
+                  fontFamily: FONT.semibold,
+                  fontSize: 13,
+                  color: on ? colors.warmWhite : colors.navy,
+                }}
+              >
+                {o.label}
+              </Text>
+            </Tappable>
+          );
+        })}
+      </View>
+      <Text style={{ fontFamily: FONT.regular, fontSize: 12.5, color: colors.midGrey }}>
+        {tr("settings.languageHint")}
+      </Text>
+    </View>
   );
 }
