@@ -80,6 +80,66 @@ Your memories are yours. You can delete everything at any time from Settings and
 
 Screenshot in inglese: `scripts/store-screenshots/specs.en.json` (stessi 8 file raw catturati con l'app in inglese: `capture.cjs --locale en`, poi `compose.py specs.en.json docs/store-assets/screenshots/phone-en`).
 
+## Scheda in francese (fr-FR)
+
+**Short description** (≤80, 69 caratteri):
+`Révise quelques minutes par jour et n'oublie pas ce que tu as étudié.`
+
+**Full description** (1521/4000):
+
+```
+Memika t'aide à ne pas oublier ce que tu as déjà étudié.
+
+Tu enregistres un mot, un terme ou un concept avec son explication et un exemple. À partir de là, Memika se charge de te le faire revoir au bon moment, avant qu'il ne t'échappe.
+
+Chaque révision passe par trois phases, toujours dans le même ordre.
+Scan : un contrôle rapide, tu t'en souviens ou non.
+Reinforcement : un indice avant la réponse, pour fixer ce que tu as vu ces derniers jours.
+Focus : la vraie révision, où c'est toi qui décides si tu l'as oublié, si ça a été difficile ou si tu t'en souviens bien.
+
+Chaque jour, tu choisis le temps que tu as, de cinq minutes à plus d'une heure, et Memika prépare le plan de révision en conséquence.
+
+Sur l'écran Aujourd'hui, tu vois ce qui est à réviser et le temps qu'il faut. Dans les dossiers, tu gardes tes souvenirs classés par sujet, que ce soit une langue, la médecine, le droit ou la matière d'un examen. Dans la santé de la mémoire, tu vois quels souvenirs sont stables et lesquels sont en train de s'effacer.
+
+Pas de séries à tenir, pas de classements, pas de publicité. Juste un endroit tranquille où revenir quelques minutes par jour.
+
+Memika est gratuite avec un dossier de souvenirs. Les dossiers illimités arriveront avec Memika Premium, sur abonnement via Google Play.
+
+Tes souvenirs t'appartiennent. Tu peux tout supprimer quand tu veux depuis les Paramètres et nous demander une copie de tes données à tout moment. Politique de confidentialité : https://ioterra360.github.io/memika-legal/privacy/
+```
+
+Screenshot: `scripts/store-screenshots/specs.fr.json` → `docs/store-assets/screenshots/phone-fr/`.
+
+## Scheda in spagnolo (es-ES)
+
+**Short description** (≤80, 64 caratteri):
+`Repasa unos minutos al día y no olvides lo que ya has estudiado.`
+
+**Full description** (1436/4000):
+
+```
+Memika sirve para no olvidar lo que ya has estudiado.
+
+Guardas una palabra, un término o un concepto con su significado y un ejemplo. Desde ese momento, Memika se encarga de volver a mostrártelo en el momento justo, antes de que se te escape.
+
+Cada repaso pasa por tres fases, siempre en el mismo orden.
+Scan: una comprobación rápida, lo recuerdas o no.
+Reinforcement: una pista antes de la respuesta, para asentar lo que has visto en los últimos días.
+Focus: el repaso de verdad, en el que decides tú si lo has olvidado, si te ha costado o si lo recuerdas bien.
+
+Cada día eliges cuánto tiempo tienes, desde cinco minutos hasta más de una hora, y Memika ajusta el plan de repaso a ese tiempo.
+
+En la pantalla Hoy ves qué toca repasar y cuánto tiempo hace falta. En las carpetas tienes tus recuerdos separados por tema, ya sea un idioma, medicina, derecho o la asignatura de un examen. En la salud de la memoria ves qué recuerdos están estables y cuáles se están desvaneciendo.
+
+Sin rachas, sin clasificaciones, sin publicidad. Solo un lugar tranquilo al que volver unos minutos al día.
+
+Memika es gratuita con una carpeta de recuerdos. Las carpetas ilimitadas llegarán con Memika Premium, por suscripción a través de Google Play.
+
+Tus recuerdos son tuyos. Puedes borrarlo todo cuando quieras desde Ajustes y pedirnos una copia de tus datos en cualquier momento. Política de privacidad: https://ioterra360.github.io/memika-legal/privacy/
+```
+
+Screenshot: `scripts/store-screenshots/specs.es.json` → `docs/store-assets/screenshots/phone-es/`.
+
 ## Contenuti dell'app (Monitoraggio norme → Contenuti dell'app)
 
 **Norme sulla privacy** → https://ioterra360.github.io/memika-legal/privacy/

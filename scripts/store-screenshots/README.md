@@ -36,3 +36,5 @@ Build d8525c8c (2026-08-27) died exactly this way.
   Demo decks use short first cards for this reason.
 - `SafeAreaView` has no top inset on web → `compose.py` draws an Android-style status strip
   (time + glyphs) above the capture to restore the inset.
+
+Other languages: `SHOT_LOCALE=en|fr|es node scripts/store-screenshots/capture.cjs` writes raw-<lang>/; compose with `specs.<lang>.json` into `docs/store-assets/screenshots/phone-<lang>/`. Button labels are looked up in the catalogs, nothing to edit.

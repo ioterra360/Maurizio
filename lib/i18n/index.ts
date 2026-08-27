@@ -7,7 +7,7 @@
  * - `t(key, vars)` interpolates `{name}` placeholders; `tp(base, count)`
  *   picks `<base>_one` / `<base>_other`.
  * - The active locale lives in a zustand store: device language by default
- *   (Italian phones → it, everything else → en), overridable from Settings
+ *   (it/fr/es phones → that language, everything else → en), overridable from Settings
  *   and persisted in AsyncStorage. Components use `useT()` so a change
  *   re-renders them; non-React code calls `t()` directly at call time —
  *   never cache translated strings in module-level constants.
@@ -21,9 +21,11 @@ import { create } from "zustand";
 
 import { it } from "./it";
 import { en } from "./en";
+import { fr } from "./fr";
+import { es } from "./es";
 
-export type Locale = "it" | "en";
-export const LOCALES: readonly Locale[] = ["it", "en"] as const;
+export type Locale = "it" | "en" | "fr" | "es";
+export const LOCALES: readonly Locale[] = ["it", "en", "fr", "es"] as const;
 /** "system" = follow the phone; otherwise a forced locale. */
 export type LocalePreference = Locale | "system";
 
@@ -36,11 +38,11 @@ export type PluralBase = TKey extends infer K
   : never;
 export type Vars = Record<string, string | number>;
 
-const CATALOGS: Record<Locale, Record<TKey, string>> = { it, en };
+const CATALOGS: Record<Locale, Record<TKey, string>> = { it, en, fr, es };
 const STORAGE_KEY = "memika.locale";
 const FALLBACK_FOR_UNSUPPORTED: Locale = "en";
 
-/** "it-IT" / "it_IT" / "en" → supported locale; unknown → English. */
+/** "it-IT" / "fr_CA" / "es" → supported locale; unknown → English. */
 export function localeFromTag(tag: string | null | undefined): Locale {
   const lang = (tag ?? "").toLowerCase().split(/[-_]/)[0];
   return (LOCALES as readonly string[]).includes(lang) ? (lang as Locale) : FALLBACK_FOR_UNSUPPORTED;
@@ -89,7 +91,7 @@ export const useLocaleStore = create<LocaleState>((set) => ({
   hydrate: async () => {
     try {
       const raw = await AsyncStorage.getItem(STORAGE_KEY);
-      const preference: LocalePreference = raw === "it" || raw === "en" ? raw : "system";
+      const preference: LocalePreference = (LOCALES as readonly string[]).includes(raw ?? "") ? (raw as Locale) : "system";
       set({ preference, locale: resolve(preference), hydrated: true });
     } catch {
       set({ hydrated: true });

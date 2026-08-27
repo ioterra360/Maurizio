@@ -817,6 +817,8 @@ export const en: Record<keyof typeof it, string> = {
   "settings.eveningReview": "Evening review",
   "settings.language": "Language",
   "settings.languageEn": "English",
+  "settings.languageEs": "Español",
+  "settings.languageFr": "Français",
   "settings.languageHint": "Applies right away, no restart.",
   "settings.languageIt": "Italiano",
   "settings.languageSection": "Language",

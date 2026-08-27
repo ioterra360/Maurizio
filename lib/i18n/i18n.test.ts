@@ -10,12 +10,20 @@ vi.mock("@react-native-async-storage/async-storage", () => ({
 }));
 
 import { en } from "./en";
+import { es } from "./es";
+import { fr } from "./fr";
 import { it } from "./it";
 import { interpolate, localeFromTag, t, tp, useLocaleStore } from "./index";
 
 describe("catalogs", () => {
-  test("en has exactly the keys of it", () => {
-    expect(Object.keys(en).sort()).toEqual(Object.keys(it).sort());
+  test("every catalog has exactly the keys of it", () => {
+    for (const cat of [en, fr, es]) expect(Object.keys(cat).sort()).toEqual(Object.keys(it).sort());
+  });
+  test("placeholders match the Italian source in every catalog", () => {
+    const ph = (s: string) => (s.match(/\{\w+\}/g) ?? []).sort();
+    for (const cat of [en, fr, es] as Record<string, string>[]) {
+      for (const [k, v] of Object.entries(it)) expect(ph(cat[k] ?? ""), k).toEqual(ph(v));
+    }
   });
   test("plural keys come in _one/_other pairs", () => {
     for (const k of Object.keys(it)) {
@@ -24,7 +32,7 @@ describe("catalogs", () => {
     }
   });
   test("no empty strings", () => {
-    for (const [k, v] of Object.entries({ ...it, ...en })) expect(v.trim(), k).not.toBe("");
+    for (const [k, v] of Object.entries({ ...it, ...en, ...fr, ...es })) expect(v.trim(), k).not.toBe("");
   });
 });
 
@@ -33,7 +41,9 @@ describe("localeFromTag", () => {
     expect(localeFromTag("it-IT")).toBe("it");
     expect(localeFromTag("it_CH")).toBe("it");
     expect(localeFromTag("en-US")).toBe("en");
-    expect(localeFromTag("fr-FR")).toBe("en");
+    expect(localeFromTag("fr-FR")).toBe("fr");
+    expect(localeFromTag("es_MX")).toBe("es");
+    expect(localeFromTag("de-DE")).toBe("en");
     expect(localeFromTag(undefined)).toBe("en");
   });
 });

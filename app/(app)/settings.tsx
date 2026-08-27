@@ -684,13 +684,15 @@ function LanguagePicker() {
     { value: "system", label: tr("settings.languageSystem") },
     { value: "it", label: tr("settings.languageIt") },
     { value: "en", label: tr("settings.languageEn") },
+    { value: "fr", label: tr("settings.languageFr") },
+    { value: "es", label: tr("settings.languageEs") },
   ];
   return (
     <View
       className="rounded-card bg-surface"
       style={{ padding: 12, borderWidth: 1, borderColor: colors.hairline, gap: 10 }}
     >
-      <View style={{ flexDirection: "row", gap: 8 }}>
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
         {options.map((o) => {
           const on = preference === o.value;
           return (
@@ -701,11 +703,12 @@ function LanguagePicker() {
               accessibilityLabel={o.label}
               accessibilityState={{ selected: on }}
               pressedOpacity={0.8}
-              containerStyle={{ flex: 1 }}
+              containerStyle={{ flexGrow: 1, flexBasis: "30%" }}
               style={{
                 alignItems: "center",
                 justifyContent: "center",
                 paddingVertical: 10,
+                paddingHorizontal: 12,
                 borderRadius: 999,
                 backgroundColor: on ? colors.navy : colors.warmWhite,
                 borderWidth: 1,

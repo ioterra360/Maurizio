@@ -1,5 +1,5 @@
 /**
- * Italian — the base catalog. Every key here must exist in en.ts.
+ * Italian — the base catalog. Every key here must exist in en.ts, fr.ts, es.ts.
  * Key convention: `<area>.<camelCaseMeaning>`; shared UI words live under
  * `common.*`; plural pairs end with `_one` / `_other` and receive `{count}`.
  * Generated from the 2026-08-27 inventory; edit by hand from now on.
@@ -817,6 +817,8 @@ export const it = {
   "settings.eveningReview": "Ripasso serale",
   "settings.language": "Lingua",
   "settings.languageEn": "English",
+  "settings.languageEs": "Español",
+  "settings.languageFr": "Français",
   "settings.languageHint": "Cambia subito, senza riavviare.",
   "settings.languageIt": "Italiano",
   "settings.languageSection": "Lingua",

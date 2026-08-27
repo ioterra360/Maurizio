@@ -1,0 +1,67 @@
+[
+ {
+  "slug": "oggi",
+  "file": "today.png",
+  "dark": true,
+  "accent": "#6DA8E5",
+  "kicker": "Chaque jour",
+  "headline": "Un plan de révision, prêt quand tu veux",
+  "subline": "Choisis le temps que tu as, 5, 15 ou 30 minutes, et Memika fait le reste."
+ },
+ {
+  "slug": "scan",
+  "file": "scan.png",
+  "accent": "#6DA8E5",
+  "kicker": "Scan · premier rythme",
+  "headline": "Un contrôle rapide : tu t'en souviens ou non",
+  "subline": "Les souvenirs plus anciens défilent en quelques secondes, sans effort."
+ },
+ {
+  "slug": "reinforcement",
+  "file": "reinforcement.png",
+  "accent": "#9B8CE8",
+  "kicker": "Reinforcement · deuxième rythme",
+  "headline": "Un indice avant la réponse",
+  "subline": "Un rappel guidé pour ce que tu as vu ces derniers jours."
+ },
+ {
+  "slug": "focus",
+  "file": "focus.png",
+  "accent": "#1A2C4F",
+  "kicker": "Focus · troisième rythme",
+  "headline": "Révision en profondeur, verdict honnête",
+  "subline": "Oublié, difficile ou retenu : c'est toi qui décides, Memika replanifie."
+ },
+ {
+  "slug": "cartelle",
+  "file": "knowledge.png",
+  "accent": "#3EC07B",
+  "kicker": "Dossiers",
+  "headline": "Tes souvenirs, par sujet",
+  "subline": "Langues, médecine, droit : chaque dossier avec sa propre priorité."
+ },
+ {
+  "slug": "ricordi",
+  "file": "folder-es.png",
+  "accent": "#F5A89C",
+  "kicker": "Chaque souvenir",
+  "headline": "Avec son explication et son état",
+  "subline": "Stable, en train de s'effacer ou archivé, toujours sous les yeux."
+ },
+ {
+  "slug": "salute",
+  "file": "health.png",
+  "accent": "#3EC07B",
+  "kicker": "Santé de la mémoire",
+  "headline": "Vois ce qui s'efface avant de l'oublier",
+  "subline": "Une vue calme. Pas de séries à tenir, pas de classements."
+ },
+ {
+  "slug": "aggiungi",
+  "file": "add.png",
+  "accent": "#6DA8E5",
+  "kicker": "Ajouter",
+  "headline": "Un mot, un terme, un concept",
+  "subline": "Recto, verso, un exemple. La première révision est déjà prévue pour demain."
+ }
+]
