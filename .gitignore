@@ -44,6 +44,3 @@ expo-qr.png
 # generated native folders
 /ios
 /android
-
-# Raw web captures for store screenshots (regenerate with scripts/store-screenshots)
-scripts/store-screenshots/raw/

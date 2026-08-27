@@ -37,12 +37,13 @@ export function HealthRow({ name, active, fading, archived, chip }: Props) {
       <Text
         className="text-navy"
         numberOfLines={1}
-        style={{ fontFamily: FONT.semibold, fontSize: 15, letterSpacing: -0.07, width: 84 }}
+        // The name takes all the slack (bar and chip are fixed width) instead
+        // of a fixed 84 px column that ellipsised "Giapponese" on every phone.
+        style={{ fontFamily: FONT.semibold, fontSize: 15, letterSpacing: -0.07, flex: 1, minWidth: 84 }}
       >
         {name}
       </Text>
       <RetentionBar active={active} fading={fading} archived={archived} width={130} height={6} />
-      <View style={{ flex: 1 }} />
       <View
         className="rounded-tag"
         style={{ backgroundColor: s.bg, paddingHorizontal: 10, paddingVertical: 4 }}

@@ -36,7 +36,7 @@ What's not yet set up:
   must set `SENTRY_DISABLE_AUTO_UPLOAD=true` or the build fails (see § Sentry)
 - Legal pages live on GitHub Pages (ioterra360/memika-legal) (drafts in `docs/legal/`, Maurizio publishes)
 - RevenueCat (`docs/PAYMENTS.md`) — not started
-- OTA updates (`expo-updates` not installed; no `channel` keys in `eas.json` on purpose)
+- OTA updates: `expo-updates` installed since build 9 (2026-08-27), channels `development`/`preview`/`production` in `eas.json`, runtime policy `fingerprint` — see § OTA updates and the fingerprint inputs note there
 
 This doc captures the setup so we don't reinvent it under deadline.
 
@@ -111,6 +111,21 @@ Choice: option 1 for `EXPO_PUBLIC_*` (they're already public in the bundle),
 option 2 for any server-only values that get added later (none in Phase 1-3).
 
 ## OTA updates (`expo-updates` / EAS Update)
+
+> **Fingerprint inputs — check before every `eas update`.** The runtime version is a
+> hash of: `app.json`/`app.config` result (including `platforms`, which gains `"web"`
+> if `react-native-web` is merely installed), `eas.json`, the **root** `.gitignore`,
+> the icon/splash PNGs referenced by the config, and every native dependency. Run
+> `npx expo-updates fingerprint:generate --platform android` and compare with
+> `eas build:view <id> --json` → `runtimeVersion` of the build you want to reach;
+> if they differ the update is silently ignored by that build. Nested `.gitignore`
+> files are not inputs — put tooling ignore rules there.
+>
+> **`.env` foot-gun.** `eas update` bundles `EXPO_PUBLIC_*` from the *local* `.env`
+> (`eas.json` `build.<profile>.env` applies to builds only). Publish only from a
+> checkout whose `.env` carries the production Supabase URL/anon key; an update
+> exported without them ships empty creds and every install fails fast on the
+> next launch (`release-missing-creds`). Run the Hermes pre-check first.
 
 **Enabled 2026-08-26** (Angelo: testers must get fixes without new builds).
 `expo-updates` is installed, `app.json` has `updates.url` (u.expo.dev/<projectId>)
@@ -294,7 +309,7 @@ unadvertised first release, re-export from a vector source before marketing).
 | File | Size / mode | Used by |
 | --- | --- | --- |
 | `assets/icon.png` | 1024×1024 RGB, opaque, square corners | `expo.icon` (iOS app icon — Apple rejects alpha) |
-| `assets/adaptive-icon.png` | 1024×1024 RGBA, tile inside the 672 px safe circle | `expo.android.adaptiveIcon.foregroundImage` on `#F5F3EF` |
+| `assets/adaptive-icon.png` | 1024×1024 opaque RGB, full-bleed navy (tile gradient extended to the edges), artwork inside the 672 px safe circle | `expo.android.adaptiveIcon.foregroundImage` on `#142450` (was `#F5F3EF`, which showed as a light ring around the tile) |
 | `assets/splash-icon.png` | 1024×1024 RGBA | `expo-splash-screen` plugin, `imageWidth: 200` on `#F5F3EF` |
 | `assets/favicon.png` | 48×48 RGBA | `expo.web.favicon` |
 | `docs/store-assets/appstore-icon-1024.png` | 1024×1024 RGB, no alpha | App Store Connect listing icon (upload manually) |

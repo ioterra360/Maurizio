@@ -38,7 +38,7 @@ GRATIS E PREMIUM
 Memika è gratuita con una cartella di ricordi. In arrivo Memika Premium, con cartelle illimitate, gestito come abbonamento dal Google Play Store.
 
 I TUOI DATI
-I ricordi sono tuoi: puoi esportare ed eliminare tutto in qualsiasi momento dalle Impostazioni. Informativa sulla privacy: https://ioterra360.github.io/memika-legal/privacy/
+I ricordi sono tuoi: puoi eliminare tutto in qualsiasi momento dalle Impostazioni e chiederci una copia dei tuoi dati quando vuoi. Informativa sulla privacy: https://ioterra360.github.io/memika-legal/privacy/
 ```
 
 **Categoria**: App → Istruzione
@@ -65,9 +65,11 @@ I ricordi sono tuoi: puoi esportare ed eliminare tutto in qualsiasi momento dall
 
 **Annunci** → No, l'app non contiene annunci.
 
+**ID pubblicità (Advertising ID)** → No: nessun SDK pubblicitario/analytics, nessuna permission `com.google.android.gms.permission.AD_ID` nel manifest (verificato in expo, expo-updates, @sentry/react-native). Se la Console segnala un'incoerenza col manifest caricato, ricontrollare l'AAB.
+
 **Classificazione dei contenuti** (questionario IARC) → categoria *Riferimento, notizie o istruzione* (in alternativa *Utilità, produttività, comunicazione o altro*). Risposte: nessuna violenza, nessun contenuto sessuale, nessun linguaggio volgare, nessuna sostanza, nessun gioco d'azzardo, nessuna interazione tra utenti né condivisione di contenuti, nessuna condivisione di posizione, nessun acquisto di beni digitali (finché non ci sono gli IAP: aggiornare a "sì" con RevenueCat), nessun accesso illimitato a internet (i link legali si aprono nel browser di sistema). Risultato atteso: PEGI 3 / Everyone.
 
-**Pubblico target e contenuti** → fascia *18 anni e oltre*; l'app non è pensata per bambini; nessun elemento che attiri involontariamente i minori.
+**Pubblico target e contenuti** → fasce *16-17* e *18 anni e oltre* (i Termini e la Privacy pubblicati riservano l'app ai maggiori di 16 anni — dichiarare solo 18+ sarebbe incoerente con le pagine legali); l'app non è pensata per bambini; la mascotte è un cervello cartoon ma il contenuto (lingue, medicina, diritto, esami) non attira i minori di 13 anni. Decisione da confermare con Maurizio (2026-08-27).
 
 **App di notizie** → No. **App per il tracciamento dei contatti COVID-19** → No. **App governativa** → No. **Funzionalità finanziarie** → Nessuna. **App per la salute** → Nessuna funzionalità sanitaria.
 
@@ -79,13 +81,14 @@ I ricordi sono tuoi: puoi esportare ed eliminare tutto in qualsiasi momento dall
   | Categoria | Tipo | Raccolto | Condiviso | Obbligatorio | Finalità |
   |---|---|---|---|---|---|
   | Informazioni personali | Indirizzo email | Sì | No | Sì | Gestione account |
-  | Informazioni personali | Nome | Sì | No | No | Funzionalità dell'app, Personalizzazione |
+  | Informazioni personali | Nome | Sì | No | Sì (richiesto alla registrazione) | Funzionalità dell'app, Personalizzazione |
   | Attività nell'app | Altri contenuti generati dagli utenti (i ricordi) | Sì | No | Sì | Funzionalità dell'app |
   | Attività nell'app | Azioni nell'app (esiti dei ripassi) | Sì | No | Sì | Funzionalità dell'app |
   | Info e prestazioni app | Log degli arresti anomali | Sì* | No | No | Analisi |
   | Info e prestazioni app | Diagnostica | Sì* | No | No | Analisi |
   | Dispositivo o altri ID | Dispositivo o altri ID | Sì* | No | No | Analisi |
-  \* Solo se Sentry è attivo nella build pubblicata (DSN impostato). Se si pubblica senza Sentry, dichiarare "No" per queste tre righe e aggiornare il modulo quando si attiva.
+  \* Solo se Sentry è attivo nella build pubblicata (DSN impostato). **Le build attuali (vc7–vc11) NON hanno il DSN in `eas.json` → dichiarare "No" per log arresti anomali e diagnostica** e aggiornare il modulo quando si attiva.
+  Nota: da vc9 in poi `expo-updates` invia un ID client EAS per installazione al server di aggiornamento di Expo (verifica aggiornamenti OTA): se la Console lo richiede, dichiararlo come "Dispositivo o altri ID · Raccolto · Non condiviso · Funzionalità dell'app" (fornitore di servizi, non condivisione).
 - Nessun dato trattato in modo effimero; nessuna raccolta di posizione, contatti, foto, file, messaggi.
 
 ## Impostazioni store (Crescita → Presenza sullo store → Impostazioni)
