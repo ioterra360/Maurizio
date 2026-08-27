@@ -32,6 +32,11 @@ export default function ScanScreen() {
   const recordAndAdvance = useReviewStore((s) => s.recordAndAdvance);
   const amendLastAnswer = useReviewStore((s) => s.amendLastAnswer);
   const [revealed, setRevealed] = useState(false);
+  // Carte con lettura (giapponese): la lettura NON è visibile all'inizio.
+  // Primo tap = "Mostrami la lettura", secondo = "Mostrami il significato"
+  // (Angelo, 2026-08-27). Vedere la sola lettura non conta come reveal per
+  // lo scheduler: solo il significato porta a "struggled".
+  const [readingShown, setReadingShown] = useState(false);
   // Flash di conferma dopo "Lo ricordo": mostra la soluzione della carta
   // appena risposta per la finestra di amend, poi prosegue.
   const [flash, setFlash] = useState<null | {
@@ -53,11 +58,13 @@ export default function ScanScreen() {
     useCallback(() => {
       ensureSession("scan", "flow");
       setRevealed(false);
+      setReadingShown(false);
     }, [ensureSession]),
   );
 
   useEffect(() => {
     setRevealed(false);
+    setReadingShown(false);
   }, [index]);
 
   // Il timer del flash non deve sopravvivere allo screen.
@@ -115,10 +122,20 @@ export default function ScanScreen() {
     }
   };
 
+  const hasReading = Boolean(card?.reading);
   const handleShowMe = () => {
     tap();
+    if (hasReading && !readingShown) {
+      setReadingShown(true);
+      return;
+    }
     setRevealed(true);
   };
+  const showMeLabel = hasReading
+    ? readingShown
+      ? "Mostrami il significato"
+      : "Mostrami la lettura"
+    : "Mostrami";
 
   // Flash di conferma — sostituisce interamente la carta (regge anche
   // sull'ultima carta del mazzo, quando l'indice è già oltre la fine).
@@ -289,7 +306,7 @@ export default function ScanScreen() {
         >
           {card.front}
         </Text>
-        {card.reading ? (
+        {card.reading && readingShown ? (
           <Text
             style={{
               fontFamily: FONT.medium,
@@ -335,7 +352,7 @@ export default function ScanScreen() {
           onPress={handleShowMe}
           disabled={revealed}
           accessibilityRole="button"
-          accessibilityLabel="Mostrami il significato"
+          accessibilityLabel={showMeLabel}
           pressedOpacity={0.85}
           style={{
             alignItems: "center",
@@ -355,7 +372,7 @@ export default function ScanScreen() {
               letterSpacing: -0.1,
             }}
           >
-            Mostrami
+            {showMeLabel}
           </Text>
         </Tappable>
         <Tappable
