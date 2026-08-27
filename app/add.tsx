@@ -96,6 +96,8 @@ export default function AddScreen() {
   const [definition, setDefinition] = useState("");
   const [example, setExample] = useState("");
   const [saving, setSaving] = useState(false);
+  // Tallest ScrollView viewport seen (keyboard closed) — see onLayout below.
+  const [viewportH, setViewportH] = useState(0);
   const [savePressed, setSavePressed] = useState(false);
   // Which required field is empty after a save attempt. Buttons are never
   // silently disabled: tapping with a missing field explains and focuses it.
@@ -240,7 +242,16 @@ export default function AddScreen() {
         style={{ flex: 1 }}
       >
         <ScrollView
-          contentContainerStyle={{ paddingBottom: 200 }}
+          // The action footer lives INSIDE the scroll content, at the bottom.
+          // minHeight is the viewport measured with the keyboard closed (kept
+          // as a max), so with the keyboard open the content keeps its height
+          // and the buttons stay where they were, under the keyboard, instead
+          // of riding up with it (Angelo, 2026-08-27).
+          onLayout={(e) => {
+            const h = e.nativeEvent.layout.height;
+            setViewportH((prev) => (h > prev ? h : prev));
+          }}
+          contentContainerStyle={{ flexGrow: 1, minHeight: viewportH, paddingBottom: 24 }}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
           showsVerticalScrollIndicator={false}
@@ -572,15 +583,13 @@ export default function AddScreen() {
           >
             Prova a usarlo nella vita reale oggi — il primo ripasso è domani.
           </Text>
-        </ScrollView>
 
-        {/* Pinned bottom actions */}
+        {/* Bottom actions — pushed to the bottom of the (min-height) content */}
+        <View style={{ flex: 1 }} />
         <View
           style={{
-            position: "absolute",
-            left: 18,
-            right: 18,
-            bottom: 24,
+            paddingHorizontal: 18,
+            paddingTop: 20,
             gap: 10,
             alignItems: "center",
           }}
@@ -609,6 +618,7 @@ export default function AddScreen() {
           />
           <PrimaryButton label="Salva e continua" onPress={() => doSave(false)} loading={saving} />
         </View>
+        </ScrollView>
       </KeyboardAvoidingView>
 
     </SafeAreaView>
