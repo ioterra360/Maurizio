@@ -44,22 +44,22 @@ export type ReviewCard = {
 };
 
 const SCAN_CARDS: ReviewCard[] = [
-  { id: "demo-scan-0", front: "biblioteca",   back: "Library",                             folder: "Spanish",  folderKind: "es" },
-  { id: "demo-scan-1", front: "Pruritus",     back: "Itching sensation",                   folder: "Medicine", folderKind: "medicine" },
-  { id: "demo-scan-2", front: "難しい", reading: "muzukashii", back: "Difficult · hard · challenging", folder: "Japanese", folderKind: "jp" },
-  { id: "demo-scan-3", front: "Caveat emptor", back: "Let the buyer beware",               folder: "Law",      folderKind: "law" },
+  { id: "demo-scan-0", front: "sendero",     back: "Sentiero · percorso",                    folder: "Spagnolo",   folderKind: "es" },
+  { id: "demo-scan-1", front: "Prurito",     back: "Sensazione che induce a grattarsi",      folder: "Medicina",   folderKind: "medicine" },
+  { id: "demo-scan-2", front: "難しい", reading: "muzukashii", back: "Difficile · complicato · impegnativo", folder: "Giapponese", folderKind: "jp" },
+  { id: "demo-scan-3", front: "Caveat emptor", back: "Il compratore stia attento — il rischio è dell'acquirente", folder: "Diritto", folderKind: "law" },
 ];
 
 const REINF_CARDS: ReviewCard[] = [
-  { id: "demo-reinf-0", front: "amanecer", back: "Dawn · sunrise · daybreak",          hint: "From 'mañana' — the day arriving",           folder: "Spanish",  folderKind: "es" },
-  { id: "demo-reinf-1", front: "Synapse",  back: "Junction between two neurons",       hint: "Greek: syn (together) + haptein (to clasp)", folder: "Medicine", folderKind: "medicine" },
-  { id: "demo-reinf-2", front: "希望", reading: "kibō", back: "Hope · wish · aspiration", hint: "Two kanji: wish + hope",                   folder: "Japanese", folderKind: "jp" },
+  { id: "demo-reinf-0", front: "amanecer", back: "Alba · aurora · il sorgere del sole",       hint: "Da 'mañana': il giorno che arriva",                folder: "Spagnolo",   folderKind: "es" },
+  { id: "demo-reinf-1", front: "Sinapsi",  back: "Giunzione tra due neuroni",                hint: "Greco: syn (insieme) + haptein (stringere)",      folder: "Medicina",   folderKind: "medicine" },
+  { id: "demo-reinf-2", front: "希望", reading: "kibō", back: "Speranza · desiderio · aspirazione", hint: "Due kanji: desiderio + speranza",           folder: "Giapponese", folderKind: "jp" },
 ];
 
 const FOCUS_CARDS: ReviewCard[] = [
-  { id: "demo-focus-0", front: "中心",   reading: "chūshin",  back: "Center · core · the middle",         example: "Memika は学習の中心です",                  folder: "Japanese", folderKind: "jp" },
-  { id: "demo-focus-1", front: "完璧",   reading: "kanpeki", back: "Perfect · flawless · complete",       example: "完璧な仕事です",                             folder: "Japanese", folderKind: "jp" },
-  { id: "demo-focus-2", front: "Estoppel", back: "Preclusion of contradiction in legal proceedings",      example: "The court invoked estoppel.",              folder: "Law", folderKind: "law" },
+  { id: "demo-focus-0", front: "中心",   reading: "chūshin",  back: "Centro · nucleo · il punto centrale",     example: "Memika は学習の中心です",                 folder: "Giapponese", folderKind: "jp" },
+  { id: "demo-focus-1", front: "完璧",   reading: "kanpeki", back: "Perfetto · impeccabile · completo",        example: "完璧な仕事です",                            folder: "Giapponese", folderKind: "jp" },
+  { id: "demo-focus-2", front: "Estoppel", back: "Preclusione: non ci si può contraddire in giudizio", example: "Il giudice ha applicato l'estoppel.",  folder: "Diritto",    folderKind: "law" },
 ];
 
 const DECKS: Record<LayerKey, ReviewCard[]> = {
