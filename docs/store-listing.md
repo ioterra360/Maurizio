@@ -48,6 +48,38 @@ I ricordi sono tuoi. Puoi cancellare tutto quando vuoi dalle Impostazioni e chie
 - Screenshot telefono (8, PNG 1080×1920, 9:16, senza alpha — vincoli Play verificati): `docs/store-assets/screenshots/phone/01-oggi.png … 08-aggiungi.png`. Generati il 2026-08-27 dall'app vera in demo mode (Expo web + Playwright) e impaginati con titolo: Oggi (apertura navy) · Scan · Reinforcement · Focus · Cartelle · Cartella Spagnolo · Salute della memoria · Aggiungi. Pipeline e testi in `scripts/store-screenshots/` (README con la ricetta e il gotcha fingerprint). Caricarli nell'ordine dei numeri.
 - Tablet 7"/10": non richiesti (`supportsTablet: false`, nessun layout tablet).
 
+## Scheda in inglese (en-US) — aggiungere come traduzione della scheda
+
+**App name** (≤30): `Memika`
+
+**Short description** (≤80, 66 caratteri):
+`Review a few minutes a day and keep what you studied from fading away.`
+
+**Full description** (≤4000):
+
+```
+Memika helps you keep what you have already studied.
+
+Save a word, a term or a concept with its meaning and an example. From then on Memika brings it back at the right moment, before it slips away.
+
+Every review goes through three phases, always in the same order.
+Scan: a quick check, you remember it or you don't.
+Reinforcement: a hint before the answer, to settle what you saw in the last few days.
+Focus: the real review, where you decide whether you forgot it, struggled with it or remember it well.
+
+Each day you choose how much time you have, from five minutes to more than an hour, and Memika builds the review plan around it.
+
+The Today screen shows what is due and how long it takes. Folders keep your memories organised by topic, whether that is a language, medicine, law or an exam subject. Memory health shows which memories are stable and which are fading.
+
+No streaks, no leaderboards, no ads. Just a quiet place to come back to for a few minutes a day.
+
+Memika is free with one folder of memories. Unlimited folders will come with Memika Premium, as a subscription through Google Play.
+
+Your memories are yours. You can delete everything at any time from Settings and ask us for a copy of your data whenever you want. Privacy policy: https://ioterra360.github.io/memika-legal/privacy/
+```
+
+Screenshot in inglese: `scripts/store-screenshots/specs.en.json` (stessi 8 file raw catturati con l'app in inglese: `capture.cjs --locale en`, poi `compose.py specs.en.json docs/store-assets/screenshots/phone-en`).
+
 ## Contenuti dell'app (Monitoraggio norme → Contenuti dell'app)
 
 **Norme sulla privacy** → https://ioterra360.github.io/memika-legal/privacy/

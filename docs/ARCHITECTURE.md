@@ -213,3 +213,15 @@ from the client.
   StoreKit + Play Billing in one SDK and validates receipts server-side; the
   15–30 % store cut is the cost of being in the store at all. Details and the
   enforcement plan in `PAYMENTS.md`.
+
+## Localisation (2026-08-27)
+
+`lib/i18n/` is a dependency-free layer: `it.ts` is the key source (765 keys,
+grouped by screen), `en.ts` is typed against it so a missing key fails
+`tsc`. Components call `useT()` (re-renders on language change); non-React
+code calls `t()` / `tp()` at call time. Exported constants that carry text
+expose getters so consumers keep reading plain strings. The locale store
+follows the device (Italian phones → it, others → en) unless the user picks
+one in Settings; the choice is persisted in AsyncStorage and hydrated before
+auth in the root layout. No native module is involved, so translations ship
+via EAS Update.

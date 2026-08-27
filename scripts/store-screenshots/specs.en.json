@@ -1,0 +1,67 @@
+[
+ {
+  "slug": "oggi",
+  "file": "today.png",
+  "dark": true,
+  "accent": "#6DA8E5",
+  "kicker": "Every day",
+  "headline": "A review plan, ready when you are",
+  "subline": "Pick how much time you have, 5, 15 or 30 minutes, and Memika does the rest."
+ },
+ {
+  "slug": "scan",
+  "file": "scan.png",
+  "accent": "#6DA8E5",
+  "kicker": "Scan · first rhythm",
+  "headline": "A quick check: you remember it or not",
+  "subline": "Older memories go by in seconds, no strain."
+ },
+ {
+  "slug": "reinforcement",
+  "file": "reinforcement.png",
+  "accent": "#9B8CE8",
+  "kicker": "Reinforcement · second rhythm",
+  "headline": "A hint before the answer",
+  "subline": "Guided recall for what you saw in the last few days."
+ },
+ {
+  "slug": "focus",
+  "file": "focus.png",
+  "accent": "#1A2C4F",
+  "kicker": "Focus · third rhythm",
+  "headline": "Deep review, honest verdict",
+  "subline": "Forgot, struggled or remembered: you decide, Memika reschedules."
+ },
+ {
+  "slug": "cartelle",
+  "file": "knowledge.png",
+  "accent": "#3EC07B",
+  "kicker": "Folders",
+  "headline": "Your memories, by topic",
+  "subline": "Languages, medicine, law: each folder with its own priority."
+ },
+ {
+  "slug": "ricordi",
+  "file": "folder-es.png",
+  "accent": "#F5A89C",
+  "kicker": "Every memory",
+  "headline": "With its meaning and its state",
+  "subline": "Stable, fading or archived, always in view."
+ },
+ {
+  "slug": "salute",
+  "file": "health.png",
+  "accent": "#3EC07B",
+  "kicker": "Memory health",
+  "headline": "See what is fading before you forget it",
+  "subline": "A calm view. No streaks, no leaderboards."
+ },
+ {
+  "slug": "aggiungi",
+  "file": "add.png",
+  "accent": "#6DA8E5",
+  "kicker": "Add",
+  "headline": "A word, a term, a concept",
+  "subline": "Front, back, an example. The first review is already set for tomorrow."
+ }
+]
