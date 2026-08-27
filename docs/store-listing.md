@@ -8,37 +8,30 @@
 **Nome app** (≤30): `Memika`
 (alternativa ASO: `Memika: ripasso spaziato`)
 
-**Descrizione breve** (≤80):
-`Ripasso spaziato, calmo: tieni vivo ciò che hai già imparato.`
+**Descrizione breve** (≤80, 73 caratteri):
+`Ripassa pochi minuti al giorno e non dimenticare quello che hai studiato.`
 
-**Descrizione completa** (≤4000):
+**Descrizione completa** (≤4000, versione 2026-08-27 riscritta in tono naturale, senza trattini lunghi):
 
 ```
-Memika ti aiuta a non dimenticare quello che hai già imparato.
+Memika serve a non dimenticare quello che hai già studiato.
 
-Non è un corso e non è un gioco: è un ripasso spaziato calmo, pensato per chi costruisce conoscenza nel tempo — lingue, medicina, diritto, esami professionali — e sa che le cose si dimenticano se non le rivedi al momento giusto.
+Salvi una parola, un termine o un concetto con la sua spiegazione e un esempio. Da quel momento ci pensa Memika a riproportelo al momento giusto, prima che ti sfugga.
 
-COME FUNZIONA
-Salvi un ricordo (una parola, un termine, un concetto) con la sua spiegazione e un esempio. Memika calcola quando riproportelo e lo fa passare per tre ritmi di ripasso, sempre nello stesso ordine:
-• Scan — un controllo rapido: lo ricordi o no.
-• Reinforcement — richiamo guidato, con un indizio prima della risposta.
-• Focus — ripasso profondo: dimenticato, faticoso o ricordato.
+Ogni ripasso passa da tre fasi, sempre nello stesso ordine.
+Scan: un controllo veloce, lo ricordi oppure no.
+Reinforcement: un indizio prima della risposta, per fissare quello che hai visto negli ultimi giorni.
+Focus: il ripasso vero e proprio, in cui decidi tu se lo hai dimenticato, se è stato faticoso o se lo ricordi bene.
 
-Ogni giorno scegli quanto tempo hai — 5, 15, 30 minuti — e Memika prepara il piano di ripasso adatto.
+Ogni giorno scegli quanto tempo hai, da cinque minuti a più di un'ora, e Memika prepara il piano di ripasso di conseguenza.
 
-COSA VEDI
-• Oggi: cosa è in scadenza e quanto tempo serve.
-• Cartelle: i tuoi ricordi organizzati per argomento.
-• Salute della memoria: quali ricordi sono stabili e quali stanno sbiadendo.
+Nella schermata Oggi vedi cosa è in scadenza e quanto tempo serve. Nelle cartelle tieni i ricordi divisi per argomento, che sia una lingua, medicina, diritto o la materia di un esame. Nella salute della memoria vedi quali ricordi sono stabili e quali stanno sbiadendo.
 
-SENZA RUMORE
-Niente streak, niente classifiche, niente pubblicità. Un posto tranquillo dove tornare pochi minuti al giorno.
+Niente streak, niente classifiche, niente pubblicità. Solo un posto tranquillo dove tornare per qualche minuto al giorno.
 
-GRATIS E PREMIUM
-Memika è gratuita con una cartella di ricordi. In arrivo Memika Premium, con cartelle illimitate, gestito come abbonamento dal Google Play Store.
+Memika è gratuita con una cartella di ricordi. Le cartelle illimitate arriveranno con Memika Premium, in abbonamento tramite Google Play.
 
-I TUOI DATI
-I ricordi sono tuoi: puoi eliminare tutto in qualsiasi momento dalle Impostazioni e chiederci una copia dei tuoi dati quando vuoi. Informativa sulla privacy: https://ioterra360.github.io/memika-legal/privacy/
+I ricordi sono tuoi. Puoi cancellare tutto quando vuoi dalle Impostazioni e chiederci una copia dei tuoi dati in qualsiasi momento. Informativa sulla privacy: https://ioterra360.github.io/memika-legal/privacy/
 ```
 
 **Categoria**: App → Istruzione
