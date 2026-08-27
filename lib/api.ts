@@ -292,6 +292,16 @@ export async function fetchMemoryById(id: string): Promise<Memory | null> {
   return data ? mapMemory(data) : null;
 }
 
+/**
+ * Delete a memory for good. review_items rows cascade (FK on delete
+ * cascade); RLS limits it to the user's own rows. Demo: no-op.
+ */
+export async function deleteMemory(id: string): Promise<void> {
+  if (isDemoMode) return;
+  const { error } = await supabase.from("memories").delete().eq("id", id);
+  if (error) throw error;
+}
+
 /** Save the user's notes on a memory (null clears them). Demo: no-op. */
 export async function updateMemoryNotes(id: string, notes: string | null): Promise<void> {
   if (isDemoMode) return;

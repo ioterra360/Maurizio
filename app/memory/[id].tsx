@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import {
+  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -8,6 +9,7 @@ import {
   TextInput,
   View,
 } from "react-native";
+import { Trash2 } from "lucide-react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useLocalSearchParams } from "expo-router";
 
@@ -16,7 +18,7 @@ import { PrimaryButton } from "@/components/PrimaryButton";
 import { SectionLabel } from "@/components/SectionLabel";
 import { Tappable } from "@/components/Tappable";
 import { TopBar } from "@/components/TopBar";
-import { fetchMemoryById, updateMemoryNotes } from "@/lib/api";
+import { deleteMemory, fetchMemoryById, updateMemoryNotes } from "@/lib/api";
 import { longDate, relativeReviewed } from "@/lib/format";
 import type { Memory } from "@/lib/mappers";
 import { reportError } from "@/lib/report-error";
@@ -48,6 +50,7 @@ export default function MemoryDetailScreen() {
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
   const [savePressed, setSavePressed] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const load = useCallback(async () => {
     if (!id) return;
@@ -92,6 +95,36 @@ export default function MemoryDetailScreen() {
   const back = () => {
     if (router.canGoBack()) router.back();
     else router.replace("/(app)/knowledge");
+  };
+
+  const confirmDelete = () => {
+    if (!memory || deleting) return;
+    Alert.alert(
+      `Eliminare "${memory.term}"?`,
+      "Il ricordo e la sua storia di ripasso spariscono per sempre. Non si può annullare.",
+      [
+        { text: "Annulla", style: "cancel" },
+        {
+          text: "Elimina",
+          style: "destructive",
+          onPress: () => void doDelete(),
+        },
+      ],
+    );
+  };
+
+  const doDelete = async () => {
+    if (!memory) return;
+    setDeleting(true);
+    try {
+      await deleteMemory(memory.id);
+      showToast("Ricordo eliminato");
+      back(); // the folder list refetches on focus
+    } catch (e) {
+      reportError("memory-detail/delete", e);
+      showToast("Non siamo riusciti a eliminare il ricordo. Riprova.");
+      setDeleting(false);
+    }
   };
 
   const meta = memory ? STATE_META[memory.state] : null;
@@ -306,6 +339,32 @@ export default function MemoryDetailScreen() {
             <View style={{ marginTop: 18 }}>
               <PrimaryButton label="Salva appunti" onPress={save} loading={saving} disabled={!dirty} />
             </View>
+
+            {/* Danger zone */}
+            <Tappable
+              onPress={confirmDelete}
+              disabled={deleting || saving}
+              accessibilityRole="button"
+              accessibilityLabel="Elimina ricordo"
+              pressedOpacity={0.8}
+              containerStyle={{ marginTop: 34, opacity: deleting ? 0.5 : 1 }}
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 8,
+                height: 52,
+                borderRadius: radii.cta,
+                borderWidth: 1.5,
+                borderColor: colors.danger,
+                backgroundColor: colors.dangerSoft,
+              }}
+            >
+              <Trash2 size={17} color={colors.danger} strokeWidth={2} />
+              <Text style={{ fontFamily: FONT.semibold, fontSize: 15.5, color: colors.danger }}>
+                {deleting ? "Elimino…" : "Elimina ricordo"}
+              </Text>
+            </Tappable>
           </ScrollView>
         </KeyboardAvoidingView>
       )}

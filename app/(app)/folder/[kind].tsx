@@ -315,14 +315,16 @@ export default function FolderDetailScreen() {
         </View>
       </ScrollView>
 
-      {/* FAB — folder detail has no tab bar, so it sits low at the bottom. */}
+      {/* FAB — the folder screen lives inside the tab navigator, so it must
+          clear the tab bar like the Knowledge FAB does (it used to sit behind
+          "Impostazioni" — Angelo, 2026-08-27). */}
       <Tappable
         onPress={addItem}
         accessibilityLabel="Aggiungi un ricordo a questa cartella"
         containerStyle={{
           position: "absolute",
           right: 22,
-          bottom: 24,
+          bottom: 104,
         }}
         style={{
           width: 56,
