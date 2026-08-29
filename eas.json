@@ -39,7 +39,8 @@
         "track": "internal"
       },
       "ios": {
-        "appleTeamId": "DT6SV2JMV3"
+        "appleTeamId": "DT6SV2JMV3",
+        "ascAppId": "6806607162"
       }
     }
   }

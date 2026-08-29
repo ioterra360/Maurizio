@@ -2,7 +2,8 @@
 
     python scripts/store-screenshots/compose.py                          # Play 1080x1920 -> docs/store-assets/screenshots/phone/
     python scripts/store-screenshots/compose.py specs.json out_dir       # Play, custom spec/out
-    python scripts/store-screenshots/compose.py specs.json out_dir iphone67   # App Store 6.7" 1290x2796
+    python scripts/store-screenshots/compose.py specs.json out_dir iphone67   # App Store 6.7"/6.9" 1290x2796
+    python scripts/store-screenshots/compose.py specs.json out_dir iphone65   # App Store 6.5" 1284x2778
 
 Layouts: "play" (1080x1920, 9:16) and "iphone67" (1290x2796, the iPhone 6.7"
 size App Store Connect requires; also accepted for 6.9"). Same design, scaled;
@@ -21,6 +22,9 @@ LAYOUTS = {
     # kick_y/head_y = top of kicker/headline; sw = phone screen width; top = phone screen top
     "play":     dict(W=1080, H=1920, kick_y=150, kick_size=26, head_y=205, head_size=66, head_step=78, head_w=940,
                      sub_size=32, sub_step=44, sub_w=860, sw=820, top=560, bezel=18, r_out=72, r_in=54),
+    # 6.5" slot (1284x2778): same composition, 6 px narrower.
+    "iphone65": dict(W=1284, H=2778, kick_y=230, kick_size=32, head_y=300, head_size=80, head_step=94, head_w=1120,
+                     sub_size=40, sub_step=54, sub_w=1040, sw=1060, top=980, bezel=22, r_out=88, r_in=66),
     "iphone67": dict(W=1290, H=2796, kick_y=230, kick_size=32, head_y=300, head_size=80, head_step=94, head_w=1120,
                      sub_size=40, sub_step=54, sub_w=1040, sw=1060, top=980, bezel=22, r_out=88, r_in=66),
 }
