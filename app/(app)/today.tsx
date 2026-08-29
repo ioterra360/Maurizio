@@ -23,7 +23,7 @@ import {
   totalMinutes,
   type LayerCounts,
 } from "@/lib/queue";
-import { TIME_BUDGETS } from "@/lib/constants";
+import { REVIEW_LAYERS, TIME_BUDGETS } from "@/lib/constants";
 import { firstName, dateBadge, timeGreeting } from "@/lib/format";
 import { FONT, colors } from "@/theme/tokens";
 
@@ -134,8 +134,13 @@ export default function TodayScreen() {
     if (!plan) return;
     // Il flusso esegue ESATTAMENTE il piano mostrato: snapshot dei caps,
     // niente refetch interno sovrascrivibile da sessioni più vecchie.
-    startSession("scan", "flow", { budgetCap: estItems, layerCaps: plan });
-    router.push("/review/scan");
+    // Parte dal primo livello con carte: con la regola dei layer (Focus =
+    // ricordi nuovi) un utente ai primi giorni ha Scan e Reinforcement
+    // vuoti, e aprirli creerebbe una review_sessions fantasma più un
+    // "Scan completato" senza aver visto una carta.
+    const first = REVIEW_LAYERS.find((l) => plan[l] > 0) ?? "scan";
+    startSession(first, "flow", { budgetCap: estItems, layerCaps: plan });
+    router.push(`/review/${first}`);
   };
   const startLayer = (path: "scan" | "reinforcement" | "focus") => {
     // Livello singolo = tutto il budget su quel livello, per scelta di spec.

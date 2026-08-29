@@ -31,14 +31,12 @@ type Outcome = RecapEntry["response"];
 
 const OUTCOME_COLOR: Record<Outcome, string> = {
   remembered: statusTint.active.text,
-  struggled: colors.navy,
   forgot: statusTint.fading.text,
 };
 
 /** Catalog keys — resolved with t() at render so the language switch applies at once. */
 const OUTCOME_LABEL_KEY: Record<Outcome, TKey> = {
   remembered: "complete.outcomeRemembered",
-  struggled: "complete.outcomeStruggled",
   forgot: "complete.outcomeForgot",
 };
 
@@ -164,13 +162,13 @@ export default function CompleteScreen() {
   const pct = total > 0 ? totals.remembered / total : 0;
   const tier = pct >= 0.8 ? "top" : pct >= 0.5 ? "mid" : "low";
   const copy = TIER_KEYS[tier];
-  const maxOutcome = Math.max(totals.remembered, totals.struggled, totals.forgot, 1);
+  const maxOutcome = Math.max(totals.remembered, totals.forgot, 1);
 
   // Breakdown per livello — solo in flow, dove i livelli sono più di uno.
   const byLayer = useMemo(() => {
-    const acc = new Map<LayerKey, { remembered: number; struggled: number; forgot: number }>();
+    const acc = new Map<LayerKey, { remembered: number; forgot: number }>();
     for (const r of results) {
-      const c = acc.get(r.layer) ?? { remembered: 0, struggled: 0, forgot: 0 };
+      const c = acc.get(r.layer) ?? { remembered: 0, forgot: 0 };
       c[r.response] += 1;
       acc.set(r.layer, c);
     }
@@ -277,7 +275,6 @@ export default function CompleteScreen() {
             }}
           >
             <OutcomeBar outcome="remembered" value={totals.remembered} max={maxOutcome} />
-            <OutcomeBar outcome="struggled" value={totals.struggled} max={maxOutcome} />
             <OutcomeBar outcome="forgot" value={totals.forgot} max={maxOutcome} />
             <Text
               style={{
@@ -350,7 +347,6 @@ export default function CompleteScreen() {
                       >
                         {t("complete.layerBreakdown", {
                           remembered: c.remembered,
-                          struggled: c.struggled,
                           forgot: c.forgot,
                         })}
                       </Text>

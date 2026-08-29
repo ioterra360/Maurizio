@@ -21,6 +21,7 @@ import { useFolderDetail } from "@/lib/use-folders";
 import { priorityOf, useFolderOrderStore } from "@/lib/folder-order-store";
 import { useReviewStore } from "@/lib/review-store";
 import { relativeReviewed } from "@/lib/format";
+import { layerFor } from "@/lib/queue";
 import { markAddOpenedIntentionally } from "@/lib/add-gate";
 import type { FolderItem } from "@/lib/folder-data";
 
@@ -54,6 +55,7 @@ export default function FolderDetailScreen() {
         back: m.definition,
         state: m.state,
         reviewed: relativeReviewed(m.lastReviewedAt),
+        layer: layerFor(m.srs.repetitions, m.state) ?? undefined,
       })),
     [items],
   );

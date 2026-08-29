@@ -9,6 +9,13 @@
 
 import type { LayerKey } from "@/theme/tokens";
 
+/**
+ * The "struggled" outcomes stay in the vocabulary (SM-2 quality 3) but no
+ * screen produces them since 2026-08-29 (Maurizio: answers are binary for
+ * now; the intermediate option returns later with its own timing, only for
+ * item types where a partial recall makes sense). lib/review-store maps
+ * every UI answer to the binary outcomes.
+ */
 export type LayerOutcome =
   | { layer: "scan"; outcome: "remember" | "show" }
   | { layer: "reinforcement"; outcome: "continue" | "struggled" | "again" }

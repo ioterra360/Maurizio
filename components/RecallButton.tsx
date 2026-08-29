@@ -28,8 +28,10 @@ const META: Record<
 };
 
 /**
- * The three recall buttons on the Focus review layer. Pressable variants —
- * the green "Remembered" gets a glow, the others are outlined.
+ * Recall buttons of the Focus review layer. Focus renders "forgot" and
+ * "remembered" (binary answers since 2026-08-29); the "struggled" variant is
+ * kept for when the intermediate answer returns with its own timing. The
+ * green "Remembered" gets a glow, the others are outlined.
  */
 export function RecallButton({ variant, onPress }: Props) {
   const { t } = useT();

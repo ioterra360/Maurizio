@@ -28,7 +28,9 @@ Three rhythms, **always in this order**:
 
 1. **Scan** — quick check, low cost. One-tap "Show me / Remember" pass.
 2. **Reinforcement** — guided recall with a hint reveal, then full answer.
-3. **Focus** — deep review with three-way recall (Forgot / Struggled / Remembered).
+3. **Focus** — deep review with a binary recall (Forgot / Remembered). The intermediate
+   "Struggled" answer was removed on 2026-08-29 (Maurizio): it returns later
+   with its own timing, only for item types where a partial recall exists.
 
 The order is a product decision and is locked. Do not reorder it.
 

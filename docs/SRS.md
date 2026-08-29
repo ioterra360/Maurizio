@@ -43,14 +43,18 @@ recall outcomes:
 |---|---|---|
 | Scan | Remember / Show me | 4 / 2 |
 | Reinforcement | Continue / Review again | 4 / 1 |
-| Focus | Remembered / Struggled / Forgot | 5 / 3 / 0 |
+| Focus | Remembered / Forgot | 5 / 0 |
 
 Why these exact mappings:
 - **Scan "Show me"** = "I couldn't recall it instantly" = mild forget (2).
   Memory stays in the active queue but interval doesn't grow much.
 - **Reinforcement "Review again"** = the user explicitly asked for another
   pass = treat as a real failure (1) to surface again soon.
-- **Focus "Struggled"** = the answer eventually came back but with friction (3).
+- Answers are binary on every layer. The intermediate "Struggled" (quality 3)
+  was removed from the UI on 2026-08-29 (Maurizio): it needs its own timing
+  and only makes sense for item types where a partial recall exists
+  (concepts, not vocabulary). The scheduler still accepts quality 3 so it
+  can return.
 - **Focus "Forgot"** = full reset (0) — interval back to 1 day, repetitions zero.
 
 ## Update rules
@@ -83,10 +87,20 @@ else:
 "Start Today's Review" runs Scan → Reinforcement → Focus over a single bucket
 of due memories, slicing them by layer:
 
-- **Scan layer**: memories due today with `srs_repetitions < 3`. Fast pass.
-- **Reinforcement layer**: due memories with `3 ≤ srs_repetitions < 8` or
-  state = `fading`. Guided recall.
-- **Focus layer**: due memories with `srs_repetitions ≥ 8`. Deep review.
+- **Scan layer**: due memories with `srs_repetitions ≥ 4` — the 3-month
+  phase and beyond ("ricordi più vecchi"). Fast pass.
+- **Reinforcement layer**: due memories with `2 ≤ srs_repetitions < 4` or
+  state = `fading` — the 7-day and 30-day phases. Guided recall, also the
+  recovery path for fading cards.
+- **Focus layer**: due memories with `srs_repetitions < 2` — the 20h and 48h
+  consolidations ("ricordi di ieri"). Deep review. A forget resets
+  repetitions, so a forgotten card drops back here.
+
+Mapping fixed on 2026-08-29 from Maurizio's phase ladder (Focus for the two
+consolidations, Reinforcement for 7d/30d, Scan from 3 months). The previous
+rule was inverted (Scan for the newest cards). Thresholds live in
+`lib/constants.ts` (`LAYER_REPS_*`), mirrored in `lib/api.ts` and
+`lib/queue.ts layerFor()`.
 
 The user can also tap a single layer card to run only that layer (no auto
 hand-off to the next). Captured in `review_sessions.layer`.

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   DEMO_DUE_COUNTS,
+  layerFor,
   layerMinutes,
   splitBudget,
   toReviewCard,
@@ -103,5 +104,32 @@ describe("toReviewCard", () => {
 describe("DEMO_DUE_COUNTS", () => {
   it("mirrors the static demo deck sizes", () => {
     expect(DEMO_DUE_COUNTS).toEqual({ scan: 4, reinforcement: 3, focus: 3 });
+  });
+});
+
+describe("layerFor — Maurizio's phase ladder on SM-2 repetitions", () => {
+  it("sends new and once-reviewed cards to Focus (20h / 48h consolidations)", () => {
+    expect(layerFor(0, "active")).toBe("focus");
+    expect(layerFor(1, "active")).toBe("focus");
+  });
+
+  it("sends the 7-day and 30-day phases to Reinforcement", () => {
+    expect(layerFor(2, "active")).toBe("reinforcement");
+    expect(layerFor(3, "active")).toBe("reinforcement");
+  });
+
+  it("sends everything from 3 months on to Scan", () => {
+    expect(layerFor(4, "active")).toBe("scan");
+    expect(layerFor(12, "active")).toBe("scan");
+  });
+
+  it("routes fading cards to Reinforcement whatever their count", () => {
+    expect(layerFor(0, "fading")).toBe("reinforcement");
+    expect(layerFor(9, "fading")).toBe("reinforcement");
+  });
+
+  it("keeps archived cards out of every layer", () => {
+    expect(layerFor(0, "archived")).toBeNull();
+    expect(layerFor(5, "archived")).toBeNull();
   });
 });

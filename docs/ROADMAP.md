@@ -81,7 +81,8 @@ review layer at the right time, and recall outcomes update the schedule.
 - Scan screen — large term, two-button reveal pattern
 - Reinforcement screen — three-state (pre → hint → answer) with Review-again
   / Continue buttons
-- Focus screen — three-button recall (Forgot / Struggled / Remembered)
+- Focus screen — three-button recall (Forgot / Struggled / Remembered);
+  reduced to two on 2026-08-29 (Struggled removed, binary answers)
 - Layer handoff screen between Scan→Reinforcement and Reinforcement→Focus
 - Complete screen with session stats
 - Recommended-flow CTA on Today runs Scan→Reinforcement→Focus sequence

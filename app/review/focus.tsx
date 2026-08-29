@@ -92,9 +92,10 @@ export default function FocusScreen() {
     );
   }
 
-  const advance = (response: "remembered" | "struggled" | "forgot") => {
-    // Mirror scan/reinforcement: success on a clean recall, error otherwise
-    // (struggled is a soft forget per the SM-2 downgrade in review-store).
+  const advance = (response: "remembered" | "forgot") => {
+    // Binary answer (Maurizio, 2026-08-29): success cue on a recall, error
+    // cue on a forget. RecallButton keeps a "struggled" variant for when the
+    // intermediate answer returns with its own timing.
     if (response === "remembered") success();
     else error();
     const result = recordAndAdvance(response);
@@ -186,7 +187,6 @@ export default function FocusScreen() {
         {revealed ? (
           <>
             <RecallButton variant="forgot" onPress={() => advance("forgot")} />
-            <RecallButton variant="struggled" onPress={() => advance("struggled")} />
             <RecallButton variant="remembered" onPress={() => advance("remembered")} />
           </>
         ) : (

@@ -6,7 +6,12 @@
 import type { LayerKey } from "@/theme/tokens";
 import type { Memory } from "./mappers";
 import type { ReviewCard } from "./review-store";
-import type { FolderKind } from "./constants";
+import {
+  LAYER_REPS_FOCUS_BELOW,
+  LAYER_REPS_REINFORCEMENT_BELOW,
+  type FolderKind,
+  type MemoryState,
+} from "./constants";
 
 export type LayerCounts = { scan: number; reinforcement: number; focus: number };
 
@@ -47,6 +52,19 @@ export function splitBudget(counts: LayerCounts, capTotal: number): LayerCounts 
     if (!gave) break; // ogni livello è saturo
   }
   return out;
+}
+
+/**
+ * Livello di ripasso di una memoria in base alle ripetizioni riuscite e
+ * allo stato (soglie e razionale in lib/constants.ts). `null` = archiviata,
+ * fuori da ogni coda. Specchio puro dei predicati di lib/api.ts.
+ */
+export function layerFor(repetitions: number, state: MemoryState): LayerKey | null {
+  if (state === "archived") return null;
+  if (state === "fading") return "reinforcement";
+  if (repetitions < LAYER_REPS_FOCUS_BELOW) return "focus";
+  if (repetitions < LAYER_REPS_REINFORCEMENT_BELOW) return "reinforcement";
+  return "scan";
 }
 
 export function layerMinutes(layer: LayerKey, items: number): number {

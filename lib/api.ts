@@ -33,7 +33,13 @@ import {
   mapReviewItem,
   mapReviewSession,
 } from "./mappers";
-import { FOLDER_TEMPLATES, type FolderKind, type ReviewResponse } from "./constants";
+import {
+  FOLDER_TEMPLATES,
+  LAYER_REPS_FOCUS_BELOW,
+  LAYER_REPS_REINFORCEMENT_BELOW,
+  type FolderKind,
+  type ReviewResponse,
+} from "./constants";
 import type { DeletionPreview } from "./account-deletion";
 import { getAllFolderSeeds, getFolderSeed, type FolderSeed } from "./folder-data";
 import { nextFolderPriority, type NewFolderInput } from "./folder-templates";
@@ -636,9 +642,11 @@ export async function applyScheduledUpdate(
 
 /**
  * Due memories sliced by layer, per docs/SRS.md:
- *   - scan          : due now, srs_repetitions < 3
- *   - reinforcement : due now, 3 <= srs_repetitions < 8, OR state='fading'
- *   - focus         : due now, srs_repetitions >= 8
+ *   - focus         : due now, srs_repetitions < LAYER_REPS_FOCUS_BELOW (2)
+ *   - reinforcement : due now, 2 <= srs_repetitions < LAYER_REPS_REINFORCEMENT_BELOW (4), OR state='fading'
+ *   - scan          : due now, srs_repetitions >= 4
+ * Rationale + Maurizio's phase mapping in lib/constants.ts; pure mirror in
+ * lib/queue.ts layerFor().
  *
  * Demo mode returns an empty list — the review store falls through to its
  * static decks for offline UAT. Phase 3D will replace the static decks
@@ -671,13 +679,15 @@ export async function fetchDueMemoriesByLayer(
   // Scan → Reinforcement → Focus flow no memory shows up twice. Per
   // docs/SRS.md fading items belong to Reinforcement only; Scan and Focus
   // exclude them explicitly.
-  if (layer === "scan") {
-    query = query.lt("srs_repetitions", 3).neq("state", "fading");
+  if (layer === "focus") {
+    query = query.lt("srs_repetitions", LAYER_REPS_FOCUS_BELOW).neq("state", "fading");
   } else if (layer === "reinforcement") {
     // Either in the reinforcement repetition window OR explicitly fading.
-    query = query.or("and(srs_repetitions.gte.3,srs_repetitions.lt.8),state.eq.fading");
+    query = query.or(
+      `and(srs_repetitions.gte.${LAYER_REPS_FOCUS_BELOW},srs_repetitions.lt.${LAYER_REPS_REINFORCEMENT_BELOW}),state.eq.fading`,
+    );
   } else {
-    query = query.gte("srs_repetitions", 8).neq("state", "fading");
+    query = query.gte("srs_repetitions", LAYER_REPS_REINFORCEMENT_BELOW).neq("state", "fading");
   }
 
   const { data, error } = await query
@@ -713,9 +723,11 @@ export async function fetchDueCounts(
   };
   const [scan, reinforcement, focus] = await Promise.all(
     [
-      base().lt("srs_repetitions", 3).neq("state", "fading"),
-      base().or("and(srs_repetitions.gte.3,srs_repetitions.lt.8),state.eq.fading"),
-      base().gte("srs_repetitions", 8).neq("state", "fading"),
+      base().gte("srs_repetitions", LAYER_REPS_REINFORCEMENT_BELOW).neq("state", "fading"),
+      base().or(
+        `and(srs_repetitions.gte.${LAYER_REPS_FOCUS_BELOW},srs_repetitions.lt.${LAYER_REPS_REINFORCEMENT_BELOW}),state.eq.fading`,
+      ),
+      base().lt("srs_repetitions", LAYER_REPS_FOCUS_BELOW).neq("state", "fading"),
     ].map(async (q) => {
       const { count, error } = await q;
       if (error) throw error;

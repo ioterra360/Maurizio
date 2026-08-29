@@ -184,7 +184,7 @@ export type RecapEntry = {
   term: string;
   reading?: string;
   layer: LayerKey;
-  response: "remembered" | "struggled" | "forgot";
+  response: "remembered" | "forgot";
   revealed: boolean;
 };
 
@@ -198,28 +198,23 @@ type PendingItem = {
 };
 
 /**
- * Translate a Focus-screen response + the layer the card is currently on
- * into the LayerOutcome the scheduler understands.
- *
- * The Scan and Reinforcement screens both call recordAndAdvance with
- * "remembered" | "struggled" | "forgot" too — we map them to the closest
- * layer-native outcome per docs/SRS.md so the SM-2 quality is correct:
- *   scan:          remembered → remember (q=4),   forgot/struggled → show (q=2)
- *   reinforcement: remembered → continue (q=4),   struggled → struggled (q=3),   forgot → again (q=1)
- *   focus:         passthrough — already matches the Focus screen vocabulary.
+ * Translate a screen response + the layer the card is currently on into the
+ * LayerOutcome the scheduler understands. Answers are binary on every layer
+ * (Maurizio, 2026-08-29: the intermediate "struggled" is out for now — it
+ * comes back later with its own timing and only for item types where a
+ * partial recall makes sense). Mapping per docs/SRS.md:
+ *   scan:          remembered → remember (q=4),   forgot → show (q=2)
+ *   reinforcement: remembered → continue (q=4),   forgot → again (q=1)
+ *   focus:         remembered → remembered (q=5), forgot → forgot (q=0)
  */
-function toLayerOutcome(layer: LayerKey, response: ReviewResponse): LayerOutcome {
+function toLayerOutcome(layer: LayerKey, response: "remembered" | "forgot"): LayerOutcome {
   switch (layer) {
     case "scan":
       return { layer: "scan", outcome: response === "remembered" ? "remember" : "show" };
     case "reinforcement":
-      if (response === "remembered") return { layer: "reinforcement", outcome: "continue" };
-      if (response === "struggled") return { layer: "reinforcement", outcome: "struggled" };
-      return { layer: "reinforcement", outcome: "again" };
+      return { layer: "reinforcement", outcome: response === "remembered" ? "continue" : "again" };
     case "focus":
-      if (response === "remembered") return { layer: "focus", outcome: "remembered" };
-      if (response === "struggled") return { layer: "focus", outcome: "struggled" };
-      return { layer: "focus", outcome: "forgot" };
+      return { layer: "focus", outcome: response === "remembered" ? "remembered" : "forgot" };
   }
 }
 
@@ -298,11 +293,11 @@ type ReviewState = {
     },
   ) => void;
   recordAndAdvance: (
-    response: "remembered" | "struggled" | "forgot",
+    response: "remembered" | "forgot",
     opts?: { revealed?: boolean },
   ) => "next" | "handoff" | "done";
   /**
-   * Corregge l'ultima risposta Scan in "struggled" entro la finestra del
+   * Corregge l'ultima risposta Scan in "forgot" entro la finestra del
    * flash di conferma. Ritorna false se la finestra è già chiusa.
    */
   amendLastAnswer: () => boolean;
@@ -660,15 +655,17 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
     const now = Date.now();
     if (now - lastRecordAt < 250) return "next";
     lastRecordAt = now;
+    // `struggled` stays in Counts because review_sessions.items_struggled is
+    // a DB column; no screen produces it any more, so it is carried as-is.
     const totals: Counts = {
       remembered: state.totals.remembered + (response === "remembered" ? 1 : 0),
-      struggled: state.totals.struggled + (response === "struggled" ? 1 : 0),
+      struggled: state.totals.struggled,
       forgot: state.totals.forgot + (response === "forgot" ? 1 : 0),
       reviewed: state.totals.reviewed + 1,
     };
     const layerTotals: Counts = {
       remembered: state.layerTotals.remembered + (response === "remembered" ? 1 : 0),
-      struggled: state.layerTotals.struggled + (response === "struggled" ? 1 : 0),
+      struggled: state.layerTotals.struggled,
       forgot: state.layerTotals.forgot + (response === "forgot" ? 1 : 0),
       reviewed: state.layerTotals.reviewed + 1,
     };
@@ -780,17 +777,17 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
     const { cardId, prior, persist } = lastScanAnswer;
     lastScanAnswer = null;
     const s = get();
-    const corrected = scheduleUpdate(prior, toLayerOutcome("scan", "struggled"));
-    // remembered → struggled: sposta i contatori e correggi l'ultima entry.
+    const corrected = scheduleUpdate(prior, toLayerOutcome("scan", "forgot"));
+    // remembered → forgot: sposta i contatori e correggi l'ultima entry.
     const fix = (c: Counts): Counts => ({
       ...c,
       remembered: c.remembered - 1,
-      struggled: c.struggled + 1,
+      forgot: c.forgot + 1,
     });
     const results = s.results.slice();
     const last = results[results.length - 1];
     if (last && last.id === cardId) {
-      results[results.length - 1] = { ...last, response: "struggled" };
+      results[results.length - 1] = { ...last, response: "forgot" };
     }
     set({
       totals: fix(s.totals),
@@ -800,7 +797,7 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
     });
     // Stessa closure della risposta originale: stesso bersaglio di sessione,
     // outcome corretto.
-    persist("struggled", corrected);
+    persist("forgot", corrected);
     return true;
   },
 

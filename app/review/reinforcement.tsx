@@ -110,7 +110,7 @@ export default function ReinforcementScreen() {
     );
   }
 
-  const advance = (response: "remembered" | "struggled" | "forgot") => {
+  const advance = (response: "remembered" | "forgot") => {
     if (response === "forgot") error();
     else success();
     const result = recordAndAdvance(response);
@@ -341,9 +341,9 @@ export default function ReinforcementScreen() {
               </Text>
             </Tappable>
             <Tappable
-              onPress={() => advance("struggled")}
+              onPress={() => advance("remembered")}
               accessibilityRole="button"
-              accessibilityLabel={t("common.continue")}
+              accessibilityLabel={t("reinforcement.continueRememberA11y")}
               pressedOpacity={0.88}
               style={{
                 alignItems: "center",

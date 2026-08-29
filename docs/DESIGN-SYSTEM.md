@@ -149,7 +149,9 @@ These are the building blocks the screens are made of. Add new components in
    on the left, icon, label, sub-line.
 7. **Folder row** — Knowledge list item: dot, name, priority pill, retention
    bar inline.
-8. **Recall button** — Forgot / Struggled / Remembered. Used in Focus review.
+8. **Recall button** — Forgot / Remembered. Used in Focus review. The
+   `struggled` variant still exists in `components/RecallButton.tsx` but is
+   not rendered since 2026-08-29 (binary answers).
 
 ## Animation rules
 

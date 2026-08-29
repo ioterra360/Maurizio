@@ -37,7 +37,7 @@ export default function ScanScreen() {
   // Carte con lettura (giapponese): la lettura NON è visibile all'inizio.
   // Primo tap = "Mostrami la lettura", secondo = "Mostrami il significato"
   // (Angelo, 2026-08-27). Vedere la sola lettura non conta come reveal per
-  // lo scheduler: solo il significato porta a "struggled".
+  // lo scheduler: solo il significato conta come "non ricordato".
   const [readingShown, setReadingShown] = useState(false);
   // Frase d'esempio: passo intermedio dello stesso bottone ("Mostra
   // esempio"), PRIMA del significato — è un aiuto, non la risposta
@@ -99,13 +99,12 @@ export default function ScanScreen() {
   };
 
   const handleRemember = () => {
-    // If the user already revealed the answer, this card needed a hint —
-    // log it as "struggled" so the store/scheduler treats it as a soft
-    // forget (Scan "show me" → SM-2 quality 2 per docs/SRS.md). A pure
-    // "remembered" tap (no reveal) keeps full quality 4.
+    // If the user already revealed the meaning they did not recall it:
+    // binary answer, logged as "forgot" (Scan "show me" → SM-2 quality 2
+    // per docs/SRS.md). A pure "remembered" tap (no reveal) keeps quality 4.
     if (revealed) {
       tap();
-      routeAfter(recordAndAdvance("struggled", { revealed: true }));
+      routeAfter(recordAndAdvance("forgot", { revealed: true }));
       return;
     }
     success();
@@ -171,7 +170,7 @@ export default function ScanScreen() {
           accessibilityRole="button"
           accessibilityLabel={
             flash.amended
-              ? t("scan.markedStruggledA11y")
+              ? t("scan.markedToReviewA11y")
               : t("scan.amendA11y")
           }
           style={{ flex: 1, paddingHorizontal: 24, alignItems: "center", paddingTop: 48 }}
@@ -236,7 +235,7 @@ export default function ScanScreen() {
             }}
           >
             {flash.amended
-              ? t("scan.markedStruggled")
+              ? t("scan.markedToReview")
               : t("scan.amendHint")}
           </Text>
         </Pressable>
@@ -414,7 +413,7 @@ export default function ScanScreen() {
         <Tappable
           onPress={handleRemember}
           accessibilityRole="button"
-          accessibilityLabel={t("scan.iRemember")}
+          accessibilityLabel={revealed ? t("scan.continueAfterRevealA11y") : t("scan.iRemember")}
           pressedOpacity={0.88}
           style={{
             alignItems: "center",
@@ -438,7 +437,7 @@ export default function ScanScreen() {
               letterSpacing: -0.16,
             }}
           >
-            {t("scan.iRemember")}
+            {revealed ? t("common.continue") : t("scan.iRemember")}
           </Text>
         </Tappable>
       </View>
