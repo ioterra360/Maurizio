@@ -25,6 +25,9 @@
     },
     "production": {
       "autoIncrement": true,
+      "ios": {
+        "credentialsSource": "local"
+      },
       "env": {
         "EXPO_PUBLIC_SUPABASE_URL": "https://taekvxxljtgzsjrlmumo.supabase.co",
         "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_ov-GrA3U6G8HZ92mMSY8Zw_IkRzTNIG",

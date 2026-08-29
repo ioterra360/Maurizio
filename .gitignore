@@ -44,3 +44,7 @@ expo-qr.png
 # generated native folders
 /ios
 /android
+
+# Local iOS signing material for EAS (credentialsSource: local) — never commit
+.credentials/
+credentials.json
