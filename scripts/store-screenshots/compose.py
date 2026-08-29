@@ -1,7 +1,12 @@
-"""Compose 1080x1920 Google Play phone screenshots from the raw web captures in raw/.
+"""Compose store phone screenshots from the raw web captures in raw/.
 
-    python scripts/store-screenshots/compose.py              # -> docs/store-assets/screenshots/phone/
-    python scripts/store-screenshots/compose.py specs.json out_dir
+    python scripts/store-screenshots/compose.py                          # Play 1080x1920 -> docs/store-assets/screenshots/phone/
+    python scripts/store-screenshots/compose.py specs.json out_dir       # Play, custom spec/out
+    python scripts/store-screenshots/compose.py specs.json out_dir iphone67   # App Store 6.7" 1290x2796
+
+Layouts: "play" (1080x1920, 9:16) and "iphone67" (1290x2796, the iPhone 6.7"
+size App Store Connect requires; also accepted for 6.9"). Same design, scaled;
+the phone frame always bleeds off the bottom.
 
 Design: warm canvas (or navy for the opener), kicker + headline + subline on top,
 device frame with an Android-style status strip, screen bleeding off the bottom."""
@@ -12,6 +17,13 @@ FONTS = os.path.join(HERE, "..", "..", "node_modules", "@expo-google-fonts", "in
 def font(w, size):
     return ImageFont.truetype(f"{FONTS}/{w}/Inter_{w}.ttf", size)
 NAVY=(26,44,79); CANVAS=(245,243,239); MID=(138,138,136); WHITE=(255,255,255)
+LAYOUTS = {
+    # kick_y/head_y = top of kicker/headline; sw = phone screen width; top = phone screen top
+    "play":     dict(W=1080, H=1920, kick_y=150, kick_size=26, head_y=205, head_size=66, head_step=78, head_w=940,
+                     sub_size=32, sub_step=44, sub_w=860, sw=820, top=560, bezel=18, r_out=72, r_in=54),
+    "iphone67": dict(W=1290, H=2796, kick_y=230, kick_size=32, head_y=300, head_size=80, head_step=94, head_w=1120,
+                     sub_size=40, sub_step=54, sub_w=1040, sw=1060, top=980, bezel=22, r_out=88, r_in=66),
+}
 W,H=1080,1920
 
 def status_strip(shot):
@@ -47,7 +59,8 @@ def wrap(d, text, f, maxw):
     if cur: lines.append(cur)
     return lines
 
-def compose(spec, out_path):
+def compose(spec, out_path, layout="play"):
+    L = LAYOUTS[layout]; W = L["W"]; H = L["H"]
     dark = spec.get("dark", False)
     bg = NAVY if dark else CANVAS
     fg = WHITE if dark else NAVY
@@ -55,26 +68,26 @@ def compose(spec, out_path):
     accent = tuple(int(spec.get("accent","#6DA8E5").lstrip("#")[i:i+2],16) for i in (0,2,4))
     im = Image.new("RGB", (W,H), bg); d = ImageDraw.Draw(im)
     # kicker
-    kf = font("600SemiBold", 26); kick = spec["kicker"].upper()
+    kf = font("600SemiBold", L["kick_size"]); kick = spec["kicker"].upper()
     # letter-spaced kicker
     x = W/2 - (sum(d.textlength(c, font=kf) for c in kick) + 4*(len(kick)-1))/2
     for c in kick:
-        d.text((x, 150), c, font=kf, fill=accent if not dark else (150,185,235)); x += d.textlength(c, font=kf) + 4
+        d.text((x, L["kick_y"]), c, font=kf, fill=accent if not dark else (150,185,235)); x += d.textlength(c, font=kf) + 4
     # headline
-    hf = font("700Bold", 66); lines = wrap(d, spec["headline"], hf, 940)
-    y = 205
+    hf = font("700Bold", L["head_size"]); lines = wrap(d, spec["headline"], hf, L["head_w"])
+    y = L["head_y"]
     for ln in lines:
-        d.text((W/2, y), ln, font=hf, fill=fg, anchor="ma"); y += 78
+        d.text((W/2, y), ln, font=hf, fill=fg, anchor="ma"); y += L["head_step"]
     # subline
-    sf = font("400Regular", 32); slines = wrap(d, spec["subline"], sf, 860); y += 16
+    sf = font("400Regular", L["sub_size"]); slines = wrap(d, spec["subline"], sf, L["sub_w"]); y += 16
     for ln in slines:
-        d.text((W/2, y), ln, font=sf, fill=sub, anchor="ma"); y += 44
+        d.text((W/2, y), ln, font=sf, fill=sub, anchor="ma"); y += L["sub_step"]
     # device
     shot = status_strip(Image.open(spec["file"]))
-    sw = 820; sh = int(shot.height * sw / shot.width)
+    sw = L["sw"]; sh = int(shot.height * sw / shot.width)
     shot = shot.resize((sw, sh), Image.LANCZOS)
-    top = 560  # fixed so every board shows the phone at the same height
-    bezel = 18; r_out = 72; r_in = 54
+    top = L["top"]  # fixed so every board shows the phone at the same height
+    bezel = L["bezel"]; r_out = L["r_out"]; r_in = L["r_in"]
     fx0 = (W - sw)//2 - bezel; fy0 = top - bezel
     # shadow
     sh_layer = Image.new("RGBA", (W,H), (0,0,0,0)); sd = ImageDraw.Draw(sh_layer)
@@ -89,8 +102,10 @@ def compose(spec, out_path):
 if __name__ == "__main__":
     spec_path = sys.argv[1] if len(sys.argv) > 1 else os.path.join(HERE, "specs.json")
     out_dir = sys.argv[2] if len(sys.argv) > 2 else os.path.join(HERE, "..", "..", "docs", "store-assets", "screenshots", "phone")
+    layout = sys.argv[3] if len(sys.argv) > 3 else "play"
+    if layout not in LAYOUTS: sys.exit(f"unknown layout {layout!r}; use one of {list(LAYOUTS)}")
     specs = json.load(open(spec_path, encoding="utf-8"))
     os.makedirs(out_dir, exist_ok=True)
     for i, sp in enumerate(specs, 1):
         sp = dict(sp); sp["file"] = os.path.join(HERE, "raw", sp["file"])
-        compose(sp, os.path.join(out_dir, f"{i:02d}-{sp['slug']}.png"))
+        compose(sp, os.path.join(out_dir, f"{i:02d}-{sp['slug']}.png"), layout)
