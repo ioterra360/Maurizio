@@ -236,6 +236,23 @@ export async function updateFolderPaused(folderId: string, paused: boolean): Pro
   if (error) throw error;
 }
 
+/**
+ * Scrive l'ordine delle cartelle scelto in Cartelle (1 = più in alto) in
+ * folders.priority, così il mazzo di Oggi e gli altri dispositivi lo
+ * seguono. Al massimo 5 cartelle per utente: un update ciascuna. Demo no-op.
+ */
+export async function updateFolderPriorities(
+  pairs: ReadonlyArray<{ id: string; priority: number }>,
+): Promise<void> {
+  if (isDemoMode) return;
+  await Promise.all(
+    pairs.map(async ({ id, priority }) => {
+      const { error } = await supabase.from("folders").update({ priority }).eq("id", id);
+      if (error) throw error;
+    }),
+  );
+}
+
 /** Elimina la cartella. I ricordi cascano a DB (on delete cascade). Demo no-op. */
 export async function deleteFolder(folderId: string): Promise<void> {
   if (isDemoMode) return;

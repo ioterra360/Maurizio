@@ -80,6 +80,7 @@ Values calibrated from the HTML mockup. Use these instead of Tailwind defaults.
 | `h2` | 19 / 24 / -0.02em | Section heads inside cards |
 | `h1` | 30 / 33 / -0.03em | Screen titles ("Today", "Knowledge") |
 | `display` | 44 / 48 / -0.035em | Onboarding wordmark only |
+| `term` | 28–84 / 1.1× / -0.03em | The big word on the review screens: `components/TermText.tsx` picks the size from the string and the screen width (`lib/term-typography.ts`) so a single word always fits one line (max 84 Scan, 80 Focus, 72 Reinforcement, 56 Scan flash; floor 28), multi-word terms are capped at 75% of the maximum and may wrap to two lines (up to four when the size hits the 28 floor, `termLines`). Never a fixed size + `numberOfLines={1}` again (2026-08-29). |
 
 ### Number style
 

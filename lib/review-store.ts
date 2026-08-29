@@ -13,7 +13,7 @@ import {
 import { isDemoMode } from "./supabase";
 import { reportError } from "./report-error";
 import { t } from "@/lib/i18n";
-import { toReviewCard, type LayerCounts } from "./queue";
+import { allocateByFolderPriority, toReviewCard, type LayerCounts } from "./queue";
 import { update as scheduleUpdate } from "@/features/srs/scheduler";
 import {
   initialSrsState,
@@ -394,14 +394,28 @@ async function loadDeckFor(
       if (myId === deckLoadSeq) set({ deck: [], deckLoading: false, deckError: false });
       return;
     }
-    const [memories, folders] = await Promise.all([
-      fetchDueMemoriesByLayer(userId, layer, {
-        folderId: s.folderId ?? undefined,
-        limit: cap,
-      }),
-      fetchFolders(userId),
-    ]);
+    // Cartelle promises "le cartelle più in alto vengono proposte per
+    // prime": one due-query per folder (in parallel, each up to the cap so
+    // the top folder alone can fill the deck), then allocateByFolderPriority
+    // keeps the top folder first, soonest due inside a folder, cut to cap.
+    // A single truncated query ordered by next_review_at could drop the top
+    // folder entirely when lower folders hold the oldest due cards (Codex).
+    // Folder-scoped sessions query their one folder (paused allowed, as
+    // before); the flow skips paused folders itself because the per-folder
+    // query does not.
+    const folders = await fetchFolders(userId);
     if (myId !== deckLoadSeq) return;
+    const targets = s.folderId
+      ? [s.folderId]
+      : folders.filter((f) => !f.paused).map((f) => f.id);
+    const chunks = await Promise.all(
+      targets.map((fid) =>
+        fetchDueMemoriesByLayer(userId, layer, { folderId: fid, limit: cap }),
+      ),
+    );
+    if (myId !== deckLoadSeq) return;
+    const priorityById = new Map(folders.map((f) => [f.id, f.priority]));
+    const memories = allocateByFolderPriority(chunks.flat(), priorityById, cap);
     const nameById = new Map(folders.map((f) => [f.id, f.name]));
     const kindById = new Map(folders.map((f) => [f.id, f.kind]));
     set({

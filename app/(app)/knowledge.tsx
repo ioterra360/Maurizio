@@ -15,6 +15,8 @@ import { Tappable } from "@/components/Tappable";
 import { useFoldersWithStats } from "@/lib/use-folders";
 import type { FolderWithStats } from "@/lib/mappers";
 import { applyFolderOrder, useFolderOrderStore } from "@/lib/folder-order-store";
+import { updateFolderPriorities } from "@/lib/api";
+import { reportError } from "@/lib/report-error";
 import { markAddOpenedIntentionally } from "@/lib/add-gate";
 import { useT } from "@/lib/i18n";
 import { FONT, colors } from "@/theme/tokens";
@@ -257,7 +259,16 @@ export default function KnowledgeScreen() {
         data={error ? [] : orderedFolders}
         keyExtractor={(f) => f.kind}
         renderItem={renderItem}
-        onDragEnd={({ data }) => setOrder(data.map((f) => f.kind as FolderKind))}
+        onDragEnd={({ data }) => {
+          setOrder(data.map((f) => f.kind as FolderKind));
+          // Mirror to folders.priority: the review deck fills from the top
+          // folder first (lib/queue.ts allocateByFolderPriority).
+          void updateFolderPriorities(data.map((f, i) => ({ id: f.id, priority: i + 1 }))).catch(
+            (e) => {
+              reportError("knowledge/update-priorities", e);
+            },
+          );
+        }}
         ListHeaderComponent={header}
         ListEmptyComponent={empty}
         contentContainerStyle={{ paddingBottom: 140 }}

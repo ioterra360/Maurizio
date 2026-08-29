@@ -20,6 +20,7 @@ import {
 import type { Memory, FolderWithStats } from "./mappers";
 import type { FolderKind } from "./constants";
 import { useAuthStore } from "./auth-store";
+import { useFolderOrderStore } from "./folder-order-store";
 
 type FoldersResult = {
   folders: FolderWithStats[];
@@ -45,6 +46,9 @@ export function useFoldersWithStats(): FoldersResult {
       const next = await fetchFoldersWithStats(uid);
       if (myId !== requestSeq.current) return;
       setFolders(next);
+      // Server order (folders.priority) becomes the display order on every
+      // screen that lists folders, until the user drags on this device.
+      useFolderOrderStore.getState().adoptOrder(next.map((f) => f.kind as FolderKind));
     } catch (e) {
       if (myId !== requestSeq.current) return;
       setError(e instanceof Error ? e : new Error(String(e)));

@@ -7,6 +7,7 @@ import { Home, Folder, BarChart3, Settings as SettingsIcon } from "lucide-react-
 
 import { useAuthGate } from "@/lib/auth-gate";
 import { useFolderOrderStore } from "@/lib/folder-order-store";
+import { useFolderSortStore } from "@/lib/folder-sort-store";
 import { useT } from "@/lib/i18n";
 import { colors } from "@/theme/tokens";
 
@@ -22,6 +23,11 @@ export default function AppLayout() {
   useEffect(() => {
     if (!orderHydrated) void hydrateOrder();
   }, [orderHydrated, hydrateOrder]);
+  const sortHydrated = useFolderSortStore((s) => s.hydrated);
+  const hydrateSort = useFolderSortStore((s) => s.hydrate);
+  useEffect(() => {
+    if (!sortHydrated) void hydrateSort();
+  }, [sortHydrated, hydrateSort]);
   if (gate) return gate;
 
   // Mockup-faithful bar: paddingTop 10 + content (~44) + paddingBottom 22,

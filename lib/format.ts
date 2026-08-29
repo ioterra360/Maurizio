@@ -71,6 +71,11 @@ export function timeGreeting(date: Date = new Date()): string {
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
+/** Local midnight of `d`, as epoch ms. */
+function startOfLocalDay(d: Date): number {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+}
+
 /**
  * Human-friendly relative timestamp for the "Reviewed …" footer on memory
  * rows. Bucketed coarsely (today / yesterday / N days / N weeks / N months)
@@ -82,12 +87,15 @@ export function relativeReviewed(
   now: Date = new Date(),
 ): string {
   if (!iso) return t("format.neverReviewed");
-  const then = new Date(iso).getTime();
-  if (Number.isNaN(then)) return t("format.neverReviewed");
-  const diff = now.getTime() - then;
-  if (diff < 0) return t("format.justNow");
-  const days = Math.floor(diff / DAY_MS);
-  if (days === 0) return t("format.today");
+  const then = new Date(iso);
+  if (Number.isNaN(then.getTime())) return t("format.neverReviewed");
+  if (then.getTime() > now.getTime()) return t("format.justNow");
+  // Calendar days in the user's local time zone, not rolling 24 h windows:
+  // a review yesterday at 20:00 must read "Ieri" at 15:00 today (19 h
+  // later), and a card reviewed two evenings ago is "2 giorni fa" even if
+  // only 26 h passed. Math.round absorbs the 23/25 h days around DST.
+  const days = Math.round((startOfLocalDay(now) - startOfLocalDay(then)) / DAY_MS);
+  if (days <= 0) return t("format.today");
   if (days === 1) return t("format.yesterday");
   if (days < 7) return tp("format.daysAgo", days);
   if (days < 30) {

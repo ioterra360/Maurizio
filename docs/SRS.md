@@ -102,6 +102,18 @@ rule was inverted (Scan for the newest cards). Thresholds live in
 `lib/constants.ts` (`LAYER_REPS_*`), mirrored in `lib/api.ts` and
 `lib/queue.ts layerFor()`.
 
+Inside a layer the deck is composed by **folder priority** (the drag order in
+Cartelle, persisted to `folders.priority`): the store runs one due-query per
+non-paused folder in parallel (each capped at the layer cap, soonest due
+first; a folder-scoped session queries only its folder) and `lib/queue.ts
+allocateByFolderPriority` keeps the top folder's cards first, soonest due
+inside a folder, up to the layer cap (2026-08-29). Floor: when the cap can
+hold one card per folder with due cards, every such folder gets its most
+urgent card first, so a 5-minute budget still touches every folder and none
+drifts toward fading unseen; below that the strict priority order applies.
+The per-layer plan numbers on Today (`fetchDueCounts`) are unaffected:
+priority decides *which* cards fill the cap, not how many.
+
 The user can also tap a single layer card to run only that layer (no auto
 hand-off to the next). Captured in `review_sessions.layer`.
 

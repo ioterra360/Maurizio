@@ -216,8 +216,7 @@ from the client.
 
 ## Localisation (2026-08-27)
 
-`lib/i18n/` is a dependency-free layer: `it.ts` is the key source (765 keys,
-grouped by screen), `en.ts`, `fr.ts` and `es.ts` are typed against it so a missing key fails
+`lib/i18n/` is a dependency-free layer: `it.ts` is the key source (grouped by screen), `en.ts`, `fr.ts` and `es.ts` are typed against it so a missing key fails
 `tsc`. Components call `useT()` (re-renders on language change); non-React
 code calls `t()` / `tp()` at call time. Exported constants that carry text
 expose getters so consumers keep reading plain strings. The locale store

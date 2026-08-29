@@ -18,7 +18,9 @@ type Props = { label?: string; size?: number };
  * ActivityIndicator (spec core-loop §10 — caricamenti con la mascotte).
  * Centrato dal contenitore che lo ospita.
  */
-export function MascotLoader({ label, size = 84 }: Props) {
+// 96 instead of 84: the idea artwork is wider than tall, so at the same box
+// the brain reads ~13% smaller than the old square default did.
+export function MascotLoader({ label, size = 96 }: Props) {
   const sway = useSharedValue(0);
   useEffect(() => {
     sway.value = withRepeat(
@@ -36,7 +38,9 @@ export function MascotLoader({ label, size = 84 }: Props) {
   return (
     <View style={{ alignItems: "center", gap: 12 }}>
       <Animated.View style={style}>
-        <Mascot variant="default" size={size} withShadow={false} />
+        {/* "idea" (brain at the laptop, 544 px source) instead of the 130 px
+            default, which upscaled to a blur at 84 dp on 3x screens. */}
+        <Mascot variant="idea" size={size} withShadow={false} />
       </Animated.View>
       {label ? (
         <Text style={{ fontFamily: FONT.regular, fontSize: 13.5, color: colors.midGrey }}>

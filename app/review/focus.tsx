@@ -7,6 +7,7 @@ import { DeckErrorScreen } from "@/components/DeckErrorScreen";
 import { MascotLoader } from "@/components/MascotLoader";
 import { ReviewHeader } from "@/components/ReviewHeader";
 import { FolderPill } from "@/components/FolderPill";
+import { TermText } from "@/components/TermText";
 import { RecallButton } from "@/components/RecallButton";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { useReviewStore } from "@/lib/review-store";
@@ -111,22 +112,7 @@ export default function FocusScreen() {
           <FolderPill folder={card.folder} layerKey="focus" />
         </View>
 
-        <Text
-          adjustsFontSizeToFit
-          numberOfLines={1}
-          style={{
-            fontFamily: FONT.bold,
-            fontSize: card.front.length > 10 ? 44 : 80,
-            color: colors.navy,
-            letterSpacing: -2.2,
-            textAlign: "center",
-            lineHeight: card.front.length > 10 ? 52 : 88,
-            marginTop: 24,
-            paddingHorizontal: 8,
-          }}
-        >
-          {card.front}
-        </Text>
+        <TermText text={card.front} max={80} screenPadding={22} style={{ marginTop: 24 }} />
         {card.reading ? (
           <Text
             style={{

@@ -21,7 +21,7 @@ Salvi una parola, un termine o un concetto con la sua spiegazione e un esempio. 
 Ogni ripasso passa da tre fasi, sempre nello stesso ordine.
 Scan: un controllo veloce, lo ricordi oppure no.
 Reinforcement: un indizio prima della risposta, per fissare quello che hai visto negli ultimi giorni.
-Focus: il ripasso vero e proprio, in cui decidi tu se lo hai dimenticato, se è stato faticoso o se lo ricordi bene.
+Focus: il ripasso vero e proprio, in cui decidi tu se lo hai dimenticato o se lo ricordi bene.
 
 Ogni giorno scegli quanto tempo hai, da cinque minuti a più di un'ora, e Memika prepara il piano di ripasso di conseguenza.
 
@@ -65,7 +65,7 @@ Save a word, a term or a concept with its meaning and an example. From then on M
 Every review goes through three phases, always in the same order.
 Scan: a quick check, you remember it or you don't.
 Reinforcement: a hint before the answer, to settle what you saw in the last few days.
-Focus: the real review, where you decide whether you forgot it, struggled with it or remember it well.
+Focus: the real review, where you decide whether you forgot it or remember it well.
 
 Each day you choose how much time you have, from five minutes to more than an hour, and Memika builds the review plan around it.
 
@@ -95,7 +95,7 @@ Tu enregistres un mot, un terme ou un concept avec son explication et un exemple
 Chaque révision passe par trois phases, toujours dans le même ordre.
 Scan : un contrôle rapide, tu t'en souviens ou non.
 Reinforcement : un indice avant la réponse, pour fixer ce que tu as vu ces derniers jours.
-Focus : la vraie révision, où c'est toi qui décides si tu l'as oublié, si ça a été difficile ou si tu t'en souviens bien.
+Focus : la vraie révision, où c'est toi qui décides si tu l'as oublié ou si tu t'en souviens bien.
 
 Chaque jour, tu choisis le temps que tu as, de cinq minutes à plus d'une heure, et Memika prépare le plan de révision en conséquence.
 
@@ -125,7 +125,7 @@ Guardas una palabra, un término o un concepto con su significado y un ejemplo. 
 Cada repaso pasa por tres fases, siempre en el mismo orden.
 Scan: una comprobación rápida, lo recuerdas o no.
 Reinforcement: una pista antes de la respuesta, para asentar lo que has visto en los últimos días.
-Focus: el repaso de verdad, en el que decides tú si lo has olvidado, si te ha costado o si lo recuerdas bien.
+Focus: el repaso de verdad, en el que decides tú si lo has olvidado o si lo recuerdas bien.
 
 Cada día eliges cuánto tiempo tienes, desde cinco minutos hasta más de una hora, y Memika ajusta el plan de repaso a ese tiempo.
 

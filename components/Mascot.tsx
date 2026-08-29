@@ -2,7 +2,7 @@ import { Image, View, type ImageStyle, type StyleProp } from "react-native";
 
 export type MascotVariant =
   | "default" // classic winking brain mascot
-  | "idea" // brain + open book + lightbulb (Eureka)
+  | "idea" // brain at a laptop + lightbulb speech bubble (working / thinking)
   | "checklist" // brain + speech bubble with checks
   | "investigate" // brain + magnifying glass
   | "announce"; // brain + megaphone + lightbulb

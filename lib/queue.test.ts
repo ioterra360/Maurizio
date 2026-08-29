@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   DEMO_DUE_COUNTS,
+  allocateByFolderPriority,
   layerFor,
   layerMinutes,
   splitBudget,
@@ -131,5 +132,40 @@ describe("layerFor — Maurizio's phase ladder on SM-2 repetitions", () => {
   it("keeps archived cards out of every layer", () => {
     expect(layerFor(0, "archived")).toBeNull();
     expect(layerFor(5, "archived")).toBeNull();
+  });
+});
+
+describe("allocateByFolderPriority — folders higher in the list come first", () => {
+  const due = (id: string, folderId: string, next: string) =>
+    mem({ id, folderId, nextReviewAt: next });
+  const items = [
+    due("b1", "B", "2026-08-01T08:00:00.000Z"),
+    due("a1", "A", "2026-08-03T08:00:00.000Z"),
+    due("b2", "B", "2026-08-02T08:00:00.000Z"),
+    due("a2", "A", "2026-08-02T08:00:00.000Z"),
+    due("c1", "C", "2026-08-01T08:00:00.000Z"),
+  ];
+  const priority = new Map([["A", 1], ["B", 2], ["C", 3]]);
+
+  it("guarantees every folder its most urgent card when the cap allows, then fills by priority", () => {
+    // 3 folders with due cards, cap 3: one each, in priority order.
+    expect(allocateByFolderPriority(items, priority, 3).map((m) => m.id)).toEqual(["a2", "b1", "c1"]);
+    // cap 4: the floor plus the next card of the top folder, deck kept in priority order.
+    expect(allocateByFolderPriority(items, priority, 4).map((m) => m.id)).toEqual(["a2", "a1", "b1", "c1"]);
+  });
+
+  it("falls back to strict priority when the cap cannot touch every folder", () => {
+    expect(allocateByFolderPriority(items, priority, 2).map((m) => m.id)).toEqual(["a2", "a1"]);
+  });
+
+  it("returns everything in priority order when under the cap", () => {
+    expect(allocateByFolderPriority(items, priority, 10).map((m) => m.id)).toEqual(["a2", "a1", "b1", "b2", "c1"]);
+  });
+
+  it("puts folders without a known priority last, and never mutates the input", () => {
+    const copy = [...items];
+    const out = allocateByFolderPriority(items, new Map([["C", 1]]), 10);
+    expect(out[0].id).toBe("c1");
+    expect(items).toEqual(copy);
   });
 });

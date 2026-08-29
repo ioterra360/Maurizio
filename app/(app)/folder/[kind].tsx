@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from "react";
 import { ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Plus, Repeat } from "lucide-react-native";
+import { ArrowUpDown, Plus, Repeat } from "lucide-react-native";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 
 import { TopBar } from "@/components/TopBar";
@@ -14,7 +14,7 @@ import { FilterChip } from "@/components/FilterChip";
 import { ItemRow } from "@/components/ItemRow";
 import { SectionLabel } from "@/components/SectionLabel";
 import { Tappable } from "@/components/Tappable";
-import { FONT, colors } from "@/theme/tokens";
+import { FONT, colors, radii } from "@/theme/tokens";
 import { useT } from "@/lib/i18n";
 import { FOLDER_KINDS, type FolderKind, type MemoryState } from "@/lib/constants";
 import { useFolderDetail } from "@/lib/use-folders";
@@ -22,6 +22,9 @@ import { priorityOf, useFolderOrderStore } from "@/lib/folder-order-store";
 import { useReviewStore } from "@/lib/review-store";
 import { relativeReviewed } from "@/lib/format";
 import { layerFor } from "@/lib/queue";
+import { sortMemories } from "@/lib/folder-sort";
+import { useFolderSortStore } from "@/lib/folder-sort-store";
+import { FolderSortSheet, SORT_LABEL_KEY } from "@/components/FolderSortSheet";
 import { markAddOpenedIntentionally } from "@/lib/add-gate";
 import type { FolderItem } from "@/lib/folder-data";
 
@@ -35,6 +38,11 @@ export default function FolderDetailScreen() {
   const order = useFolderOrderStore((s) => s.order);
   const startSession = useReviewStore((s) => s.start);
   const [filter, setFilter] = useState<"all" | MemoryState>("all");
+  // Ordinamento della lista, ricordato per cartella (lib/folder-sort-store).
+  const sort = useFolderSortStore((s) => (kind ? s.sortFor(kind) : "due"));
+  const setSort = useFolderSortStore((s) => s.setSort);
+  const [sortOpen, setSortOpen] = useState(false);
+  const sortedItems = useMemo(() => sortMemories(items, sort), [items, sort]);
 
   // Refetch on focus — the name can change in folder-settings, and the hook
   // itself only loads on mount. Runs before the early returns (hooks rule).
@@ -48,7 +56,7 @@ export default function FolderDetailScreen() {
   // inline so we can rip it out when ItemRow accepts Memory directly.
   const displayItems = useMemo<FolderItem[]>(
     () =>
-      items.map((m) => ({
+      sortedItems.map((m) => ({
         id: m.id,
         front: m.term,
         reading: m.reading ?? undefined,
@@ -57,7 +65,7 @@ export default function FolderDetailScreen() {
         reviewed: relativeReviewed(m.lastReviewedAt),
         layer: layerFor(m.srs.repetitions, m.state) ?? undefined,
       })),
-    [items],
+    [sortedItems],
   );
 
   const filtered = useMemo(() => {
@@ -249,9 +257,41 @@ export default function FolderDetailScreen() {
           </Text>
         ) : null}
 
-        {/* Filters */}
-        <View style={{ paddingHorizontal: 22, paddingTop: 20, paddingBottom: 10 }}>
+        {/* Filters + sort */}
+        <View
+          className="flex-row items-center justify-between"
+          style={{ paddingLeft: 22, paddingRight: 16, paddingTop: 20, paddingBottom: 10 }}
+        >
           <SectionLabel>{t("folder.memoriesSection")}</SectionLabel>
+          <Tappable
+            onPress={() => setSortOpen(true)}
+            accessibilityRole="button"
+            accessibilityLabel={t("folder.sortA11y", { current: t(SORT_LABEL_KEY[sort]) })}
+            pressedOpacity={0.6}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 6,
+              height: 32,
+              paddingHorizontal: 12,
+              borderRadius: radii.filter,
+              borderWidth: 1,
+              borderColor: colors.hairline,
+              backgroundColor: colors.warmWhite,
+            }}
+          >
+            <ArrowUpDown size={15} color={colors.navy} strokeWidth={1.9} />
+            <Text
+              style={{
+                fontFamily: FONT.medium,
+                fontSize: 13.5,
+                color: colors.navy,
+                letterSpacing: -0.07,
+              }}
+            >
+              {t(SORT_LABEL_KEY[sort])}
+            </Text>
+          </Tappable>
         </View>
         <ScrollView
           horizontal
@@ -346,6 +386,16 @@ export default function FolderDetailScreen() {
       >
         <Plus size={24} color={colors.warmWhite} strokeWidth={2.2} />
       </Tappable>
+
+      <FolderSortSheet
+        visible={sortOpen}
+        current={sort}
+        onSelect={(next) => {
+          if (kind) setSort(kind, next);
+          setSortOpen(false);
+        }}
+        onClose={() => setSortOpen(false)}
+      />
     </SafeAreaView>
   );
 }

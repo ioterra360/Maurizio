@@ -1,16 +1,29 @@
 import { create } from "zustand";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { FOLDER_KINDS, type FolderKind } from "./constants";
+import { reportError } from "./report-error";
 
-const STORAGE_KEY = "memika.folder-order.v1";
+// v2 (2026-08-29): v1 orders predate the folders.priority mirror and were
+// never written to the DB, so they must not count as a user choice on this
+// device — the server order is adopted until the next drag.
+const STORAGE_KEY = "memika.folder-order.v2";
+const LEGACY_STORAGE_KEY = "memika.folder-order.v1";
 
 type State = {
   /** User-defined order. Null until hydrated; defaults to FOLDER_KINDS. */
   order: FolderKind[] | null;
   hydrated: boolean;
+  /** True once the user dragged on THIS device (a persisted order exists). */
+  userSet: boolean;
   hydrate: () => Promise<void>;
   /** Replace the whole order at once — used by drag-to-reorder. */
   setOrder: (next: FolderKind[]) => void;
+  /**
+   * Take the server order (folders.priority) as the display order while
+   * the user has not dragged on this device. In memory only: the DB stays
+   * the source until a local drag persists a choice.
+   */
+  adoptOrder: (next: FolderKind[]) => void;
   reset: () => Promise<void>;
 };
 
@@ -30,27 +43,31 @@ function clean(arr: unknown): FolderKind[] | null {
 async function persist(order: FolderKind[]) {
   try {
     await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(order));
-  } catch {
+  } catch (e) {
     // Non-fatal: order falls back to default on next launch.
+    reportError("folder-order/persist", e);
   }
 }
 
 export const useFolderOrderStore = create<State>((set, get) => ({
   order: null,
   hydrated: false,
+  userSet: false,
 
   hydrate: async () => {
     try {
       const raw = await AsyncStorage.getItem(STORAGE_KEY);
       const parsed = raw ? clean(JSON.parse(raw)) : null;
+      void AsyncStorage.removeItem(LEGACY_STORAGE_KEY).catch(() => undefined);
       // A drag completed while AsyncStorage was resolving already set (and
       // persisted) a fresher order — don't clobber it with the stale snapshot.
-      if (get().order) {
+      if (get().userSet) {
         set({ hydrated: true });
         return;
       }
-      set({ order: parsed ?? [...FOLDER_KINDS], hydrated: true });
-    } catch {
+      set({ order: parsed ?? get().order ?? [...FOLDER_KINDS], hydrated: true, userSet: parsed !== null });
+    } catch (e) {
+      reportError("folder-order/hydrate", e);
       set((s) => ({ order: s.order ?? [...FOLDER_KINDS], hydrated: true }));
     }
   },
@@ -58,13 +75,20 @@ export const useFolderOrderStore = create<State>((set, get) => ({
   setOrder: (next) => {
     const cleaned = clean(next);
     if (!cleaned) return;
-    set({ order: cleaned });
+    set({ order: cleaned, userSet: true });
     void persist(cleaned);
+  },
+
+  adoptOrder: (next) => {
+    if (get().userSet) return;
+    const cleaned = clean(next);
+    if (!cleaned) return;
+    set({ order: cleaned });
   },
 
   reset: async () => {
     const next = [...FOLDER_KINDS];
-    set({ order: next });
+    set({ order: next, userSet: true });
     await persist(next);
   },
 }));

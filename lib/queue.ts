@@ -67,6 +67,47 @@ export function layerFor(repetitions: number, state: MemoryState): LayerKey | nu
   return "scan";
 }
 
+/**
+ * Compone il mazzo di un livello rispettando la priorità delle cartelle
+ * (Cartelle: "le cartelle più in alto vengono proposte per prime"): prima
+ * le carte della cartella #1 (scadenza più vicina prima), poi la #2, e così
+ * via, fino al tetto `cap`. Cartelle senza priorità nota in coda.
+ *
+ * Pavimento: se il tetto può ospitare una carta per ogni cartella con carte
+ * in coda, ogni cartella entra con la sua carta più urgente, e il resto si
+ * riempie per priorità. Così un budget da 5 minuti tocca tutte le cartelle e
+ * nessuna scivola verso il fading senza essere mai vista. Sotto quella
+ * soglia vale la priorità pura. Il mazzo resta in ordine di priorità.
+ * Puro; non muta l'input.
+ */
+export function allocateByFolderPriority(
+  memories: readonly Memory[],
+  priorityByFolderId: ReadonlyMap<string, number>,
+  cap: number,
+): Memory[] {
+  const rank = (m: Memory) => priorityByFolderId.get(m.folderId) ?? Number.MAX_SAFE_INTEGER;
+  const due = (m: Memory) => {
+    const ms = Date.parse(m.nextReviewAt);
+    return Number.isNaN(ms) ? 0 : ms;
+  };
+  const limit = Math.max(0, cap);
+  const sorted = [...memories].sort((a, b) => rank(a) - rank(b) || due(a) - due(b));
+  if (sorted.length <= limit) return sorted;
+
+  // Most urgent card of each folder (sorted is rank-then-due, so the first
+  // hit per folder is its soonest due).
+  const floor = new Map<string, Memory>();
+  for (const m of sorted) if (!floor.has(m.folderId)) floor.set(m.folderId, m);
+  if (floor.size > limit) return sorted.slice(0, limit);
+
+  const chosen = new Set<Memory>(floor.values());
+  for (const m of sorted) {
+    if (chosen.size >= limit) break;
+    chosen.add(m);
+  }
+  return sorted.filter((m) => chosen.has(m));
+}
+
 export function layerMinutes(layer: LayerKey, items: number): number {
   if (items <= 0) return 0;
   return Math.max(1, Math.ceil((items * SECONDS_PER_ITEM[layer]) / 60));

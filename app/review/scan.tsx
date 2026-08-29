@@ -7,6 +7,7 @@ import { DeckErrorScreen } from "@/components/DeckErrorScreen";
 import { MascotLoader } from "@/components/MascotLoader";
 import { ReviewHeader } from "@/components/ReviewHeader";
 import { FolderPill } from "@/components/FolderPill";
+import { TermText } from "@/components/TermText";
 import { Tappable } from "@/components/Tappable";
 import { AMEND_WINDOW_MS, useReviewStore } from "@/lib/review-store";
 import { success, tap } from "@/lib/feedback";
@@ -175,21 +176,7 @@ export default function ScanScreen() {
           }
           style={{ flex: 1, paddingHorizontal: 24, alignItems: "center", paddingTop: 48 }}
         >
-          <Text
-            adjustsFontSizeToFit
-            numberOfLines={1}
-            style={{
-              fontFamily: FONT.bold,
-              fontSize: flash.front.length > 10 ? 40 : 56,
-              color: colors.navy,
-              letterSpacing: -1.4,
-              textAlign: "center",
-              lineHeight: flash.front.length > 10 ? 46 : 62,
-              paddingHorizontal: 8,
-            }}
-          >
-            {flash.front}
-          </Text>
+          <TermText text={flash.front} max={56} screenPadding={24} />
           {flash.reading ? (
             <Text
               style={{
@@ -308,22 +295,7 @@ export default function ScanScreen() {
       <View style={{ flex: 1, paddingHorizontal: 24, alignItems: "center", paddingTop: 48 }}>
         <FolderPill folder={card.folder} layerKey="scan" />
 
-        <Text
-          adjustsFontSizeToFit
-          numberOfLines={1}
-          style={{
-            fontFamily: FONT.bold,
-            fontSize: card.front.length > 10 ? 56 : 84,
-            color: colors.navy,
-            letterSpacing: -2.4,
-            textAlign: "center",
-            lineHeight: card.front.length > 10 ? 64 : 92,
-            marginTop: 24,
-            paddingHorizontal: 8,
-          }}
-        >
-          {card.front}
-        </Text>
+        <TermText text={card.front} max={84} screenPadding={24} style={{ marginTop: 24 }} />
         {card.reading && readingShown ? (
           <Text
             style={{

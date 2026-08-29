@@ -8,6 +8,7 @@ import { DeckErrorScreen } from "@/components/DeckErrorScreen";
 import { MascotLoader } from "@/components/MascotLoader";
 import { ReviewHeader } from "@/components/ReviewHeader";
 import { FolderPill } from "@/components/FolderPill";
+import { TermText } from "@/components/TermText";
 import { Tappable } from "@/components/Tappable";
 import { useReviewStore } from "@/lib/review-store";
 import { success, error, tap } from "@/lib/feedback";
@@ -138,22 +139,7 @@ export default function ReinforcementScreen() {
       <View style={{ flex: 1, paddingHorizontal: 24, alignItems: "center", paddingTop: 40 }}>
         <FolderPill folder={card.folder} layerKey="reinforcement" />
 
-        <Text
-          adjustsFontSizeToFit
-          numberOfLines={1}
-          style={{
-            fontFamily: FONT.bold,
-            fontSize: card.front.length > 10 ? 48 : 72,
-            color: colors.navy,
-            letterSpacing: -2.2,
-            textAlign: "center",
-            lineHeight: card.front.length > 10 ? 54 : 80,
-            marginTop: 24,
-            paddingHorizontal: 8,
-          }}
-        >
-          {card.front}
-        </Text>
+        <TermText text={card.front} max={72} screenPadding={24} style={{ marginTop: 24 }} />
         {card.reading ? (
           <Text
             style={{

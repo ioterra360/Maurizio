@@ -62,7 +62,7 @@ own one folder (`FREE_FOLDER_LIMIT`, enforced in the UI for now).
 | `user_id` | uuid | FK to `profiles(id)`, cascade |
 | `kind` | text | Machine slug. Unique with `user_id`. |
 | `name` | text | Display name |
-| `priority` | int | 1 = highest. Used for sort + SRS weighting later |
+| `priority` | int | 1 = highest. Written at createFolder (max+1) and on every drag in Cartelle (`updateFolderPriorities`); the review deck fills from the top folder first (`lib/queue.ts allocateByFolderPriority`, 2026-08-29). |
 | `color` | text | Hex string, optional override |
 | `icon` | text | Lucide icon name or emoji |
 | `paused` | boolean | Cartella dormiente: esclusa dalla coda ripassi e dai conteggi di Oggi, default `false` |
