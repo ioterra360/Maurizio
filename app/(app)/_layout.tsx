@@ -98,13 +98,6 @@ export default function AppLayout() {
           not by tapping a tab. Hide it from the tab bar — without this,
           Expo Router would auto-mount it as a 5th, empty-titled tab. */}
       <Tabs.Screen name="folder/[kind]" options={{ href: null }} />
-      {/* Subscribe is opened from a paywall CTA, never from the tab bar.
-          Also hide the floating bar itself on that screen — it would occlude
-          the legal footnote and let users tab away from the paywall. */}
-      <Tabs.Screen
-        name="subscribe"
-        options={{ href: null, tabBarStyle: { display: "none" } }}
-      />
     </Tabs>
   );
 }

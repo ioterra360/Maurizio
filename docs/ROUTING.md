@@ -22,7 +22,6 @@ app/
 │   ├── _layout.tsx              Tabs nav (backBehavior "history"). Auth gate.
 │   ├── today.tsx · knowledge.tsx · health.tsx · settings.tsx
 │   ├── folder/[kind].tsx        Dettaglio cartella — tab nascosto (href: null)
-│   └── subscribe.tsx            Paywall — tab nascosto, tab bar nascosta
 │
 ├── review/
 │   ├── _layout.tsx              Stack, auth-gated
@@ -51,7 +50,6 @@ app/
 | `/(app)/health` | `app/(app)/health.tsx` | Signed-in users |
 | `/(app)/settings` | `app/(app)/settings.tsx` | Signed-in users |
 | `/(app)/folder/[kind]` | `app/(app)/folder/[kind].tsx` | Signed-in users |
-| `/(app)/subscribe` | `app/(app)/subscribe.tsx` | Signed-in users |
 | `/review/scan · reinforcement · focus · handoff · complete` | `app/review/*` | Signed-in users |
 | `/(admin)/home` | `app/(admin)/home.tsx` | Signed-in admins |
 

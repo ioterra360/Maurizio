@@ -92,7 +92,7 @@ slightly Studio-Ghibli-via-Stripe. See `docs/DESIGN-SYSTEM.md` for visual specs.
 
 Freemium + one Premium tier, sold as **in-app purchases via RevenueCat**
 (decided 2026-07-25, confirmed 2026-08-25). Pricing TBD. Not built yet —
-`app/(app)/subscribe.tsx` is gated off by `PREMIUM_ENABLED=false`. Free = one
+The old external-checkout screen was deleted on 2026-08-29; the paywall will be rebuilt on RevenueCat behind `PREMIUM_ENABLED`. Free = one
 folder (picked at onboarding); Premium = unlimited folders, plus a future word
 quota for free users (not decided). No web checkout, ever (Apple 3.1.1 / Play
 Payments policy) — model and enforcement plan in `docs/PAYMENTS.md`.

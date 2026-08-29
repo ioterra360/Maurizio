@@ -30,7 +30,7 @@ import { reportError } from "@/lib/report-error";
 import { deleteOwnAccount, fetchDeletionPreview, fetchProfile, updateProfile } from "@/lib/api";
 import {
   ACCOUNT_DELETION_URL,
-  PREMIUM_ENABLED,
+  NOTIFICATIONS_ENABLED,
   PRIVACY_URL,
   SUPPORT_EMAIL,
   TERMS_URL,
@@ -302,6 +302,9 @@ export default function SettingsScreen() {
           </View>
         </View>
 
+        {/* Schedule — hidden until notifications exist (NOTIFICATIONS_ENABLED). */}
+        {NOTIFICATIONS_ENABLED && (
+          <>
         {/* Schedule */}
         <View style={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 8 }}>
           <SectionLabel>{tr("settings.scheduleSection")}</SectionLabel>
@@ -312,6 +315,8 @@ export default function SettingsScreen() {
           <SettingsRow label={tr("settings.morningReview")} value={(profile?.morningReviewAt ?? "08:00").slice(0, 5)} />
           <SettingsRow label={tr("settings.eveningReview")} value={(profile?.eveningReviewAt ?? "21:30").slice(0, 5)} />
         </View>
+          </>
+        )}
 
         {/* Limits */}
         <View style={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 8 }}>
@@ -325,6 +330,8 @@ export default function SettingsScreen() {
           />
         </View>
 
+        {NOTIFICATIONS_ENABLED && (
+          <>
         {/* Notifications */}
         <View style={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 8 }}>
           <SectionLabel>{tr("settings.notificationsSection")}</SectionLabel>
@@ -357,6 +364,8 @@ export default function SettingsScreen() {
             }}
           />
         </View>
+          </>
+        )}
 
         {/* Language — device language by default, forced from here. */}
         <View style={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 8 }}>
@@ -365,24 +374,6 @@ export default function SettingsScreen() {
         <View style={{ paddingHorizontal: 16 }}>
           <LanguagePicker />
         </View>
-
-        {/* Premium — hidden until the RevenueCat paywall replaces the old
-            external-checkout screen (see PREMIUM_ENABLED). */}
-        {PREMIUM_ENABLED && (
-          <>
-            <View style={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 8 }}>
-              <SectionLabel>{tr("settings.subscriptionSection")}</SectionLabel>
-            </View>
-            <View style={{ paddingHorizontal: 16, gap: 10 }}>
-              <SettingsRow
-                label={tr("settings.premiumLabel")}
-                hint={tr("settings.premiumHint")}
-                value={tr("settings.premiumDiscover")}
-                onPress={() => router.push("/(app)/subscribe" as never)}
-              />
-            </View>
-          </>
-        )}
 
         {/* About */}
         <View style={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 8 }}>

@@ -21,7 +21,7 @@ memikaapp@gmail.com). Developer: Angelo Casula / Tailor App Studio
 
 Freemium: a free account owns exactly ONE folder; Premium (RevenueCat, not
 built) unlocks unlimited folders. `PREMIUM_ENABLED=false` in
-`lib/constants.ts` keeps the old `app/(app)/subscribe.tsx` unreachable. See
+`lib/constants.ts` keeps the Premium row hidden (the old external-checkout screen was deleted on 2026-08-29). See
 `docs/PAYMENTS.md`.
 
 ## 2. Read these before touching code
@@ -232,8 +232,8 @@ The `--legacy-peer-deps` flag is required because `lucide-react-native` over-dec
 - **A monorepo / Nx setup.** Memika is one app. Premature.
 - **Web checkout / external payment links.** Payments are in-app purchases via
   RevenueCat. A store build that links out to a web checkout is rejected under
-  Apple 3.1.1 / Play Payments policy — `app/(app)/subscribe.tsx` is gated off by
-  `PREMIUM_ENABLED` until the IAP paywall replaces it. `docs/PAYMENTS.md`
+  Apple 3.1.1 / Play Payments policy — the old external-checkout screen was deleted on
+  2026-08-29; the IAP paywall is not built yet. `docs/PAYMENTS.md`
   describes the RevenueCat model and the enforcement plan.
 - **Auto-seeding folders at signup.** Replaced (2026-08-25) by the one-folder
   pick in `/choose-topic`. Do not reintroduce `seedDefaultFolders`.

@@ -14,8 +14,8 @@ What exists today:
 
 | Piece | State |
 |---|---|
-| `PREMIUM_ENABLED` in `lib/constants.ts` | `false` — kill-switch. Hides the "Memika Premium" row in Settings and makes `app/(app)/subscribe.tsx` redirect to Settings. |
-| `app/(app)/subscribe.tsx` | The OLD external-checkout screen (opens `https://ioterra360.github.io/memika-legal/`). **Must be rewritten** as the RevenueCat paywall before the flag is ever flipped. Never ship it as is. |
+| `PREMIUM_ENABLED` in `lib/constants.ts` | `false` — kill-switch. The Premium row in Settings and the future RevenueCat paywall stay hidden until it flips. |
+| (deleted 2026-08-29) | The old external-checkout screen `app/(app)/subscribe.tsx` and its catalog keys were removed before the first iOS build (Guideline 3.1.1 hygiene). The IAP paywall will be a new screen. |
 | `FREE_FOLDER_LIMIT = 1` in `lib/constants.ts` | The freemium rule. Onboarding creates exactly one folder (`/choose-topic`); no create-folder affordance exists anywhere else. |
 | `profiles` entitlement column | Does not exist yet (see "Data model" below). |
 | Store prerequisites | Apple Developer (Individual) and Google Play (Personal) accounts opened 2026-08-25 under Maurizio Cocco. Paid Apps Agreement / merchant profile not yet completed. |
@@ -45,7 +45,7 @@ simply does not exist: no "+" for folders, no "create folder" route.
 
 Copy is Italian and honest: no fake "limited-time" claims, no invented user
 counts, no benefits the app does not deliver. The current `BENEFITS` list in
-`subscribe.tsx` promises "Ricordi illimitati" and "Insight personalizzati" —
+The old paywall promised "Ricordi illimitati" and "Insight personalizzati" —
 both must be re-checked against what Premium actually unlocks before reuse.
 
 ## Why RevenueCat (and not a webhook of our own)
@@ -169,7 +169,7 @@ lands (seconds); until then the client trusts the SDK for the current session.
 - `Purchases.configure({ apiKey, appUserID: user.id })` in `auth-store` after
   sign-in; `Purchases.logOut()` on sign-out. Demo mode branches before any
   SDK call.
-- Rewrite `app/(app)/subscribe.tsx`: offerings → package list → `purchasePackage`
+- Build the paywall screen (new `app/(app)/subscribe.tsx`): offerings → package list → `purchasePackage`
   → on `entitlements.active.premium` navigate back with a toast. Handle
   `userCancelled`, `PURCHASE_NOT_ALLOWED`, `PAYMENT_PENDING` with Italian copy.
   Terms + Privacy links (`TERMS_URL`, `PRIVACY_URL`) are mandatory on an

@@ -118,7 +118,7 @@ export const DEMO_ACCOUNTS = [
 
 export type DemoAccount = (typeof DEMO_ACCOUNTS)[number];
 
-function deriveName(email: string): string {
+export function deriveName(email: string): string {
   const local = email.split("@")[0] ?? "";
   const cleaned = local
     .split(/[._-]/)

@@ -18,7 +18,7 @@ import { AuthTextInput } from "@/components/AuthTextInput";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { Tappable } from "@/components/Tappable";
 import { isDemoMode, supabase } from "@/lib/supabase";
-import { useAuthStore } from "@/lib/auth-store";
+import { deriveName, useAuthStore } from "@/lib/auth-store";
 import { authErrorMessage } from "@/lib/auth-errors";
 import { AUTH_LINK_PATHS } from "@/lib/auth-links";
 import { PRIVACY_URL, TERMS_URL } from "@/lib/constants";
@@ -59,10 +59,6 @@ export default function SignupScreen() {
 
   const handleSubmit = async () => {
     setError(null);
-    if (!name.trim()) {
-      setError(t("signup.enterName"));
-      return;
-    }
     if (!email.trim()) {
       setError(t("signup.enterEmail"));
       return;
@@ -89,7 +85,9 @@ export default function SignupScreen() {
         email: email.trim().toLowerCase(),
         password,
         options: {
-          data: { name: name.trim() },
+          // Name is optional (5.1.1 data minimisation): fall back to the
+          // email-derived display name the rest of the app already uses.
+          data: { name: name.trim() || deriveName(email.trim().toLowerCase()) },
           // Hosted Auth runs with email confirmation OFF (mailer_autoconfirm),
           // so no email is sent today. If confirmation is ever re-enabled the
           // link must come back INTO the app: app/auth-callback.tsx finishes

@@ -78,7 +78,6 @@ app/                       Expo Router routes (file-based)
     knowledge.tsx          Folders list (Phase 2)
     health.tsx             Memory health (Phase 2)
     settings.tsx           Settings, legal links, sign out, delete account
-    subscribe.tsx          Old external-checkout screen, gated off (PREMIUM_ENABLED)
   (admin)/home.tsx         Admin panel home
 
 components/                Cross-screen UI primitives

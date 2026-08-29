@@ -220,11 +220,21 @@ export const DAILY_INPUT_CAP_DEFAULT = 20;
 
 /**
  * Paywall kill-switch. The "Memika Premium" row in Settings and the
- * /subscribe route stay hidden until the RevenueCat in-app-purchase paywall
+ * Premium row in Settings stays hidden until the RevenueCat in-app-purchase paywall
+ * (the old external-checkout screen was deleted on 2026-08-29)
  * replaces the old external-checkout screen — a store build that links out to
  * a web checkout is rejected under Apple 3.1.1 / Play Payments policy.
  */
 export const PREMIUM_ENABLED = false;
+
+/**
+ * Notifications (schedule rows, calm mode, weekly digest) are not built yet:
+ * expo-notifications is not a dependency and the profile columns only store
+ * a preference. Apple 2.1 rejects placeholder features, so the Settings
+ * sections stay hidden until the definitive server push lands (deferred by
+ * Angelo, 2026-08-27).
+ */
+export const NOTIFICATIONS_ENABLED = false;
 
 /**
  * Public legal / support endpoints. The pages are published by the

@@ -15,7 +15,7 @@
  *   SettingsManager (iOS) / navigator (web), so this ships OTA.
  */
 import { useMemo } from "react";
-import { I18nManager, NativeModules, Platform } from "react-native";
+import { I18nManager, NativeModules, Platform, Settings } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { create } from "zustand";
 
@@ -54,9 +54,14 @@ export function detectDeviceLocale(): Locale {
     if (Platform.OS === "android") {
       tag = (I18nManager.getConstants?.() as { localeIdentifier?: string } | undefined)?.localeIdentifier;
     } else if (Platform.OS === "ios") {
-      const settings = (NativeModules as { SettingsManager?: { settings?: { AppleLocale?: string; AppleLanguages?: string[] } } })
+      // New Architecture: NativeModules.SettingsManager is a TurboModule host
+      // object with no plain `settings` property, so read through the
+      // Settings API (synchronous). The legacy path stays as a fallback.
+      const fromSettings = Settings.get("AppleLocale") as string | undefined;
+      const languages = Settings.get("AppleLanguages") as string[] | undefined;
+      const legacy = (NativeModules as { SettingsManager?: { settings?: { AppleLocale?: string; AppleLanguages?: string[] } } })
         .SettingsManager?.settings;
-      tag = settings?.AppleLocale ?? settings?.AppleLanguages?.[0];
+      tag = fromSettings ?? languages?.[0] ?? legacy?.AppleLocale ?? legacy?.AppleLanguages?.[0];
     } else if (typeof navigator !== "undefined") {
       tag = navigator.language;
     }
