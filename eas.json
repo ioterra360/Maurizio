@@ -37,6 +37,9 @@
     "production": {
       "android": {
         "track": "internal"
+      },
+      "ios": {
+        "appleTeamId": "DT6SV2JMV3"
       }
     }
   }

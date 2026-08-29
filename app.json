@@ -12,7 +12,15 @@
       "supportsTablet": false,
       "bundleIdentifier": "studio.tailor.memika",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "CFBundleDevelopmentRegion": "it",
+        "CFBundleLocalizations": ["it", "en", "fr", "es"],
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": false,
+          "NSExceptionDomains": {
+            "localhost": { "NSExceptionAllowsInsecureHTTPLoads": true }
+          }
+        }
       }
     },
     "android": {
