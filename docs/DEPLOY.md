@@ -350,7 +350,23 @@ removed on purpose — do not add it back, it silently loses to the plugin). San
 checks after touching any of these: `npx expo config --type introspect --json`
 must resolve without warnings and `npx expo-doctor` must stay at 18/18.
 
-## Release checklist (state as of 2026-08-25)
+## Release checklist (state as of 2026-08-29)
+
+**2026-08-29 (Apple day):** enrollment approved (Team ID DT6SV2JMV3). App ID
+`studio.tailor.memika` registered; ASC app record created (Apple ID
+6806607162); DSA trader status declared with the P.IVA certificate (verification
+pending). Signing via local credentials (see § iOS signing above). First native
+round from commit `6c0d04b`: Android **vc12** (EAS 9cb7bf2b, AAB in
+`Memika/builds/memika-android-vc12-2026-08-29.aab`) and iOS **build 2** (EAS
+97ea570f) submitted to App Store Connect with `eas submit -p ios --non-interactive`
+(API key in `eas.json` submit profile). Listing filled through the ASC API
+(`docs/app-store-listing.md`): 4 locales, categories, age rating 16+ override,
+copyright, manual release, 6.5" screenshots. en-US app name is
+"Memika: Spaced Repetition" (plain "Memika" is taken in English). Left manual:
+App Review contact phone + demo password, App Privacy questionnaire, price Free,
+submit for review after DSA verification. From now on OTAs go to BOTH runtimes:
+`eas update --channel production --platform all`.
+
 
 Order matters: the Play closed test is a 14-day calendar gate, so get an
 Android build into testers' hands first.
