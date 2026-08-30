@@ -19,7 +19,7 @@ import { PrimaryButton } from "@/components/PrimaryButton";
 import { SectionLabel } from "@/components/SectionLabel";
 import { Tappable } from "@/components/Tappable";
 import { TopBar } from "@/components/TopBar";
-import { deleteMemory, fetchMemoryById, updateMemoryNotes } from "@/lib/api";
+import { deleteMemory, fetchMemoryById, fetchReviewCount, updateMemoryNotes } from "@/lib/api";
 import { longDate, relativeReviewed } from "@/lib/format";
 import { termFontSize, termLineHeight } from "@/lib/term-typography";
 import { useT } from "@/lib/i18n";
@@ -52,6 +52,9 @@ export default function MemoryDetailScreen() {
   const showToast = useUIStore((s) => s.showToast);
 
   const [memory, setMemory] = useState<Memory | null>(null);
+  // Conteggio vero dei ripassi (righe review_items); null = non caricato →
+  // la riga si nasconde invece di mostrare un numero inventato.
+  const [reviewCount, setReviewCount] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [notes, setNotes] = useState("");
@@ -64,8 +67,15 @@ export default function MemoryDetailScreen() {
     setLoading(true);
     setError(false);
     try {
-      const m = await fetchMemoryById(id);
+      const [m, count] = await Promise.all([
+        fetchMemoryById(id),
+        fetchReviewCount(id).catch((e) => {
+          reportError("memory-detail/review-count", e);
+          return null;
+        }),
+      ]);
       setMemory(m);
+      setReviewCount(count);
       setNotes(m?.notes ?? "");
       if (!m) setError(true);
     } catch (e) {
@@ -305,7 +315,9 @@ export default function MemoryDetailScreen() {
               }}
             >
               <MetaRow label={t("memory.addedOn")} value={longDate(memory.createdAt)} />
-              <MetaRow label={t("memory.reviewCount")} value={String(memory.srs.repetitions)} />
+              {reviewCount !== null ? (
+                <MetaRow label={t("memory.reviewCount")} value={String(reviewCount)} />
+              ) : null}
               <MetaRow
                 label={t("memory.lastReview")}
                 value={

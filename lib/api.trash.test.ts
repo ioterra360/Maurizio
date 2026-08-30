@@ -49,7 +49,9 @@ vi.mock("./supabase", () => ({
 
 import {
   cancelAccountDeletion,
+  createFolder,
   deleteFolder,
+  fetchReviewCount,
   deleteMemory,
   fetchDueMemoriesByLayer,
   fetchFolders,
@@ -129,19 +131,23 @@ describe("restore", () => {
     expect(call(1, "not")).toContainEqual(["deleted_at", "is", null]);
   });
 
-  it("restoreMemory also restores its folder row when the folder is trashed", async () => {
+  it("restoreMemory restores a trashed folder BEFORE reviving the memory", async () => {
     results = [
       { data: { id: "m1", folder_id: "f9" } }, // the memory row (unfiltered read)
-      {}, // memory update
       { data: { id: "f9", deleted_at: "2026-08-30T10:00:00Z" } }, // folder row
       {}, // folder update
+      {}, // memory update
     ];
     await restoreMemory("m1");
-    const folderUpdates = log.filter(
-      (l) => l.table === "folders" && l.calls.some(([n]) => n === "update"),
-    );
-    expect(folderUpdates).toHaveLength(1);
-    expect(folderUpdates[0].calls.filter(([n]) => n === "update").map(([, a]) => a)[0][0]).toEqual({
+    const updates = log
+      .map((l, i) => ({ i, table: l.table, isUpdate: l.calls.some(([n]) => n === "update") }))
+      .filter((x) => x.isUpdate);
+    // Folder first, memory last: a failure in between leaves a trashed
+    // memory in a LIVE folder (safe), never a live memory in a trashed one
+    // (the folder purge cascade would eat it).
+    expect(updates.map((x) => x.table)).toEqual(["folders", "memories"]);
+    const folderUpdate = log[updates[0].i];
+    expect(folderUpdate.calls.filter(([n]) => n === "update").map(([, a]) => a)[0][0]).toEqual({
       deleted_at: null,
     });
   });
@@ -149,14 +155,44 @@ describe("restore", () => {
   it("restoreMemory leaves a live folder untouched", async () => {
     results = [
       { data: { id: "m1", folder_id: "f9" } },
-      {},
       { data: { id: "f9", deleted_at: null } },
+      {},
     ];
     await restoreMemory("m1");
     const folderUpdates = log.filter(
       (l) => l.table === "folders" && l.calls.some(([n]) => n === "update"),
     );
     expect(folderUpdates).toHaveLength(0);
+  });
+
+  it("createFolder RESURRECTS a trashed same-kind folder instead of hard-deleting it", async () => {
+    results = [
+      { data: [] }, // fetchFolders (live folders, for priority)
+      { data: { id: "fOld", deleted_at: "2026-08-30T09:00:00Z" } }, // trashed same-kind lookup
+      { data: {
+        id: "fOld", user_id: "u1", kind: "es", name: "Nuovo nome", priority: 1,
+        color: null, icon: null, paused: false, deleted_at: null,
+        created_at: "2026-08-01T00:00:00Z", updated_at: "2026-08-30T11:00:00Z",
+      } }, // resurrect update returning the row
+    ];
+    const folder = await createFolder("u1", { kind: "es", name: "Nuovo nome", itemTypes: [] });
+    expect(folder.id).toBe("fOld");
+    // NO builder anywhere may issue a row delete: the old memories must keep
+    // their own 24h window in the trash.
+    for (const l of log) expect(l.calls.map(([n]) => n)).not.toContain("delete");
+    const resurrect = log.find((l) => l.table === "folders" && l.calls.some(([n]) => n === "update"));
+    expect(resurrect).toBeDefined();
+    const payload = resurrect!.calls.filter(([n]) => n === "update").map(([, a]) => a)[0][0] as Record<string, unknown>;
+    expect(payload.deleted_at).toBeNull();
+    expect(payload.name).toBe("Nuovo nome");
+  });
+
+  it("fetchReviewCount counts review_items rows for the memory", async () => {
+    results = [{ count: 12 }];
+    const n = await fetchReviewCount("m1");
+    expect(n).toBe(12);
+    expect(log[0].table).toBe("review_items");
+    expect(call(0, "eq")).toContainEqual(["memory_id", "m1"]);
   });
 });
 
@@ -176,15 +212,19 @@ describe("trash listing", () => {
     });
     results = [
       { data: [folder("fDel", "2026-08-30T09:00:00Z"), folder("fLive", null)] },
-      { data: [mem("a", "fDel", "2026-08-30T09:00:00Z"), mem("b", "fLive", "2026-08-30T10:00:00Z")] },
+      { data: [
+        mem("a", "fDel", "2026-08-30T09:00:00Z"), // trashed WITH the folder
+        mem("b", "fLive", "2026-08-30T10:00:00Z"), // folder alive → standalone
+        mem("c", "fDel", "2026-08-30T05:00:00Z"), // trashed BEFORE the folder → purges sooner → standalone
+      ] },
     ];
     const trash = await fetchTrash("u1");
     expect(trash.folders).toHaveLength(1);
     expect(trash.folders[0].id).toBe("fDel");
     expect(trash.folders[0].memoryCount).toBe(1);
-    expect(trash.memories).toHaveLength(1);
-    expect(trash.memories[0].id).toBe("b");
-    expect(trash.memories[0].folderName).toBe("folder-fLive");
+    expect(trash.memories.map((m) => m.id).sort()).toEqual(["b", "c"]);
+    expect(trash.memories.find((m) => m.id === "b")!.folderName).toBe("folder-fLive");
+    expect(trash.memories.find((m) => m.id === "c")!.folderName).toBe("folder-fDel");
   });
 });
 

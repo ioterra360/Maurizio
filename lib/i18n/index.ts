@@ -125,7 +125,9 @@ export function t(key: TKey, vars?: Vars, locale: Locale = getLocale()): string 
 
 /** Plural-aware translate: `<base>_one` for 1, `<base>_other` otherwise. `{count}` is injected. */
 export function tp(base: PluralBase, count: number, vars?: Vars, locale: Locale = getLocale()): string {
-  const key = `${base}_${count === 1 ? "one" : "other"}` as TKey;
+  // CLDR: il francese tratta lo 0 come singolare ("0 souvenir"); it/en/es no.
+  const one = count === 1 || (count === 0 && locale === "fr");
+  const key = `${base}_${one ? "one" : "other"}` as TKey;
   return t(key, { count, ...vars }, locale);
 }
 

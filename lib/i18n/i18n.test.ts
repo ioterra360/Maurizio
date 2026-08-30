@@ -75,3 +75,14 @@ describe("t / tp", () => {
     delete (en as Record<string, string>)["x.items_one"]; delete (en as Record<string, string>)["x.items_other"];
   });
 });
+
+describe("tp — CLDR plural category for zero", () => {
+  // NB: "it" qui è il catalogo italiano importato sopra, non vitest.it.
+  test("uses the singular form for 0 in French, plural elsewhere", async () => {
+    const { tp } = await import("./index");
+    expect(tp("accountDeletion.memoryCount", 0, undefined, "fr")).toBe("0 souvenir");
+    expect(tp("accountDeletion.memoryCount", 0, undefined, "it")).toBe("0 ricordi");
+    expect(tp("accountDeletion.memoryCount", 0, undefined, "en")).toBe("0 memories");
+    expect(tp("accountDeletion.memoryCount", 0, undefined, "es")).toBe("0 recuerdos");
+  });
+});

@@ -245,15 +245,33 @@ export async function createFolder(
   }
   const existing = await fetchFolders(userId);
   // unique(user_id, kind): una cartella della stessa kind ancora nel cestino
-  // occuperebbe lo slot (23505). L'utente sta ripartendo da zero: quella nel
-  // cestino muore subito (hard delete, i ricordi cascano a DB).
-  const { error: purgeError } = await supabase
+  // occuperebbe lo slot (23505). MAI hard delete (tradirebbe la promessa
+  // delle 24 ore — review 2026-08-30): la riga nel cestino viene RIANIMATA
+  // col nuovo nome, e i suoi vecchi ricordi restano nel cestino con la loro
+  // finestra (in /trash compaiono come ricordi singoli, ripristinabili).
+  const { data: trashed, error: trashedError } = await supabase
     .from("folders")
-    .delete()
+    .select("id")
     .eq("user_id", userId)
     .eq("kind", input.kind)
-    .not("deleted_at", "is", null);
-  if (purgeError) throw purgeError;
+    .not("deleted_at", "is", null)
+    .maybeSingle<{ id: string }>();
+  if (trashedError) throw trashedError;
+  if (trashed) {
+    const { data: revived, error: reviveError } = await supabase
+      .from("folders")
+      .update({
+        deleted_at: null,
+        name: input.name,
+        priority: nextFolderPriority(existing),
+        paused: false,
+      })
+      .eq("id", trashed.id)
+      .select("*")
+      .single<FolderRow>();
+    if (reviveError) throw reviveError;
+    return mapFolder(revived);
+  }
   const { data, error } = await supabase
     .from("folders")
     .insert({
@@ -693,6 +711,22 @@ export async function recordReviewItem(opts: {
 }
 
 /**
+ * Quante volte questo ricordo è stato ripassato davvero: righe di
+ * review_items (una per risposta registrata). NON srs_repetitions, che è la
+ * striscia di successi SM-2 e torna a 0 dopo un "non ricordo" (review
+ * 2026-08-30). Demo: 0.
+ */
+export async function fetchReviewCount(memoryId: string): Promise<number> {
+  if (isDemoMode) return 0;
+  const { count, error } = await supabase
+    .from("review_items")
+    .select("id", { count: "exact", head: true })
+    .eq("memory_id", memoryId);
+  if (error) throw error;
+  return count ?? 0;
+}
+
+/**
  * Close out a review session with the final counts. Demo no-ops.
  */
 export async function completeReviewSession(
@@ -873,14 +907,24 @@ export async function fetchTrash(userId: string): Promise<TrashContent> {
   const nameById = new Map(folders.map((f) => [f.id, f.name]));
   const memories = (memoriesRes.data ?? []).map(mapMemory);
 
+  // Un ricordo eliminato ben PRIMA della sua cartella scade per conto suo:
+  // va mostrato come voce singola col suo countdown, non nel conteggio della
+  // cartella (che scade più tardi). La tolleranza di un minuto tiene uniti
+  // gli update dello stesso deleteFolder (due richieste, due now() server).
+  const folderTs = new Map(trashedFolders.map((f) => [f.id, Date.parse(f.deletedAt ?? "")]));
+  const inFolderBatch = (m: Memory): boolean => {
+    const fts = folderTs.get(m.folderId);
+    if (fts === undefined) return false;
+    return fts - Date.parse(m.deletedAt ?? "") <= 60_000;
+  };
   const counts = new Map<string, number>();
   for (const m of memories) {
-    if (trashedIds.has(m.folderId)) counts.set(m.folderId, (counts.get(m.folderId) ?? 0) + 1);
+    if (inFolderBatch(m)) counts.set(m.folderId, (counts.get(m.folderId) ?? 0) + 1);
   }
   return {
     folders: trashedFolders.map((f) => ({ ...f, memoryCount: counts.get(f.id) ?? 0 })),
     memories: memories
-      .filter((m) => !trashedIds.has(m.folderId))
+      .filter((m) => !inFolderBatch(m))
       .map((m) => ({ ...m, folderName: nameById.get(m.folderId) ?? null })),
   };
 }
@@ -921,11 +965,11 @@ export async function restoreMemory(id: string): Promise<void> {
     .maybeSingle<{ id: string; folder_id: string }>();
   if (error) throw error;
   if (!data) return;
-  const { error: updError } = await supabase
-    .from("memories")
-    .update({ deleted_at: null })
-    .eq("id", id);
-  if (updError) throw updError;
+  // Cartella PRIMA del ricordo: se il secondo update fallisce resta un
+  // ricordo nel cestino dentro una cartella viva (stato sicuro), mai un
+  // ricordo vivo in una cartella nascosta che il cascade della purga si
+  // porterebbe via (review 2026-08-30; il trigger memories_guard_deleted_at
+  // rifiuta comunque l'ordine inverso).
   const { data: folder, error: folderError } = await supabase
     .from("folders")
     .select("id, deleted_at")
@@ -939,4 +983,9 @@ export async function restoreMemory(id: string): Promise<void> {
       .eq("id", folder.id);
     if (restoreError) throw restoreError;
   }
+  const { error: updError } = await supabase
+    .from("memories")
+    .update({ deleted_at: null })
+    .eq("id", id);
+  if (updError) throw updError;
 }
