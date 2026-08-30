@@ -8,6 +8,7 @@ import {
   Text,
   TextInput,
   View,
+  useWindowDimensions,
 } from "react-native";
 import { Trash2 } from "lucide-react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -20,6 +21,7 @@ import { Tappable } from "@/components/Tappable";
 import { TopBar } from "@/components/TopBar";
 import { deleteMemory, fetchMemoryById, updateMemoryNotes } from "@/lib/api";
 import { longDate, relativeReviewed } from "@/lib/format";
+import { termFontSize, termLineHeight } from "@/lib/term-typography";
 import { useT } from "@/lib/i18n";
 import type { TKey } from "@/lib/i18n";
 import type { Memory } from "@/lib/mappers";
@@ -45,6 +47,7 @@ const NOTES_MAX = 2000;
  */
 export default function MemoryDetailScreen() {
   const { t } = useT();
+  const { width } = useWindowDimensions();
   const { id } = useLocalSearchParams<{ id: string }>();
   const showToast = useUIStore((s) => s.showToast);
 
@@ -133,6 +136,11 @@ export default function MemoryDetailScreen() {
 
   const meta = memory ? STATE_META[memory.state] : null;
 
+  // Il titolo si dimensiona dalla stringa (come il termine nel ripasso) e
+  // scende fino a 24 px prima di andare a capo — mai troncato a metà parola
+  // a grandezza fissa (Maurizio 2026-08-30). Box = schermo − padding 22×2.
+  const titleSize = memory ? termFontSize(memory.term, width - 60, 42, 24) : 42;
+
   return (
     <SafeAreaView className="flex-1 bg-warm-white" edges={["top"]}>
       <TopBar
@@ -215,9 +223,9 @@ export default function MemoryDetailScreen() {
               <Text
                 style={{
                   fontFamily: FONT.bold,
-                  fontSize: memory.term.length > 12 ? 32 : 42,
-                  lineHeight: memory.term.length > 12 ? 40 : 50,
-                  letterSpacing: -1,
+                  fontSize: titleSize,
+                  lineHeight: termLineHeight(titleSize),
+                  letterSpacing: -0.5,
                   color: colors.navy,
                   textAlign: "center",
                 }}
@@ -297,6 +305,7 @@ export default function MemoryDetailScreen() {
               }}
             >
               <MetaRow label={t("memory.addedOn")} value={longDate(memory.createdAt)} />
+              <MetaRow label={t("memory.reviewCount")} value={String(memory.srs.repetitions)} />
               <MetaRow
                 label={t("memory.lastReview")}
                 value={

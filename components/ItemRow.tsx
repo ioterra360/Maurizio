@@ -1,7 +1,8 @@
-import { Text, View } from "react-native";
+import { Text, View, useWindowDimensions } from "react-native";
 import { Tappable } from "@/components/Tappable";
 import { FONT, colors, radii, statusTint } from "@/theme/tokens";
 import { useT } from "@/lib/i18n";
+import { lineFontSize } from "@/lib/term-typography";
 import type { FolderItem } from "@/lib/folder-data";
 
 // Labels are catalog KEYS, resolved with t() at render so the runtime
@@ -32,8 +33,13 @@ type Props = {
  */
 export function ItemRow({ item, onPress }: Props) {
   const { t } = useT();
+  const { width } = useWindowDimensions();
   const meta = STATE_META[item.state];
   const cjk = isCjk(item.front);
+  // Il termine si RIMPICCIOLISCE per stare intero sulla riga (fino a 12 px)
+  // prima che i puntini possano tagliarlo — Maurizio 2026-08-30 ("embarg…").
+  // Box stimato: schermo − padding lista/riga − pallino − chip di stato.
+  const termSize = lineFontSize(item.front, width - 180, cjk ? 17 : 15, 12);
 
   return (
     <Tappable
@@ -67,11 +73,13 @@ export function ItemRow({ item, onPress }: Props) {
       <View className="flex-1" style={{ minWidth: 0 }}>
         <View className="flex-row flex-wrap items-baseline" style={{ gap: 8 }}>
           <Text
+            numberOfLines={1}
             style={{
               fontFamily: FONT.semibold,
-              fontSize: cjk ? 17 : 15,
+              fontSize: termSize,
               color: colors.navy,
               letterSpacing: -0.1,
+              flexShrink: 1,
             }}
           >
             {item.front}

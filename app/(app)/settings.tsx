@@ -27,7 +27,7 @@ import { useAuthStore } from "@/lib/auth-store";
 import { useReviewStore } from "@/lib/review-store";
 import { useUIStore } from "@/lib/ui-store";
 import { reportError } from "@/lib/report-error";
-import { deleteOwnAccount, fetchDeletionPreview, fetchProfile, updateProfile } from "@/lib/api";
+import { fetchDeletionPreview, fetchProfile, requestAccountDeletion, updateProfile } from "@/lib/api";
 import {
   ACCOUNT_DELETION_URL,
   NOTIFICATIONS_ENABLED,
@@ -183,7 +183,10 @@ export default function SettingsScreen() {
     if (!user || deleting) return;
     setDeleting(true);
     try {
-      await deleteOwnAccount();
+      // 72 ore di grazia (migration 20260830121000): la riga profiles viene
+      // marcata, i dati restano; riaccedendo entro il termine l'app propone
+      // "Recupera account". La purga definitiva è un job server.
+      await requestAccountDeletion();
     } catch (err) {
       reportError("settings/account-deletion", err);
       // Close the sheet BEFORE toasting: the global toast renders below this
@@ -193,8 +196,8 @@ export default function SettingsScreen() {
       showToast(deletionErrorMessage(err));
       return;
     }
-    // Server side the account is gone (sessions cascade from auth.users).
-    // Clear the local session: reset the review deck, sign out, go to login.
+    // L'account è marcato per l'eliminazione (72h): chiudiamo la sessione
+    // locale — mazzo, sign out, login. I dati restano fino alla purga.
     useReviewStore.getState().reset();
     setConfirmDelete(false);
     await signOut();
@@ -380,6 +383,15 @@ export default function SettingsScreen() {
           <SectionLabel>{tr("settings.aboutSection")}</SectionLabel>
         </View>
         <View style={{ paddingHorizontal: 16, gap: 10 }}>
+          <SettingsRow
+            label={tr("settings.trashLabel")}
+            hint={tr("settings.trashHint")}
+            value={tr("settings.open")}
+            onPress={() => {
+              tap();
+              router.push("/trash" as never);
+            }}
+          />
           <SettingsRow label={tr("settings.version")} value={APP_VERSION_LABEL} />
           {user?.role === "admin" && viewAsUser ? (
             <SettingsRow
@@ -564,8 +576,8 @@ export default function SettingsScreen() {
               })}
             </Text>
             <View style={{ marginTop: 22, gap: 10 }}>
-              {/* Real deletion: delete_own_account() RPC (SECURITY DEFINER,
-                  target = auth.uid()), then local sign-out → login. */}
+              {/* request_account_deletion() RPC (SECURITY DEFINER, target =
+                  auth.uid()): 72h di grazia, poi la purga server. */}
               <PrimaryButton
                 label={deleting ? tr("settings.deleting") : tr("settings.deleteAll")}
                 onPress={() => {

@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { Pressable, Text, View } from "react-native";
+import { Pressable, Text, View, useWindowDimensions } from "react-native";
 import { GripVertical } from "lucide-react-native";
 import { FONT, colors, radii } from "@/theme/tokens";
 import { FolderTile } from "./FolderTile";
 import { RetentionBar } from "./RetentionBar";
 import type { FolderKind } from "@/lib/constants";
 import { useT } from "@/lib/i18n";
+import { lineFontSize } from "@/lib/term-typography";
 
 type Props = {
   kind: FolderKind;
@@ -48,6 +49,10 @@ export function FolderRow({
   isActive,
 }: Props) {
   const { t, tp } = useT();
+  const { width } = useWindowDimensions();
+  // Il nome si rimpicciolisce (fino a 12 px) prima di troncare: box stimato
+  // = schermo − padding − tile − badge priorità − barra retention − grip.
+  const nameSize = lineFontSize(name, width - 230, 15, 12);
   const showReorder = !!onDrag;
   const [pressed, setPressed] = useState(false);
   const [reorderPressed, setReorderPressed] = useState(false);
@@ -96,7 +101,7 @@ export function FolderRow({
             numberOfLines={1}
             style={{
               fontFamily: FONT.semibold,
-              fontSize: 15,
+              fontSize: nameSize,
               color: colors.navy,
               letterSpacing: -0.15,
               flexShrink: 1,

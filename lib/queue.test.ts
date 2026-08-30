@@ -22,6 +22,7 @@ const mem = (over: Partial<Memory> = {}): Memory => ({
   itemType: "word",
   state: "active",
   srs: { intervalDays: 1, easeFactor: 2.5, repetitions: 0 },
+  deletedAt: null,
   lastReviewedAt: null,
   nextReviewAt: "2026-07-25T08:00:00.000Z",
   createdAt: "2026-07-20T08:00:00.000Z",

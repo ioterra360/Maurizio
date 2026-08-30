@@ -1,10 +1,10 @@
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import DraggableFlatList, {
   type RenderItemParams,
 } from "react-native-draggable-flatlist";
-import { Plus } from "lucide-react-native";
+import { Plus, Trash2 } from "lucide-react-native";
 import { router, useFocusEffect } from "expo-router";
 
 import { HeaderHero } from "@/components/HeaderHero";
@@ -15,7 +15,8 @@ import { Tappable } from "@/components/Tappable";
 import { useFoldersWithStats } from "@/lib/use-folders";
 import type { FolderWithStats } from "@/lib/mappers";
 import { applyFolderOrder, useFolderOrderStore } from "@/lib/folder-order-store";
-import { updateFolderPriorities } from "@/lib/api";
+import { fetchTrash, updateFolderPriorities } from "@/lib/api";
+import { useAuthStore } from "@/lib/auth-store";
 import { reportError } from "@/lib/report-error";
 import { markAddOpenedIntentionally } from "@/lib/add-gate";
 import { useT } from "@/lib/i18n";
@@ -24,7 +25,24 @@ import { FOLDER_LIMIT_ENFORCED, FOLDER_TEMPLATES, type FolderKind } from "@/lib/
 
 export default function KnowledgeScreen() {
   const { t, tp } = useT();
+  const userId = useAuthStore((s) => s.user?.id);
   const { folders, loading, error, refetch } = useFoldersWithStats();
+  // Quanti elementi (cartelle + ricordi singoli) sono nel cestino: la riga
+  // "Cestino" in fondo alla lista compare solo se > 0. Errori silenziosi:
+  // la riga resta con l'ultimo valore noto, Impostazioni è la via di riserva.
+  const [trashCount, setTrashCount] = useState(0);
+  const loadTrashCount = useCallback(async () => {
+    if (!userId) return;
+    try {
+      const trash = await fetchTrash(userId);
+      setTrashCount(trash.folders.length + trash.memories.length);
+    } catch (e) {
+      reportError("knowledge/trash-count", e);
+    }
+  }, [userId]);
+  useEffect(() => {
+    void loadTrashCount();
+  }, [loadTrashCount]);
   const order = useFolderOrderStore((s) => s.order);
   const hydrated = useFolderOrderStore((s) => s.hydrated);
   const hydrateOrder = useFolderOrderStore((s) => s.hydrate);
@@ -47,7 +65,8 @@ export default function KnowledgeScreen() {
         return;
       }
       refetch();
-    }, [refetch]),
+      void loadTrashCount();
+    }, [refetch, loadTrashCount]),
   );
 
   const orderedFolders = useMemo(
@@ -270,6 +289,52 @@ export default function KnowledgeScreen() {
           );
         }}
         ListHeaderComponent={header}
+        ListFooterComponent={
+          trashCount > 0 ? (
+            <View style={{ paddingHorizontal: 16, paddingTop: 6 }}>
+              <Tappable
+                onPress={() => router.push("/trash" as never)}
+                accessibilityRole="button"
+                accessibilityLabel={t("knowledge.trashRow")}
+                pressedOpacity={0.85}
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 12,
+                  borderRadius: 14,
+                  backgroundColor: colors.surface,
+                  paddingHorizontal: 14,
+                  paddingVertical: 13,
+                  borderWidth: 1,
+                  borderColor: colors.hairline,
+                }}
+              >
+                <Trash2 size={17} color={colors.midGrey} strokeWidth={1.9} />
+                <Text
+                  style={{
+                    flex: 1,
+                    fontFamily: FONT.semibold,
+                    fontSize: 14.5,
+                    color: colors.navy,
+                    letterSpacing: -0.1,
+                  }}
+                >
+                  {t("knowledge.trashRow")}
+                </Text>
+                <Text
+                  style={{
+                    fontFamily: FONT.regular,
+                    fontSize: 12.5,
+                    color: colors.midGrey,
+                    fontVariant: ["tabular-nums"],
+                  }}
+                >
+                  {tp("knowledge.trashRowCount", trashCount)}
+                </Text>
+              </Tappable>
+            </View>
+          ) : null
+        }
         ListEmptyComponent={empty}
         contentContainerStyle={{ paddingBottom: 140 }}
         showsVerticalScrollIndicator={false}

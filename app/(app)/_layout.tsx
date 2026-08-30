@@ -1,11 +1,14 @@
 import { useEffect } from "react";
-import { Tabs } from "expo-router";
+import { Tabs, router } from "expo-router";
 import { StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { BlurView } from "expo-blur";
 import { Home, Folder, BarChart3, Settings as SettingsIcon } from "lucide-react-native";
 
 import { useAuthGate } from "@/lib/auth-gate";
+import { fetchDeletionRequestedAt } from "@/lib/api";
+import { useAuthStore } from "@/lib/auth-store";
+import { reportError } from "@/lib/report-error";
 import { useFolderOrderStore } from "@/lib/folder-order-store";
 import { useFolderSortStore } from "@/lib/folder-sort-store";
 import { useT } from "@/lib/i18n";
@@ -28,6 +31,24 @@ export default function AppLayout() {
   useEffect(() => {
     if (!sortHydrated) void hydrateSort();
   }, [sortHydrated, hydrateSort]);
+  // Eliminazione account richiesta (72h di grazia)? Fuori dall'app, sulla
+  // schermata di recupero. Controllo una volta per utente a ogni mount del
+  // gruppo (login incluso); un errore di rete non blocca l'uso normale.
+  const userId = useAuthStore((s) => s.user?.id);
+  useEffect(() => {
+    if (!userId) return;
+    let cancelled = false;
+    fetchDeletionRequestedAt(userId)
+      .then((ts) => {
+        if (!cancelled && ts) router.replace("/recover-account" as never);
+      })
+      .catch((err) => {
+        reportError("app-layout/deletion-check", err);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]);
   if (gate) return gate;
 
   // Mockup-faithful bar: paddingTop 10 + content (~44) + paddingBottom 22,

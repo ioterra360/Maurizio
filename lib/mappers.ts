@@ -26,6 +26,8 @@ export type ProfileRow = {
   weekly_digest: boolean;
   morning_review_at: string;
   evening_review_at: string;
+  /** Eliminazione account richiesta (migration 20260830121000); null = attivo. */
+  deletion_requested_at?: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -40,6 +42,8 @@ export type Profile = {
   weeklyDigest: boolean;
   morningReviewAt: string;
   eveningReviewAt: string;
+  /** Eliminazione account richiesta; null = attivo. */
+  deletionRequestedAt: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -55,6 +59,7 @@ export function mapProfile(row: ProfileRow): Profile {
     weeklyDigest: row.weekly_digest,
     morningReviewAt: row.morning_review_at,
     eveningReviewAt: row.evening_review_at,
+    deletionRequestedAt: row.deletion_requested_at ?? null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -73,6 +78,8 @@ export type FolderRow = {
   color: string | null;
   icon: string | null;
   paused: boolean;
+  /** Nel cestino da questo istante; null = viva (migration 20260830120000). */
+  deleted_at?: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -86,6 +93,8 @@ export type Folder = {
   color: string | null;
   icon: string | null;
   paused: boolean;
+  /** Nel cestino da questo istante; null = viva. */
+  deletedAt: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -100,6 +109,7 @@ export function mapFolder(row: FolderRow): Folder {
     color: row.color,
     icon: row.icon,
     paused: row.paused,
+    deletedAt: row.deleted_at ?? null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -146,6 +156,8 @@ export type MemoryRow = {
   srs_repetitions: number;
   last_reviewed_at: string | null;
   next_review_at: string;
+  /** Nel cestino da questo istante; null = vivo (migration 20260830120000). */
+  deleted_at?: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -169,6 +181,8 @@ export type Memory = {
   };
   lastReviewedAt: string | null;
   nextReviewAt: string;
+  /** Nel cestino da questo istante; null = vivo. */
+  deletedAt: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -194,6 +208,7 @@ export function mapMemory(row: MemoryRow): Memory {
     },
     lastReviewedAt: row.last_reviewed_at,
     nextReviewAt: row.next_review_at,
+    deletedAt: row.deleted_at ?? null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };

@@ -49,9 +49,9 @@ function widthUnits(text: string): number {
 /**
  * Largest font size (px, whole number) at which `term` fits `boxWidth`:
  * one line for a single word, up to two lines for a multi-word term. Never
- * above `max`, never below the readable floor (28).
+ * above `max`, never below the readable floor (default 28, override per surface).
  */
-export function termFontSize(term: string, boxWidth: number, max: number): number {
+export function termFontSize(term: string, boxWidth: number, max: number, floor: number = FLOOR): number {
   const trimmed = term.trim();
   const words = trimmed.split(/\s+/).filter(Boolean);
   if (words.length === 0 || boxWidth <= 0) return max;
@@ -61,7 +61,20 @@ export function termFontSize(term: string, boxWidth: number, max: number): numbe
   const byWord = boxWidth / longest;
   const byTotal = multi ? (2 * boxWidth) / widthUnits(trimmed) : byWord;
   const size = Math.min(ceiling, byWord, byTotal);
-  return Math.max(FLOOR, Math.floor(size));
+  return Math.max(floor, Math.floor(size));
+}
+
+/**
+ * Largest whole font size at which `text` fits ONE line of `boxWidth`,
+ * clamped to [floor, max]. For single-line rows (folder list, item rows)
+ * where the text must shrink to stay whole before the ellipsis is allowed
+ * to cut it (Maurizio, 2026-08-30 — "embarg…" clipped).
+ */
+export function lineFontSize(text: string, boxWidth: number, max: number, floor: number): number {
+  const trimmed = text.trim();
+  if (trimmed.length === 0 || boxWidth <= 0) return max;
+  const size = boxWidth / widthUnits(trimmed);
+  return Math.max(floor, Math.min(max, Math.floor(size)));
 }
 
 const MIN_LINES = 2;

@@ -97,8 +97,8 @@ export async function fetchDeletionPreview(userId: string): Promise<DeletionPrev
     };
   }
   const [foldersRes, memoriesRes] = await Promise.all([
-    supabase.from("folders").select("id", { count: "exact", head: true }).eq("user_id", userId),
-    supabase.from("memories").select("id", { count: "exact", head: true }).eq("user_id", userId),
+    supabase.from("folders").select("id", { count: "exact", head: true }).eq("user_id", userId).is("deleted_at", null),
+    supabase.from("memories").select("id", { count: "exact", head: true }).eq("user_id", userId).is("deleted_at", null),
   ]);
   if (foldersRes.error) throw foldersRes.error;
   if (memoriesRes.error) throw memoriesRes.error;
@@ -123,6 +123,41 @@ export async function deleteOwnAccount(): Promise<void> {
   if (error) throw error;
 }
 
+/**
+ * Richiede l'eliminazione dell'account con 72 ore di grazia (migration
+ * 20260830121000): profiles.deletion_requested_at = now(), i dati restano.
+ * Il chiamante fa signOut(); riaccedendo entro 72 ore l'app propone il
+ * recupero (cancelAccountDeletion). La purga definitiva è un job server
+ * (purge_expired_accounts). Sostituisce deleteOwnAccount nel flusso UI.
+ */
+export async function requestAccountDeletion(): Promise<void> {
+  if (isDemoMode) return;
+  const { error } = await supabase.rpc("request_account_deletion");
+  if (error) throw error;
+}
+
+/** Annulla l'eliminazione richiesta — "Recupera account". Demo no-op. */
+export async function cancelAccountDeletion(): Promise<void> {
+  if (isDemoMode) return;
+  const { error } = await supabase.rpc("cancel_account_deletion");
+  if (error) throw error;
+}
+
+/**
+ * Quando è stata richiesta l'eliminazione dell'account (null = mai). Letta
+ * al login/mount dell'app per portare l'utente su /recover-account.
+ */
+export async function fetchDeletionRequestedAt(userId: string): Promise<string | null> {
+  if (isDemoMode) return null;
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("deletion_requested_at")
+    .eq("id", userId)
+    .maybeSingle<{ deletion_requested_at: string | null }>();
+  if (error) throw error;
+  return data?.deletion_requested_at ?? null;
+}
+
 // ---------------------------------------------------------------------------
 // Folders
 // ---------------------------------------------------------------------------
@@ -137,6 +172,7 @@ export async function fetchFolders(userId: string): Promise<Folder[]> {
       kind: t.kind,
       name: t.name,
       priority: i + 1,
+      deletedAt: null,
       color: null,
       icon: null,
       paused: false,
@@ -148,6 +184,7 @@ export async function fetchFolders(userId: string): Promise<Folder[]> {
     .from("folders")
     .select("*")
     .eq("user_id", userId)
+    .is("deleted_at", null)
     .order("priority")
     .returns<FolderRow[]>();
   if (error) throw error;
@@ -164,7 +201,8 @@ export async function countFolders(userId: string): Promise<number> {
   const { count, error } = await supabase
     .from("folders")
     .select("id", { count: "exact", head: true })
-    .eq("user_id", userId);
+    .eq("user_id", userId)
+    .is("deleted_at", null);
   if (error) throw error;
   return count ?? 0;
 }
@@ -197,6 +235,7 @@ export async function createFolder(
       kind: input.kind,
       name: input.name,
       priority: 1,
+      deletedAt: null,
       color: null,
       icon: null,
       paused: false,
@@ -205,6 +244,16 @@ export async function createFolder(
     };
   }
   const existing = await fetchFolders(userId);
+  // unique(user_id, kind): una cartella della stessa kind ancora nel cestino
+  // occuperebbe lo slot (23505). L'utente sta ripartendo da zero: quella nel
+  // cestino muore subito (hard delete, i ricordi cascano a DB).
+  const { error: purgeError } = await supabase
+    .from("folders")
+    .delete()
+    .eq("user_id", userId)
+    .eq("kind", input.kind)
+    .not("deleted_at", "is", null);
+  if (purgeError) throw purgeError;
   const { data, error } = await supabase
     .from("folders")
     .insert({
@@ -253,10 +302,27 @@ export async function updateFolderPriorities(
   );
 }
 
-/** Elimina la cartella. I ricordi cascano a DB (on delete cascade). Demo no-op. */
+/**
+ * Sposta la cartella nel cestino (deleted_at) insieme ai suoi ricordi vivi.
+ * La purga definitiva avviene dopo 24 ore lato server (purge_trash).
+ * I ricordi PRIMA della cartella: se il secondo update fallisce resta una
+ * cartella visibile con ricordi nel cestino (recuperabili), mai il contrario
+ * — una cartella nascosta con ricordi vivi verrebbe mangiata dal cascade
+ * della purga. Demo no-op.
+ */
 export async function deleteFolder(folderId: string): Promise<void> {
   if (isDemoMode) return;
-  const { error } = await supabase.from("folders").delete().eq("id", folderId);
+  const deletedAt = new Date().toISOString();
+  const { error: memError } = await supabase
+    .from("memories")
+    .update({ deleted_at: deletedAt })
+    .eq("folder_id", folderId)
+    .is("deleted_at", null);
+  if (memError) throw memError;
+  const { error } = await supabase
+    .from("folders")
+    .update({ deleted_at: deletedAt })
+    .eq("id", folderId);
   if (error) throw error;
 }
 
@@ -266,7 +332,8 @@ async function pausedFolderIds(userId: string): Promise<string[]> {
     .from("folders")
     .select("id")
     .eq("user_id", userId)
-    .eq("paused", true);
+    .eq("paused", true)
+    .is("deleted_at", null);
   if (error) throw error;
   return (data ?? []).map((r: { id: string }) => r.id);
 }
@@ -288,6 +355,7 @@ export async function fetchMemoriesForFolder(folderId: string): Promise<Memory[]
     .from("memories")
     .select("*")
     .eq("folder_id", folderId)
+    .is("deleted_at", null)
     .order("next_review_at")
     .returns<MemoryRow[]>();
   if (error) throw error;
@@ -310,18 +378,22 @@ export async function fetchMemoryById(id: string): Promise<Memory | null> {
     .from("memories")
     .select("*")
     .eq("id", id)
+    .is("deleted_at", null)
     .maybeSingle<MemoryRow>();
   if (error) throw error;
   return data ? mapMemory(data) : null;
 }
 
 /**
- * Delete a memory for good. review_items rows cascade (FK on delete
- * cascade); RLS limits it to the user's own rows. Demo: no-op.
+ * Sposta il ricordo nel cestino (deleted_at); la storia di ripasso resta e
+ * cade solo con la purga definitiva dopo 24 ore (purge_trash). Demo: no-op.
  */
 export async function deleteMemory(id: string): Promise<void> {
   if (isDemoMode) return;
-  const { error } = await supabase.from("memories").delete().eq("id", id);
+  const { error } = await supabase
+    .from("memories")
+    .update({ deleted_at: new Date().toISOString() })
+    .eq("id", id);
   if (error) throw error;
 }
 
@@ -375,7 +447,11 @@ export async function createMemory(input: {
   return mapMemory(data);
 }
 
-/** Ricordi inseriti oggi (giorno locale) — per il limite giornaliero. */
+/**
+ * Ricordi inseriti oggi (giorno locale) — per il limite giornaliero.
+ * NESSUN filtro sul cestino, di proposito: eliminare e reinserire non deve
+ * liberare quota.
+ */
 export async function fetchTodayInputCount(userId: string): Promise<number> {
   if (isDemoMode) return 0;
   const { from, to } = todayRange();
@@ -395,7 +471,8 @@ export async function countMemoriesInFolder(folderId: string): Promise<number> {
   const { count, error } = await supabase
     .from("memories")
     .select("id", { count: "exact", head: true })
-    .eq("folder_id", folderId);
+    .eq("folder_id", folderId)
+    .is("deleted_at", null);
   if (error) throw error;
   return count ?? 0;
 }
@@ -407,6 +484,7 @@ export async function fetchDueMemories(userId: string, limit = 50): Promise<Memo
     .from("memories")
     .select("*")
     .eq("user_id", userId)
+    .is("deleted_at", null)
     .neq("state", "archived")
     .lte("next_review_at", new Date().toISOString())
     .order("next_review_at")
@@ -433,6 +511,7 @@ function seedToFolderWithStats(userId: string, s: FolderSeed): FolderWithStats {
     kind: s.kind,
     name: s.name,
     priority: s.priority,
+    deletedAt: null,
     color: null,
     icon: null,
     paused: false,
@@ -537,6 +616,7 @@ export async function fetchFolderDetail(
       // "Never reviewed" once the adapter swaps to lastReviewedAt.
       lastReviewedAt: isoFromRelativeLabel(it.reviewed, now),
       nextReviewAt: now.toISOString(),
+      deletedAt: null,
       createdAt: now.toISOString(),
       updatedAt: now.toISOString(),
     }));
@@ -681,6 +761,7 @@ export async function fetchDueMemoriesByLayer(
     .from("memories")
     .select("*")
     .eq("user_id", userId)
+    .is("deleted_at", null)
     .neq("state", "archived")
     .lte("next_review_at", nowIso);
   if (opts.folderId) {
@@ -732,6 +813,7 @@ export async function fetchDueCounts(
       .from("memories")
       .select("id", { count: "exact", head: true })
       .eq("user_id", userId)
+      .is("deleted_at", null)
       .neq("state", "archived")
       .lte("next_review_at", nowIso);
     if (folderId) q = q.eq("folder_id", folderId);
@@ -752,4 +834,109 @@ export async function fetchDueCounts(
     }),
   );
   return { scan, reinforcement, focus };
+}
+
+// ---------------------------------------------------------------------------
+// Cestino (soft delete — migration 20260830120000, purga server dopo 24 ore)
+// ---------------------------------------------------------------------------
+
+export type TrashFolder = Folder & { memoryCount: number };
+export type TrashMemory = Memory & { folderName: string | null };
+export type TrashContent = { folders: TrashFolder[]; memories: TrashMemory[] };
+
+/**
+ * Contenuto del cestino: cartelle eliminate (con quanti ricordi contengono)
+ * e ricordi eliminati singolarmente (la cui cartella è viva), col nome della
+ * cartella. Due letture sequenziali: tutte le cartelle (vive e no, servono i
+ * nomi) e i ricordi nel cestino; la partizione avviene in JS.
+ */
+export async function fetchTrash(userId: string): Promise<TrashContent> {
+  if (isDemoMode) return { folders: [], memories: [] };
+  const foldersRes = await supabase
+    .from("folders")
+    .select("*")
+    .eq("user_id", userId)
+    .returns<FolderRow[]>();
+  if (foldersRes.error) throw foldersRes.error;
+  const memoriesRes = await supabase
+    .from("memories")
+    .select("*")
+    .eq("user_id", userId)
+    .not("deleted_at", "is", null)
+    .order("deleted_at")
+    .returns<MemoryRow[]>();
+  if (memoriesRes.error) throw memoriesRes.error;
+
+  const folders = (foldersRes.data ?? []).map(mapFolder);
+  const trashedFolders = folders.filter((f) => f.deletedAt);
+  const trashedIds = new Set(trashedFolders.map((f) => f.id));
+  const nameById = new Map(folders.map((f) => [f.id, f.name]));
+  const memories = (memoriesRes.data ?? []).map(mapMemory);
+
+  const counts = new Map<string, number>();
+  for (const m of memories) {
+    if (trashedIds.has(m.folderId)) counts.set(m.folderId, (counts.get(m.folderId) ?? 0) + 1);
+  }
+  return {
+    folders: trashedFolders.map((f) => ({ ...f, memoryCount: counts.get(f.id) ?? 0 })),
+    memories: memories
+      .filter((m) => !trashedIds.has(m.folderId))
+      .map((m) => ({ ...m, folderName: nameById.get(m.folderId) ?? null })),
+  };
+}
+
+/**
+ * Ripristina una cartella dal cestino, con tutti i suoi ricordi nel cestino
+ * (anche quelli eliminati singolarmente prima della cartella — regola
+ * comunicata: "ripristinandola tornano"). La cartella PRIMA dei ricordi:
+ * mai ricordi vivi dentro una cartella nascosta.
+ */
+export async function restoreFolder(folderId: string): Promise<void> {
+  if (isDemoMode) return;
+  const { error } = await supabase
+    .from("folders")
+    .update({ deleted_at: null })
+    .eq("id", folderId);
+  if (error) throw error;
+  const { error: memError } = await supabase
+    .from("memories")
+    .update({ deleted_at: null })
+    .eq("folder_id", folderId)
+    .not("deleted_at", "is", null);
+  if (memError) throw memError;
+}
+
+/**
+ * Ripristina un singolo ricordo. Se la sua cartella è nel cestino torna
+ * anche LEI (solo la riga cartella: gli altri ricordi restano nel cestino
+ * fino a purga o ripristino esplicito) — senza questo, la purga della
+ * cartella si porterebbe via il ricordo appena ripristinato (cascade).
+ */
+export async function restoreMemory(id: string): Promise<void> {
+  if (isDemoMode) return;
+  const { data, error } = await supabase
+    .from("memories")
+    .select("id, folder_id")
+    .eq("id", id)
+    .maybeSingle<{ id: string; folder_id: string }>();
+  if (error) throw error;
+  if (!data) return;
+  const { error: updError } = await supabase
+    .from("memories")
+    .update({ deleted_at: null })
+    .eq("id", id);
+  if (updError) throw updError;
+  const { data: folder, error: folderError } = await supabase
+    .from("folders")
+    .select("id, deleted_at")
+    .eq("id", data.folder_id)
+    .maybeSingle<{ id: string; deleted_at: string | null }>();
+  if (folderError) throw folderError;
+  if (folder?.deleted_at) {
+    const { error: restoreError } = await supabase
+      .from("folders")
+      .update({ deleted_at: null })
+      .eq("id", folder.id);
+    if (restoreError) throw restoreError;
+  }
 }
