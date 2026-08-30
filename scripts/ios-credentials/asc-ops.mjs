@@ -55,7 +55,7 @@ if (cmd === "status") {
   else out("reviewDetail POST", await call("POST", "/v1/appStoreReviewDetails", { data: { type: "appStoreReviewDetails", attributes: attrs, relationships: { appStoreVersion: { data: { type: "appStoreVersions", id: VERSION_ID } } } } }));
 } else if (cmd === "invite-user") {
   const [email, firstName, lastName, role = "ADMIN"] = args;
-  out(`userInvitation ${email} [${role}]`, await call("POST", "/v1/userInvitations", { data: { type: "userInvitations", attributes: { email, firstName, lastName, roles: [role], allAppsVisible: true, provisioningAllowed: true } } }));
+  out(`userInvitation ${email} [${role}]`, await call("POST", "/v1/userInvitations", { data: { type: "userInvitations", attributes: { email, firstName, lastName, roles: [role], allAppsVisible: true, ...(role === "ADMIN" ? {} : { provisioningAllowed: true }) } } }));
 } else if (cmd === "set-free") {
   // Price schedule: base territory ITA, one manual price = the 0.0 price point, no start date (= now).
   const points = await call("GET", `/v1/apps/${APP_ID}/appPricePoints?filter[territory]=ITA&fields[appPricePoints]=customerPrice&limit=5`);
