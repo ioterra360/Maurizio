@@ -828,7 +828,7 @@ export const en: Record<keyof typeof it, string> = {
   "settings.languageHint": "Applies right away, no restart.",
   "settings.languageIt": "Italiano",
   "settings.languageSection": "Language",
-  "settings.languageSystem": "Same as the phone",
+  "settings.languageSystem": "Default",
   "settings.legalSection": "Privacy and terms",
   "settings.limitsSection": "Limits",
   "settings.memberSince": "With Memika since {month} {year}",

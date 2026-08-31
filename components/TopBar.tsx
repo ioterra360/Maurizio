@@ -53,24 +53,40 @@ export function TopBar({ title, onBack, rightSlot }: Props) {
         <ChevronLeft size={22} color={colors.navy} strokeWidth={2} />
       </Tappable>
 
+      {/* Titolo ancorato al CENTRO DELLO SCHERMO, non al centro dello
+          spazio residuo: con flex:1 la larghezza diversa dei lati (freccia
+          40px vs "Salva") lo spostava — sotto, il termine è centrato sullo
+          schermo e i due sembravano disallineati (Angelo, 2026-08-31).
+          left/right 64 = spazio del lato più largo, così il titolo non
+          finisce mai sotto i tasti. */}
       {title ? (
-        <Text
-          className="text-navy"
+        <View
+          pointerEvents="none"
           style={{
-            flex: 1,
-            textAlign: "center",
-            marginHorizontal: 8,
-            fontFamily: FONT.semibold,
-            fontSize: 16,
-            letterSpacing: -0.16,
+            position: "absolute",
+            left: 64,
+            right: 64,
+            top: 0,
+            bottom: 0,
+            alignItems: "center",
+            justifyContent: "center",
           }}
-          numberOfLines={1}
         >
-          {title}
-        </Text>
-      ) : (
-        <View style={{ flex: 1 }} />
-      )}
+          <Text
+            className="text-navy"
+            style={{
+              fontFamily: FONT.semibold,
+              fontSize: 16,
+              letterSpacing: -0.16,
+              textAlign: "center",
+            }}
+            numberOfLines={1}
+          >
+            {title}
+          </Text>
+        </View>
+      ) : null}
+      <View style={{ flex: 1 }} />
 
       <View style={{ minWidth: 40, flexShrink: 0, alignItems: "flex-end" }}>{rightSlot ?? null}</View>
     </View>

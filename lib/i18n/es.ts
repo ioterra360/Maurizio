@@ -828,7 +828,7 @@ export const es: Record<keyof typeof it, string> = {
   "settings.languageHint": "Cambia al instante, sin reiniciar.",
   "settings.languageIt": "Italiano",
   "settings.languageSection": "Idioma",
-  "settings.languageSystem": "Como el teléfono",
+  "settings.languageSystem": "Default",
   "settings.legalSection": "Privacidad y condiciones",
   "settings.limitsSection": "Límites",
   "settings.memberSince": "En Memika desde {month} {year}",

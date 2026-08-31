@@ -828,7 +828,7 @@ export const it = {
   "settings.languageHint": "Cambia subito, senza riavviare.",
   "settings.languageIt": "Italiano",
   "settings.languageSection": "Lingua",
-  "settings.languageSystem": "Come il telefono",
+  "settings.languageSystem": "Default",
   "settings.legalSection": "Privacy e termini",
   "settings.limitsSection": "Limiti",
   "settings.memberSince": "Con Memika da {month} {year}",
