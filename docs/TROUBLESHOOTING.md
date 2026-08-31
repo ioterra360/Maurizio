@@ -322,3 +322,33 @@ If you've spent more than 30 minutes on a single error message:
 2. Search the same in Reanimated 4 docs:
    https://docs.swmansion.com/react-native-reanimated/
 3. Then ping in a new conversation with the full error + what you tried.
+
+## OTA e runtime: i binari spediti NON hanno il fingerprint di HEAD (2026-08-31)
+
+`.gitignore` ed `eas.json` sono input del fingerprint. Dopo la build vc12 /
+iOS build 2 sono cambiati (credenziali locali iOS), quindi il fingerprint di
+HEAD non corrisponde più ai runtime dei binari in circolazione:
+
+- Android vc12 (EAS 9cb7bf2b): runtime `9a1fad42caf0a7fe2fbb6c55a136723b4e439604` = stato di `.gitignore`+`eas.json` al commit `6c0d04b`
+- iOS build 2 (EAS 97ea570f): runtime `19eda23c0e95d5da22ce5f3fde03af0030509242` = `.gitignore` di HEAD + `eas.json` al commit `e8a16ff`
+
+`EXPO_UPDATES_FINGERPRINT_OVERRIDE` NON viene onorata da `eas update`
+(provato: pubblica comunque col fingerprint calcolato). Ricetta funzionante,
+finché non escono build nuove (che riallineeranno tutto):
+
+```bash
+# Android
+git checkout 6c0d04b -- .gitignore eas.json
+npx expo-updates fingerprint:generate --platform android   # DEVE stampare 9a1fad42…
+npx eas update --channel production --platform android --message "…" --non-interactive
+# iOS
+git checkout HEAD -- .gitignore && git checkout e8a16ff -- eas.json
+npx expo-updates fingerprint:generate --platform ios       # DEVE stampare 19eda23c…
+npx eas update --channel production --platform ios --message "…" --non-interactive
+# ripristino
+git checkout HEAD -- .gitignore eas.json
+```
+
+Verifica sempre con `eas update:list --branch production --limit 2` che i
+gruppi pubblicati portino ESATTAMENTE quei due runtime. Prima di tutto questo
+valgono ancora: `npm prune --legacy-peer-deps` e il pre-check hermesc.
