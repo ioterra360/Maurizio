@@ -475,8 +475,15 @@ export default function FolderSettingsScreen() {
             })
             .catch((err) => {
               reportError("folder-settings/subfolder-save", err);
+              const code = (err as { code?: string })?.code ?? "";
               const msg = err instanceof Error ? err.message : String(err);
-              showToast(msg.includes("limit") ? t("subfolders.limit") : t("subfolders.failed"));
+              showToast(
+                code === "23505" || msg.includes("duplicate")
+                  ? t("subfolders.duplicate")
+                  : msg.includes("limit")
+                    ? t("subfolders.limit")
+                    : t("subfolders.failed"),
+              );
             })
             .finally(() => setSubSaving(false));
         }}

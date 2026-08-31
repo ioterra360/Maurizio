@@ -954,6 +954,7 @@ export const fr: Record<keyof typeof it, string> = {
   "subfolders.deleteBody": "Les mots de la section retournent dans le dossier. La section disparaît immédiatement.",
   "subfolders.deleteTitle": "Supprimer la section « {name} » ?",
   "subfolders.deleted": "Section supprimée : ses mots sont revenus dans le dossier",
+  "subfolders.duplicate": "Une section porte déjà ce nom",
   "subfolders.failed": "Une erreur est survenue. Réessaie.",
   "subfolders.limit": "3 sections maximum par dossier",
   "subfolders.namePlaceholder": "Nom de la section",

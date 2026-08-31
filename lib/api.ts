@@ -261,6 +261,15 @@ export async function createFolder(
     .maybeSingle<{ id: string }>();
   if (trashedError) throw trashedError;
   if (trashed) {
+    // Le vecchie sezioni muoiono con la rianimazione: la cartella "nuova"
+    // non deve ereditare chips fantasma che consumano il budget max-3
+    // (review 2026-08-31). I ricordi nel cestino si limitano a tornare alla
+    // radice (subfolder_id on delete set null), la loro finestra resta.
+    const { error: subCleanupError } = await supabase
+      .from("subfolders")
+      .delete()
+      .eq("folder_id", trashed.id);
+    if (subCleanupError) throw subCleanupError;
     const { data: revived, error: reviveError } = await supabase
       .from("folders")
       .update({

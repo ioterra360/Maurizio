@@ -954,6 +954,7 @@ export const es: Record<keyof typeof it, string> = {
   "subfolders.deleteBody": "Las palabras de la sección vuelven a la carpeta. La sección desaparece al instante.",
   "subfolders.deleteTitle": "¿Eliminar la sección \"{name}\"?",
   "subfolders.deleted": "Sección eliminada: sus palabras han vuelto a la carpeta",
+  "subfolders.duplicate": "Ya existe una sección con ese nombre",
   "subfolders.failed": "Algo salió mal. Inténtalo de nuevo.",
   "subfolders.limit": "Máximo 3 secciones por carpeta",
   "subfolders.namePlaceholder": "Nombre de la sección",

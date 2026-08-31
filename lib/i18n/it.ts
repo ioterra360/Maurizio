@@ -954,6 +954,7 @@ export const it = {
   "subfolders.deleteBody": "Le parole della sezione tornano nella cartella. La sezione sparisce subito.",
   "subfolders.deleteTitle": "Eliminare la sezione \"{name}\"?",
   "subfolders.deleted": "Sezione eliminata: le parole sono tornate nella cartella",
+  "subfolders.duplicate": "C'è già una sezione con questo nome",
   "subfolders.failed": "Operazione non riuscita. Riprova.",
   "subfolders.limit": "Massimo 3 sezioni per cartella",
   "subfolders.namePlaceholder": "Nome della sezione",

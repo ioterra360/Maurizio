@@ -79,7 +79,11 @@ export default function ChooseTopicScreen() {
   const adminOnly = user?.role === "admin" && !viewAsUser;
   const showToast = useUIStore((s) => s.showToast);
   const { mode, moveMemoryId } = useLocalSearchParams<{ mode?: string; moveMemoryId?: string }>();
-  const addingAnother = mode === "new" && !FOLDER_LIMIT_ENFORCED;
+  // Il flusso "Nuova cartella…" del MoveSheet (moveMemoryId) non deve MAI
+  // rimbalzare su Oggi: anche a limite freemium attivo l'utente arriva qui
+  // con una cartella già sua (review 2026-08-31; il gate Premium nasconderà
+  // la voce a monte quando arriverà).
+  const addingAnother = (mode === "new" && !FOLDER_LIMIT_ENFORCED) || Boolean(moveMemoryId);
 
   const [checking, setChecking] = useState(true);
   const [ownedKinds, setOwnedKinds] = useState<ReadonlySet<string>>(() => new Set());

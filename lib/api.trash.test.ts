@@ -169,6 +169,7 @@ describe("restore", () => {
     results = [
       { data: [] }, // fetchFolders (live folders, for priority)
       { data: { id: "fOld", deleted_at: "2026-08-30T09:00:00Z" } }, // trashed same-kind lookup
+      {}, // stale subfolders cleanup
       { data: {
         id: "fOld", user_id: "u1", kind: "es", name: "Nuovo nome", priority: 1,
         color: null, icon: null, paused: false, deleted_at: null,
@@ -177,9 +178,19 @@ describe("restore", () => {
     ];
     const folder = await createFolder("u1", { kind: "es", name: "Nuovo nome", itemTypes: [] });
     expect(folder.id).toBe("fOld");
-    // NO builder anywhere may issue a row delete: the old memories must keep
-    // their own 24h window in the trash.
-    for (const l of log) expect(l.calls.map(([n]) => n)).not.toContain("delete");
+    // The old MEMORIES keep their 24h window (no delete on memories/folders);
+    // the old SECTIONS instead die with the revive — the "new" folder must
+    // not inherit phantom chips that eat the max-3 budget.
+    for (const l of log) {
+      if (l.table === "subfolders") continue;
+      expect(l.calls.map(([n]) => n)).not.toContain("delete");
+    }
+    const subCleanup = log.find((l) => l.table === "subfolders" && l.calls.some(([n]) => n === "delete"));
+    expect(subCleanup).toBeDefined();
+    expect(subCleanup!.calls.filter(([n]) => n === "eq").map(([, a]) => a)).toContainEqual([
+      "folder_id",
+      "fOld",
+    ]);
     const resurrect = log.find((l) => l.table === "folders" && l.calls.some(([n]) => n === "update"));
     expect(resurrect).toBeDefined();
     const payload = resurrect!.calls.filter(([n]) => n === "update").map(([, a]) => a)[0][0] as Record<string, unknown>;

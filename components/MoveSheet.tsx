@@ -64,6 +64,7 @@ export function MoveSheet({
   useEffect(() => {
     if (visible) {
       setFolders(null);
+      setBusy(false); // il foglio resta montato: senza reset restava disabilitato
       void load();
     }
   }, [visible, load]);
@@ -77,6 +78,8 @@ export function MoveSheet({
     } catch (e) {
       reportError("move-sheet/move", e);
       showToast(t("move.failed"));
+    } finally {
+      // Sempre: il componente sopravvive alla chiusura (prop visible).
       setBusy(false);
     }
   };

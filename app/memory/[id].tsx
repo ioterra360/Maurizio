@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Alert,
   KeyboardAvoidingView,
@@ -12,7 +12,7 @@ import {
 } from "react-native";
 import { FolderInput, Trash2 } from "lucide-react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { router, useLocalSearchParams } from "expo-router";
+import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 
 import { MascotLoader } from "@/components/MascotLoader";
 import { PrimaryButton } from "@/components/PrimaryButton";
@@ -99,6 +99,22 @@ export default function MemoryDetailScreen() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  // Ricarica al ritorno sullo schermo (es. dal flusso "Nuova cartella…" del
+  // MoveSheet, che sposta la parola da choose-topic): senza, la scheda
+  // mostrava sezione/cartella vecchie e un secondo Sposta poteva riportare
+  // la parola indietro (review 2026-08-31). Il primo focus (mount) è già
+  // coperto dall'effect qui sopra.
+  const firstFocusRef = useRef(true);
+  useFocusEffect(
+    useCallback(() => {
+      if (firstFocusRef.current) {
+        firstFocusRef.current = false;
+        return;
+      }
+      void load();
+    }, [load]),
+  );
 
   const dirty = memory !== null && notes.trim() !== (memory.notes ?? "").trim();
 

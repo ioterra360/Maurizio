@@ -506,9 +506,14 @@ export default function FolderDetailScreen() {
             })
             .catch((e) => {
               reportError("folder/subfolder-create", e);
+              const code = (e as { code?: string })?.code ?? "";
               const msg = e instanceof Error ? e.message : String(e);
               showToast(
-                msg.includes("limit") ? t("subfolders.limit") : t("subfolders.failed"),
+                code === "23505" || msg.includes("duplicate")
+                  ? t("subfolders.duplicate")
+                  : msg.includes("limit")
+                    ? t("subfolders.limit")
+                    : t("subfolders.failed"),
               );
             })
             .finally(() => setSubSaving(false));
