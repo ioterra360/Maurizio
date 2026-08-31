@@ -136,6 +136,42 @@ export type FolderWithStats = Folder & {
 };
 
 // ============================================================================
+// Subfolder (sezioni dentro una cartella — migration 20260831010000)
+// ============================================================================
+
+export type SubfolderRow = {
+  id: string;
+  user_id: string;
+  folder_id: string;
+  name: string;
+  position: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type Subfolder = {
+  id: string;
+  userId: string;
+  folderId: string;
+  name: string;
+  position: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export function mapSubfolder(row: SubfolderRow): Subfolder {
+  return {
+    id: row.id,
+    userId: row.user_id,
+    folderId: row.folder_id,
+    name: row.name,
+    position: row.position,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+// ============================================================================
 // Memory
 // ============================================================================
 
@@ -143,6 +179,8 @@ export type MemoryRow = {
   id: string;
   user_id: string;
   folder_id: string;
+  /** Sezione della cartella (subfolders.id); null = radice. */
+  subfolder_id?: string | null;
   term: string;
   reading: string | null;
   definition: string;
@@ -166,6 +204,8 @@ export type Memory = {
   id: string;
   userId: string;
   folderId: string;
+  /** Sezione della cartella; null = radice. */
+  subfolderId: string | null;
   term: string;
   reading: string | null;
   definition: string;
@@ -192,6 +232,7 @@ export function mapMemory(row: MemoryRow): Memory {
     id: row.id,
     userId: row.user_id,
     folderId: row.folder_id,
+    subfolderId: row.subfolder_id ?? null,
     term: row.term,
     reading: row.reading,
     definition: row.definition,

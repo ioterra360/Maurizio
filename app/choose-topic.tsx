@@ -18,7 +18,7 @@ import { PrimaryButton } from "@/components/PrimaryButton";
 import { SectionLabel } from "@/components/SectionLabel";
 import { Tappable } from "@/components/Tappable";
 import { TopBar } from "@/components/TopBar";
-import { countFolders, createFolder, fetchFolders } from "@/lib/api";
+import { countFolders, createFolder, fetchFolders, moveMemory } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
 import {
   FOLDER_LIMIT_ENFORCED,
@@ -78,7 +78,7 @@ export default function ChooseTopicScreen() {
   const viewAsUser = useAuthStore((s) => s.viewAsUser);
   const adminOnly = user?.role === "admin" && !viewAsUser;
   const showToast = useUIStore((s) => s.showToast);
-  const { mode } = useLocalSearchParams<{ mode?: string }>();
+  const { mode, moveMemoryId } = useLocalSearchParams<{ mode?: string; moveMemoryId?: string }>();
   const addingAnother = mode === "new" && !FOLDER_LIMIT_ENFORCED;
 
   const [checking, setChecking] = useState(true);
@@ -153,7 +153,19 @@ export default function ChooseTopicScreen() {
     setSaving(true);
     try {
       const folder = await createFolder(user.id, folderInputFromChoice(choice));
-      showToast(t("chooseTopic.folderReadyToast", { name: folder.name }));
+      // Arrivati dal foglio "Sposta" (MoveSheet): la parola segue subito la
+      // cartella appena creata; un fallimento non blocca la creazione.
+      if (moveMemoryId) {
+        try {
+          await moveMemory(moveMemoryId, { folderId: folder.id });
+          showToast(t("move.moved", { name: folder.name }));
+        } catch (moveErr) {
+          reportError("choose-topic/move-memory", moveErr);
+          showToast(t("move.failed"));
+        }
+      } else {
+        showToast(t("chooseTopic.folderReadyToast", { name: folder.name }));
+      }
       if (addingAnother && router.canGoBack()) {
         router.back(); // Knowledge refetches on focus
       } else {

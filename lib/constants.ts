@@ -18,6 +18,13 @@ import type { LayerKey } from "@/theme/tokens";
 export const TEMPLATE_KINDS = ["jp", "medicine", "es", "law"] as const;
 export type TemplateKind = (typeof TEMPLATE_KINDS)[number];
 
+/**
+ * Sottocartelle per cartella (Maurizio 2026-08-31: "max 3, modalità pro").
+ * Per ora il limite vale per tutti, come FOLDER_LIMIT_ENFORCED: quando
+ * arriverà RevenueCat diventerà un vantaggio Premium.
+ */
+export const SUBFOLDERS_MAX = 3;
+
 /** Kind slug of a user-named folder ("Altro…" at onboarding). */
 export const CUSTOM_FOLDER_KIND = "custom" as const;
 

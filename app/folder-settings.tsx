@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
-import { Modal, ScrollView, Text, TextInput, View } from "react-native";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Alert, Modal, ScrollView, Text, TextInput, View } from "react-native";
+import { Layers, Plus, Trash2 } from "lucide-react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useLocalSearchParams } from "expo-router";
 
@@ -15,10 +16,18 @@ import { SettingsToggle } from "@/components/SettingsRow";
 import { Tappable } from "@/components/Tappable";
 import {
   countMemoriesInFolder,
+  createSubfolder,
   deleteFolder,
+  deleteSubfolder,
+  fetchSubfolders,
+  renameSubfolder,
   updateFolderName,
   updateFolderPaused,
 } from "@/lib/api";
+import { NamePromptModal } from "@/components/NamePromptModal";
+import { useAuthStore } from "@/lib/auth-store";
+import { SUBFOLDERS_MAX } from "@/lib/constants";
+import type { Subfolder } from "@/lib/mappers";
 import { useFolderDetail } from "@/lib/use-folders";
 import { useUIStore } from "@/lib/ui-store";
 import { reportError } from "@/lib/report-error";
@@ -41,7 +50,51 @@ export default function FolderSettingsScreen() {
     ? (params.kind as FolderKind)
     : null;
   const { folder, items, loading, refetch } = useFolderDetail(kind);
+  const user = useAuthStore((s) => s.user);
   const showToast = useUIStore((s) => s.showToast);
+  // Sottocartelle: elenco + modale nome (aggiungi/rinomina).
+  const [subfolders, setSubfolders] = useState<Subfolder[]>([]);
+  const [subModal, setSubModal] = useState<
+    { mode: "add" } | { mode: "rename"; target: Subfolder } | null
+  >(null);
+  const [subSaving, setSubSaving] = useState(false);
+  const settingsFolderId = folder?.id ?? null;
+  const loadSubfolders = useCallback(async () => {
+    if (!settingsFolderId) return;
+    try {
+      setSubfolders(await fetchSubfolders(settingsFolderId));
+    } catch (err) {
+      reportError("folder-settings/subfolders-load", err);
+    }
+  }, [settingsFolderId]);
+  useEffect(() => {
+    void loadSubfolders();
+  }, [loadSubfolders]);
+
+  const confirmDeleteSubfolder = (sub: Subfolder) => {
+    Alert.alert(
+      t("subfolders.deleteTitle", { name: sub.name }),
+      t("subfolders.deleteBody"),
+      [
+        { text: t("common.cancel"), style: "cancel" },
+        {
+          text: t("common.delete"),
+          style: "destructive",
+          onPress: () => {
+            deleteSubfolder(sub.id)
+              .then(() => {
+                showToast(t("subfolders.deleted"));
+                void loadSubfolders();
+              })
+              .catch((err) => {
+                reportError("folder-settings/subfolder-delete", err);
+                showToast(t("subfolders.failed"));
+              });
+          },
+        },
+      ],
+    );
+  };
   const [name, setName] = useState("");
   const [saving, setSaving] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -260,6 +313,90 @@ export default function FolderSettingsScreen() {
           />
         </View>
 
+        {/* Sottocartelle */}
+        <View style={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 8 }}>
+          <SectionLabel>{t("subfolders.section")}</SectionLabel>
+        </View>
+        <View style={{ paddingHorizontal: 16, gap: 8 }}>
+          {subfolders.map((sub) => (
+            <Tappable
+              key={sub.id}
+              onPress={() => setSubModal({ mode: "rename", target: sub })}
+              accessibilityRole="button"
+              accessibilityLabel={t("subfolders.rowA11y", { name: sub.name })}
+              pressedOpacity={0.85}
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 12,
+                backgroundColor: colors.surface,
+                borderRadius: 14,
+                borderWidth: 1,
+                borderColor: colors.hairline,
+                paddingLeft: 14,
+                paddingRight: 8,
+                paddingVertical: 12,
+              }}
+            >
+              <Layers size={17} color={colors.navy} strokeWidth={1.9} />
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text
+                  numberOfLines={1}
+                  style={{
+                    fontFamily: FONT.semibold,
+                    fontSize: 15,
+                    color: colors.navy,
+                    letterSpacing: -0.15,
+                  }}
+                >
+                  {sub.name}
+                </Text>
+                <Text style={{ fontFamily: FONT.regular, fontSize: 12, color: colors.midGrey, marginTop: 2 }}>
+                  {t("subfolders.rowHint")}
+                </Text>
+              </View>
+              <Tappable
+                onPress={() => confirmDeleteSubfolder(sub)}
+                accessibilityRole="button"
+                accessibilityLabel={t("subfolders.deleteA11y", { name: sub.name })}
+                pressedOpacity={0.6}
+                style={{ padding: 10 }}
+              >
+                <Trash2 size={17} color={colors.danger} strokeWidth={1.9} />
+              </Tappable>
+            </Tappable>
+          ))}
+          {subfolders.length < SUBFOLDERS_MAX ? (
+            <Tappable
+              onPress={() => setSubModal({ mode: "add" })}
+              accessibilityRole="button"
+              accessibilityLabel={t("subfolders.add")}
+              pressedOpacity={0.7}
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 6,
+                paddingVertical: 12,
+                borderRadius: 14,
+                borderWidth: 1.2,
+                borderColor: colors.hairlineStrong,
+                borderStyle: "dashed",
+                backgroundColor: colors.warmWhite,
+              }}
+            >
+              <Plus size={15} color={colors.navy} strokeWidth={2.1} />
+              <Text style={{ fontFamily: FONT.semibold, fontSize: 13.5, color: colors.navy }}>
+                {t("subfolders.add")}
+              </Text>
+            </Tappable>
+          ) : (
+            <Text style={{ paddingHorizontal: 8, fontFamily: FONT.regular, fontSize: 12, color: colors.midGrey }}>
+              {t("subfolders.limit")}
+            </Text>
+          )}
+        </View>
+
         <View style={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 8 }}>
           <SectionLabel>{t("folderSettings.orderSection")}</SectionLabel>
         </View>
@@ -309,6 +446,41 @@ export default function FolderSettingsScreen() {
           </Tappable>
         </View>
       </ScrollView>
+
+      <NamePromptModal
+        visible={subModal !== null}
+        title={subModal?.mode === "rename" ? t("subfolders.renameTitle") : t("subfolders.addTitle")}
+        initialValue={subModal?.mode === "rename" ? subModal.target.name : ""}
+        placeholder={t("subfolders.namePlaceholder")}
+        saving={subSaving}
+        onClose={() => {
+          if (!subSaving) setSubModal(null);
+        }}
+        onSave={(name) => {
+          if (!subModal || subSaving || !user || !settingsFolderId) return;
+          setSubSaving(true);
+          const op =
+            subModal.mode === "rename"
+              ? renameSubfolder(subModal.target.name === name ? subModal.target.id : subModal.target.id, name)
+              : createSubfolder(user.id, settingsFolderId, name).then(() => undefined);
+          op
+            .then(() => {
+              showToast(
+                subModal.mode === "rename"
+                  ? t("subfolders.renamed")
+                  : t("subfolders.created", { name }),
+              );
+              setSubModal(null);
+              void loadSubfolders();
+            })
+            .catch((err) => {
+              reportError("folder-settings/subfolder-save", err);
+              const msg = err instanceof Error ? err.message : String(err);
+              showToast(msg.includes("limit") ? t("subfolders.limit") : t("subfolders.failed"));
+            })
+            .finally(() => setSubSaving(false));
+        }}
+      />
 
       {/* Conferma eliminazione — mostra quanti ricordi cascano col delete */}
       <Modal

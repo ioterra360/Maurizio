@@ -10,7 +10,7 @@ import {
   View,
   useWindowDimensions,
 } from "react-native";
-import { Trash2 } from "lucide-react-native";
+import { FolderInput, Trash2 } from "lucide-react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useLocalSearchParams } from "expo-router";
 
@@ -19,7 +19,8 @@ import { PrimaryButton } from "@/components/PrimaryButton";
 import { SectionLabel } from "@/components/SectionLabel";
 import { Tappable } from "@/components/Tappable";
 import { TopBar } from "@/components/TopBar";
-import { deleteMemory, fetchMemoryById, fetchReviewCount, updateMemoryNotes } from "@/lib/api";
+import { deleteMemory, fetchMemoryById, fetchReviewCount, fetchSubfolders, updateMemoryNotes } from "@/lib/api";
+import { MoveSheet } from "@/components/MoveSheet";
 import { longDate, relativeReviewed } from "@/lib/format";
 import { termFontSize, termLineHeight } from "@/lib/term-typography";
 import { useT } from "@/lib/i18n";
@@ -61,6 +62,9 @@ export default function MemoryDetailScreen() {
   const [saving, setSaving] = useState(false);
   const [savePressed, setSavePressed] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [moveOpen, setMoveOpen] = useState(false);
+  // Nome della sezione (sottocartella) del ricordo; null = radice o non caricato.
+  const [sectionName, setSectionName] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     if (!id) return;
@@ -77,6 +81,12 @@ export default function MemoryDetailScreen() {
       setMemory(m);
       setReviewCount(count);
       setNotes(m?.notes ?? "");
+      if (m?.subfolderId) {
+        const subs = await fetchSubfolders(m.folderId).catch(() => []);
+        setSectionName(subs.find((s2) => s2.id === m.subfolderId)?.name ?? null);
+      } else {
+        setSectionName(null);
+      }
       if (!m) setError(true);
     } catch (e) {
       reportError("memory-detail/fetch", e);
@@ -315,6 +325,7 @@ export default function MemoryDetailScreen() {
               }}
             >
               <MetaRow label={t("memory.addedOn")} value={longDate(memory.createdAt)} />
+              {sectionName ? <MetaRow label={t("memory.section")} value={sectionName} /> : null}
               {reviewCount !== null ? (
                 <MetaRow label={t("memory.reviewCount")} value={String(reviewCount)} />
               ) : null}
@@ -369,6 +380,32 @@ export default function MemoryDetailScreen() {
               <PrimaryButton label={t("memory.saveNotes")} onPress={save} loading={saving} disabled={!dirty} />
             </View>
 
+            {/* Sposta in un'altra cartella / sezione */}
+            <Tappable
+              onPress={() => setMoveOpen(true)}
+              disabled={deleting || saving}
+              accessibilityRole="button"
+              accessibilityLabel={t("move.cta")}
+              pressedOpacity={0.85}
+              containerStyle={{ marginTop: 12 }}
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 8,
+                height: 52,
+                borderRadius: radii.cta,
+                borderWidth: 1.5,
+                borderColor: colors.navy,
+                backgroundColor: colors.warmWhite,
+              }}
+            >
+              <FolderInput size={17} color={colors.navy} strokeWidth={2} />
+              <Text style={{ fontFamily: FONT.semibold, fontSize: 15.5, color: colors.navy }}>
+                {t("move.cta")}
+              </Text>
+            </Tappable>
+
             {/* Danger zone */}
             <Tappable
               onPress={confirmDelete}
@@ -397,6 +434,18 @@ export default function MemoryDetailScreen() {
           </ScrollView>
         </KeyboardAvoidingView>
       )}
+      {memory ? (
+        <MoveSheet
+          visible={moveOpen}
+          memory={memory}
+          onClose={() => setMoveOpen(false)}
+          onMoved={(destination) => {
+            setMoveOpen(false);
+            showToast(t("move.moved", { name: destination }));
+            void load();
+          }}
+        />
+      ) : null}
     </SafeAreaView>
   );
 }

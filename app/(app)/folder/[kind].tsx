@@ -1,7 +1,15 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ArrowUpDown, Plus, Repeat } from "lucide-react-native";
+
+import { NamePromptModal } from "@/components/NamePromptModal";
+import { createSubfolder, fetchSubfolders } from "@/lib/api";
+import { useAuthStore } from "@/lib/auth-store";
+import { reportError } from "@/lib/report-error";
+import { useUIStore } from "@/lib/ui-store";
+import { SUBFOLDERS_MAX } from "@/lib/constants";
+import type { Subfolder } from "@/lib/mappers";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 
 import { TopBar } from "@/components/TopBar";
@@ -35,7 +43,28 @@ export default function FolderDetailScreen() {
     ? (params.kind as FolderKind)
     : null;
   const { folder, items, loading, error, refetch } = useFolderDetail(kind);
+  const user = useAuthStore((s) => s.user);
+  const showToast = useUIStore((s) => s.showToast);
   const order = useFolderOrderStore((s) => s.order);
+  // Sezioni della cartella (sottocartelle): chips sotto i filtri di stato.
+  const [subfolders, setSubfolders] = useState<Subfolder[]>([]);
+  const [subFilter, setSubFilter] = useState<"all" | string>("all");
+  const [subModalOpen, setSubModalOpen] = useState(false);
+  const [subSaving, setSubSaving] = useState(false);
+  const folderId = folder?.id ?? null;
+  const loadSubfolders = useCallback(async () => {
+    if (!folderId) return;
+    try {
+      const subs = await fetchSubfolders(folderId);
+      setSubfolders(subs);
+      setSubFilter((cur) => (cur === "all" || subs.some((s) => s.id === cur) ? cur : "all"));
+    } catch (e) {
+      reportError("folder/subfolders-load", e);
+    }
+  }, [folderId]);
+  useEffect(() => {
+    void loadSubfolders();
+  }, [loadSubfolders]);
   const startSession = useReviewStore((s) => s.start);
   const [filter, setFilter] = useState<"all" | MemoryState>("all");
   // Ordinamento della lista, ricordato per cartella (lib/folder-sort-store).
@@ -43,20 +72,29 @@ export default function FolderDetailScreen() {
   const setSort = useFolderSortStore((s) => s.setSort);
   const [sortOpen, setSortOpen] = useState(false);
   const sortedItems = useMemo(() => sortMemories(items, sort), [items, sort]);
+  // Filtro per sezione PRIMA dell'adattatore di visualizzazione.
+  const sectionedItems = useMemo(
+    () =>
+      subFilter === "all"
+        ? sortedItems
+        : sortedItems.filter((m) => (m.subfolderId ?? null) === subFilter),
+    [sortedItems, subFilter],
+  );
 
   // Refetch on focus — the name can change in folder-settings, and the hook
   // itself only loads on mount. Runs before the early returns (hooks rule).
   useFocusEffect(
     useCallback(() => {
       refetch();
-    }, [refetch]),
+      void loadSubfolders();
+    }, [refetch, loadSubfolders]),
   );
 
   // Memory (api/db model) → FolderItem (UI/display model) adapter. Kept
   // inline so we can rip it out when ItemRow accepts Memory directly.
   const displayItems = useMemo<FolderItem[]>(
     () =>
-      sortedItems.map((m) => ({
+      sectionedItems.map((m) => ({
         id: m.id,
         front: m.term,
         reading: m.reading ?? undefined,
@@ -65,7 +103,7 @@ export default function FolderDetailScreen() {
         reviewed: relativeReviewed(m.lastReviewedAt),
         layer: layerFor(m.srs.repetitions, m.state) ?? undefined,
       })),
-    [sortedItems],
+    [sectionedItems],
   );
 
   const filtered = useMemo(() => {
@@ -327,6 +365,58 @@ export default function FolderDetailScreen() {
           />
         </ScrollView>
 
+        {/* Sezioni (sottocartelle) — max SUBFOLDERS_MAX per cartella. */}
+        {subfolders.length > 0 || subfolders.length < SUBFOLDERS_MAX ? (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ paddingHorizontal: 16, gap: 6, paddingBottom: 12 }}
+          >
+            {subfolders.length > 0 ? (
+              <FilterChip
+                label={t("subfolders.chipAll")}
+                count={items.length}
+                active={subFilter === "all"}
+                onPress={() => setSubFilter("all")}
+              />
+            ) : null}
+            {subfolders.map((s) => (
+              <FilterChip
+                key={s.id}
+                label={s.name}
+                count={items.filter((m) => (m.subfolderId ?? null) === s.id).length}
+                active={subFilter === s.id}
+                onPress={() => setSubFilter(s.id)}
+              />
+            ))}
+            {subfolders.length < SUBFOLDERS_MAX ? (
+              <Tappable
+                onPress={() => setSubModalOpen(true)}
+                accessibilityRole="button"
+                accessibilityLabel={t("subfolders.add")}
+                pressedOpacity={0.7}
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 5,
+                  height: 32,
+                  paddingHorizontal: 12,
+                  borderRadius: radii.filter,
+                  borderWidth: 1,
+                  borderColor: colors.hairlineStrong,
+                  borderStyle: "dashed",
+                  backgroundColor: colors.warmWhite,
+                }}
+              >
+                <Plus size={13} color={colors.navy} strokeWidth={2.2} />
+                <Text style={{ fontFamily: FONT.medium, fontSize: 13, color: colors.navy }}>
+                  {t("subfolders.add")}
+                </Text>
+              </Tappable>
+            ) : null}
+          </ScrollView>
+        ) : null}
+
         {/* Item list */}
         <View style={{ paddingHorizontal: 16, gap: 6 }}>
           {filtered.length === 0 ? (
@@ -395,6 +485,34 @@ export default function FolderDetailScreen() {
           setSortOpen(false);
         }}
         onClose={() => setSortOpen(false)}
+      />
+
+      <NamePromptModal
+        visible={subModalOpen}
+        title={t("subfolders.addTitle")}
+        placeholder={t("subfolders.namePlaceholder")}
+        saving={subSaving}
+        onClose={() => {
+          if (!subSaving) setSubModalOpen(false);
+        }}
+        onSave={(name) => {
+          if (!user || !folderId || subSaving) return;
+          setSubSaving(true);
+          createSubfolder(user.id, folderId, name)
+            .then(() => {
+              setSubModalOpen(false);
+              showToast(t("subfolders.created", { name }));
+              void loadSubfolders();
+            })
+            .catch((e) => {
+              reportError("folder/subfolder-create", e);
+              const msg = e instanceof Error ? e.message : String(e);
+              showToast(
+                msg.includes("limit") ? t("subfolders.limit") : t("subfolders.failed"),
+              );
+            })
+            .finally(() => setSubSaving(false));
+        }}
       />
     </SafeAreaView>
   );
