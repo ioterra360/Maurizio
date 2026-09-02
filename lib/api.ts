@@ -47,8 +47,11 @@ import { nextFolderPriority, type NewFolderInput } from "./folder-templates";
 import { isoFromRelativeLabel } from "./format";
 import { DEMO_DUE_COUNTS, PHASES_BY_LAYER, type LayerCounts } from "./queue";
 import type { LayerKey } from "@/theme/tokens";
-import { type UpdatedSrs } from "@/features/srs/types";
-import { firstReview } from "@/features/srs/phases";
+import {
+  firstReview,
+  type PhaseState,
+  type ReviewOutcome,
+} from "@/features/srs/phases";
 
 // ---------------------------------------------------------------------------
 // Profile
@@ -769,24 +772,26 @@ export async function completeReviewSession(
 }
 
 /**
- * Persist the scheduler's UpdatedSrs back to the memories row. Demo no-ops.
- * The mapping is straightforward — UpdatedSrs already lines up 1:1 with the
- * srs_* columns plus the lifecycle state.
+ * Persiste il risultato del motore a fasi. Le colonne srs_* non vengono più
+ * toccate: restano al valore che avevano finché una migrazione successiva
+ * non le rimuove. Demo: no-op.
  */
-export async function applyScheduledUpdate(
+export async function applyPhaseUpdate(
   memoryId: string,
-  srs: UpdatedSrs,
+  next: PhaseState & { lifecycle: "active" | "fading" },
+  result: ReviewOutcome,
 ): Promise<void> {
   if (isDemoMode) return;
   const { error } = await supabase
     .from("memories")
     .update({
-      srs_interval_days: srs.intervalDays,
-      srs_ease_factor: srs.easeFactor,
-      srs_repetitions: srs.repetitions,
-      last_reviewed_at: srs.lastReviewedAt,
-      next_review_at: srs.nextReviewAt,
-      state: srs.state,
+      review_phase: next.phase,
+      review_window_end: next.reviewWindowEnd,
+      recovery_from: next.recoveryFrom,
+      next_review_at: next.nextReviewAt,
+      last_reviewed_at: next.lastReviewedAt,
+      last_result: result,
+      state: next.lifecycle,
     })
     .eq("id", memoryId);
   if (error) throw error;

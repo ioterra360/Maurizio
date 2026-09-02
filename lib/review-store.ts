@@ -3,7 +3,7 @@ import type { LayerKey } from "@/theme/tokens";
 
 import { useAuthStore } from "./auth-store";
 import {
-  applyScheduledUpdate,
+  applyPhaseUpdate,
   completeReviewSession,
   fetchDueMemoriesByLayer,
   fetchFolders,
@@ -14,13 +14,13 @@ import { isDemoMode } from "./supabase";
 import { reportError } from "./report-error";
 import { t } from "@/lib/i18n";
 import { allocateByFolderPriority, toReviewCard, type LayerCounts } from "./queue";
-import { update as scheduleUpdate } from "@/features/srs/scheduler";
 import {
-  initialSrsState,
-  type LayerOutcome,
-  type SrsState,
-  type UpdatedSrs,
-} from "@/features/srs/types";
+  applyReview,
+  firstReview,
+  type PhaseState,
+  type ReviewOutcome,
+} from "@/features/srs/phases";
+import { type SrsState } from "@/features/srs/types";
 import { FOLDER_KINDS, type FolderKind, type ReviewResponse } from "./constants";
 
 export type ReviewCard = {
@@ -42,6 +42,8 @@ export type ReviewCard = {
    * build { ...memory.srs, nextReviewAt, lastReviewedAt }.
    */
   srs?: SrsState;
+  /** Stato di fase della scala di Maurizio. Le carte demo lo omettono. */
+  phase?: PhaseState;
 };
 
 /**
@@ -198,30 +200,16 @@ type PendingItem = {
 };
 
 /**
- * Translate a screen response + the layer the card is currently on into the
- * LayerOutcome the scheduler understands. Answers are binary on every layer
- * (Maurizio, 2026-08-29: the intermediate "struggled" is out for now — it
- * comes back later with its own timing and only for item types where a
- * partial recall makes sense). Mapping per docs/SRS.md:
- *   scan:          remembered → remember (q=4),   forgot → show (q=2)
- *   reinforcement: remembered → continue (q=4),   forgot → again (q=1)
- *   focus:         remembered → remembered (q=5), forgot → forgot (q=0)
+ * Le risposte sono binarie su ogni livello (Maurizio, 2026-08-29) e il
+ * motore a fasi le consuma direttamente: "remembered" | "forgot" È già
+ * l'esito — non serve più la traduzione in quality SM-2. Il livello non
+ * influenza l'avanzamento: conta solo la fase della carta.
  */
-function toLayerOutcome(layer: LayerKey, response: "remembered" | "forgot"): LayerOutcome {
-  switch (layer) {
-    case "scan":
-      return { layer: "scan", outcome: response === "remembered" ? "remember" : "show" };
-    case "reinforcement":
-      return { layer: "reinforcement", outcome: response === "remembered" ? "continue" : "again" };
-    case "focus":
-      return { layer: "focus", outcome: response === "remembered" ? "remembered" : "forgot" };
-  }
-}
 
 /**
  * Static demo card ids look like `demo-scan-0`; they are NOT row ids in
  * public.memories. Until Phase 3D swaps the decks for fetchDueMemoriesByLayer
- * results, we must NOT send these to applyScheduledUpdate or recordReviewItem
+ * results, we must NOT send these to applyPhaseUpdate or recordReviewItem
  * in remote mode — Postgres would reject the FK and the fire-and-forget
  * catch would silently swallow it. Returns true when the id corresponds to a
  * real memories row.
@@ -280,8 +268,8 @@ type ReviewState = {
    * though the user already finished the layer.
    */
   pendingSessionComplete: Counts | null;
-  /** SRS state per card id — initialized lazily and updated in place. */
-  srsByCard: Record<string, SrsState>;
+  /** Stato di fase per card id — inizializzato pigramente e aggiornato in place. */
+  phaseByCard: Record<string, PhaseState>;
   start: (
     layer: LayerKey,
     mode: "flow" | "single",
@@ -354,8 +342,11 @@ let pendingScanPersist: {
 /** Ultima risposta Scan — bersaglio del possibile amend nel flash. */
 let lastScanAnswer: {
   cardId: string;
-  prior: SrsState;
-  persist: (finalResponse: ReviewResponse, finalSrs: UpdatedSrs) => void;
+  prior: PhaseState;
+  persist: (
+    finalResponse: ReviewOutcome,
+    finalPhase: PhaseState & { lifecycle: "active" | "fading" },
+  ) => void;
 } | null = null;
 
 function clearPendingScanPersist(flush = true) {
@@ -569,7 +560,7 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
   pendingSessionLayer: null,
   pendingItems: [],
   pendingSessionComplete: null,
-  srsByCard: {},
+  phaseByCard: {},
 
   /**
    * Begin a session from layer 0. CALLERS BEWARE: this resets totals.
@@ -645,7 +636,7 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
       pendingItems: [],
       pendingSessionComplete: null,
       layerTotals: EMPTY_COUNTS,
-      // Cumulative `totals`, `mode`, `srsByCard`, `results`, `layerCaps` and
+      // Cumulative `totals`, `mode`, `phaseByCard`, `results`, `layerCaps` and
       // `budgetCap` are preserved across layers — mode in particular MUST
       // survive so an ensureSession() race can't downgrade an in-progress
       // flow to single, and results/caps feed the final recap + next decks.
@@ -689,8 +680,10 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
     // setState below and the persistence completes in the background. Any
     // failure is logged in __DEV__; production telemetry comes in Phase 4.
     const userId = useAuthStore.getState().user?.id;
-    const prior = state.srsByCard[card.id] ?? card.srs ?? initialSrsState();
-    const updated = scheduleUpdate(prior, toLayerOutcome(state.layer, response));
+    // Le carte demo non hanno una fase persistita: firstReview() dà loro uno
+    // stato sintetico coerente (il persist per gli id demo è comunque no-op).
+    const prior = state.phaseByCard[card.id] ?? card.phase ?? firstReview();
+    const updated = applyReview(prior, response);
     const entry: RecapEntry = {
       id: card.id,
       term: card.front,
@@ -700,7 +693,7 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
       revealed: opts.revealed ?? false,
     };
     set({
-      srsByCard: { ...state.srsByCard, [card.id]: updated },
+      phaseByCard: { ...state.phaseByCard, [card.id]: updated },
       results: [...state.results, entry],
     });
     // Only persist when we have a real memories row to point at. Static
@@ -713,10 +706,13 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
     const canPersist = !!userId && isPersistableMemoryId(card.id);
     const targetSessionId = state.sessionId;
     const targetSessionPromise = currentSessionPromise;
-    const persist = (finalResponse: ReviewResponse, finalSrs: UpdatedSrs) => {
+    const persist = (
+      finalResponse: ReviewOutcome,
+      finalPhase: PhaseState & { lifecycle: "active" | "fading" },
+    ) => {
       if (!canPersist || !userId) return;
-      void applyScheduledUpdate(card.id, finalSrs).catch((e) => {
-        reportError("review/apply-scheduled-update", e, { cardId: card.id });
+      void applyPhaseUpdate(card.id, finalPhase, finalResponse).catch((e) => {
+        reportError("review/apply-phase", e, { cardId: card.id });
       });
       const write = (sid: string) =>
         void recordReviewItem({
@@ -791,7 +787,7 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
     const { cardId, prior, persist } = lastScanAnswer;
     lastScanAnswer = null;
     const s = get();
-    const corrected = scheduleUpdate(prior, toLayerOutcome("scan", "forgot"));
+    const corrected = applyReview(prior, "forgot");
     // remembered → forgot: sposta i contatori e correggi l'ultima entry.
     const fix = (c: Counts): Counts => ({
       ...c,
@@ -806,7 +802,7 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
     set({
       totals: fix(s.totals),
       layerTotals: fix(s.layerTotals),
-      srsByCard: { ...s.srsByCard, [cardId]: corrected },
+      phaseByCard: { ...s.phaseByCard, [cardId]: corrected },
       results,
     });
     // Stessa closure della risposta originale: stesso bersaglio di sessione,
@@ -884,7 +880,7 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
       pendingSessionLayer: null,
       pendingItems: [],
       pendingSessionComplete: null,
-      srsByCard: {},
+      phaseByCard: {},
     });
   },
 }));

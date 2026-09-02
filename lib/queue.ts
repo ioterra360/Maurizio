@@ -4,7 +4,7 @@
  * (lib/queue.test.ts).
  */
 import type { LayerKey } from "@/theme/tokens";
-import type { Memory } from "./mappers";
+import { toPhaseState, type Memory } from "./mappers";
 import type { ReviewCard } from "./review-store";
 import {
   PHASE_SPEC,
@@ -160,5 +160,6 @@ export function toReviewCard(
     folder: folderName,
     folderKind,
     srs: { ...m.srs, nextReviewAt: m.nextReviewAt, lastReviewedAt: m.lastReviewedAt },
+    phase: toPhaseState(m),
   };
 }
