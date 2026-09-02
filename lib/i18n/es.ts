@@ -805,6 +805,11 @@ export const es: Record<keyof typeof it, string> = {
   // ---- settings ------------------------------------------------------------
   "settings.aboutSection": "Información",
   "settings.accountDeletedToast": "Eliminación iniciada: tienes 72 horas para cancelarla volviendo a entrar.",
+  "settings.appearanceSection": "Aspecto",
+  "settings.themeDark": "Oscuro",
+  "settings.themeHint": "Cambia al instante. «Default» seguirá el tema del teléfono en una próxima actualización de la tienda.",
+  "settings.themeLight": "Claro",
+  "settings.themeSystem": "Default",
   "settings.backToAdmin": "Volver al panel de admin",
   "settings.backToAdminHint": "Estás usando la app como usuario con tu cuenta de admin.",
   "settings.calmMode": "Modo calma",

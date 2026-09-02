@@ -30,6 +30,7 @@ import {
 
 import { useAuthStore } from "@/lib/auth-store";
 import { useLocaleStore, useT } from "@/lib/i18n";
+import { useThemeStore, useColors } from "@/theme/theme-store";
 import { parseDevSignOutToken } from "@/lib/auth-links";
 import { SUPPORT_EMAIL } from "@/lib/constants";
 import { reportError } from "@/lib/report-error";
@@ -246,9 +247,12 @@ function RootLayout() {
       } catch (err) {
         reportError("root/initial-url", err);
       }
-      // Locale first (a few ms from AsyncStorage) so the first frame is
-      // already in the user's chosen language, then auth.
-      await useLocaleStore.getState().hydrate();
+      // Locale + tema per primi (pochi ms da AsyncStorage) così il primo
+      // frame è già nella lingua E nel tema scelti, poi auth.
+      await Promise.all([
+        useLocaleStore.getState().hydrate(),
+        useThemeStore.getState().hydrate(),
+      ]);
       hydrate();
     })();
   }, [hydrate, receiveAuthLink]);
@@ -312,17 +316,20 @@ function RootLayout() {
     }
   }, [fontsLoaded, fontError, hydrated]);
 
+  const scheme = useThemeStore((st) => st.scheme);
+  const themeColors = useColors();
+
   if (!(fontsLoaded || fontError) || !hydrated) return null;
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
-        <StatusBar style="dark" />
+        <StatusBar style={scheme === "dark" ? "light" : "dark"} />
         <View style={{ flex: 1 }} onLayout={onRootLayout}>
           <Stack
             screenOptions={{
               headerShown: false,
-              contentStyle: { backgroundColor: colors.canvas },
+              contentStyle: { backgroundColor: themeColors.canvas },
             }}
           >
             <Stack.Screen
@@ -335,7 +342,7 @@ function RootLayout() {
                 // animation looks identical on Android and insets correctly.
                 presentation: Platform.OS === "ios" ? "modal" : "card",
                 animation: "slide_from_bottom",
-                contentStyle: { backgroundColor: colors.warmWhite },
+                contentStyle: { backgroundColor: themeColors.warmWhite },
               }}
             />
             <Stack.Screen
@@ -344,7 +351,7 @@ function RootLayout() {
                 // Same sheet treatment as Add (see above for the Android note).
                 presentation: Platform.OS === "ios" ? "modal" : "card",
                 animation: "slide_from_bottom",
-                contentStyle: { backgroundColor: colors.warmWhite },
+                contentStyle: { backgroundColor: themeColors.warmWhite },
               }}
             />
           </Stack>

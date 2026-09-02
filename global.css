@@ -1,3 +1,64 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/*
+ * Variabili di tema (2026-09-02): i colori nominati di tailwind.config.js
+ * puntano a queste. Il tema si decide con colorScheme.set() da
+ * theme/theme-store.ts (darkMode: "class"), così le className flippano
+ * insieme agli stili inline di useColors() senza toccare i call site.
+ * I valori sono gli stessi di theme/palettes.ts — cambiali INSIEME.
+ */
+:root {
+  --mk-text-primary: #1A2C4F;
+  --mk-text-secondary: #8A8A88;
+  --mk-accent: #1A2C4F;
+  --mk-on-accent: #FAF8F4;
+  --mk-navy-soft: #243C6B;
+  --mk-canvas: #F5F3EF;
+  --mk-bg-screen: #FAF8F4;
+  --mk-surface: #FFFFFF;
+  --mk-placeholder: #B5B3AE;
+  --mk-hairline: rgba(26, 44, 79, 0.08);
+  --mk-hairline-strong: rgba(26, 44, 79, 0.14);
+  --mk-divider: #EFEDE7;
+  --mk-dot-idle: #DCDAD3;
+  --mk-scan: #6DA8E5;
+  --mk-reinforcement: #9B8CE8;
+  --mk-focus: #1A2C4F;
+  --mk-active: #3EC07B;
+  --mk-fading: #F5A89C;
+  --mk-archived: #9C9C95;
+  --mk-danger: #B04A38;
+  --mk-danger-soft: #FDEEEA;
+  --mk-tag-user: #EDF0F6;
+  --mk-tag-pro: #EEEAFB;
+  --mk-tag-pro-text: #5A4DB1;
+}
+
+.dark:root {
+  --mk-text-primary: #EDEFF4;
+  --mk-text-secondary: #8E96A8;
+  --mk-accent: #3B6BF5;
+  --mk-on-accent: #FFFFFF;
+  --mk-navy-soft: #C6CDE0;
+  --mk-canvas: #08090C;
+  --mk-bg-screen: #0E1015;
+  --mk-surface: #171A22;
+  --mk-placeholder: #5C6270;
+  --mk-hairline: rgba(255, 255, 255, 0.08);
+  --mk-hairline-strong: rgba(255, 255, 255, 0.14);
+  --mk-divider: #23262F;
+  --mk-dot-idle: #2A2E3A;
+  --mk-scan: #7FB4E9;
+  --mk-reinforcement: #A89BEF;
+  --mk-focus: #8FA6D9;
+  --mk-active: #4CCB8A;
+  --mk-fading: #F0A091;
+  --mk-archived: #8B8B84;
+  --mk-danger: #E2705A;
+  --mk-danger-soft: #2A1714;
+  --mk-tag-user: #1D2330;
+  --mk-tag-pro: #241F3D;
+  --mk-tag-pro-text: #B9AEF5;
+}

@@ -1,61 +1,31 @@
 /**
  * Memika design tokens
  *
- * Source of truth: _design_drop/memika/project/Memika App.html (editorial direction).
- * Mirrors tailwind.config.js so non-NativeWind consumers (e.g. SVG, Reanimated)
- * can reference identical values.
+ * Dal 2026-09-02 i valori vivono in theme/palettes.ts (chiaro + scuro) e i
+ * componenti li leggono con useColors() / useThemeTokens()
+ * (theme/theme-store.ts) così seguono il cambio tema al volo.
+ *
+ * Gli export statici qui sotto sono la TAVOLOZZA CHIARA e restano per:
+ *   1. il codice non ancora convertito all'hook (rende sempre in chiaro);
+ *   2. i default a livello di modulo dove un hook non può girare.
+ * NON aggiungere nuovi consumi statici: usa gli hook.
+ *
+ * FONT e radii non dipendono dal tema e restano qui.
  */
 
-export const colors = {
-  navy: "#1A2C4F",
-  /** Softened navy — example/secondary text in the review flow. */
-  navySoft: "#243C6B",
-  canvas: "#F5F3EF",
-  warmWhite: "#FAF8F4",
-  surface: "#FFFFFF",
-  midGrey: "#8A8A88",
-  placeholder: "#B5B3AE",
-  hairline: "rgba(26,44,79,0.08)",
-  hairlineStrong: "rgba(26,44,79,0.14)",
-  divider: "#EFEDE7",
-  /** Idle (unfilled) review progress-dot grey. */
-  dotIdle: "#DCDAD3",
-  /** Switch track in the OFF state (Settings, admin moderation). */
-  switchTrackOff: "#D9D7D1",
-  // Layer colors (Scan → Reinforcement → Focus, locked order).
-  scan: "#6DA8E5",
-  reinforcement: "#9B8CE8",
-  focus: "#1A2C4F",
-  // Memory states.
-  active: "#3EC07B",
-  fading: "#F5A89C",
-  /**
-   * Single canonical "archived" grey used everywhere: RetentionBar segment,
-   * StatBlock dot, FilterChip dot, HealthRow ring, ItemRow dot. Do NOT
-   * introduce another grey for this concept.
-   */
-  archived: "#9C9C95",
-  // Semantic.
-  danger: "#B04A38",
-  dangerSoft: "#FDEEEA",
-  // Cards: USER tag background + ADMIN tag background.
-  tagUserBg: "#EDF0F6",
-  // "Pro" plan tag — violet pill (bg) and strong violet text/dot.
-  tagProBg: "#EEEAFB",
-  tagProText: "#5A4DB1",
-} as const;
+import { light } from "./palettes";
+
+export { useColors, useThemeStore, useThemeTokens, currentTokens } from "./theme-store";
+export type { ThemeColors, ThemeScheme, ThemeTokens } from "./palettes";
+
+export const colors = light.colors;
 
 /**
  * Cross-domain aliases. The mockup reuses semantic colors as plain accents
  * (e.g. the green-checkmark on Complete uses the "active" hex). Use these
  * names when the meaning isn't the semantic role.
  */
-export const palette = {
-  green: colors.active,
-  peach: colors.fading,
-  violet: colors.reinforcement,
-  blue: colors.scan,
-} as const;
+export const palette = light.palette;
 
 export const radii = {
   tag: 6,
@@ -76,56 +46,26 @@ export const radii = {
  * term in review screens, layer pip backgrounds in onboarding, and
  * handoff next-layer hero. Kept centralized so the three tints can't drift.
  */
-export const layerTint = {
-  scan: "#E6F0FA",
-  reinforcement: "#F1EEFC",
-  focus: "#EDF0F6",
-  /** Scan reveal panel — paler blue than the pill background. */
-  scanReveal: "#EDF4FB",
-} as const;
+export const layerTint = light.layerTint;
 
 /**
- * Per-folder identity tints — from the mockup FolderGlyph
- * (_design_drop/memika/project/ui.jsx). Keyed by folder kind slug.
- * Also used by the admin recall-by-folder chart track.
+ * Per-folder identity tints — legacy (le cartelle nuove portano l'emoji e
+ * usano la tinta neutra `custom`). Also used by the admin recall chart.
  */
-export const folderTint = {
-  jp: "#FCE9E9",
-  es: "#FDF1E0",
-  medicine: "#E8F5EE",
-  law: "#EEEAFB",
-  /** Custom (user-named) folder — neutral warm tint. */
-  custom: "#F1EFE9",
-} as const satisfies Record<"jp" | "es" | "medicine" | "law" | "custom", string>;
+export const folderTint = light.folderTint;
 
 /**
  * Memory lifecycle status tints — used by ItemRow, HealthRow and any
- * pill/chip that visualises an active/fading/archived state. Centralizing
- * the bg/text pair prevents the three palettes from drifting across
- * surfaces.
+ * pill/chip that visualises an active/fading/archived state.
  */
-export const statusTint = {
-  active:   { bg: "#E7F5EE", text: "#1F8552" },
-  fading:   { bg: "#FDEEEA", text: "#A65B4A" },
-  archived: { bg: "#EFEDE7", text: "#7A7975" },
-} as const;
+export const statusTint = light.statusTint;
 
-/**
- * Admin moderation severity tints. HIGH and LOW reuse statusTint.fading /
- * statusTint.archived directly; MED is the mockup's pale-peach pair
- * (mobile-admin.jsx), named here so it isn't re-hardcoded inline.
- */
-export const severityTint = {
-  med: { bg: "#FDF2EA", text: "#A65B4A" },
-} as const;
+/** Admin moderation severity tints. */
+export const severityTint = light.severityTint;
 
-export const layer = {
-  scan: { color: colors.scan, label: "Scan", icon: "Radar" },
-  reinforcement: { color: colors.reinforcement, label: "Reinforcement", icon: "Repeat" },
-  focus: { color: colors.focus, label: "Focus", icon: "Target" },
-} as const;
+export const layer = light.layer;
 
-export type LayerKey = keyof typeof layer;
+export type LayerKey = keyof typeof light.layer;
 
 /** Inter font family literals — wrap to avoid string typos at call sites. */
 export const FONT = {

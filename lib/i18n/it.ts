@@ -805,6 +805,11 @@ export const it = {
   // ---- settings ------------------------------------------------------------
   "settings.aboutSection": "Informazioni",
   "settings.accountDeletedToast": "Eliminazione avviata: hai 72 ore per annullarla riaccedendo.",
+  "settings.appearanceSection": "Aspetto",
+  "settings.themeDark": "Scuro",
+  "settings.themeHint": "Cambia subito. «Default» seguirà il tema del telefono da un prossimo aggiornamento dello store.",
+  "settings.themeLight": "Chiaro",
+  "settings.themeSystem": "Default",
   "settings.backToAdmin": "Torna al pannello admin",
   "settings.backToAdminHint": "Stai usando l'app come utente con il tuo account admin.",
   "settings.calmMode": "Modalità calma",

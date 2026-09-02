@@ -19,6 +19,8 @@ import { HeaderHero } from "@/components/HeaderHero";
 import { InitialsAvatar } from "@/components/FolderTile";
 import { SectionLabel } from "@/components/SectionLabel";
 import { useLocaleStore, useT, type LocalePreference, type TKey } from "@/lib/i18n";
+import { useThemeStore } from "@/theme/theme-store";
+import type { ThemePreference } from "@/theme/theme-store";
 import { SettingsRow, SettingsToggle } from "@/components/SettingsRow";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { GhostButton } from "@/components/GhostButton";
@@ -371,6 +373,14 @@ export default function SettingsScreen() {
           </>
         )}
 
+        {/* Aspetto — Default (telefono) / Chiaro / Scuro (2026-09-02). */}
+        <View style={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 8 }}>
+          <SectionLabel>{tr("settings.appearanceSection")}</SectionLabel>
+        </View>
+        <View style={{ paddingHorizontal: 16 }}>
+          <ThemePicker />
+        </View>
+
         {/* Language — device language by default, forced from here. */}
         <View style={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 8 }}>
           <SectionLabel>{tr("settings.languageSection")}</SectionLabel>
@@ -683,6 +693,69 @@ function DangerCard({
         </Text>
       </View>
     </Tappable>
+  );
+}
+
+/**
+ * Tre pillole: Default (telefono) / Chiaro / Scuro. Stesso pattern del
+ * LanguagePicker: il confronto è sulla PREFERENZA, non sullo scheme
+ * risolto, così "Default" resta accesa anche quando risolve a chiaro.
+ */
+function ThemePicker() {
+  const { t: tr } = useT();
+  const preference = useThemeStore((s) => s.preference);
+  const setThemePreference = useThemeStore((s) => s.setPreference);
+  const options: ReadonlyArray<{ value: ThemePreference; label: string }> = [
+    { value: "system", label: tr("settings.themeSystem") },
+    { value: "light", label: tr("settings.themeLight") },
+    { value: "dark", label: tr("settings.themeDark") },
+  ];
+  return (
+    <View
+      className="rounded-card bg-surface"
+      style={{ padding: 12, borderWidth: 1, borderColor: colors.hairline, gap: 10 }}
+    >
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+        {options.map((o) => {
+          const on = preference === o.value;
+          return (
+            <Tappable
+              key={o.value}
+              onPress={() => void setThemePreference(o.value)}
+              accessibilityRole="button"
+              accessibilityLabel={o.label}
+              accessibilityState={{ selected: on }}
+              pressedOpacity={0.8}
+              containerStyle={{ flexGrow: 1, flexBasis: "30%" }}
+              style={{
+                alignItems: "center",
+                justifyContent: "center",
+                paddingVertical: 10,
+                paddingHorizontal: 12,
+                borderRadius: 999,
+                backgroundColor: on ? colors.accent : colors.warmWhite,
+                borderWidth: 1,
+                borderColor: on ? colors.accent : colors.hairlineStrong,
+              }}
+            >
+              <Text
+                numberOfLines={1}
+                style={{
+                  fontFamily: FONT.semibold,
+                  fontSize: 13,
+                  color: on ? colors.onAccent : colors.navy,
+                }}
+              >
+                {o.label}
+              </Text>
+            </Tappable>
+          );
+        })}
+      </View>
+      <Text style={{ fontFamily: FONT.regular, fontSize: 12.5, color: colors.midGrey }}>
+        {tr("settings.themeHint")}
+      </Text>
+    </View>
   );
 }
 

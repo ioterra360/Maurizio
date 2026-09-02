@@ -6,36 +6,44 @@ module.exports = {
     "./features/**/*.{js,jsx,ts,tsx}",
   ],
   presets: [require("nativewind/preset")],
+  // Tema deciso da theme/theme-store.ts via colorScheme.set() — non dal
+  // sistema: finché app.json porta userInterfaceStyle "light" l'OS non
+  // consegna mai il tratto scuro (si sblocca con la build nativa 3).
+  darkMode: "class",
   theme: {
     extend: {
       colors: {
-        // Memika editorial palette (mirrors theme/tokens.ts).
-        navy: "#1A2C4F",
-        "navy-soft": "#243C6B",
-        canvas: "#F5F3EF",
-        "warm-white": "#FAF8F4",
-        surface: "#FFFFFF",
-        "mid-grey": "#8A8A88",
-        placeholder: "#B5B3AE",
-        hairline: "rgba(26,44,79,0.08)",
-        "hairline-strong": "rgba(26,44,79,0.14)",
-        divider: "#EFEDE7",
-        "dot-idle": "#DCDAD3",
+        // Memika palette — variabili di global.css, tema chiaro/scuro
+        // (2026-09-02). I valori vivono in theme/palettes.ts + global.css.
+        navy: "var(--mk-text-primary)",
+        "navy-soft": "var(--mk-navy-soft)",
+        canvas: "var(--mk-canvas)",
+        "warm-white": "var(--mk-bg-screen)",
+        surface: "var(--mk-surface)",
+        "mid-grey": "var(--mk-text-secondary)",
+        placeholder: "var(--mk-placeholder)",
+        hairline: "var(--mk-hairline)",
+        "hairline-strong": "var(--mk-hairline-strong)",
+        divider: "var(--mk-divider)",
+        "dot-idle": "var(--mk-dot-idle)",
+        // Ruoli nuovi (spec 2026-09-02 §F1).
+        accent: "var(--mk-accent)",
+        "on-accent": "var(--mk-on-accent)",
         // Layers (Scan → Reinforcement → Focus, locked order).
-        scan: "#6DA8E5",
-        reinforcement: "#9B8CE8",
-        focus: "#1A2C4F",
+        scan: "var(--mk-scan)",
+        reinforcement: "var(--mk-reinforcement)",
+        focus: "var(--mk-focus)",
         // Memory states.
-        active: "#3EC07B",
-        fading: "#F5A89C",
-        archived: "#9C9C95",
+        active: "var(--mk-active)",
+        fading: "var(--mk-fading)",
+        archived: "var(--mk-archived)",
         // Semantic.
-        danger: "#B04A38",
-        "danger-soft": "#FDEEEA",
+        danger: "var(--mk-danger)",
+        "danger-soft": "var(--mk-danger-soft)",
         // Tag chip backgrounds.
-        "tag-user": "#EDF0F6",
-        "tag-pro": "#EEEAFB",
-        "tag-pro-text": "#5A4DB1",
+        "tag-user": "var(--mk-tag-user)",
+        "tag-pro": "var(--mk-tag-pro)",
+        "tag-pro-text": "var(--mk-tag-pro-text)",
       },
       fontFamily: {
         sans: ["Inter_400Regular", "system-ui", "sans-serif"],
