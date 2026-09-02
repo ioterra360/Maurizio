@@ -926,6 +926,31 @@ export async function fetchUpcomingCounts(
 }
 
 /**
+ * I ricordi con ripasso programmato in un intervallo — la lista del giorno
+ * nel calendario (tocco su una cella). Ordinati per orario di apertura.
+ */
+export async function fetchMemoriesInRange(
+  userId: string,
+  fromISO: string,
+  toISO: string,
+): Promise<Memory[]> {
+  if (isDemoMode) return [];
+  const paused = await pausedFolderIds(userId);
+  let q = supabase
+    .from("memories")
+    .select("*")
+    .eq("user_id", userId)
+    .is("deleted_at", null)
+    .neq("state", "archived")
+    .gte("next_review_at", fromISO)
+    .lte("next_review_at", toISO);
+  if (paused.length > 0) q = q.not("folder_id", "in", `(${paused.join(",")})`);
+  const { data, error } = await q.order("next_review_at").returns<MemoryRow[]>();
+  if (error) throw error;
+  return (data ?? []).map(mapMemory);
+}
+
+/**
  * Conteggio dei ricordi IN CODA ADESSO per cartella — la sezione "Oggi"
  * della Home (righe per cartella con "N ricordi"). Una sola query leggera
  * (solo folder_id) ridotta lato client; PostgREST non raggruppa.

@@ -1039,6 +1039,8 @@ export const es: Record<keyof typeof it, string> = {
   "today.reviewsToday": "Repasos de hoy",
   "today.heroCount_one": "{count} recuerdo por repasar",
   "today.heroCount_other": "{count} recuerdos por repasar",
+  "today.heroLabel_one": "recuerdo por repasar",
+  "today.heroLabel_other": "recuerdos por repasar",
   "today.heroFolders_one": "{count} carpeta",
   "today.heroFolders_other": "{count} carpetas",
   "today.startReviewHero": "Empezar el repaso",

@@ -1039,6 +1039,8 @@ export const en: Record<keyof typeof it, string> = {
   "today.reviewsToday": "Today's reviews",
   "today.heroCount_one": "{count} memory to review",
   "today.heroCount_other": "{count} memories to review",
+  "today.heroLabel_one": "memory to review",
+  "today.heroLabel_other": "memories to review",
   "today.heroFolders_one": "{count} folder",
   "today.heroFolders_other": "{count} folders",
   "today.startReviewHero": "Start the review",

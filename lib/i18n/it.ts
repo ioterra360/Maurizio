@@ -1039,6 +1039,8 @@ export const it = {
   "today.reviewsToday": "Ripassi di oggi",
   "today.heroCount_one": "{count} ricordo da ripassare",
   "today.heroCount_other": "{count} ricordi da ripassare",
+  "today.heroLabel_one": "ricordo da ripassare",
+  "today.heroLabel_other": "ricordi da ripassare",
   "today.heroFolders_one": "{count} cartella",
   "today.heroFolders_other": "{count} cartelle",
   "today.startReviewHero": "Inizia il ripasso",

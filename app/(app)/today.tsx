@@ -3,6 +3,7 @@ import { ScrollView, Text, View, useWindowDimensions } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useFocusEffect } from "expo-router";
+import { CalendarDays, ChevronRight, Clock } from "lucide-react-native";
 
 import { TimeBudgetChips } from "@/components/TimeBudgetChips";
 import { SectionLabel } from "@/components/SectionLabel";
@@ -10,9 +11,19 @@ import { LayerCard } from "@/components/LayerCard";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { ErrorCard } from "@/components/ErrorCard";
 import { Mascot } from "@/components/Mascot";
+import { FolderTile } from "@/components/FolderTile";
+import { Tappable } from "@/components/Tappable";
 import { useAuthStore } from "@/lib/auth-store";
 import { useReviewStore } from "@/lib/review-store";
-import { fetchDueCounts } from "@/lib/api";
+import {
+  fetchDueByFolder,
+  fetchDueCounts,
+  fetchOverdueCount,
+  fetchUpcomingCounts,
+} from "@/lib/api";
+import { useFoldersWithStats } from "@/lib/use-folders";
+import { applyFolderOrder, useFolderOrderStore } from "@/lib/folder-order-store";
+import { dayKeyOf, upcomingDays, type UpcomingDay } from "@/lib/upcoming";
 import { reportError } from "@/lib/report-error";
 import { isDemoMode } from "@/lib/supabase";
 import { useT } from "@/lib/i18n";
@@ -25,18 +36,27 @@ import {
 } from "@/lib/queue";
 import { REVIEW_LAYERS, TIME_BUDGETS } from "@/lib/constants";
 import { firstName, dateBadge, timeGreeting } from "@/lib/format";
-import { FONT, useColors } from "@/theme/tokens";
+import { FONT, radii, useThemeTokens } from "@/theme/tokens";
 
 /** Chiave AsyncStorage del budget scelto — la proposta del giorno sopravvive al riavvio. */
 const BUDGET_KEY = "memika.time-budget-minutes";
 
+/** Orizzonte della sezione "Prossimi ripassi" (il calendario copre oltre). */
+const UPCOMING_HORIZON_DAYS = 30;
+
 export default function TodayScreen() {
   const { t, tp } = useT();
-  const colors = useColors();
+  const { colors, layerTint } = useThemeTokens();
   const user = useAuthStore((s) => s.user);
   const display = firstName(user?.name ?? "", t("today.welcomeFallbackName"));
   const [budget, setBudget] = useState(15);
   const [dueCounts, setDueCounts] = useState<LayerCounts | null>(null);
+  // Le sezioni del mockup di Maurizio (2026-09-01): ritardatari, per-cartella
+  // e giorni futuri. Se falliscono non bloccano la card hero: la sezione
+  // semplicemente non compare e l'errore viene riportato.
+  const [overdue, setOverdue] = useState(0);
+  const [dueByFolder, setDueByFolder] = useState<Map<string, number>>(() => new Map());
+  const [upcoming, setUpcoming] = useState<UpcomingDay[]>([]);
   // Stato del fetch della coda: la schermata non deve mai restare su
   // "Sto preparando il piano…" con la CTA disabilitata per sempre — dopo
   // un errore (rete, timeout) mostra una card con "Riprova".
@@ -45,6 +65,9 @@ export default function TodayScreen() {
   // Sequenza monotona: solo l'ultima richiesta può scrivere lo stato, così
   // un retry veloce non viene sovrascritto da una risposta più lenta.
   const dueSeq = useRef(0);
+
+  const { folders } = useFoldersWithStats();
+  const order = useFolderOrderStore((s) => s.order);
 
   // Budget persistito: la scelta sopravvive al riavvio dell'app.
   useEffect(() => {
@@ -78,6 +101,24 @@ export default function TodayScreen() {
         setDueError(true);
         setDueLoading(false);
       });
+    // Sezioni secondarie: non condizionano la CTA né lo stato di errore.
+    fetchOverdueCount(user.id)
+      .then((n) => {
+        if (myId === dueSeq.current) setOverdue(n);
+      })
+      .catch((e) => reportError("today/overdue", e));
+    fetchDueByFolder(user.id)
+      .then((m) => {
+        if (myId === dueSeq.current) setDueByFolder(m);
+      })
+      .catch((e) => reportError("today/due-by-folder", e));
+    const from = new Date();
+    const to = new Date(from.getTime() + UPCOMING_HORIZON_DAYS * 24 * 60 * 60 * 1000);
+    fetchUpcomingCounts(user.id, from.toISOString(), to.toISOString())
+      .then((counts) => {
+        if (myId === dueSeq.current) setUpcoming(upcomingDays(counts, 2));
+      })
+      .catch((e) => reportError("today/upcoming", e));
   }, [user]);
 
   useFocusEffect(
@@ -112,14 +153,11 @@ export default function TodayScreen() {
   const counts = dueCounts ?? (isDemoMode ? DEMO_DUE_COUNTS : null);
   const plan = counts ? splitBudget(counts, estItems) : null;
   const totItems = plan ? plan.scan + plan.reinforcement + plan.focus : null;
+  const totDue = counts ? counts.scan + counts.reinforcement + counts.focus : null;
   const totMin = plan ? totalMinutes(plan) : null;
-  // Errore senza nessun conteggio (nemmeno uno precedente): stato di errore
-  // al posto della CTA. Con conteggi stale dal focus precedente il piano
-  // resta visibile e il refetch fallito è solo riportato.
   const showPlanError = dueError && !plan;
   const minutesLabel = (l: "scan" | "reinforcement" | "focus") =>
     plan ? t("today.approxMinutes", { minutes: layerMinutes(l, plan[l]) }) : "…";
-  // Recommended flow subtitle pulled out so we can localize cleanly.
   const PLAN_LABELS = {
     scan:          t("today.scanSubtitle", { minutes: minutesLabel("scan") }),
     reinforcement: t("today.reinforcementSubtitle", { minutes: minutesLabel("reinforcement") }),
@@ -127,27 +165,32 @@ export default function TodayScreen() {
   } as const;
   const startSession = useReviewStore((s) => s.start);
 
+  // Cartelle con carte in coda ADESSO, nell'ordine scelto dall'utente —
+  // la sezione "Oggi" del mockup. Il vecchio sottotitolo "3 × 48h" non
+  // esiste più per scelta esplicita (Maurizio 2026-09-01).
+  const foldersDue = applyFolderOrder(
+    folders.filter((f) => (dueByFolder.get(f.id) ?? 0) > 0),
+    order,
+  );
+
   // Initialize the review-store BEFORE navigating so the destination
-  // screen's useFocusEffect sees the right mode/session. Skipping this
-  // step let a same-layer pending request from an abandoned flow
-  // suppress the new direct-entry session (Codex P2 on 6b777ad).
+  // screen's useFocusEffect sees the right mode/session.
   const startReview = () => {
     if (!plan) return;
-    // Il flusso esegue ESATTAMENTE il piano mostrato: snapshot dei caps,
-    // niente refetch interno sovrascrivibile da sessioni più vecchie.
-    // Parte dal primo livello con carte: con la regola dei layer (Focus =
-    // ricordi nuovi) un utente ai primi giorni ha Scan e Reinforcement
-    // vuoti, e aprirli creerebbe una review_sessions fantasma più un
-    // "Scan completato" senza aver visto una carta.
     const first = REVIEW_LAYERS.find((l) => plan[l] > 0) ?? "scan";
     startSession(first, "flow", { budgetCap: estItems, layerCaps: plan });
     router.push(`/review/${first}`);
   };
   const startLayer = (path: "scan" | "reinforcement" | "focus") => {
-    // Livello singolo = tutto il budget su quel livello, per scelta di spec.
     startSession(path, "single", { budgetCap: estItems });
     router.push(`/review/${path}`);
   };
+
+  const tomorrowKey = dayKeyOf(new Date(Date.now() + 24 * 60 * 60 * 1000));
+  const upcomingLabel = (dayKey: string) =>
+    dayKey === tomorrowKey
+      ? t("today.tomorrow")
+      : dateBadge(new Date(`${dayKey}T12:00:00`));
 
   return (
     <SafeAreaView className="flex-1 bg-warm-white" edges={["top"]}>
@@ -155,9 +198,7 @@ export default function TodayScreen() {
         contentContainerStyle={{ paddingBottom: 120 }}
         showsVerticalScrollIndicator={false}
       >
-        {/* Editorial hero with mascot peek — mascot is absolutely positioned
-            so the 32pt heading keeps the full width on narrow phones (e.g.
-            iPhone SE) rather than wrapping prematurely. */}
+        {/* Editorial hero with mascot peek. */}
         <View style={{ paddingHorizontal: 28, paddingTop: 22, position: "relative" }}>
           <Text
             accessibilityRole="header"
@@ -196,13 +237,94 @@ export default function TodayScreen() {
           </View>
         </View>
 
-        {/* Time budget chips */}
-        <View style={{ paddingHorizontal: 20, marginTop: 22 }}>
-          <TimeBudgetChips value={budget} onChange={pickBudget} />
+        {/* Card hero "Ripassi di oggi" — mockup Maurizio 2026-09-01: numero
+            nel cerchio a sinistra (al posto dei quadrati sovrapposti). */}
+        <View style={{ paddingHorizontal: 28, paddingTop: 24, paddingBottom: 8 }}>
+          <SectionLabel>{t("today.reviewsToday")}</SectionLabel>
+        </View>
+        <View style={{ paddingHorizontal: 20 }}>
+          {showPlanError ? (
+            <ErrorCard
+              title={t("today.planErrorTitle")}
+              onRetry={loadDueCounts}
+              retrying={dueLoading}
+              retryAccessibilityLabel={t("today.planRetryAccessibility")}
+              style={{ alignSelf: "stretch" }}
+            />
+          ) : (
+            <View
+              style={{
+                backgroundColor: colors.surface,
+                borderRadius: radii.card,
+                borderWidth: 1,
+                borderColor: colors.hairline,
+                padding: 16,
+                gap: 14,
+              }}
+            >
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
+                <View
+                  style={{
+                    width: 56,
+                    height: 56,
+                    borderRadius: 28,
+                    backgroundColor: layerTint.focus,
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontFamily: FONT.bold,
+                      fontSize: totDue !== null && totDue > 99 ? 18 : 22,
+                      color: colors.navy,
+                      fontVariant: ["tabular-nums"],
+                    }}
+                  >
+                    {totDue ?? "…"}
+                  </Text>
+                </View>
+                <View style={{ flex: 1, gap: 2 }}>
+                  <Text
+                    style={{
+                      fontFamily: FONT.bold,
+                      fontSize: 17,
+                      color: colors.navy,
+                      letterSpacing: -0.2,
+                    }}
+                  >
+                    {tp("today.heroLabel", totDue ?? 0)}
+                  </Text>
+                  <Text
+                    style={{
+                      fontFamily: FONT.regular,
+                      fontSize: 13.5,
+                      color: colors.midGrey,
+                      fontVariant: ["tabular-nums"],
+                    }}
+                  >
+                    {plan
+                      ? `${tp("today.heroFolders", foldersDue.length)} · ${t("today.approxMinutes", { minutes: totMin ?? 0 })}`
+                      : t("today.preparingPlan")}
+                  </Text>
+                </View>
+              </View>
+              <PrimaryButton
+                label={
+                  plan && totItems === 0 ? t("today.nothingToReview") : t("today.startReviewHero")
+                }
+                onPress={startReview}
+                disabled={!plan || totItems === 0}
+              />
+            </View>
+          )}
         </View>
 
-        {/* Recommended flow */}
-        <View style={{ paddingHorizontal: 28, paddingTop: 28, paddingBottom: 8 }}>
+        {/* Time budget chips + flusso consigliato, sotto la card hero. */}
+        <View style={{ paddingHorizontal: 20, marginTop: 18 }}>
+          <TimeBudgetChips value={budget} onChange={pickBudget} />
+        </View>
+        <View style={{ paddingHorizontal: 28, paddingTop: 24, paddingBottom: 8 }}>
           <SectionLabel>{t("today.recommendedFlow")}</SectionLabel>
         </View>
         <View style={{ paddingHorizontal: 20, gap: 10 }}>
@@ -226,39 +348,209 @@ export default function TodayScreen() {
           />
         </View>
 
-        {/* CTA — in normal flow at the bottom of the page (no floating layer),
-            so it can never overlap the Focus card or anything else. */}
-        <View style={{ paddingHorizontal: 20, marginTop: 28, alignItems: "center", gap: 12 }}>
-          {showPlanError ? (
-            <ErrorCard
-              title={t("today.planErrorTitle")}
-              onRetry={loadDueCounts}
-              retrying={dueLoading}
-              retryAccessibilityLabel={t("today.planRetryAccessibility")}
-              style={{ alignSelf: "stretch" }}
-            />
-          ) : (
-            <>
+        {/* Da recuperare — solo se c'è qualcosa oltre la finestra. */}
+        {overdue > 0 ? (
+          <>
+            <View style={{ paddingHorizontal: 28, paddingTop: 24, paddingBottom: 8 }}>
+              <SectionLabel>{t("today.recoverSection")}</SectionLabel>
+            </View>
+            <View style={{ paddingHorizontal: 20 }}>
+              <Tappable
+                accessibilityRole="button"
+                accessibilityLabel={tp("today.overdue", overdue)}
+                onPress={startReview}
+                pressedOpacity={0.85}
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 12,
+                  backgroundColor: colors.surface,
+                  borderRadius: radii.card,
+                  borderWidth: 1,
+                  borderColor: colors.hairline,
+                  padding: 14,
+                }}
+              >
+                <View
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 20,
+                    backgroundColor: colors.dangerSoft,
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Clock size={20} color={colors.danger} strokeWidth={2} />
+                </View>
+                <Text
+                  style={{
+                    flex: 1,
+                    fontFamily: FONT.semibold,
+                    fontSize: 15.5,
+                    color: colors.navy,
+                  }}
+                >
+                  {tp("today.overdue", overdue)}
+                </Text>
+                <ChevronRight size={18} color={colors.midGrey} strokeWidth={2} />
+              </Tappable>
+            </View>
+          </>
+        ) : null}
+
+        {/* Oggi — cartelle con carte in coda, in ordine di priorità. */}
+        {foldersDue.length > 0 ? (
+          <>
+            <View
+              style={{
+                paddingHorizontal: 28,
+                paddingTop: 24,
+                paddingBottom: 8,
+                flexDirection: "row",
+                alignItems: "baseline",
+                justifyContent: "space-between",
+              }}
+            >
+              <SectionLabel>{t("today.todaySection")}</SectionLabel>
+              <Text
+                style={{ fontFamily: FONT.regular, fontSize: 12, color: colors.midGrey }}
+              >
+                {t("today.byPriority")}
+              </Text>
+            </View>
+            <View style={{ paddingHorizontal: 20, gap: 8 }}>
+              {foldersDue.map((f) => (
+                <Tappable
+                  key={f.id}
+                  accessibilityRole="button"
+                  accessibilityLabel={f.name}
+                  onPress={() =>
+                    router.push({ pathname: "/folder/[id]", params: { id: f.id } })
+                  }
+                  pressedOpacity={0.85}
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: 12,
+                    backgroundColor: colors.surface,
+                    borderRadius: radii.card,
+                    borderWidth: 1,
+                    borderColor: colors.hairline,
+                    paddingHorizontal: 14,
+                    paddingVertical: 12,
+                  }}
+                >
+                  <FolderTile emoji={f.emoji} size={32} />
+                  <Text
+                    numberOfLines={1}
+                    style={{
+                      flex: 1,
+                      fontFamily: FONT.semibold,
+                      fontSize: 15.5,
+                      color: colors.navy,
+                      letterSpacing: -0.15,
+                    }}
+                  >
+                    {f.name}
+                  </Text>
+                  <Text
+                    style={{
+                      fontFamily: FONT.medium,
+                      fontSize: 13.5,
+                      color: colors.scan,
+                      fontVariant: ["tabular-nums"],
+                    }}
+                  >
+                    {tp("today.folderDue", dueByFolder.get(f.id) ?? 0)}
+                  </Text>
+                  <ChevronRight size={16} color={colors.midGrey} strokeWidth={2} />
+                </Tappable>
+              ))}
+            </View>
+          </>
+        ) : null}
+
+        {/* Prossimi ripassi — due giorni, poi "Vedi ripassi successivi". */}
+        <View style={{ paddingHorizontal: 28, paddingTop: 24, paddingBottom: 8 }}>
+          <SectionLabel>{t("today.upcomingSection")}</SectionLabel>
+        </View>
+        <View
+          style={{
+            marginHorizontal: 20,
+            backgroundColor: colors.surface,
+            borderRadius: radii.card,
+            borderWidth: 1,
+            borderColor: colors.hairline,
+          }}
+        >
+          {upcoming.map((d, i) => (
+            <Tappable
+              key={d.dayKey}
+              accessibilityRole="button"
+              accessibilityLabel={`${upcomingLabel(d.dayKey)} · ${tp("upcoming.dayCount", d.count)}`}
+              onPress={() => router.push("/upcoming" as never)}
+              pressedOpacity={0.85}
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 12,
+                paddingHorizontal: 14,
+                paddingVertical: 13,
+                borderBottomWidth: 1,
+                borderBottomColor: colors.hairline,
+              }}
+            >
+              <CalendarDays size={18} color={colors.scan} strokeWidth={2} />
               <Text
                 style={{
-                  textAlign: "center",
-                  fontFamily: FONT.regular,
+                  flex: 1,
+                  fontFamily: FONT.semibold,
+                  fontSize: 14.5,
+                  color: colors.navy,
+                }}
+              >
+                {upcomingLabel(d.dayKey)}
+              </Text>
+              <Text
+                style={{
+                  fontFamily: FONT.medium,
                   fontSize: 13.5,
-                  color: colors.midGrey,
+                  color: colors.scan,
                   fontVariant: ["tabular-nums"],
                 }}
               >
-                {plan
-                  ? tp("today.planTotal", totItems ?? 0, { minutes: totMin ?? 0 })
-                  : t("today.preparingPlan")}
+                {tp("today.folderDue", d.count)}
               </Text>
-              <PrimaryButton
-                label={plan && totItems === 0 ? t("today.nothingToReview") : t("today.startReview")}
-                onPress={startReview}
-                disabled={!plan || totItems === 0}
-              />
-            </>
-          )}
+              <ChevronRight size={16} color={colors.midGrey} strokeWidth={2} />
+            </Tappable>
+          ))}
+          <Tappable
+            accessibilityRole="button"
+            accessibilityLabel={t("today.seeUpcoming")}
+            onPress={() => router.push("/upcoming" as never)}
+            pressedOpacity={0.85}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 12,
+              paddingHorizontal: 14,
+              paddingVertical: 13,
+            }}
+          >
+            <CalendarDays size={18} color={colors.midGrey} strokeWidth={2} />
+            <Text
+              style={{
+                flex: 1,
+                fontFamily: FONT.semibold,
+                fontSize: 14.5,
+                color: colors.navy,
+              }}
+            >
+              {t("today.seeUpcoming")}
+            </Text>
+            <ChevronRight size={16} color={colors.midGrey} strokeWidth={2} />
+          </Tappable>
         </View>
       </ScrollView>
     </SafeAreaView>
