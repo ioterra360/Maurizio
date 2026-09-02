@@ -12,6 +12,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import Constants from "expo-constants";
+import * as Updates from "expo-updates";
 import { LogOut, Trash2, AlertTriangle, ExternalLink } from "lucide-react-native";
 
 import { HeaderHero } from "@/components/HeaderHero";
@@ -393,6 +394,16 @@ export default function SettingsScreen() {
             }}
           />
           <SettingsRow label={tr("settings.version")} value={APP_VERSION_LABEL} />
+          {/* Identità del bundle JS: l'unico modo per un tester (o per noi)
+              di distinguere "l'OTA non è arrivata" da "è arrivata e la
+              modifica è sottile". updateId è null quando gira il bundle di
+              fabbrica o in Expo Go — costante per la vita del processo,
+              quindi va bene leggerla a livello di modulo. */}
+          <SettingsRow
+            label={tr("settings.otaUpdate")}
+            hint={tr("settings.otaUpdateHint")}
+            value={Updates.updateId ? Updates.updateId.slice(0, 8) : tr("settings.otaEmbedded")}
+          />
           {user?.role === "admin" && viewAsUser ? (
             <SettingsRow
               label={tr("settings.backToAdmin")}

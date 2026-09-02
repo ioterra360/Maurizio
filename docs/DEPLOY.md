@@ -364,8 +364,16 @@ round from commit `6c0d04b`: Android **vc12** (EAS 9cb7bf2b, AAB in
 copyright, manual release, 6.5" screenshots. en-US app name is
 "Memika: Spaced Repetition" (plain "Memika" is taken in English). Left manual:
 App Review contact phone + demo password, App Privacy questionnaire, price Free,
-submit for review after DSA verification. From now on OTAs go to BOTH runtimes:
-`eas update --channel production --platform all`.
+submit for review after DSA verification.
+
+> ⚠️ **NON usare `eas update --channel production --platform all`.** Questa
+> riga diceva di farlo ed era SBAGLIATA: i runtime di vc12 e iOS build 2
+> hanno fingerprint diversi che richiedono due stati dell'albero mutuamente
+> esclusivi su `.gitignore`, quindi un solo publish non può raggiungerli
+> entrambi — e da un HEAD pulito non ne raggiunge NESSUNO (ha già prodotto
+> due update orfani, 33c8a878/d02cdb80). La ricetta corretta, una gamba per
+> piattaforma con il checkout-dance, è in **TROUBLESHOOTING.md § "OTA per i
+> runtime di vc12 / iOS build 2"** (righe ~326-354). Correzione 2026-09-02.
 
 
 Order matters: the Play closed test is a 14-day calendar gate, so get an
