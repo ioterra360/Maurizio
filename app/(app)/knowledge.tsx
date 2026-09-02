@@ -21,7 +21,7 @@ import { reportError } from "@/lib/report-error";
 import { markAddOpenedIntentionally } from "@/lib/add-gate";
 import { useT } from "@/lib/i18n";
 import { FONT, colors } from "@/theme/tokens";
-import { FOLDER_LIMIT_ENFORCED, FOLDER_TEMPLATES, type FolderKind } from "@/lib/constants";
+import { FOLDER_LIMIT_ENFORCED, type FolderKind } from "@/lib/constants";
 
 export default function KnowledgeScreen() {
   const { t, tp } = useT();
@@ -100,12 +100,9 @@ export default function KnowledgeScreen() {
 
   // Test phase (FOLDER_LIMIT_ENFORCED=false): one folder per kind, so the
   // button disappears once the 4 templates + the custom one all exist.
-  const canAddFolder =
-    !FOLDER_LIMIT_ENFORCED &&
-    !loading &&
-    !error &&
-    folders.length > 0 &&
-    folders.length < FOLDER_TEMPLATES.length + 1;
+  // Nessun tetto numerico dal 2026-09-02 (via unique(user_id,kind) e via i
+  // 5 slot): il confine tornera' coi piani Free/Pro/Premium, non qui.
+  const canAddFolder = !FOLDER_LIMIT_ENFORCED && !loading && !error && folders.length > 0;
 
   const header = (
     <View style={{ position: "relative" }}>
@@ -280,7 +277,7 @@ export default function KnowledgeScreen() {
         keyExtractor={(f) => f.kind}
         renderItem={renderItem}
         onDragEnd={({ data }) => {
-          setOrder(data.map((f) => f.kind as FolderKind));
+          setOrder(data.map((f) => f.id));
           // Mirror to folders.priority: the review deck fills from the top
           // folder first (lib/queue.ts allocateByFolderPriority).
           void updateFolderPriorities(data.map((f, i) => ({ id: f.id, priority: i + 1 }))).catch(

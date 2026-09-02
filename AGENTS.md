@@ -58,17 +58,18 @@ These exist because of past decisions documented elsewhere in `docs/`.
 - **Layer order is locked: Scan → Reinforcement → Focus.** Never reorder in
   copy, navigation, icons, or recommendation flow. This was a Phase-0 product
   decision and is in the design contract.
-- **There are four folder TEMPLATES: Giapponese · Medicina · Spagnolo ·
-  Diritto.** Their `kind` slugs are `jp`, `medicine`, `es`, `law` (database,
-  unchanged); a user-named folder has kind `custom`. Nothing is auto-seeded:
-  a user starts with **ONE folder chosen at onboarding** (`/choose-topic`,
-  helpers in `lib/folder-templates.ts`). Freemium = one folder per free
-  account, gated by `FOLDER_LIMIT_ENFORCED` in `lib/constants.ts`. **Test
-  phase (2026-08-27, Angelo): the flag is `false`** — Knowledge shows a
-  "Nuova cartella" pill that pushes `/choose-topic?mode=new`; owned kinds are
-  greyed out because `folders` has `unique(user_id, kind)` and the app keys
-  folders by kind (max 4 templates + 1 custom). Flip the flag back when the
-  Premium (RevenueCat) sheet lands. Demo mode still shows all four.
+- **Folder identity is `folders.id`, and folders come from the TAXONOMY**
+  (2026-09-02, migration 20260902130000): four macrocategories — Lingue,
+  Materie, Lavoro, Interessi — with ~44 subcategories in
+  `lib/folder-taxonomy.ts`, picked in `/choose-topic` ("Cosa vuoi
+  ricordare?"). `unique(user_id, kind)` is GONE; duplicates are legal; the
+  route is `/folder/[id]`; order/sort stores key by id. `folders.kind` is a
+  LEGACY bridge column written via `legacyKindFor()` for pre-OTA clients —
+  do not build new logic on it; it goes away with a future migration. The
+  old 4-template constants (`FOLDER_TEMPLATES` in `lib/constants.ts`) now
+  serve DEMO MODE ONLY. Nothing is auto-seeded: a user starts with ONE
+  folder chosen at onboarding. Freemium gating (`FOLDER_LIMIT_ENFORCED`,
+  still `false` in the test phase) returns with the Free/Pro/Premium plans.
 - **Demo accounts are: `angelo.casula@gmail.com` (user) and
   `memikaapp@gmail.com` (admin).** Admin role is granted ONLY by the
   `public.admin_emails` allowlist (seeded with `memikaapp@gmail.com`, migration

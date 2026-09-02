@@ -50,17 +50,22 @@ is in the `admin_emails` allowlist (currently `memikaapp@gmail.com`).
 ### `folders`
 
 Knowledge categories owned by a user. Nothing is auto-seeded: the user picks
-ONE topic at onboarding (`/choose-topic`) and `createFolder()` in
-`lib/api.ts` inserts a single row — kind `jp` / `medicine` / `es` / `law`
-(template) or `custom` (user-named, name 1–40 chars client-side). Insert is
-allowed by `folders_all_own_or_admin` (user_id = auth.uid()). Free accounts
+ONE topic at onboarding (`/choose-topic`, "Cosa vuoi ricordare?") from the
+taxonomy — 4 macrocategories, ~44 subcategories (`lib/folder-taxonomy.ts`) —
+or names a custom folder (1–40 chars client-side). **Identity is `id`**
+(migration 20260902130000): `unique(user_id, kind)` is gone, duplicates are
+legal, the route is `/folder/[id]`. Insert is allowed by
+`folders_all_own_or_admin` (user_id = auth.uid()). Free accounts
 own one folder (`FREE_FOLDER_LIMIT`, enforced in the UI for now).
 
 | Column | Type | Notes |
 |---|---|---|
-| `id` | uuid PK | gen_random_uuid() |
+| `id` | uuid PK | gen_random_uuid() — **l'identità della cartella** |
 | `user_id` | uuid | FK to `profiles(id)`, cascade |
-| `kind` | text | Machine slug. Unique with `user_id`. |
+| `kind` | text | **LEGACY** bridge slug (`legacyKindFor`), for pre-OTA clients only; removed with a future migration |
+| `category` | text | Macrocategoria: `lingue/materie/lavoro/interessi/custom` |
+| `template_id` | text | Sottocategoria della tassonomia (es. `ja`, `medicina`, `vino`); null = personalizzata |
+| `emoji` | text | Glifo del FolderTile, sempre scritto dal client (backfill sulle righe storiche) |
 | `name` | text | Display name |
 | `priority` | int | 1 = highest. Written at createFolder (max+1) and on every drag in Cartelle (`updateFolderPriorities`); the review deck fills from the top folder first (`lib/queue.ts allocateByFolderPriority`, 2026-08-29). |
 | `color` | text | Hex string, optional override |
