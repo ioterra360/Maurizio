@@ -190,6 +190,7 @@ export default function TrashScreen() {
                     key={f.id}
                     tile={
                       <FolderTile
+                        emoji={f.emoji}
                         kind={
                           ((FOLDER_KINDS as readonly string[]).includes(f.kind)
                             ? f.kind

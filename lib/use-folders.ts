@@ -18,7 +18,6 @@ import {
   fetchFoldersWithStats,
 } from "./api";
 import type { Memory, FolderWithStats } from "./mappers";
-import type { FolderKind } from "./constants";
 import { useAuthStore } from "./auth-store";
 import { useFolderOrderStore } from "./folder-order-store";
 
@@ -48,7 +47,7 @@ export function useFoldersWithStats(): FoldersResult {
       setFolders(next);
       // Server order (folders.priority) becomes the display order on every
       // screen that lists folders, until the user drags on this device.
-      useFolderOrderStore.getState().adoptOrder(next.map((f) => f.kind as FolderKind));
+      useFolderOrderStore.getState().adoptOrder(next.map((f) => f.id));
     } catch (e) {
       if (myId !== requestSeq.current) return;
       setError(e instanceof Error ? e : new Error(String(e)));
@@ -83,7 +82,7 @@ type FolderDetailResult = {
   refetch: () => void;
 };
 
-export function useFolderDetail(kind: FolderKind | null): FolderDetailResult {
+export function useFolderDetail(idOrKind: string | null): FolderDetailResult {
   const userId = useAuthStore((s) => s.user?.id);
   const [folder, setFolder] = useState<FolderWithStats | null>(null);
   const [items, setItems] = useState<Memory[]>([]);
@@ -93,7 +92,7 @@ export function useFolderDetail(kind: FolderKind | null): FolderDetailResult {
   // switching folders rapidly while a slower previous fetch is in flight.
   const requestSeq = useRef(0);
 
-  const load = useCallback(async (uid: string, k: FolderKind) => {
+  const load = useCallback(async (uid: string, k: string) => {
     const myId = ++requestSeq.current;
     setLoading(true);
     setError(null);
@@ -111,19 +110,19 @@ export function useFolderDetail(kind: FolderKind | null): FolderDetailResult {
   }, []);
 
   useEffect(() => {
-    if (!userId || !kind) {
+    if (!userId || !idOrKind) {
       requestSeq.current++;
       setFolder(null);
       setItems([]);
       setLoading(false);
       return;
     }
-    load(userId, kind);
-  }, [userId, kind, load]);
+    load(userId, idOrKind);
+  }, [userId, idOrKind, load]);
 
   const refetch = useCallback(() => {
-    if (userId && kind) load(userId, kind);
-  }, [userId, kind, load]);
+    if (userId && idOrKind) load(userId, idOrKind);
+  }, [userId, idOrKind, load]);
 
   return { folder, items, loading, error, refetch };
 }

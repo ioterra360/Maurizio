@@ -45,11 +45,9 @@ import { FONT, colors } from "@/theme/tokens";
  */
 export default function FolderSettingsScreen() {
   const { t, tp } = useT();
-  const params = useLocalSearchParams<{ kind: string }>();
-  const kind = (FOLDER_KINDS as readonly string[]).includes(params.kind ?? "")
-    ? (params.kind as FolderKind)
-    : null;
-  const { folder, items, loading, refetch } = useFolderDetail(kind);
+  const params = useLocalSearchParams<{ id: string }>();
+  const idParam = params.id && params.id.length > 0 ? params.id : null;
+  const { folder, items, loading, refetch } = useFolderDetail(idParam);
   const user = useAuthStore((s) => s.user);
   const showToast = useUIStore((s) => s.showToast);
   // Sottocartelle: elenco + modale nome (aggiungi/rinomina).
@@ -161,7 +159,7 @@ export default function FolderSettingsScreen() {
     }
   };
 
-  if (!kind) {
+  if (!idParam) {
     return (
       <SafeAreaView className="flex-1 bg-warm-white" edges={["top"]}>
         <TopBar />
@@ -266,7 +264,7 @@ export default function FolderSettingsScreen() {
               borderColor: colors.hairline,
             }}
           >
-            <FolderTile kind={kind} size={36} />
+            <FolderTile emoji={folder?.emoji} size={36} />
             <TextInput
               value={name}
               onChangeText={setName}

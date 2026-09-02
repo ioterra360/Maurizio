@@ -1,29 +1,28 @@
 import { create } from "zustand";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-import type { FolderKind } from "./constants";
 import { isFolderSort, type FolderSort } from "./folder-sort";
 import { reportError } from "./report-error";
 
 const STORAGE_KEY = "memika.folder-sort.v1";
 const DEFAULT_SORT: FolderSort = "due";
 
-type ByKind = Partial<Record<FolderKind, FolderSort>>;
+type ByKind = Partial<Record<string, FolderSort>>;
 
 type State = {
   /** Sort choice per folder kind (folders are keyed by kind in the app). */
   byKind: ByKind;
   hydrated: boolean;
   hydrate: () => Promise<void>;
-  setSort: (kind: FolderKind, sort: FolderSort) => void;
-  sortFor: (kind: FolderKind) => FolderSort;
+  setSort: (folderId: string, sort: FolderSort) => void;
+  sortFor: (folderId: string) => FolderSort;
 };
 
 function clean(raw: unknown): ByKind {
   if (!raw || typeof raw !== "object") return {};
   const out: ByKind = {};
   for (const [k, v] of Object.entries(raw as Record<string, unknown>)) {
-    if (isFolderSort(v)) out[k as FolderKind] = v;
+    if (isFolderSort(v)) out[k] = v;
   }
   return out;
 }

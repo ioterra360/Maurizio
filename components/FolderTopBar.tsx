@@ -6,10 +6,11 @@ import { FolderTile } from "@/components/FolderTile";
 import { Tappable } from "@/components/Tappable";
 import { FONT, colors } from "@/theme/tokens";
 import { useT } from "@/lib/i18n";
-import type { FolderKind } from "@/lib/constants";
 
 type Props = {
-  kind: FolderKind;
+  folderId: string;
+  /** Glifo della cartella (folders.emoji). */
+  emoji: string;
   name: string;
   priority: number;
 };
@@ -22,7 +23,7 @@ type Props = {
  * folder identity in the top bar (not the hero), freeing the hero for
  * editorial calm.
  */
-export function FolderTopBar({ kind, name, priority }: Props) {
+export function FolderTopBar({ folderId, emoji, name, priority }: Props) {
   const { t } = useT();
   return (
     <View
@@ -52,7 +53,7 @@ export function FolderTopBar({ kind, name, priority }: Props) {
       </Tappable>
 
       <View className="flex-row items-center" style={{ gap: 8 }}>
-        <FolderTile kind={kind} size={22} />
+        <FolderTile emoji={emoji} size={22} />
         <Text
           style={{
             fontFamily: FONT.semibold,
@@ -87,7 +88,7 @@ export function FolderTopBar({ kind, name, priority }: Props) {
       </View>
 
       <Tappable
-        onPress={() => router.push({ pathname: "/folder-settings", params: { kind } } as never)}
+        onPress={() => router.push({ pathname: "/folder-settings", params: { id: folderId } } as never)}
         accessibilityRole="button"
         accessibilityLabel={t("folderTopBar.settingsA11y")}
         pressedOpacity={0.6}

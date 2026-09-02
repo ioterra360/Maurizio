@@ -15,7 +15,7 @@ import { TopBar } from "@/components/TopBar";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { GhostButton } from "@/components/GhostButton";
 import { Tappable } from "@/components/Tappable";
-import { ADD_PREVIEW_BY_KIND, ITEM_TYPES_BY_KIND } from "@/lib/folder-data";
+import { ADD_PREVIEW_BY_KIND } from "@/lib/folder-data";
 import { FONT, colors, radii } from "@/theme/tokens";
 import {
   DAILY_INPUT_CAP_DEFAULT,
@@ -36,6 +36,7 @@ import { consumeIntentionalAddOpen } from "@/lib/add-gate";
 import { useT } from "@/lib/i18n";
 import { shortDateTime } from "@/lib/format";
 import { firstReview } from "@/features/srs/phases";
+import { itemTypesFor, legacyKindFor, templateHasReading } from "@/lib/folder-taxonomy";
 
 export default function AddScreen() {
   // Add is a root-level modal (declared in app/_layout.tsx so it can slide
@@ -53,11 +54,10 @@ export default function AddScreen() {
   // paramless open (Knowledge FAB) the first folder the user owns wins once
   // the list arrives (effect below) — there is no fixed default kind any
   // more, a user may own only "law" or only a custom folder.
-  const params = useLocalSearchParams<{ kind?: string }>();
-  const paramKind = (FOLDER_KINDS as readonly string[]).includes(params.kind ?? "")
-    ? (params.kind as FolderKind)
-    : null;
-  const initialKind: FolderKind = paramKind ?? "custom";
+  const params = useLocalSearchParams<{ folderId?: string; kind?: string }>();
+  // ?folderId= dalla scheda cartella; ?kind= sopravvive per le navigazioni
+  // salvate dai client pre-OTA (si risolve sotto, quando la lista arriva).
+  const paramFolderId = params.folderId && params.folderId.length > 0 ? params.folderId : null;
   // Add lives outside the (app) group, so hydrate the persisted folder
   // order here too — the pill row and #N suffixes must match Knowledge.
   const order = useFolderOrderStore((s) => s.order);
@@ -66,36 +66,32 @@ export default function AddScreen() {
   useEffect(() => {
     if (!orderHydrated) void hydrateOrder();
   }, [orderHydrated, hydrateOrder]);
-  // Cartelle dal DB (serve l'id per il salvataggio), ristrette ai kind
-  // noti (4 modelli + custom): le mappe tipo/anteprima sono keyed su di essi.
+  // Cartelle dal DB — l'identità è folders.id (tassonomia 2026-09-02);
+  // chip e anteprima si derivano da category/templateId della riga.
   const { folders: allFolders, loading: foldersLoading, error: foldersError } =
     useFoldersWithStats();
   const folders = useMemo(
-    () =>
-      applyFolderOrder(
-        allFolders.filter(
-          (f): f is FolderWithStats & { kind: FolderKind } =>
-            (FOLDER_KINDS as readonly string[]).includes(f.kind as string),
-        ),
-        order,
-      ),
+    () => applyFolderOrder(allFolders, order),
     [allFolders, order],
   );
-  const [folder, setFolder] = useState<FolderKind>(initialKind);
-  const [type, setType] = useState<string>(
-    ITEM_TYPES_BY_KIND[initialKind][0]?.value ?? "word",
+  const [folderId, setFolderId] = useState<string | null>(paramFolderId);
+  const selectedFolder = useMemo(
+    () => folders.find((f) => f.id === folderId) ?? null,
+    [folders, folderId],
   );
+  const [type, setType] = useState<string>("word");
   // Snap the selection onto a folder the user actually owns (first in the
-  // custom order) whenever the current kind isn't in their list — covers the
-  // paramless open and a stale ?kind= for a folder they deleted.
+  // custom order) whenever the current id isn't in their list — covers the
+  // paramless open, a legacy ?kind= and a folder they deleted.
   useEffect(() => {
     if (folders.length === 0) return;
-    if (folders.some((f) => f.kind === folder)) return;
-    const first = folders[0];
+    if (folderId && folders.some((f) => f.id === folderId)) return;
+    const byLegacyKind = params.kind ? folders.find((f) => f.kind === params.kind) : null;
+    const first = byLegacyKind ?? folders[0];
     if (!first) return;
-    setFolder(first.kind);
-    setType(ITEM_TYPES_BY_KIND[first.kind][0]?.value ?? "word");
-  }, [folders, folder]);
+    setFolderId(first.id);
+    setType(itemTypesFor(first.category, first.templateId)[0]?.value ?? "word");
+  }, [folders, folderId, params.kind]);
   const [term, setTerm] = useState("");
   const [reading, setReading] = useState("");
   const [definition, setDefinition] = useState("");
@@ -141,8 +137,12 @@ export default function AddScreen() {
     return <Redirect href={"/choose-topic" as never} />;
   }
 
-  const preview = ADD_PREVIEW_BY_KIND[folder];
-  const types = ITEM_TYPES_BY_KIND[folder];
+  // Anteprima per categoria: si riusa la mappa legacy passando dal kind
+  // derivato (lingue→es/jp, materie→medicine/law, resto→custom).
+  const previewKind = (selectedFolder ? legacyKindFor(selectedFolder.templateId) : "custom") as FolderKind;
+  const preview = ADD_PREVIEW_BY_KIND[previewKind] ?? ADD_PREVIEW_BY_KIND.custom;
+  const types = itemTypesFor(selectedFolder?.category, selectedFolder?.templateId);
+  const showReading = templateHasReading(selectedFolder?.templateId);
   // L'anteprima mostrava un fisso "domani, 8:00" che non corrispondeva a
   // nulla: le 8:00 venivano da una colonna (profiles.morning_review_at) che
   // nessuno leggeva. Ora è l'orario vero del primo ripasso, T0 + 20 ore.
@@ -165,7 +165,7 @@ export default function AddScreen() {
       return;
     }
     setMissing(null);
-    const folderRow = folders.find((f) => f.kind === folder);
+    const folderRow = selectedFolder;
     if (!folderRow) {
       // Folders still loading or failed to load — say so instead of eating
       // the tap (the zero-folder case is redirected above).
@@ -182,7 +182,7 @@ export default function AddScreen() {
         userId: user.id,
         folderId: folderRow.id,
         term: term.trim(),
-        reading: folder === "jp" && reading.trim() ? reading.trim() : undefined,
+        reading: showReading && reading.trim() ? reading.trim() : undefined,
         definition: definition.trim(),
         example: example.trim() ? example.trim() : undefined,
         itemType: type,
@@ -275,16 +275,16 @@ export default function AddScreen() {
             contentContainerStyle={{ paddingHorizontal: 16, gap: 8, paddingVertical: 12 }}
           >
             {folders.map((f) => {
-              const on = folder === f.kind;
+              const on = folderId === f.id;
               return (
                 <Tappable
-                  key={f.kind}
+                  key={f.id}
                   onPress={() => {
-                    setFolder(f.kind);
+                    setFolderId(f.id);
                     // Reset the type if it isn't valid for the new folder —
                     // done here (not in an effect) so both states update in
                     // one batched render, with no invalid-type frame.
-                    const ts = ITEM_TYPES_BY_KIND[f.kind];
+                    const ts = itemTypesFor(f.category, f.templateId);
                     if (!ts.some((t) => t.value === type)) {
                       setType(ts[0]?.value ?? "word");
                     }
@@ -322,7 +322,7 @@ export default function AddScreen() {
                       fontVariant: ["tabular-nums"],
                     }}
                   >
-                    · #{priorityOf(f.kind, order)}
+                    · #{priorityOf(f.id, order)}
                   </Text>
                 </Tappable>
               );
@@ -374,7 +374,7 @@ export default function AddScreen() {
             {missing === "term" ? (
               <FieldHint>{t("add.termMissingHint")}</FieldHint>
             ) : null}
-            {folder === "jp" ? (
+            {showReading ? (
               <TextInput
                 value={reading}
                 onChangeText={setReading}
@@ -524,7 +524,7 @@ export default function AddScreen() {
                 >
                   {term.trim() ? term.trim().slice(0, 60) : preview.front}
                 </Text>
-                {folder === "jp" && reading.trim() ? (
+                {showReading && reading.trim() ? (
                   <Text
                     style={{
                       fontFamily: FONT.regular,

@@ -79,6 +79,7 @@ export default function KnowledgeScreen() {
       <View style={{ paddingHorizontal: 16, paddingBottom: 8 }}>
         <FolderRow
           kind={item.kind as FolderKind}
+          emoji={item.emoji}
           name={item.name}
           priority={(getIndex() ?? 0) + 1}
           count={item.count}
@@ -87,7 +88,7 @@ export default function KnowledgeScreen() {
           archived={item.archived}
           paused={item.paused}
           onPress={() =>
-            router.push({ pathname: "/folder/[kind]", params: { kind: item.kind } })
+            router.push({ pathname: "/folder/[id]", params: { id: item.id } })
           }
           onDrag={drag}
           isActive={isActive}

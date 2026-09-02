@@ -263,7 +263,7 @@ export default function HealthScreen() {
               </Text>
               <Tappable
                 onPress={() =>
-                  router.push({ pathname: "/folder/[kind]", params: { kind: worst.f.kind } })
+                  router.push({ pathname: "/folder/[id]", params: { id: worst.f.id } })
                 }
                 accessibilityLabel={t("health.rebalanceNowA11y", { name: worst.f.name })}
                 containerStyle={{ marginTop: 6, alignSelf: "flex-end" }}

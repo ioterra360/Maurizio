@@ -38,11 +38,11 @@ import type { FolderItem } from "@/lib/folder-data";
 
 export default function FolderDetailScreen() {
   const { t, tp } = useT();
-  const params = useLocalSearchParams<{ kind: string }>();
-  const kind = (FOLDER_KINDS as readonly string[]).includes(params.kind ?? "")
-    ? (params.kind as FolderKind)
-    : null;
-  const { folder, items, loading, error, refetch } = useFolderDetail(kind);
+  const params = useLocalSearchParams<{ id: string }>();
+  // Identità = folders.id; il resolver accetta anche un kind legacy per le
+  // navigazioni salvate dai client pre-OTA (fetchFolderDetail).
+  const idParam = params.id && params.id.length > 0 ? params.id : null;
+  const { folder, items, loading, error, refetch } = useFolderDetail(idParam);
   const user = useAuthStore((s) => s.user);
   const showToast = useUIStore((s) => s.showToast);
   const order = useFolderOrderStore((s) => s.order);
@@ -68,7 +68,7 @@ export default function FolderDetailScreen() {
   const startSession = useReviewStore((s) => s.start);
   const [filter, setFilter] = useState<"all" | MemoryState>("all");
   // Ordinamento della lista, ricordato per cartella (lib/folder-sort-store).
-  const sort = useFolderSortStore((s) => (kind ? s.sortFor(kind) : "due"));
+  const sort = useFolderSortStore((s) => (folderId ? s.sortFor(folderId) : "due"));
   const setSort = useFolderSortStore((s) => s.setSort);
   const [sortOpen, setSortOpen] = useState(false);
   const sortedItems = useMemo(() => sortMemories(items, sort), [items, sort]);
@@ -121,7 +121,7 @@ export default function FolderDetailScreen() {
     [displayItems],
   );
 
-  if (!kind) {
+  if (!idParam) {
     return (
       <SafeAreaView className="flex-1 bg-warm-white" edges={["top"]}>
         <TopBar />
@@ -181,17 +181,20 @@ export default function FolderDetailScreen() {
   // the full Scan → Reinforcement → Focus flow. Initialize the store
   // before navigating so the Scan screen's flow-default fallback no-ops.
   const startReview = () => {
-    startSession("scan", "single", { folderKind: kind, folderId: data.id, budgetCap: 28 });
+    const legacyKind = (FOLDER_KINDS as readonly string[]).includes(data.kind)
+      ? (data.kind as FolderKind)
+      : undefined;
+    startSession("scan", "single", { folderKind: legacyKind, folderId: data.id, budgetCap: 28 });
     router.push("/review/scan");
   };
   const addItem = () => {
     markAddOpenedIntentionally();
-    router.push({ pathname: "/add", params: { kind } });
+    router.push({ pathname: "/add", params: { folderId: data.id } });
   };
 
   return (
     <SafeAreaView className="flex-1 bg-warm-white" edges={["top"]}>
-      <FolderTopBar kind={kind} name={data.name} priority={priorityOf(kind, order)} />
+      <FolderTopBar folderId={data.id} emoji={data.emoji} name={data.name} priority={priorityOf(data.id, order)} />
 
       <ScrollView
         contentContainerStyle={{ paddingBottom: 200 }}
@@ -481,7 +484,7 @@ export default function FolderDetailScreen() {
         visible={sortOpen}
         current={sort}
         onSelect={(next) => {
-          if (kind) setSort(kind, next);
+          if (folderId) setSort(folderId, next);
           setSortOpen(false);
         }}
         onClose={() => setSortOpen(false)}

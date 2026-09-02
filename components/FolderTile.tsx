@@ -4,7 +4,10 @@ import { FONT, colors, folderTint } from "@/theme/tokens";
 import type { FolderKind } from "@/lib/constants";
 
 type Props = {
-  kind: FolderKind | "add";
+  /** Glifo della cartella (folders.emoji) — la via nuova. */
+  emoji?: string;
+  /** Legacy: i 5 kind storici o la tessera "add". */
+  kind?: FolderKind | "add";
   size?: number;
 };
 
@@ -12,7 +15,7 @@ type Props = {
  * The small folder identity glyph used in Knowledge list and Folder detail.
  * Each kind has its own soft-tint background and icon/emoji.
  */
-export function FolderTile({ kind, size = 32 }: Props) {
+export function FolderTile({ emoji, kind, size = 32 }: Props) {
   const base = {
     width: size,
     height: size,
@@ -20,6 +23,17 @@ export function FolderTile({ kind, size = 32 }: Props) {
     alignItems: "center" as const,
     justifyContent: "center" as const,
   };
+
+  // Via nuova (2026-09-02): il glifo vive sulla riga della cartella.
+  // La tinta resta neutra: con ~45 sottocategorie una mappa di tinte per
+  // kind non scala; l'emoji porta gia' il colore.
+  if (emoji && kind !== "add") {
+    return (
+      <View style={[base, { backgroundColor: folderTint.custom }]}>
+        <Text style={{ fontSize: size * 0.58 }}>{emoji}</Text>
+      </View>
+    );
+  }
 
   if (kind === "jp") {
     return (

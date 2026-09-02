@@ -10,6 +10,8 @@ import { lineFontSize } from "@/lib/term-typography";
 
 type Props = {
   kind: FolderKind;
+  /** Glifo della cartella (folders.emoji); se assente vale il kind legacy. */
+  emoji?: string;
   name: string;
   priority: number;
   count: number;
@@ -37,6 +39,7 @@ type Props = {
  */
 export function FolderRow({
   kind,
+  emoji,
   name,
   priority,
   count,
@@ -93,7 +96,7 @@ export function FolderRow({
         transform: [{ scale: isActive ? 1.02 : 1 }],
       }}
     >
-      <FolderTile kind={kind} />
+      <FolderTile emoji={emoji} kind={kind} />
 
       <View className="flex-1" style={{ minWidth: 0 }}>
         <View className="flex-row items-center" style={{ gap: 8 }}>

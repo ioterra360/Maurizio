@@ -1,50 +1,43 @@
 import { create } from "zustand";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { FOLDER_KINDS, type FolderKind } from "./constants";
 import { reportError } from "./report-error";
 
-// v2 (2026-08-29): v1 orders predate the folders.priority mirror and were
-// never written to the DB, so they must not count as a user choice on this
-// device — the server order is adopted until the next drag.
-const STORAGE_KEY = "memika.folder-order.v2";
-const LEGACY_STORAGE_KEY = "memika.folder-order.v1";
+// v3 (2026-09-02): l'ordine è per folders.ID, non più per kind — con la
+// tassonomia le cartelle non sono più 5 e il kind non è più un'identità.
+// I v1/v2 (kind-based) non migrano: l'ordine del server (folders.priority)
+// viene adottato finché l'utente non trascina di nuovo su questo device.
+const STORAGE_KEY = "memika.folder-order.v3";
+const LEGACY_STORAGE_KEYS = ["memika.folder-order.v1", "memika.folder-order.v2"];
 
 type State = {
-  /** User-defined order. Null until hydrated; defaults to FOLDER_KINDS. */
-  order: FolderKind[] | null;
+  /** Ordine scelto dall'utente (folder id). Null finché non idratato. */
+  order: string[] | null;
   hydrated: boolean;
   /** True once the user dragged on THIS device (a persisted order exists). */
   userSet: boolean;
   hydrate: () => Promise<void>;
   /** Replace the whole order at once — used by drag-to-reorder. */
-  setOrder: (next: FolderKind[]) => void;
+  setOrder: (next: string[]) => void;
   /**
    * Take the server order (folders.priority) as the display order while
    * the user has not dragged on this device. In memory only: the DB stays
    * the source until a local drag persists a choice.
    */
-  adoptOrder: (next: FolderKind[]) => void;
+  adoptOrder: (next: string[]) => void;
   reset: () => Promise<void>;
 };
 
-function clean(arr: unknown): FolderKind[] | null {
+function clean(arr: unknown): string[] | null {
   if (!Array.isArray(arr)) return null;
-  const valid = arr.filter((k): k is FolderKind =>
-    (FOLDER_KINDS as readonly string[]).includes(k as string),
-  );
-  if (valid.length === 0) return null;
-  // Append any folders not yet present (e.g. after a kind is added in code)
-  for (const k of FOLDER_KINDS) {
-    if (!valid.includes(k)) valid.push(k);
-  }
-  return valid;
+  const valid = [...new Set(arr.filter((k): k is string => typeof k === "string" && k.length > 0))];
+  return valid.length > 0 ? valid : null;
 }
 
-async function persist(order: FolderKind[]) {
+async function persist(order: string[]) {
   try {
     await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(order));
   } catch (e) {
-    // Non-fatal: order falls back to default on next launch.
+    // Non-fatal: order falls back to the server order on next launch.
     reportError("folder-order/persist", e);
   }
 }
@@ -58,17 +51,19 @@ export const useFolderOrderStore = create<State>((set, get) => ({
     try {
       const raw = await AsyncStorage.getItem(STORAGE_KEY);
       const parsed = raw ? clean(JSON.parse(raw)) : null;
-      void AsyncStorage.removeItem(LEGACY_STORAGE_KEY).catch(() => undefined);
+      for (const k of LEGACY_STORAGE_KEYS) {
+        void AsyncStorage.removeItem(k).catch(() => undefined);
+      }
       // A drag completed while AsyncStorage was resolving already set (and
       // persisted) a fresher order — don't clobber it with the stale snapshot.
       if (get().userSet) {
         set({ hydrated: true });
         return;
       }
-      set({ order: parsed ?? get().order ?? [...FOLDER_KINDS], hydrated: true, userSet: parsed !== null });
+      set({ order: parsed ?? get().order, hydrated: true, userSet: parsed !== null });
     } catch (e) {
       reportError("folder-order/hydrate", e);
-      set((s) => ({ order: s.order ?? [...FOLDER_KINDS], hydrated: true }));
+      set({ hydrated: true });
     }
   },
 
@@ -87,36 +82,39 @@ export const useFolderOrderStore = create<State>((set, get) => ({
   },
 
   reset: async () => {
-    const next = [...FOLDER_KINDS];
-    set({ order: next, userSet: true });
-    await persist(next);
+    set({ order: null, userSet: false });
+    try {
+      await AsyncStorage.removeItem(STORAGE_KEY);
+    } catch (e) {
+      reportError("folder-order/reset", e);
+    }
   },
 }));
 
 /**
  * Display priority (1-based) of a folder under the user's custom order.
- * Falls back to the default FOLDER_KINDS order (which matches the seed
- * priorities 1-4) until the store is hydrated.
+ * Una cartella non presente nell'ordine locale (appena creata) va in coda.
  */
-export function priorityOf(kind: FolderKind, order: FolderKind[] | null): number {
-  const src = order ?? FOLDER_KINDS;
-  const i = src.indexOf(kind);
-  return i === -1 ? FOLDER_KINDS.indexOf(kind) + 1 : i + 1;
+export function priorityOf(folderId: string, order: string[] | null): number {
+  if (!order) return 1;
+  const i = order.indexOf(folderId);
+  return i === -1 ? order.length + 1 : i + 1;
 }
 
 /**
- * Sort a list of items keyed by `kind` according to the user's custom order.
- * Items whose kind is missing from the order get appended at the end.
+ * Sort a list of folders (keyed by id) according to the user's custom
+ * order. Items missing from the order get appended at the end, keeping
+ * their relative (server) order.
  */
-export function applyFolderOrder<T extends { kind: string }>(
+export function applyFolderOrder<T extends { id: string }>(
   items: T[],
-  order: FolderKind[] | null,
+  order: string[] | null,
 ): T[] {
   if (!order) return items;
   const rank = new Map<string, number>(order.map((k, i) => [k, i]));
   return [...items].sort((a, b) => {
-    const ra = rank.get(a.kind) ?? Number.MAX_SAFE_INTEGER;
-    const rb = rank.get(b.kind) ?? Number.MAX_SAFE_INTEGER;
+    const ra = rank.get(a.id) ?? Number.MAX_SAFE_INTEGER;
+    const rb = rank.get(b.id) ?? Number.MAX_SAFE_INTEGER;
     return ra - rb;
   });
 }

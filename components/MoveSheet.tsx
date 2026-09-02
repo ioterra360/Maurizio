@@ -179,7 +179,7 @@ export function MoveSheet({
                   {otherFolders.map((f) => (
                     <SheetRow
                       key={f.id}
-                      icon={<FolderTile kind={tileKind(f.kind)} size={28} />}
+                      icon={<FolderTile emoji={f.emoji} size={28} />}
                       label={f.name}
                       disabled={busy}
                       onPress={() => void move({ folderId: f.id }, f.name)}
