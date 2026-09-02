@@ -42,6 +42,20 @@ export function dateBadge(date: Date = new Date()): string {
   });
 }
 
+/** "MER 3 SET, 06:00" — data breve + ora locale, per il primo ripasso. */
+export function shortDateTime(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "—";
+  const hh = String(d.getHours()).padStart(2, "0");
+  const mm = String(d.getMinutes()).padStart(2, "0");
+  return t("format.dateTimeShort", {
+    day: t(DAY_SHORT[d.getDay()]),
+    date: d.getDate(),
+    month: t(MONTH_SHORT[d.getMonth()]),
+    time: `${hh}:${mm}`,
+  });
+}
+
 const MONTH_LONG: readonly TKey[] = [
   "format.monthLongJanuary", "format.monthLongFebruary", "format.monthLongMarch",
   "format.monthLongApril", "format.monthLongMay", "format.monthLongJune",

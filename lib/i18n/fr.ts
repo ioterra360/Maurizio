@@ -45,19 +45,19 @@ export const fr: Record<keyof typeof it, string> = {
   "add.loadingFolders": "Un instant, je charge tes dossiers…",
   "add.overDailyLimit": "Au-delà de la limite du jour ({count}/{max}) — tu peux quand même enregistrer, mais la charge de demain sera plus lourde.",
   "add.previewBack": "Verso",
-  "add.previewFirstReview": "Première révision · demain, 8:00",
+  "add.previewFirstReview": "Première révision · {time}",
   "add.previewFront": "Recto",
   "add.readingLabel": "Lecture",
   "add.readingPlaceholder": "Lecture (facultatif) — ex. muzukashii",
   "add.saveAndAddAnother": "Enregistrer et en ajouter un autre",
   "add.saveAndContinue": "Enregistrer et continuer",
   "add.saveFailed": "Enregistrement impossible. Réessaie.",
-  "add.savedToast": "Enregistré dans {name} · première révision demain",
+  "add.savedToast": "Enregistré dans {name} · première révision dans 20 heures",
   "add.termLabel": "Terme",
   "add.termMissingHint": "Écris le terme à retenir.",
   "add.termPlaceholder": "Terme à retenir",
   "add.title": "Nouveau souvenir",
-  "add.useItTodayHint": "Essaie de l'utiliser dans la vraie vie aujourd'hui — la première révision est demain.",
+  "add.useItTodayHint": "Essaie de l'utiliser dans la vraie vie aujourd'hui — la première révision est dans 20 heures.",
 
   // ---- adminData -----------------------------------------------------------
   "adminData.activityCohortBody": "87 % de rétention S1",
@@ -574,6 +574,7 @@ export const fr: Record<keyof typeof it, string> = {
 
   // ---- format --------------------------------------------------------------
   "format.dateBadge": "{day} · {date} {month}",
+  "format.dateTimeShort": "{day} {date} {month}, {time}",
   "format.dayShortFri": "VEN",
   "format.dayShortMon": "LUN",
   "format.dayShortSat": "SAM",

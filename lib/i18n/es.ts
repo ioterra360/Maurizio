@@ -45,19 +45,19 @@ export const es: Record<keyof typeof it, string> = {
   "add.loadingFolders": "Un momento, estoy cargando tus carpetas…",
   "add.overDailyLimit": "Por encima del límite de hoy ({count}/{max}) — puedes guardar igualmente, pero mañana la carga será mayor.",
   "add.previewBack": "Reverso",
-  "add.previewFirstReview": "Primer repaso · mañana, 8:00",
+  "add.previewFirstReview": "Primer repaso · {time}",
   "add.previewFront": "Anverso",
   "add.readingLabel": "Lectura",
   "add.readingPlaceholder": "Lectura (opcional) — p. ej. muzukashii",
   "add.saveAndAddAnother": "Guardar y añadir otro",
   "add.saveAndContinue": "Guardar y continuar",
   "add.saveFailed": "No se ha podido guardar. Inténtalo de nuevo.",
-  "add.savedToast": "Guardado en {name} · primer repaso mañana",
+  "add.savedToast": "Guardado en {name} · primer repaso en 20 horas",
   "add.termLabel": "Término",
   "add.termMissingHint": "Escribe el término que quieres recordar.",
   "add.termPlaceholder": "Término para recordar",
   "add.title": "Nuevo recuerdo",
-  "add.useItTodayHint": "Intenta usarlo hoy en la vida real — el primer repaso es mañana.",
+  "add.useItTodayHint": "Intenta usarlo hoy en la vida real — el primer repaso es en 20 horas.",
 
   // ---- adminData -----------------------------------------------------------
   "adminData.activityCohortBody": "87 % de retención S1",
@@ -574,6 +574,7 @@ export const es: Record<keyof typeof it, string> = {
 
   // ---- format --------------------------------------------------------------
   "format.dateBadge": "{day} · {date} {month}",
+  "format.dateTimeShort": "{day} {date} {month}, {time}",
   "format.dayShortFri": "VIE",
   "format.dayShortMon": "LUN",
   "format.dayShortSat": "SÁB",

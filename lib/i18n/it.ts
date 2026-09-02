@@ -45,19 +45,19 @@ export const it = {
   "add.loadingFolders": "Un attimo, sto caricando le tue cartelle…",
   "add.overDailyLimit": "Oltre il limite di oggi ({count}/{max}) — puoi salvare comunque, ma domani il carico sarà più alto.",
   "add.previewBack": "Retro",
-  "add.previewFirstReview": "Primo ripasso · domani, 8:00",
+  "add.previewFirstReview": "Primo ripasso · {time}",
   "add.previewFront": "Fronte",
   "add.readingLabel": "Lettura",
   "add.readingPlaceholder": "Lettura (opzionale) — es. muzukashii",
   "add.saveAndAddAnother": "Salva e aggiungi un altro",
   "add.saveAndContinue": "Salva e continua",
   "add.saveFailed": "Salvataggio non riuscito. Riprova.",
-  "add.savedToast": "Salvato in {name} · primo ripasso domani",
+  "add.savedToast": "Salvato in {name} · primo ripasso tra 20 ore",
   "add.termLabel": "Termine",
   "add.termMissingHint": "Scrivi il termine da ricordare.",
   "add.termPlaceholder": "Termine da ricordare",
   "add.title": "Nuovo ricordo",
-  "add.useItTodayHint": "Prova a usarlo nella vita reale oggi — il primo ripasso è domani.",
+  "add.useItTodayHint": "Prova a usarlo nella vita reale oggi — il primo ripasso è tra 20 ore.",
 
   // ---- adminData -----------------------------------------------------------
   "adminData.activityCohortBody": "87% ritenzione W1",
@@ -574,6 +574,7 @@ export const it = {
 
   // ---- format --------------------------------------------------------------
   "format.dateBadge": "{day} · {date} {month}",
+  "format.dateTimeShort": "{day} {date} {month}, {time}",
   "format.dayShortFri": "VEN",
   "format.dayShortMon": "LUN",
   "format.dayShortSat": "SAB",

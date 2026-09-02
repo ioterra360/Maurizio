@@ -45,19 +45,19 @@ export const en: Record<keyof typeof it, string> = {
   "add.loadingFolders": "One moment, loading your folders…",
   "add.overDailyLimit": "Over today's limit ({count}/{max}) — you can still save, but tomorrow's load will be heavier.",
   "add.previewBack": "Back",
-  "add.previewFirstReview": "First review · tomorrow, 8:00",
+  "add.previewFirstReview": "First review · {time}",
   "add.previewFront": "Front",
   "add.readingLabel": "Reading",
   "add.readingPlaceholder": "Reading (optional) — e.g. muzukashii",
   "add.saveAndAddAnother": "Save and add another",
   "add.saveAndContinue": "Save and continue",
   "add.saveFailed": "Couldn't save. Try again.",
-  "add.savedToast": "Saved to {name} · first review tomorrow",
+  "add.savedToast": "Saved to {name} · first review in 20 hours",
   "add.termLabel": "Term",
   "add.termMissingHint": "Write the term to remember.",
   "add.termPlaceholder": "Term to remember",
   "add.title": "New memory",
-  "add.useItTodayHint": "Try using it in real life today — the first review is tomorrow.",
+  "add.useItTodayHint": "Try using it in real life today — the first review is in 20 hours.",
 
   // ---- adminData -----------------------------------------------------------
   "adminData.activityCohortBody": "87% W1 retention",
@@ -574,6 +574,7 @@ export const en: Record<keyof typeof it, string> = {
 
   // ---- format --------------------------------------------------------------
   "format.dateBadge": "{day} · {date} {month}",
+  "format.dateTimeShort": "{day} {date} {month}, {time}",
   "format.dayShortFri": "FRI",
   "format.dayShortMon": "MON",
   "format.dayShortSat": "SAT",

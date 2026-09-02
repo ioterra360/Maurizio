@@ -32,6 +32,8 @@ import { reportError } from "@/lib/report-error";
 import { safeBack } from "@/lib/safe-back";
 import { consumeIntentionalAddOpen } from "@/lib/add-gate";
 import { useT } from "@/lib/i18n";
+import { shortDateTime } from "@/lib/format";
+import { firstReview } from "@/features/srs/phases";
 
 export default function AddScreen() {
   // Add is a root-level modal (declared in app/_layout.tsx so it can slide
@@ -139,6 +141,12 @@ export default function AddScreen() {
 
   const preview = ADD_PREVIEW_BY_KIND[folder];
   const types = ITEM_TYPES_BY_KIND[folder];
+  // L'anteprima mostrava un fisso "domani, 8:00" che non corrispondeva a
+  // nulla: le 8:00 venivano da una colonna (profiles.morning_review_at) che
+  // nessuno leggeva. Ora è l'orario vero del primo ripasso, T0 + 20 ore.
+  const firstReviewLabel = t("add.previewFirstReview", {
+    time: shortDateTime(firstReview().nextReviewAt),
+  });
   const dailyLimitReached = (dailyCount ?? 0) >= dailyMax;
   // Limite giornaliero = avviso MORBIDO, mai blocco (docs/SRS.md): si può
   // salvare anche oltre il tetto — domani il carico sarà solo più alto.
@@ -567,7 +575,7 @@ export default function AddScreen() {
                     fontVariant: ["tabular-nums"],
                   }}
                 >
-                  {t("add.previewFirstReview")}
+                  {firstReviewLabel}
                 </Text>
               </View>
             </View>

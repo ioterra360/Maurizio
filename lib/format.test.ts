@@ -9,7 +9,7 @@ vi.mock("@react-native-async-storage/async-storage", () => ({
   default: { getItem: vi.fn(async () => null), setItem: vi.fn(async () => {}), removeItem: vi.fn(async () => {}) },
 }));
 
-import { relativeReviewed } from "./format";
+import { relativeReviewed, shortDateTime } from "./format";
 import { useLocaleStore } from "./i18n";
 
 // Local-time dates: the label is about the user's calendar, not 24 h windows.
@@ -45,5 +45,20 @@ describe("relativeReviewed — calendar days in local time", () => {
   test("null or garbage reads the never-reviewed label", () => {
     expect(relativeReviewed(null)).toBe("Mai ripassato");
     expect(relativeReviewed("not-a-date")).toBe("Mai ripassato");
+  });
+});
+
+describe("shortDateTime", () => {
+  test("compone giorno, data, mese e ora locale", () => {
+    // Costruita da componenti locali così il test non dipende dal fuso della macchina.
+    const d = new Date(2026, 8, 3, 6, 5); // 3 settembre 2026, 06:05 locali
+    const out = shortDateTime(d.toISOString());
+    expect(out).toContain("3");
+    expect(out).toContain("SET");
+    expect(out).toMatch(/06:05$/);
+  });
+
+  test("non esplode su una data non valida", () => {
+    expect(shortDateTime("non-una-data")).toBe("—");
   });
 });
