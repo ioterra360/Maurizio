@@ -85,15 +85,21 @@ when it's `<= now()`, the memory is due.
 | `example` | text | Example sentence, optional |
 | `item_type` | text | Folder-specific subtype (word/kanji/concept/drug/…) |
 | `state` | enum `memory_state` | `active` / `fading` / `archived` |
-| `srs_interval_days` | int | Days until next review, ≥ 0 |
-| `srs_ease_factor` | numeric(3,2) | SM-2 ease, ≥ 1.30, default 2.50 |
-| `srs_repetitions` | int | Successful recall count |
+| `review_phase` | text | Fase della scala di Maurizio (migration 20260902100000): `p20h/p48h/p7d/p30d/p3m/p6m/p1y/done` + recuperi `r24h/r48h/r3d/r7d/r14d/r30d/r2m`. Default `'p20h'`. Decide il layer (docs/SRS.md). |
+| `review_window_end` | timestamptz | Fine finestra: `< now()` = ricordo in ritardo. `null` = la fase non scade. |
+| `recovery_from` | text | Fase in cui è avvenuto il "dimenticato" del recupero in corso; `null` = non in recupero. |
+| `last_result` | text | Ultima risposta (`remembered/struggled/forgot`), telemetria. |
+| `srs_interval_days` | int | **LEGACY SM-2** — non più letto né scritto dallo scheduler (2026-09-02); da rimuovere con una migrazione futura |
+| `srs_ease_factor` | numeric(3,2) | **LEGACY SM-2** — idem |
+| `srs_repetitions` | int | **LEGACY SM-2** — idem |
 | `last_reviewed_at` | timestamptz | Nullable until first review |
-| `next_review_at` | timestamptz | The queue key. Default `now()` |
+| `next_review_at` | timestamptz | The queue key = inizio finestra. `createMemory` lo semina a **T0+20h** (`firstReview()`); il default DB `now()` non viene mai esercitato |
 | `created_at` / `updated_at` | timestamptz | |
 
-Indexed on `(user_id, next_review_at)` for the due-queue query and
-`(folder_id, state)` for the folder-state filter.
+Indexed on `(user_id, next_review_at)` for the due-queue query,
+`(folder_id, state)` for the folder-state filter, plus
+`(user_id, review_phase, next_review_at)` (coda per fase) and
+`(user_id, review_window_end)` (ritardatari) from migration 20260902100000.
 
 ### `review_sessions`
 
@@ -217,13 +223,24 @@ function in a new migration.
 
 ### The due queue for a user
 ```sql
-select id, term, folder_id, srs_interval_days, srs_repetitions
+select id, term, folder_id, review_phase, review_window_end
 from public.memories
 where user_id = auth.uid()
+  and deleted_at is null
   and state <> 'archived'
   and next_review_at <= now()
 order by next_review_at
 limit 50;
+```
+
+### I ricordi in ritardo (sezione "Da recuperare")
+```sql
+select count(*)
+from public.memories
+where user_id = auth.uid()
+  and deleted_at is null
+  and state <> 'archived'
+  and review_window_end < now();  -- i NULL sono esclusi dal confronto
 ```
 
 ### Memory health per folder

@@ -1,32 +1,22 @@
 /**
  * SRS types — kept narrow so the scheduler stays a pure function.
  *
- * The scheduler does NOT depend on lib/mappers.Memory directly. It works on
- * SrsState (the four numbers the algorithm cares about) and a string id. The
- * persistence layer (lib/api.ts in step C) is responsible for round-tripping
- * the rest of the Memory row.
+ * Dal 2026-09-02 il motore è la scala a fasi di Maurizio (./phases.ts), non
+ * più SM-2. Il vocabolario SM-2 (quality, ease, LayerOutcome, UpdatedSrs) è
+ * stato ritirato insieme a scheduler.ts; restano qui solo i tipi che il
+ * resto dell'app usa ancora.
  */
 
-import type { LayerKey } from "@/theme/tokens";
+export type MemoryLifecycleState = "active" | "fading" | "archived";
+
+/** Ri-export così i consumatori non devono dual-importare da phases.ts. */
+export type { PhaseState, ReviewPhase } from "./phases";
 
 /**
- * The "struggled" outcomes stay in the vocabulary (SM-2 quality 3) but no
- * screen produces them since 2026-08-29 (Maurizio: answers are binary for
- * now; the intermediate option returns later with its own timing, only for
- * item types where a partial recall makes sense). lib/review-store maps
- * every UI answer to the binary outcomes.
+ * Snapshot delle colonne srs_* legacy della riga memories. Lo scheduler non
+ * le legge più; il tipo sopravvive finché le colonne esistono a DB e
+ * ReviewCard le trasporta. Va via con la migrazione che le rimuove.
  */
-export type LayerOutcome =
-  | { layer: "scan"; outcome: "remember" | "show" }
-  | { layer: "reinforcement"; outcome: "continue" | "struggled" | "again" }
-  | { layer: "focus"; outcome: "remembered" | "struggled" | "forgot" };
-
-/**
- * The 5-point quality scale SM-2 expects. Higher = better recall.
- * Anything `< 3` is treated as a forget and resets the interval.
- */
-export type Quality = 0 | 1 | 2 | 3 | 4 | 5;
-
 export type SrsState = {
   intervalDays: number;
   easeFactor: number;
@@ -36,33 +26,3 @@ export type SrsState = {
   /** ISO timestamp of when the memory was last reviewed (null on first ever). */
   lastReviewedAt: string | null;
 };
-
-export type MemoryLifecycleState = "active" | "fading" | "archived";
-
-/** Ri-export così i consumatori non devono dual-importare da phases.ts. */
-export type { PhaseState, ReviewPhase } from "./phases";
-
-export type UpdatedSrs = SrsState & {
-  /** SM-2 quality used for this update — useful for telemetry/replay. */
-  quality: Quality;
-  /** Lifecycle state derived from the new interval + history. */
-  state: MemoryLifecycleState;
-};
-
-export const DEFAULT_EASE = 2.5;
-export const MIN_EASE = 1.3;
-export const FADING_OVERDUE_MULTIPLIER = 1.5;
-
-/** Default new-memory SRS state — what api.ts seeds rows with. */
-export function initialSrsState(now: Date = new Date()): SrsState {
-  return {
-    intervalDays: 0,
-    easeFactor: DEFAULT_EASE,
-    repetitions: 0,
-    nextReviewAt: now.toISOString(),
-    lastReviewedAt: null,
-  };
-}
-
-/** Re-export of LayerKey so callers don't have to dual-import from tokens. */
-export type Layer = LayerKey;
