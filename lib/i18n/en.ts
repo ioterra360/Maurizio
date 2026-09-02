@@ -1034,4 +1034,28 @@ export const en: Record<keyof typeof it, string> = {
   "taxonomy.cucina": "Cooking",
   "taxonomy.sport": "Sports",
 
+
+  // ---- home ridisegnata + calendario ripassi (2026-09-02) ----
+  "today.reviewsToday": "Today's reviews",
+  "today.heroCount_one": "{count} memory to review",
+  "today.heroCount_other": "{count} memories to review",
+  "today.heroFolders_one": "{count} folder",
+  "today.heroFolders_other": "{count} folders",
+  "today.startReviewHero": "Start the review",
+  "today.recoverSection": "To catch up",
+  "today.overdue_one": "{count} memory overdue",
+  "today.overdue_other": "{count} memories overdue",
+  "today.todaySection": "Today",
+  "today.byPriority": "by your priorities",
+  "today.upcomingSection": "Upcoming reviews",
+  "today.tomorrow": "Tomorrow",
+  "today.seeUpcoming": "See upcoming reviews",
+  "today.folderDue_one": "{count} memory",
+  "today.folderDue_other": "{count} memories",
+  "upcoming.title": "Upcoming reviews",
+  "upcoming.dayCount_one": "{count} memory to review",
+  "upcoming.dayCount_other": "{count} memories to review",
+  "upcoming.emptyMonth": "No reviews scheduled this month",
+  "upcoming.emptyDay": "No reviews for this day",
+
 };

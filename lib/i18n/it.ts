@@ -1034,4 +1034,28 @@ export const it = {
   "taxonomy.cucina": "Cucina",
   "taxonomy.sport": "Sport",
 
+
+  // ---- home ridisegnata + calendario ripassi (2026-09-02) ----
+  "today.reviewsToday": "Ripassi di oggi",
+  "today.heroCount_one": "{count} ricordo da ripassare",
+  "today.heroCount_other": "{count} ricordi da ripassare",
+  "today.heroFolders_one": "{count} cartella",
+  "today.heroFolders_other": "{count} cartelle",
+  "today.startReviewHero": "Inizia il ripasso",
+  "today.recoverSection": "Da recuperare",
+  "today.overdue_one": "{count} ricordo in ritardo",
+  "today.overdue_other": "{count} ricordi in ritardo",
+  "today.todaySection": "Oggi",
+  "today.byPriority": "in base alle tue priorità",
+  "today.upcomingSection": "Prossimi ripassi",
+  "today.tomorrow": "Domani",
+  "today.seeUpcoming": "Vedi ripassi successivi",
+  "today.folderDue_one": "{count} ricordo",
+  "today.folderDue_other": "{count} ricordi",
+  "upcoming.title": "Prossimi ripassi",
+  "upcoming.dayCount_one": "{count} ricordo da ripassare",
+  "upcoming.dayCount_other": "{count} ricordi da ripassare",
+  "upcoming.emptyMonth": "Nessun ripasso in programma questo mese",
+  "upcoming.emptyDay": "Nessun ripasso per questo giorno",
+
 } as const;

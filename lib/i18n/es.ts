@@ -1034,4 +1034,28 @@ export const es: Record<keyof typeof it, string> = {
   "taxonomy.cucina": "Cocina",
   "taxonomy.sport": "Deporte",
 
+
+  // ---- home ridisegnata + calendario ripassi (2026-09-02) ----
+  "today.reviewsToday": "Repasos de hoy",
+  "today.heroCount_one": "{count} recuerdo por repasar",
+  "today.heroCount_other": "{count} recuerdos por repasar",
+  "today.heroFolders_one": "{count} carpeta",
+  "today.heroFolders_other": "{count} carpetas",
+  "today.startReviewHero": "Empezar el repaso",
+  "today.recoverSection": "Por recuperar",
+  "today.overdue_one": "{count} recuerdo atrasado",
+  "today.overdue_other": "{count} recuerdos atrasados",
+  "today.todaySection": "Hoy",
+  "today.byPriority": "según tus prioridades",
+  "today.upcomingSection": "Próximos repasos",
+  "today.tomorrow": "Mañana",
+  "today.seeUpcoming": "Ver próximos repasos",
+  "today.folderDue_one": "{count} recuerdo",
+  "today.folderDue_other": "{count} recuerdos",
+  "upcoming.title": "Próximos repasos",
+  "upcoming.dayCount_one": "{count} recuerdo por repasar",
+  "upcoming.dayCount_other": "{count} recuerdos por repasar",
+  "upcoming.emptyMonth": "No hay repasos programados este mes",
+  "upcoming.emptyDay": "No hay repasos para este día",
+
 };

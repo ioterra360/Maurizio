@@ -47,6 +47,7 @@ import { nextFolderPriority, type NewFolderInput } from "./folder-templates";
 import { LEGACY_KIND_TO_TEMPLATE, legacyKindFor } from "./folder-taxonomy";
 import { isoFromRelativeLabel } from "./format";
 import { DEMO_DUE_COUNTS, PHASES_BY_LAYER, type LayerCounts } from "./queue";
+import { groupByLocalDay } from "./upcoming";
 import type { LayerKey } from "@/theme/tokens";
 import {
   firstReview,
@@ -894,6 +895,58 @@ export async function fetchOverdueCount(userId: string): Promise<number> {
   const { count, error } = await q;
   if (error) throw error;
   return count ?? 0;
+}
+
+/**
+ * Ripassi futuri raggruppati per giorno LOCALE — "Prossimi ripassi" della
+ * Home e le celle del calendario. Il raggruppamento avviene lato client
+ * (lib/upcoming.ts): per i volumi di un'app personale non serve un
+ * aggregato server-side, e l'indice memories_user_next_review_idx copre la
+ * query. Cartelle in pausa escluse, come dai conteggi di oggi.
+ */
+export async function fetchUpcomingCounts(
+  userId: string,
+  fromISO: string,
+  toISO: string,
+): Promise<Map<string, number>> {
+  if (isDemoMode) return new Map();
+  const paused = await pausedFolderIds(userId);
+  let q = supabase
+    .from("memories")
+    .select("next_review_at")
+    .eq("user_id", userId)
+    .is("deleted_at", null)
+    .neq("state", "archived")
+    .gte("next_review_at", fromISO)
+    .lte("next_review_at", toISO);
+  if (paused.length > 0) q = q.not("folder_id", "in", `(${paused.join(",")})`);
+  const { data, error } = await q.returns<Array<{ next_review_at: string }>>();
+  if (error) throw error;
+  return groupByLocalDay((data ?? []).map((r) => ({ nextReviewAt: r.next_review_at })));
+}
+
+/**
+ * Conteggio dei ricordi IN CODA ADESSO per cartella — la sezione "Oggi"
+ * della Home (righe per cartella con "N ricordi"). Una sola query leggera
+ * (solo folder_id) ridotta lato client; PostgREST non raggruppa.
+ */
+export async function fetchDueByFolder(userId: string): Promise<Map<string, number>> {
+  if (isDemoMode) return new Map();
+  const nowIso = new Date().toISOString();
+  const paused = await pausedFolderIds(userId);
+  let q = supabase
+    .from("memories")
+    .select("folder_id")
+    .eq("user_id", userId)
+    .is("deleted_at", null)
+    .neq("state", "archived")
+    .lte("next_review_at", nowIso);
+  if (paused.length > 0) q = q.not("folder_id", "in", `(${paused.join(",")})`);
+  const { data, error } = await q.returns<Array<{ folder_id: string }>>();
+  if (error) throw error;
+  const out = new Map<string, number>();
+  for (const r of data ?? []) out.set(r.folder_id, (out.get(r.folder_id) ?? 0) + 1);
+  return out;
 }
 
 // ---------------------------------------------------------------------------
