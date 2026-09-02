@@ -101,7 +101,7 @@ export default function FolderDetailScreen() {
         back: m.definition,
         state: m.state,
         reviewed: relativeReviewed(m.lastReviewedAt),
-        layer: layerFor(m.srs.repetitions, m.state) ?? undefined,
+        layer: layerFor(m.phase, m.state) ?? undefined,
       })),
     [sectionedItems],
   );

@@ -24,7 +24,7 @@ function makeBuilder(table: string) {
     });
   for (const m of [
     "select", "update", "delete", "insert", "upsert",
-    "eq", "neq", "is", "not", "or", "lt", "lte", "gt", "gte",
+    "eq", "neq", "is", "in", "not", "or", "lt", "lte", "gt", "gte",
     "order", "limit", "returns", "maybeSingle", "single",
   ]) {
     builder[m] = chain(m);

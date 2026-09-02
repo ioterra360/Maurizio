@@ -113,30 +113,30 @@ describe("DEMO_DUE_COUNTS", () => {
   });
 });
 
-describe("layerFor — Maurizio's phase ladder on SM-2 repetitions", () => {
-  it("sends new and once-reviewed cards to Focus (20h / 48h consolidations)", () => {
-    expect(layerFor(0, "active")).toBe("focus");
-    expect(layerFor(1, "active")).toBe("focus");
+describe("layerFor", () => {
+  it("manda i due consolidamenti a Focus", () => {
+    expect(layerFor("p20h", "active")).toBe("focus");
+    expect(layerFor("p48h", "active")).toBe("focus");
   });
 
-  it("sends the 7-day and 30-day phases to Reinforcement", () => {
-    expect(layerFor(2, "active")).toBe("reinforcement");
-    expect(layerFor(3, "active")).toBe("reinforcement");
+  it("manda 7 e 30 giorni a Reinforcement", () => {
+    expect(layerFor("p7d", "active")).toBe("reinforcement");
+    expect(layerFor("p30d", "active")).toBe("reinforcement");
   });
 
-  it("sends everything from 3 months on to Scan", () => {
-    expect(layerFor(4, "active")).toBe("scan");
-    expect(layerFor(12, "active")).toBe("scan");
+  it("manda da 3 mesi in poi a Scan", () => {
+    expect(layerFor("p3m", "active")).toBe("scan");
+    expect(layerFor("p1y", "active")).toBe("scan");
   });
 
-  it("routes fading cards to Reinforcement whatever their count", () => {
-    expect(layerFor(0, "fading")).toBe("reinforcement");
-    expect(layerFor(9, "fading")).toBe("reinforcement");
+  it("una carta archiviata non sta in nessuna coda", () => {
+    expect(layerFor("p20h", "archived")).toBeNull();
   });
 
-  it("keeps archived cards out of every layer", () => {
-    expect(layerFor(0, "archived")).toBeNull();
-    expect(layerFor(5, "archived")).toBeNull();
+  it("una carta in ritardo resta nel layer della SUA fase", () => {
+    // Prima le carte fading finivano tutte in Reinforcement. Ora il layer
+    // dipende dalla fase; il ritardo cambia solo l'ordine in coda.
+    expect(layerFor("p3m", "fading")).toBe("scan");
   });
 });
 

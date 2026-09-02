@@ -38,8 +38,6 @@ import {
 } from "./mappers";
 import {
   FOLDER_TEMPLATES,
-  LAYER_REPS_FOCUS_BELOW,
-  LAYER_REPS_REINFORCEMENT_BELOW,
   type FolderKind,
   type ReviewResponse,
 } from "./constants";
@@ -47,7 +45,7 @@ import type { DeletionPreview } from "./account-deletion";
 import { getAllFolderSeeds, getFolderSeed, type FolderSeed } from "./folder-data";
 import { nextFolderPriority, type NewFolderInput } from "./folder-templates";
 import { isoFromRelativeLabel } from "./format";
-import { DEMO_DUE_COUNTS, type LayerCounts } from "./queue";
+import { DEMO_DUE_COUNTS, PHASES_BY_LAYER, type LayerCounts } from "./queue";
 import type { LayerKey } from "@/theme/tokens";
 import { type UpdatedSrs } from "@/features/srs/types";
 import { firstReview } from "@/features/srs/phases";
@@ -795,16 +793,13 @@ export async function applyScheduledUpdate(
 }
 
 /**
- * Due memories sliced by layer, per docs/SRS.md:
- *   - focus         : due now, srs_repetitions < LAYER_REPS_FOCUS_BELOW (2)
- *   - reinforcement : due now, 2 <= srs_repetitions < LAYER_REPS_REINFORCEMENT_BELOW (4), OR state='fading'
- *   - scan          : due now, srs_repetitions >= 4
- * Rationale + Maurizio's phase mapping in lib/constants.ts; pure mirror in
+ * Ricordi in coda affettati per livello. Il livello si deduce dalla FASE
+ * (features/srs/phases.ts): Focus = consolidamenti e recuperi brevi,
+ * Reinforcement = 7/30 giorni, Scan = da 3 mesi in poi. Specchio puro in
  * lib/queue.ts layerFor().
  *
  * Demo mode returns an empty list — the review store falls through to its
- * static decks for offline UAT. Phase 3D will replace the static decks
- * with this query.
+ * static decks for offline UAT.
  */
 export async function fetchDueMemoriesByLayer(
   userId: string,
@@ -830,20 +825,10 @@ export async function fetchDueMemoriesByLayer(
     if (paused.length > 0) query = query.not("folder_id", "in", `(${paused.join(",")})`);
   }
 
-  // The layer predicates MUST be mutually exclusive so that during the full
-  // Scan → Reinforcement → Focus flow no memory shows up twice. Per
-  // docs/SRS.md fading items belong to Reinforcement only; Scan and Focus
-  // exclude them explicitly.
-  if (layer === "focus") {
-    query = query.lt("srs_repetitions", LAYER_REPS_FOCUS_BELOW).neq("state", "fading");
-  } else if (layer === "reinforcement") {
-    // Either in the reinforcement repetition window OR explicitly fading.
-    query = query.or(
-      `and(srs_repetitions.gte.${LAYER_REPS_FOCUS_BELOW},srs_repetitions.lt.${LAYER_REPS_REINFORCEMENT_BELOW}),state.eq.fading`,
-    );
-  } else {
-    query = query.gte("srs_repetitions", LAYER_REPS_REINFORCEMENT_BELOW).neq("state", "fading");
-  }
+  // Il livello ora si affetta per FASE. I predicati restano mutuamente
+  // esclusivi — nel flusso Scan → Reinforcement → Focus nessuna carta
+  // compare due volte — perché ogni fase appartiene a un solo livello.
+  query = query.in("review_phase", PHASES_BY_LAYER[layer]);
 
   const { data, error } = await query
     .order("next_review_at")
@@ -879,11 +864,9 @@ export async function fetchDueCounts(
   };
   const [scan, reinforcement, focus] = await Promise.all(
     [
-      base().gte("srs_repetitions", LAYER_REPS_REINFORCEMENT_BELOW).neq("state", "fading"),
-      base().or(
-        `and(srs_repetitions.gte.${LAYER_REPS_FOCUS_BELOW},srs_repetitions.lt.${LAYER_REPS_REINFORCEMENT_BELOW}),state.eq.fading`,
-      ),
-      base().lt("srs_repetitions", LAYER_REPS_FOCUS_BELOW).neq("state", "fading"),
+      base().in("review_phase", PHASES_BY_LAYER.scan),
+      base().in("review_phase", PHASES_BY_LAYER.reinforcement),
+      base().in("review_phase", PHASES_BY_LAYER.focus),
     ].map(async (q) => {
       const { count, error } = await q;
       if (error) throw error;
@@ -891,6 +874,30 @@ export async function fetchDueCounts(
     }),
   );
   return { scan, reinforcement, focus };
+}
+
+/**
+ * Quanti ricordi hanno superato la finestra della loro fase — la sezione
+ * "Da recuperare" della Home. Nessuna colonna di stato e nessun job: il
+ * ritardo è il confronto review_window_end < now(), calcolato alla lettura.
+ */
+export async function fetchOverdueCount(userId: string): Promise<number> {
+  if (isDemoMode) return 0;
+  const nowIso = new Date().toISOString();
+  const paused = await pausedFolderIds(userId);
+  // .lt esclude da solo i review_window_end NULL (in SQL un confronto con
+  // NULL non è mai vero), quindi non serve un filtro is-not-null esplicito.
+  let q = supabase
+    .from("memories")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", userId)
+    .is("deleted_at", null)
+    .neq("state", "archived")
+    .lt("review_window_end", nowIso);
+  if (paused.length > 0) q = q.not("folder_id", "in", `(${paused.join(",")})`);
+  const { count, error } = await q;
+  if (error) throw error;
+  return count ?? 0;
 }
 
 // ---------------------------------------------------------------------------

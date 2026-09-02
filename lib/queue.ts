@@ -7,11 +7,12 @@ import type { LayerKey } from "@/theme/tokens";
 import type { Memory } from "./mappers";
 import type { ReviewCard } from "./review-store";
 import {
-  LAYER_REPS_FOCUS_BELOW,
-  LAYER_REPS_REINFORCEMENT_BELOW,
-  type FolderKind,
-  type MemoryState,
-} from "./constants";
+  PHASE_SPEC,
+  REVIEW_PHASES,
+  layerForPhase,
+  type ReviewPhase,
+} from "@/features/srs/phases";
+import { type FolderKind, type MemoryState } from "./constants";
 
 export type LayerCounts = { scan: number; reinforcement: number; focus: number };
 
@@ -55,17 +56,26 @@ export function splitBudget(counts: LayerCounts, capTotal: number): LayerCounts 
 }
 
 /**
- * Livello di ripasso di una memoria in base alle ripetizioni riuscite e
- * allo stato (soglie e razionale in lib/constants.ts). `null` = archiviata,
- * fuori da ogni coda. Specchio puro dei predicati di lib/api.ts.
+ * Livello di ripasso di una memoria, dedotto dalla sua FASE.
+ * `null` = archiviata, fuori da ogni coda.
+ *
+ * Prima il livello si deduceva dal numero di ripetizioni, che era un proxy
+ * sbagliato: a ease standard 4 ripetizioni valgono ~37 giorni, quindi la
+ * fase "30 giorni" — che la spec assegna a Reinforcement — finiva in Scan.
+ * Il ritardo (fading) NON cambia più il livello: cambia solo la priorità in
+ * coda, come dice lo screenshot 05.
  */
-export function layerFor(repetitions: number, state: MemoryState): LayerKey | null {
+export function layerFor(phase: ReviewPhase, state: MemoryState): LayerKey | null {
   if (state === "archived") return null;
-  if (state === "fading") return "reinforcement";
-  if (repetitions < LAYER_REPS_FOCUS_BELOW) return "focus";
-  if (repetitions < LAYER_REPS_REINFORCEMENT_BELOW) return "reinforcement";
-  return "scan";
+  return layerForPhase(phase);
 }
+
+/** Le fasi che alimentano ciascun livello — usato per i filtri PostgREST. */
+export const PHASES_BY_LAYER: Record<LayerKey, ReviewPhase[]> = {
+  focus: REVIEW_PHASES.filter((p) => PHASE_SPEC[p].layer === "focus"),
+  reinforcement: REVIEW_PHASES.filter((p) => PHASE_SPEC[p].layer === "reinforcement"),
+  scan: REVIEW_PHASES.filter((p) => PHASE_SPEC[p].layer === "scan"),
+};
 
 /**
  * Compone il mazzo di un livello rispettando la priorità delle cartelle
@@ -91,7 +101,15 @@ export function allocateByFolderPriority(
     return Number.isNaN(ms) ? 0 : ms;
   };
   const limit = Math.max(0, cap);
-  const sorted = [...memories].sort((a, b) => rank(a) - rank(b) || due(a) - due(b));
+  // Le carte in ritardo hanno priorità sui ripassi normali (screenshot 05),
+  // ma dentro la loro cartella: la priorità delle cartelle resta il primo
+  // criterio, altrimenti un ritardo in una cartella secondaria scavalcherebbe
+  // tutto il resto.
+  const late = (m: Memory) =>
+    m.reviewWindowEnd && Date.parse(m.reviewWindowEnd) < Date.now() ? 0 : 1;
+  const sorted = [...memories].sort(
+    (a, b) => rank(a) - rank(b) || late(a) - late(b) || due(a) - due(b),
+  );
   if (sorted.length <= limit) return sorted;
 
   // Most urgent card of each folder (sorted is rank-then-due, so the first

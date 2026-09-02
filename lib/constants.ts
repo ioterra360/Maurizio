@@ -156,22 +156,13 @@ export type MemoryState = (typeof MEMORY_STATES)[number];
 export const REVIEW_LAYERS: ReadonlyArray<LayerKey> = ["scan", "reinforcement", "focus"];
 
 /**
- * Which layer reviews a due memory — Maurizio's phase ladder (tables of
- * 2026-08-28, materiale_maurizio/feedback_2026-08-28) mapped onto SM-2
- * `srs_repetitions` (= successful reviews so far):
- *
- *   Focus          repetitions < 2                   20h and 48h consolidations ("ricordi di ieri")
- *   Reinforcement  2 <= repetitions < 4, or fading   7-day and 30-day phases ("ultimi 3–7 giorni")
- *   Scan           repetitions >= 4                  3 months and beyond ("ricordi più vecchi")
- *
- * Fading cards always go to Reinforcement: guided recall is the recovery
- * path. A forget resets repetitions to 0, so a forgotten card drops back to
- * Focus. The same split is written as PostgREST predicates in lib/api.ts
- * (fetchDueMemoriesByLayer / fetchDueCounts) and as the pure `layerFor` in
- * lib/queue.ts — keep the three in sync.
+ * Il livello di ripasso NON si deduce più dal numero di ripetizioni: si
+ * deduce dalla fase (features/srs/phases.ts, layerForPhase). Le vecchie
+ * soglie LAYER_REPS_* sono state rimosse il 2026-09-02 perché il conteggio
+ * di ripetizioni era un proxy sbagliato — a ease standard 4 ripetizioni
+ * valgono ~37 giorni, quindi la fase "30 giorni" finiva in Scan invece che
+ * in Reinforcement.
  */
-export const LAYER_REPS_FOCUS_BELOW = 2;
-export const LAYER_REPS_REINFORCEMENT_BELOW = 4;
 
 export const REVIEW_RESPONSES = ["remembered", "struggled", "forgot", "skipped"] as const;
 export type ReviewResponse = (typeof REVIEW_RESPONSES)[number];
