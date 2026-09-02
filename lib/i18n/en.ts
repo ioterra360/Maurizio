@@ -250,11 +250,11 @@ export const en: Record<keyof typeof it, string> = {
   "chooseTopic.sectionTemplates": "Templates",
   "chooseTopic.subtitleLimitEnforced": "Memika starts with a single folder: the one you want to protect from being forgotten. More folders will come with Premium.",
   "chooseTopic.subtitleLimitOff": "The topic to start from. You can add more from the Folders screen.",
-  "chooseTopic.subtitleNewFolder": "A template, or a topic of your own. Each folder type only once.",
+  "chooseTopic.subtitleNewFolder": "Pick a starting point, or name a topic of your own.",
   "chooseTopic.templateLabel": "{name} — {hint}",
   "chooseTopic.templateOwnedLabel": "{name} — already added",
-  "chooseTopic.titleChooseTopic": "Choose your topic",
-  "chooseTopic.titleNewFolder": "New folder",
+  "chooseTopic.titleChooseTopic": "What do you want to remember?",
+  "chooseTopic.titleNewFolder": "What do you want to remember?",
 
   // ---- coachTip ------------------------------------------------------------
   "coachTip.closeTip": "Dismiss tip",

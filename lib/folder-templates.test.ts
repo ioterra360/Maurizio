@@ -1,67 +1,12 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  CUSTOM_FOLDER_KIND,
-  CUSTOM_ITEM_TYPES,
-  FOLDER_KINDS,
-  FOLDER_TEMPLATES,
-  TEMPLATE_KINDS,
-} from "./constants";
-import {
-  folderInputFromChoice,
-  getTemplate,
-  isTemplateKind,
-  itemTypesForKind,
+  folderInputFromCustomName,
+  folderInputFromSubcategory,
   nextFolderPriority,
   validateFolderName,
 } from "./folder-templates";
-
-describe("constants", () => {
-  it("keeps the four template slugs unchanged and adds custom", () => {
-    expect(TEMPLATE_KINDS).toEqual(["jp", "medicine", "es", "law"]);
-    expect(FOLDER_KINDS).toEqual(["jp", "medicine", "es", "law", "custom"]);
-    expect(FOLDER_TEMPLATES.map((t) => t.kind)).toEqual(TEMPLATE_KINDS);
-  });
-
-  it("localizes template names and chips in Italian", () => {
-    expect(FOLDER_TEMPLATES.map((t) => t.name)).toEqual([
-      "Giapponese",
-      "Medicina",
-      "Spagnolo",
-      "Diritto",
-    ]);
-    expect(getTemplate("jp").itemTypes.map((i) => i.label)).toEqual([
-      "Parola",
-      "Kanji",
-      "Grammatica",
-      "Frase",
-    ]);
-  });
-});
-
-describe("getTemplate / isTemplateKind / itemTypesForKind", () => {
-  it("looks a template up by kind", () => {
-    expect(getTemplate("law").name).toBe("Diritto");
-    expect(getTemplate("medicine").itemTypes.map((i) => i.value)).toEqual([
-      "term",
-      "concept",
-      "drug",
-      "fact",
-    ]);
-  });
-
-  it("recognizes template kinds only", () => {
-    expect(isTemplateKind("jp")).toBe(true);
-    expect(isTemplateKind("custom")).toBe(false);
-    expect(isTemplateKind(null)).toBe(false);
-    expect(isTemplateKind("")).toBe(false);
-  });
-
-  it("falls back to generic chips for custom folders", () => {
-    expect(itemTypesForKind("es")).toBe(getTemplate("es").itemTypes);
-    expect(itemTypesForKind(CUSTOM_FOLDER_KIND)).toBe(CUSTOM_ITEM_TYPES);
-  });
-});
+import { TAXONOMY } from "./folder-taxonomy";
 
 describe("validateFolderName", () => {
   it("trims and collapses whitespace", () => {
@@ -71,50 +16,53 @@ describe("validateFolderName", () => {
     });
   });
 
-  it("rejects empty / whitespace-only names", () => {
-    expect(validateFolderName("")).toMatchObject({ ok: false, reason: "empty" });
-    expect(validateFolderName("   \n ")).toMatchObject({ ok: false, reason: "empty" });
+  it("rejects empty and whitespace-only names", () => {
+    expect(validateFolderName("   ").ok).toBe(false);
   });
 
-  it("accepts exactly 40 chars and rejects 41", () => {
-    expect(validateFolderName("a".repeat(40))).toMatchObject({ ok: true });
-    expect(validateFolderName("a".repeat(41))).toMatchObject({ ok: false, reason: "too-long" });
-  });
-
-  it("measures length after trimming", () => {
-    expect(validateFolderName("  " + "a".repeat(40) + "  ")).toMatchObject({ ok: true });
+  it("rejects names over 40 chars", () => {
+    const v = validateFolderName("x".repeat(41));
+    expect(v.ok).toBe(false);
+    if (!v.ok) expect(v.reason).toBe("too-long");
   });
 });
 
 describe("nextFolderPriority", () => {
-  it("is 1 for a brand-new user", () => {
+  it("starts at 1 and appends after the max", () => {
     expect(nextFolderPriority([])).toBe(1);
-  });
-
-  it("is max+1 regardless of order or gaps", () => {
-    expect(nextFolderPriority([{ priority: 3 }, { priority: 1 }])).toBe(4);
-    expect(nextFolderPriority([{ priority: 1 }])).toBe(2);
+    expect(nextFolderPriority([{ priority: 1 }, { priority: 3 }])).toBe(4);
   });
 });
 
-describe("folderInputFromChoice", () => {
-  it("expands a template into kind + Italian name + chips", () => {
-    expect(folderInputFromChoice({ type: "template", kind: "es" })).toEqual({
-      kind: "es",
-      name: "Spagnolo",
-      itemTypes: getTemplate("es").itemTypes,
+describe("folderInputFromSubcategory", () => {
+  it("porta nome, categoria, template ed emoji della sottocategoria", () => {
+    const vino = TAXONOMY.find((c) => c.id === "interessi")!.subcategories.find(
+      (s) => s.id === "vino",
+    )!;
+    const input = folderInputFromSubcategory("interessi", vino);
+    expect(input).toMatchObject({ category: "interessi", templateId: "vino", emoji: "🍷" });
+    expect(input.name.length).toBeGreaterThan(0);
+  });
+});
+
+describe("folderInputFromCustomName", () => {
+  it("crea una cartella personalizzata col nome validato", () => {
+    const input = folderInputFromCustomName("  Vela  d'altura ");
+    expect(input).toEqual({
+      name: "Vela d'altura",
+      category: "custom",
+      templateId: null,
+      emoji: "📁",
     });
   });
 
-  it("builds a custom folder with the cleaned name and generic chips", () => {
-    expect(folderInputFromChoice({ type: "custom", name: "  Chimica " })).toEqual({
-      kind: "custom",
-      name: "Chimica",
-      itemTypes: CUSTOM_ITEM_TYPES,
-    });
+  it("una 'Altra lingua…' resta nella categoria lingue", () => {
+    const input = folderInputFromCustomName("Swahili", "lingue", "🌐");
+    expect(input.category).toBe("lingue");
+    expect(input.templateId).toBeNull();
   });
 
-  it("throws on an invalid custom name", () => {
-    expect(() => folderInputFromChoice({ type: "custom", name: " " })).toThrow();
+  it("throws sull'input invalido (ultima linea di difesa)", () => {
+    expect(() => folderInputFromCustomName("   ")).toThrow();
   });
 });

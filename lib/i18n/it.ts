@@ -250,11 +250,11 @@ export const it = {
   "chooseTopic.sectionTemplates": "Modelli",
   "chooseTopic.subtitleLimitEnforced": "Memika parte da una cartella sola: quella che vuoi proteggere dall'oblio. Altre cartelle arriveranno con Premium.",
   "chooseTopic.subtitleLimitOff": "L'argomento da cui partire. Potrai aggiungerne altri dalla schermata Cartelle.",
-  "chooseTopic.subtitleNewFolder": "Un modello, oppure un argomento tuo. Ogni tipo di cartella una volta sola.",
+  "chooseTopic.subtitleNewFolder": "Scegli da dove partire, o dai un nome a un argomento tutto tuo.",
   "chooseTopic.templateLabel": "{name} — {hint}",
   "chooseTopic.templateOwnedLabel": "{name} — già presente",
-  "chooseTopic.titleChooseTopic": "Scegli il tuo argomento",
-  "chooseTopic.titleNewFolder": "Nuova cartella",
+  "chooseTopic.titleChooseTopic": "Cosa vuoi ricordare?",
+  "chooseTopic.titleNewFolder": "Cosa vuoi ricordare?",
 
   // ---- coachTip ------------------------------------------------------------
   "coachTip.closeTip": "Chiudi suggerimento",

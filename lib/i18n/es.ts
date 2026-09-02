@@ -250,11 +250,11 @@ export const es: Record<keyof typeof it, string> = {
   "chooseTopic.sectionTemplates": "Plantillas",
   "chooseTopic.subtitleLimitEnforced": "Memika empieza con una sola carpeta: la que quieres proteger del olvido. Más carpetas llegarán con Premium.",
   "chooseTopic.subtitleLimitOff": "El tema por el que empezar. Podrás añadir otros desde la pantalla Carpetas.",
-  "chooseTopic.subtitleNewFolder": "Una plantilla, o un tema tuyo. Cada tipo de carpeta una sola vez.",
+  "chooseTopic.subtitleNewFolder": "Elige un punto de partida o ponle nombre a un tema tuyo.",
   "chooseTopic.templateLabel": "{name} — {hint}",
   "chooseTopic.templateOwnedLabel": "{name} — ya existe",
-  "chooseTopic.titleChooseTopic": "Elige tu tema",
-  "chooseTopic.titleNewFolder": "Nueva carpeta",
+  "chooseTopic.titleChooseTopic": "¿Qué quieres recordar?",
+  "chooseTopic.titleNewFolder": "¿Qué quieres recordar?",
 
   // ---- coachTip ------------------------------------------------------------
   "coachTip.closeTip": "Cerrar consejo",

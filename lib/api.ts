@@ -44,6 +44,7 @@ import {
 import type { DeletionPreview } from "./account-deletion";
 import { getAllFolderSeeds, getFolderSeed, type FolderSeed } from "./folder-data";
 import { nextFolderPriority, type NewFolderInput } from "./folder-templates";
+import { LEGACY_KIND_TO_TEMPLATE, legacyKindFor } from "./folder-taxonomy";
 import { isoFromRelativeLabel } from "./format";
 import { DEMO_DUE_COUNTS, PHASES_BY_LAYER, type LayerCounts } from "./queue";
 import type { LayerKey } from "@/theme/tokens";
@@ -171,19 +172,25 @@ export async function fetchFolders(userId: string): Promise<Folder[]> {
   if (isDemoMode) {
     // Demo accounts keep all four template folders so the offline UI stays
     // fully reviewable. Real users start with ONE folder (see createFolder).
-    return FOLDER_TEMPLATES.map((t, i) => ({
-      id: `demo-folder-${i}`,
-      userId,
-      kind: t.kind,
-      name: t.name,
-      priority: i + 1,
-      deletedAt: null,
-      color: null,
-      icon: null,
-      paused: false,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    }));
+    return FOLDER_TEMPLATES.map((t, i) => {
+      const legacy = LEGACY_KIND_TO_TEMPLATE[t.kind] ?? LEGACY_KIND_TO_TEMPLATE.custom;
+      return {
+        id: `demo-folder-${t.kind}`,
+        userId,
+        kind: t.kind,
+        name: t.name,
+        priority: i + 1,
+        category: legacy.category,
+        templateId: legacy.templateId,
+        emoji: legacy.emoji,
+        deletedAt: null,
+        color: null,
+        icon: null,
+        paused: false,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+    });
   }
   const { data, error } = await supabase
     .from("folders")
@@ -217,14 +224,16 @@ export async function countFolders(userId: string): Promise<number> {
  * or a custom name, see lib/folder-templates.ts). Priority = max+1 of the
  * folders the user already has, read in the same call.
  *
- * `itemTypes` are NOT persisted: the folders table has no item_types
- * column and Add derives the chips from `kind` (ITEM_TYPES_BY_KIND). The
- * field travels in NewFolderInput so a future column is a one-line change.
+ * Le chip dei tipi di elemento NON sono persistite: Add le deriva da
+ * category + template_id (lib/folder-taxonomy.ts itemTypesFor).
  *
- * RLS: folders_all_own_or_admin lets an authenticated user insert rows
- * where user_id = auth.uid(). unique(user_id, kind) means a second folder
- * of the same kind fails with 23505 — the freemium flow never gets there
- * (one folder per free account), Premium will pick distinct kinds.
+ * Dal 2026-09-02 non esiste più unique(user_id, kind): due cartelle dello
+ * stesso template (o omonime) sono lecite, quindi la vecchia rianimazione
+ * della riga nel cestino non serve più — una cartella nel cestino resta nel
+ * cestino con la sua finestra di 24 ore, e la nuova nasce nuova.
+ *
+ * `kind` viene ancora scritta (legacyKindFor) come ponte per i client
+ * vecchi, che ci leggono icona e chip. Va via con la colonna.
  *
  * Demo: returns a synthetic row, nothing stored.
  */
@@ -233,13 +242,17 @@ export async function createFolder(
   input: NewFolderInput,
 ): Promise<Folder> {
   const now = new Date().toISOString();
+  const legacyKind = legacyKindFor(input.templateId);
   if (isDemoMode) {
     return {
-      id: `demo-folder-${input.kind}`,
+      id: `demo-folder-${input.templateId ?? "custom"}`,
       userId,
-      kind: input.kind,
+      kind: legacyKind,
       name: input.name,
       priority: 1,
+      category: input.category,
+      templateId: input.templateId,
+      emoji: input.emoji,
       deletedAt: null,
       color: null,
       icon: null,
@@ -249,50 +262,16 @@ export async function createFolder(
     };
   }
   const existing = await fetchFolders(userId);
-  // unique(user_id, kind): una cartella della stessa kind ancora nel cestino
-  // occuperebbe lo slot (23505). MAI hard delete (tradirebbe la promessa
-  // delle 24 ore — review 2026-08-30): la riga nel cestino viene RIANIMATA
-  // col nuovo nome, e i suoi vecchi ricordi restano nel cestino con la loro
-  // finestra (in /trash compaiono come ricordi singoli, ripristinabili).
-  const { data: trashed, error: trashedError } = await supabase
-    .from("folders")
-    .select("id")
-    .eq("user_id", userId)
-    .eq("kind", input.kind)
-    .not("deleted_at", "is", null)
-    .maybeSingle<{ id: string }>();
-  if (trashedError) throw trashedError;
-  if (trashed) {
-    // Le vecchie sezioni muoiono con la rianimazione: la cartella "nuova"
-    // non deve ereditare chips fantasma che consumano il budget max-3
-    // (review 2026-08-31). I ricordi nel cestino si limitano a tornare alla
-    // radice (subfolder_id on delete set null), la loro finestra resta.
-    const { error: subCleanupError } = await supabase
-      .from("subfolders")
-      .delete()
-      .eq("folder_id", trashed.id);
-    if (subCleanupError) throw subCleanupError;
-    const { data: revived, error: reviveError } = await supabase
-      .from("folders")
-      .update({
-        deleted_at: null,
-        name: input.name,
-        priority: nextFolderPriority(existing),
-        paused: false,
-      })
-      .eq("id", trashed.id)
-      .select("*")
-      .single<FolderRow>();
-    if (reviveError) throw reviveError;
-    return mapFolder(revived);
-  }
   const { data, error } = await supabase
     .from("folders")
     .insert({
       user_id: userId,
-      kind: input.kind,
+      kind: legacyKind,
       name: input.name,
       priority: nextFolderPriority(existing),
+      category: input.category,
+      template_id: input.templateId,
+      emoji: input.emoji,
     })
     .select("*")
     .single<FolderRow>();
@@ -543,12 +522,16 @@ export async function fetchDueMemories(userId: string, limit = 50): Promise<Memo
  * "how do I roll up these counts".
  */
 function seedToFolderWithStats(userId: string, s: FolderSeed): FolderWithStats {
+  const legacy = LEGACY_KIND_TO_TEMPLATE[s.kind] ?? LEGACY_KIND_TO_TEMPLATE.custom;
   return {
     id: `demo-folder-${s.kind}`,
     userId,
     kind: s.kind,
     name: s.name,
     priority: s.priority,
+    category: legacy.category,
+    templateId: legacy.templateId,
+    emoji: legacy.emoji,
     deletedAt: null,
     color: null,
     icon: null,
@@ -622,12 +605,18 @@ export async function fetchFoldersWithStats(userId: string): Promise<FolderWithS
  * and its items list. Demo mode reuses the seed; remote resolves the folder
  * row, then fetches its items once and rolls up stats from that same read —
  * 2 queries total, and the hero stats always match the visible rows.
+ *
+ * `idOrKind` accetta l'id della cartella (identità dal 2026-09-02) MA anche
+ * un kind legacy: durante la transizione OTA una navigazione salvata da un
+ * client vecchio può ancora arrivare con /folder/jp. Via con la colonna kind.
  */
 export async function fetchFolderDetail(
   userId: string,
-  kind: FolderKind,
+  idOrKind: string,
 ): Promise<{ folder: FolderWithStats; items: Memory[] } | null> {
   if (isDemoMode) {
+    // Id demo: "demo-folder-<kind>"; accetta anche il kind nudo.
+    const kind = (idOrKind.replace(/^demo-folder-/, "")) as FolderKind;
     const seed = getFolderSeed(kind);
     if (!seed) return null;
     const folder = seedToFolderWithStats(userId, seed);
@@ -666,7 +655,9 @@ export async function fetchFolderDetail(
   }
 
   const folders = await fetchFolders(userId);
-  const folder = folders.find((f) => f.kind === kind);
+  // Prima per id (identità), poi per kind legacy (transizione OTA).
+  const folder =
+    folders.find((f) => f.id === idOrKind) ?? folders.find((f) => f.kind === idOrKind);
   if (!folder) return null;
   const items = await fetchMemoriesForFolder(folder.id);
   return { folder: rollupStats(folder, items), items };

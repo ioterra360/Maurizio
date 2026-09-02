@@ -165,37 +165,38 @@ describe("restore", () => {
     expect(folderUpdates).toHaveLength(0);
   });
 
-  it("createFolder RESURRECTS a trashed same-kind folder instead of hard-deleting it", async () => {
+  it("createFolder INSERTS a fresh row — no resurrection, no deletes (post unique-constraint, 2026-09-02)", async () => {
     results = [
       { data: [] }, // fetchFolders (live folders, for priority)
-      { data: { id: "fOld", deleted_at: "2026-08-30T09:00:00Z" } }, // trashed same-kind lookup
-      {}, // stale subfolders cleanup
       { data: {
-        id: "fOld", user_id: "u1", kind: "es", name: "Nuovo nome", priority: 1,
+        id: "fNew", user_id: "u1", kind: "es", name: "Spagnolo", priority: 1,
+        category: "lingue", template_id: "es", emoji: "🇪🇸",
         color: null, icon: null, paused: false, deleted_at: null,
-        created_at: "2026-08-01T00:00:00Z", updated_at: "2026-08-30T11:00:00Z",
-      } }, // resurrect update returning the row
+        created_at: "2026-09-02T00:00:00Z", updated_at: "2026-09-02T00:00:00Z",
+      } }, // insert returning the row
     ];
-    const folder = await createFolder("u1", { kind: "es", name: "Nuovo nome", itemTypes: [] });
-    expect(folder.id).toBe("fOld");
-    // The old MEMORIES keep their 24h window (no delete on memories/folders);
-    // the old SECTIONS instead die with the revive — the "new" folder must
-    // not inherit phantom chips that eat the max-3 budget.
+    const folder = await createFolder("u1", {
+      name: "Spagnolo",
+      category: "lingue",
+      templateId: "es",
+      emoji: "🇪🇸",
+    });
+    expect(folder.id).toBe("fNew");
+    expect(folder.category).toBe("lingue");
+    // Niente delete da nessuna parte: una cartella nel cestino resta nel
+    // cestino con la sua finestra di 24 ore, la nuova nasce nuova.
     for (const l of log) {
-      if (l.table === "subfolders") continue;
       expect(l.calls.map(([n]) => n)).not.toContain("delete");
+      expect(l.calls.map(([n]) => n)).not.toContain("update");
     }
-    const subCleanup = log.find((l) => l.table === "subfolders" && l.calls.some(([n]) => n === "delete"));
-    expect(subCleanup).toBeDefined();
-    expect(subCleanup!.calls.filter(([n]) => n === "eq").map(([, a]) => a)).toContainEqual([
-      "folder_id",
-      "fOld",
-    ]);
-    const resurrect = log.find((l) => l.table === "folders" && l.calls.some(([n]) => n === "update"));
-    expect(resurrect).toBeDefined();
-    const payload = resurrect!.calls.filter(([n]) => n === "update").map(([, a]) => a)[0][0] as Record<string, unknown>;
-    expect(payload.deleted_at).toBeNull();
-    expect(payload.name).toBe("Nuovo nome");
+    const insert = log.find((l) => l.table === "folders" && l.calls.some(([n]) => n === "insert"));
+    expect(insert).toBeDefined();
+    const payload = insert!.calls.filter(([n]) => n === "insert").map(([, a]) => a)[0][0] as Record<string, unknown>;
+    // kind legacy scritto come ponte per i client vecchi.
+    expect(payload.kind).toBe("es");
+    expect(payload.category).toBe("lingue");
+    expect(payload.template_id).toBe("es");
+    expect(payload.emoji).toBe("🇪🇸");
   });
 
   it("fetchReviewCount counts review_items rows for the memory", async () => {

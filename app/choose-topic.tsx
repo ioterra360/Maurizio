@@ -1,42 +1,53 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   KeyboardAvoidingView,
+  Modal,
   Platform,
+  Pressable,
   ScrollView,
   Text,
   TextInput,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Redirect, router, useLocalSearchParams } from "expo-router";
-import { PenLine } from "lucide-react-native";
+import { PenLine, Search } from "lucide-react-native";
 
-import { FolderTile } from "@/components/FolderTile";
 import { Mascot } from "@/components/Mascot";
 import { MascotLoader } from "@/components/MascotLoader";
 import { PrimaryButton } from "@/components/PrimaryButton";
-import { SectionLabel } from "@/components/SectionLabel";
 import { Tappable } from "@/components/Tappable";
 import { TopBar } from "@/components/TopBar";
-import { countFolders, createFolder, fetchFolders, moveMemory } from "@/lib/api";
+import { countFolders, createFolder, moveMemory } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
+import { FOLDER_LIMIT_ENFORCED, FOLDER_NAME_MAX_LENGTH } from "@/lib/constants";
 import {
-  FOLDER_LIMIT_ENFORCED,
-  FOLDER_NAME_MAX_LENGTH,
-  FOLDER_TEMPLATES,
-  type TemplateKind,
-} from "@/lib/constants";
-import {
-  folderInputFromChoice,
+  folderInputFromCustomName,
+  folderInputFromSubcategory,
   validateFolderName,
-  type TopicChoice,
+  type NewFolderInput,
 } from "@/lib/folder-templates";
+import {
+  CUSTOM_FOLDER_EMOJI,
+  TAXONOMY,
+  filterSubcategories,
+  type TaxonomyCategory,
+  type TaxonomySub,
+} from "@/lib/folder-taxonomy";
 import { useT } from "@/lib/i18n";
 import { useUIStore } from "@/lib/ui-store";
 import { reportError } from "@/lib/report-error";
 import { colors, FONT, radii } from "@/theme/tokens";
 
-type Selection = TemplateKind | "custom" | null;
+/**
+ * La scelta corrente: una sottocategoria della tassonomia, oppure un nome
+ * libero (da "Altra lingua…" — che resta nella sua macrocategoria — o dal
+ * box "Crea cartella personalizzata").
+ */
+type Selection =
+  | { type: "sub"; category: TaxonomyCategory; sub: TaxonomySub }
+  | { type: "free"; category: TaxonomyCategory | null }
+  | null;
 
 /**
  * Leaves this screen for Today. This route sits in the ROOT stack on top of
@@ -56,20 +67,20 @@ function goToday() {
 }
 
 /**
- * "Scegli il tuo argomento" — the one-folder onboarding step.
+ * "Cosa vuoi ricordare?" — la scelta dell'argomento (Maurizio 2026-09-01).
+ *
+ * Quattro macrocategorie (Lingue, Materie, Lavoro, Interessi): il tocco
+ * apre un selettore a tendina con ricerca sulle sottocategorie. In fondo,
+ * il box "Crea cartella personalizzata" per un nome libero.
  *
  * Lives in the ROOT stack (like /add) so it is reachable both from the
  * (auth) onboarding carousel and from (app) surfaces: Add and Knowledge
  * send here any signed-in user who owns zero folders instead of silently
  * no-op'ing. A returning user with ≥1 folder is bounced straight to Today.
- *
- * Freemium: exactly one folder — while FOLDER_LIMIT_ENFORCED is true. In the
- * test phase (2026-08-27) Knowledge pushes this screen with `?mode=new`:
- * the owned kinds are greyed out (unique user_id+kind in the DB), and after
- * creating we pop back to Knowledge instead of going to Today.
  */
 export default function ChooseTopicScreen() {
   const { t } = useT();
+  const insets = useSafeAreaInsets();
   const user = useAuthStore((s) => s.user);
   const hydrated = useAuthStore((s) => s.hydrated);
   // An admin browsing the consumer app ("Apri l'app come utente") may own
@@ -85,45 +96,28 @@ export default function ChooseTopicScreen() {
   // la voce a monte quando arriverà).
   const addingAnother = (mode === "new" && !FOLDER_LIMIT_ENFORCED) || Boolean(moveMemoryId);
 
-  const [checking, setChecking] = useState(true);
-  const [ownedKinds, setOwnedKinds] = useState<ReadonlySet<string>>(() => new Set());
-  const [selected, setSelected] = useState<Selection>(null);
+  const [checking, setChecking] = useState(!addingAnother);
+  const [selection, setSelection] = useState<Selection>(null);
   const [customName, setCustomName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  /** Macrocategoria col selettore aperto; null = chiuso. */
+  const [openCategory, setOpenCategory] = useState<TaxonomyCategory | null>(null);
+  const [query, setQuery] = useState("");
 
   // Returning user (already has a folder) → skip this step entirely.
-  // "Add another" mode instead loads the owned kinds to grey them out.
+  // In "add another" mode there is nothing to preload: duplicates are legal
+  // since the unique(user_id, kind) constraint was dropped (2026-09-02).
   useEffect(() => {
-    if (!user || adminOnly) return;
+    if (!user || adminOnly || addingAnother) return;
     let cancelled = false;
-    if (addingAnother) {
-      fetchFolders(user.id)
-        .then((fs) => {
-          if (cancelled) return;
-          setOwnedKinds(new Set(fs.map((f) => f.kind)));
-          setChecking(false);
-        })
-        .catch((e) => {
-          reportError("choose-topic/fetch-folders", e);
-          if (!cancelled) setChecking(false);
-        });
-      return () => {
-        cancelled = true;
-      };
-    }
     countFolders(user.id)
       .then((n) => {
         if (cancelled) return;
-        if (n > 0) {
-          goToday();
-        } else {
-          setChecking(false);
-        }
+        if (n > 0) goToday();
+        else setChecking(false);
       })
       .catch((e) => {
-        // Can't tell — let the user pick; a duplicate kind is refused by
-        // the DB (unique user_id+kind) and surfaces as a toast below.
         reportError("choose-topic/count-folders", e);
         if (!cancelled) setChecking(false);
       });
@@ -132,31 +126,39 @@ export default function ChooseTopicScreen() {
     };
   }, [user, adminOnly, addingAnother]);
 
+  const filtered = useMemo(
+    () => (openCategory ? filterSubcategories(openCategory.subcategories, query) : []),
+    [openCategory, query],
+  );
+
   if (!hydrated) return null;
   if (!user) return <Redirect href="/(auth)/login" />;
   if (adminOnly) return <Redirect href="/(admin)/home" />;
 
-  const customOwned = ownedKinds.has("custom");
+  const isFree = selection?.type === "free";
   const customValidation = validateFolderName(customName);
-  const canCreate =
-    !saving &&
-    selected !== null &&
-    (selected !== "custom" || customValidation.ok);
+  const canCreate = !saving && selection !== null && (!isFree || customValidation.ok);
 
   const create = async () => {
-    if (!selected || saving) return;
+    if (!selection || saving) return;
     setError(null);
-    const choice: TopicChoice =
-      selected === "custom"
-        ? { type: "custom", name: customName }
-        : { type: "template", kind: selected };
-    if (choice.type === "custom" && !customValidation.ok) {
-      setError(customValidation.message);
-      return;
+    let input: NewFolderInput;
+    if (selection.type === "sub") {
+      input = folderInputFromSubcategory(selection.category.id, selection.sub);
+    } else {
+      if (!customValidation.ok) {
+        setError(customValidation.message);
+        return;
+      }
+      input = folderInputFromCustomName(
+        customName,
+        selection.category?.id ?? "custom",
+        selection.category?.emoji ?? CUSTOM_FOLDER_EMOJI,
+      );
     }
     setSaving(true);
     try {
-      const folder = await createFolder(user.id, folderInputFromChoice(choice));
+      const folder = await createFolder(user.id, input);
       // Arrivati dal foglio "Sposta" (MoveSheet): la parola segue subito la
       // cartella appena creata; un fallimento non blocca la creazione.
       if (moveMemoryId) {
@@ -193,6 +195,12 @@ export default function ChooseTopicScreen() {
     );
   }
 
+  const subtitle = addingAnother
+    ? t("chooseTopic.subtitleNewFolder")
+    : FOLDER_LIMIT_ENFORCED
+      ? t("chooseTopic.subtitleLimitEnforced")
+      : t("chooseTopic.subtitleLimitOff");
+
   return (
     <SafeAreaView className="flex-1 bg-canvas" edges={["top", "bottom"]}>
       {/* Reached from Knowledge: give the user a way back (Angelo, 2026-08-27). */}
@@ -204,32 +212,21 @@ export default function ChooseTopicScreen() {
         style={{ flex: 1 }}
       >
         <ScrollView
-          contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 32 }}
           keyboardShouldPersistTaps="handled"
+          contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 24, flexGrow: 1 }}
           showsVerticalScrollIndicator={false}
         >
-          {/* Hero */}
-          <View style={{ alignItems: "center", paddingTop: 12, paddingBottom: 22 }}>
-            <View
-              style={{
-                width: 132,
-                height: 132,
-                borderRadius: 999,
-                backgroundColor: colors.warmWhite,
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <Mascot variant="idea" size={112} withShadow={false} />
-            </View>
+          <View style={{ alignItems: "center", paddingTop: addingAnother ? 4 : 16, paddingBottom: 18 }}>
+            <Mascot variant="idea" size={84} withShadow={false} />
             <Text
+              accessibilityRole="header"
               style={{
-                marginTop: 22,
+                marginTop: 10,
                 fontFamily: FONT.bold,
                 fontSize: 26,
                 lineHeight: 32,
-                letterSpacing: -0.4,
                 color: colors.navy,
+                letterSpacing: -0.6,
                 textAlign: "center",
               }}
             >
@@ -237,246 +234,346 @@ export default function ChooseTopicScreen() {
             </Text>
             <Text
               style={{
-                marginTop: 10,
+                marginTop: 6,
                 fontFamily: FONT.regular,
                 fontSize: 14.5,
-                lineHeight: 22,
+                lineHeight: 20,
                 color: colors.midGrey,
                 textAlign: "center",
-                maxWidth: 320,
+                paddingHorizontal: 12,
               }}
             >
-              {addingAnother
-                ? t("chooseTopic.subtitleNewFolder")
-                : FOLDER_LIMIT_ENFORCED
-                  ? t("chooseTopic.subtitleLimitEnforced")
-                  : t("chooseTopic.subtitleLimitOff")}
+              {subtitle}
             </Text>
           </View>
 
-          <SectionLabel>{t("chooseTopic.sectionTemplates")}</SectionLabel>
-
-          {/* 2×2 template grid */}
-          <View
-            style={{
-              flexDirection: "row",
-              flexWrap: "wrap",
-              gap: 10,
-              marginTop: 10,
-            }}
-          >
-            {FOLDER_TEMPLATES.map((tpl) => {
-              const on = selected === tpl.kind;
-              const owned = ownedKinds.has(tpl.kind);
+          {/* Le quattro macrocategorie, 2×2. */}
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
+            {TAXONOMY.map((cat) => {
+              const active =
+                (selection?.type === "sub" && selection.category.id === cat.id) ||
+                (selection?.type === "free" && selection.category?.id === cat.id);
+              const chosenSub = selection?.type === "sub" && selection.category.id === cat.id
+                ? selection.sub
+                : null;
               return (
                 <Tappable
-                  key={tpl.kind}
-                  onPress={() => {
-                    if (owned) return;
-                    setSelected(tpl.kind);
-                    setError(null);
-                  }}
-                  disabled={owned}
+                  key={cat.id}
                   accessibilityRole="button"
-                  accessibilityLabel={
-                    owned
-                      ? t("chooseTopic.templateOwnedLabel", { name: tpl.name })
-                      : t("chooseTopic.templateLabel", { name: tpl.name, hint: tpl.hint })
-                  }
-                  accessibilityState={{ selected: on, disabled: owned }}
-                  pressedOpacity={0.8}
-                  containerStyle={{ width: "48%", flexGrow: 1, opacity: owned ? 0.45 : 1 }}
+                  accessibilityLabel={cat.name}
+                  accessibilityHint={cat.hint}
+                  onPress={() => {
+                    setQuery("");
+                    setOpenCategory(cat);
+                  }}
+                  pressedOpacity={0.85}
+                  containerStyle={{ width: "48%", flexGrow: 1 }}
                   style={{
+                    minHeight: 116,
+                    backgroundColor: colors.surface,
                     borderRadius: radii.card,
-                    backgroundColor: on ? colors.tagUserBg : colors.surface,
-                    borderWidth: on ? 1.5 : 1,
-                    borderColor: on ? colors.navy : colors.hairline,
+                    borderWidth: active ? 1.5 : 1,
+                    borderColor: active ? colors.navy : colors.hairline,
                     padding: 14,
-                    gap: 10,
-                    minHeight: 112,
+                    gap: 6,
                   }}
                 >
-                  <FolderTile kind={tpl.kind} size={36} />
-                  <View>
-                    <Text
-                      style={{
-                        fontFamily: FONT.semibold,
-                        fontSize: 15.5,
-                        color: colors.navy,
-                        letterSpacing: -0.15,
-                      }}
-                    >
-                      {tpl.name}
-                    </Text>
-                    <Text
-                      numberOfLines={2}
-                      style={{
-                        marginTop: 2,
-                        fontFamily: FONT.regular,
-                        fontSize: 12.5,
-                        lineHeight: 17,
-                        color: colors.midGrey,
-                      }}
-                    >
-                      {owned ? t("chooseTopic.alreadyOwned") : tpl.hint}
-                    </Text>
-                  </View>
+                  <Text style={{ fontSize: 28 }}>{cat.emoji}</Text>
+                  <Text
+                    style={{
+                      fontFamily: FONT.bold,
+                      fontSize: 16.5,
+                      color: colors.navy,
+                      letterSpacing: -0.2,
+                    }}
+                  >
+                    {cat.name}
+                  </Text>
+                  <Text
+                    numberOfLines={2}
+                    style={{
+                      fontFamily: FONT.regular,
+                      fontSize: 12.5,
+                      lineHeight: 17,
+                      color: colors.midGrey,
+                    }}
+                  >
+                    {chosenSub ? `${chosenSub.emoji} ${chosenSub.name}` : cat.hint}
+                  </Text>
                 </Tappable>
               );
             })}
           </View>
 
-          <SectionLabel topMargin={22}>{t("chooseTopic.sectionOr")}</SectionLabel>
-
-          {/* "Altro…" — custom folder name */}
+          {/* Box "Crea cartella personalizzata". */}
           <Tappable
+            accessibilityRole="button"
+            accessibilityLabel={t("taxonomy.customBoxTitle")}
             onPress={() => {
-              if (customOwned) return;
-              setSelected("custom");
+              setSelection({ type: "free", category: null });
+              setCustomName("");
               setError(null);
             }}
-            disabled={customOwned}
-            accessibilityRole="button"
-            accessibilityLabel={customOwned ? t("chooseTopic.customOwnedLabel") : t("chooseTopic.customLabel")}
-            accessibilityState={{ selected: selected === "custom", disabled: customOwned }}
             pressedOpacity={0.85}
-            containerStyle={{ marginTop: 10, opacity: customOwned ? 0.45 : 1 }}
+            containerStyle={{ marginTop: 14 }}
             style={{
-              borderRadius: radii.card,
-              backgroundColor: selected === "custom" ? colors.tagUserBg : colors.surface,
-              borderWidth: selected === "custom" ? 1.5 : 1,
-              borderColor: selected === "custom" ? colors.navy : colors.hairline,
-              padding: 14,
+              flexDirection: "row",
+              alignItems: "center",
               gap: 12,
+              backgroundColor: colors.surface,
+              borderRadius: radii.card,
+              borderWidth: selection?.type === "free" && !selection.category ? 1.5 : 1,
+              borderColor:
+                selection?.type === "free" && !selection.category ? colors.navy : colors.hairline,
+              padding: 14,
             }}
           >
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-              <View
-                style={{
-                  width: 36,
-                  height: 36,
-                  borderRadius: 9,
-                  backgroundColor: colors.warmWhite,
-                  borderWidth: 1.2,
-                  borderColor: colors.hairlineStrong,
-                  borderStyle: "dashed",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <PenLine size={18} color={colors.navy} strokeWidth={1.8} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text
-                  style={{
-                    fontFamily: FONT.semibold,
-                    fontSize: 15.5,
-                    color: colors.navy,
-                    letterSpacing: -0.15,
-                  }}
-                >
-                  {t("chooseTopic.other")}
-                </Text>
-                <Text
-                  style={{
-                    marginTop: 2,
-                    fontFamily: FONT.regular,
-                    fontSize: 12.5,
-                    lineHeight: 17,
-                    color: colors.midGrey,
-                  }}
-                >
-                  {customOwned
-                    ? t("chooseTopic.customAlreadyOwned")
-                    : t("chooseTopic.customHint")}
-                </Text>
-              </View>
+            <View
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: 9,
+                borderWidth: 1.2,
+                borderStyle: "dashed",
+                borderColor: colors.hairlineStrong,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <PenLine size={18} color={colors.navy} strokeWidth={1.8} />
             </View>
-
-            {selected === "custom" ? (
-              <View>
-                <TextInput
-                  value={customName}
-                  onChangeText={(v) => {
-                    setCustomName(v);
-                    setError(null);
-                  }}
-                  autoFocus
-                  autoCapitalize="sentences"
-                  maxLength={FOLDER_NAME_MAX_LENGTH + 10}
-                  placeholder={t("chooseTopic.folderNamePlaceholder")}
-                  placeholderTextColor={colors.placeholder}
-                  accessibilityLabel={t("chooseTopic.folderNamePlaceholder")}
-                  returnKeyType="done"
-                  onSubmitEditing={() => {
-                    if (canCreate) void create();
-                  }}
-                  style={{
-                    height: 50,
-                    borderRadius: radii.input,
-                    backgroundColor: colors.surface,
-                    borderWidth: 1.5,
-                    borderColor: colors.navy,
-                    paddingHorizontal: 14,
-                    fontFamily: FONT.medium,
-                    fontSize: 16,
-                    color: colors.navy,
-                  }}
-                />
-                <Text
-                  style={{
-                    marginTop: 6,
-                    alignSelf: "flex-end",
-                    fontFamily: FONT.regular,
-                    fontSize: 11.5,
-                    color:
-                      customName.trim().length > FOLDER_NAME_MAX_LENGTH
-                        ? colors.danger
-                        : colors.midGrey,
-                    fontVariant: ["tabular-nums"],
-                  }}
-                >
-                  {customName.trim().length} / {FOLDER_NAME_MAX_LENGTH}
-                </Text>
-              </View>
-            ) : null}
+            <View style={{ flex: 1, gap: 2 }}>
+              <Text style={{ fontFamily: FONT.semibold, fontSize: 15.5, color: colors.navy }}>
+                {t("taxonomy.customBoxTitle")}
+              </Text>
+              <Text style={{ fontFamily: FONT.regular, fontSize: 12.5, color: colors.midGrey }}>
+                {t("taxonomy.customBoxSubtitle")}
+              </Text>
+            </View>
           </Tappable>
 
-          {error ? (
-            <View
-              className="mt-4 self-start rounded-chip px-3 py-2"
-              style={{ backgroundColor: colors.dangerSoft }}
-            >
+          {/* Nome libero: compare per "Altra lingua…" e per il box custom. */}
+          {isFree ? (
+            <View style={{ marginTop: 12, gap: 6 }}>
+              <TextInput
+                autoFocus
+                value={customName}
+                onChangeText={(v) => {
+                  setCustomName(v);
+                  setError(null);
+                }}
+                placeholder={t("chooseTopic.folderNamePlaceholder")}
+                placeholderTextColor={colors.placeholder}
+                maxLength={FOLDER_NAME_MAX_LENGTH + 10}
+                style={{
+                  height: 50,
+                  backgroundColor: colors.surface,
+                  borderRadius: radii.chip,
+                  borderWidth: 1.5,
+                  borderColor: colors.navy,
+                  paddingHorizontal: 14,
+                  fontFamily: FONT.semibold,
+                  fontSize: 16,
+                  color: colors.navy,
+                }}
+              />
               <Text
-                style={{ fontFamily: FONT.medium, fontSize: 12.5, color: colors.danger }}
+                style={{
+                  alignSelf: "flex-end",
+                  fontFamily: FONT.medium,
+                  fontSize: 11.5,
+                  color:
+                    customName.trim().length > FOLDER_NAME_MAX_LENGTH
+                      ? colors.danger
+                      : colors.midGrey,
+                  fontVariant: ["tabular-nums"],
+                }}
               >
-                {error}
+                {customName.trim().length} / {FOLDER_NAME_MAX_LENGTH}
               </Text>
             </View>
           ) : null}
 
-          <View style={{ marginTop: 26 }}>
+          {error ? (
+            <Text
+              style={{
+                marginTop: 8,
+                fontFamily: FONT.medium,
+                fontSize: 12.5,
+                color: colors.danger,
+              }}
+            >
+              {error}
+            </Text>
+          ) : null}
+
+          <View style={{ flex: 1 }} />
+
+          <View style={{ marginTop: 20, gap: 8 }}>
             <PrimaryButton
               label={t("chooseTopic.createFolder")}
               onPress={create}
-              loading={saving}
               disabled={!canCreate}
+              loading={saving}
             />
+            <Text
+              style={{
+                textAlign: "center",
+                fontFamily: FONT.regular,
+                fontSize: 12,
+                color: colors.midGrey,
+              }}
+            >
+              {t("chooseTopic.renameLaterHint")}
+            </Text>
           </View>
-          <Text
-            style={{
-              marginTop: 12,
-              fontFamily: FONT.regular,
-              fontSize: 12.5,
-              lineHeight: 18,
-              color: colors.midGrey,
-              textAlign: "center",
-            }}
-          >
-            {t("chooseTopic.renameLaterHint")}
-          </Text>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* Selettore delle sottocategorie — bottom sheet con ricerca. */}
+      <Modal
+        visible={openCategory !== null}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setOpenCategory(null)}
+      >
+        {/* Backdrop e sheet sono FRATELLI: RN Pressable ignora stopPropagation
+            sintetico (stesso pattern di NamePromptModal/MoveSheet). */}
+        <Pressable
+          accessibilityLabel={t("common.close")}
+          onPress={() => setOpenCategory(null)}
+          style={{ position: "absolute", inset: 0, backgroundColor: "rgba(15,27,51,0.32)" }}
+        />
+        <View style={{ flex: 1, justifyContent: "flex-end" }} pointerEvents="box-none">
+          <View
+            style={{
+              backgroundColor: colors.warmWhite,
+              borderTopLeftRadius: 22,
+              borderTopRightRadius: 22,
+              paddingHorizontal: 18,
+              paddingTop: 10,
+              paddingBottom: Math.max(insets.bottom, 20),
+              maxHeight: "72%",
+              shadowColor: "#0F1B33",
+              shadowOpacity: 0.18,
+              shadowOffset: { width: 0, height: -8 },
+              shadowRadius: 30,
+              elevation: 24,
+            }}
+          >
+            <View
+              style={{
+                alignSelf: "center",
+                width: 36,
+                height: 4,
+                borderRadius: 999,
+                backgroundColor: "#D9D7D1",
+                marginBottom: 12,
+              }}
+            />
+            <Text
+              style={{
+                fontFamily: FONT.bold,
+                fontSize: 19,
+                color: colors.navy,
+                letterSpacing: -0.3,
+                marginBottom: 10,
+              }}
+            >
+              {openCategory ? `${openCategory.emoji} ${openCategory.name}` : ""}
+            </Text>
+
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 8,
+                backgroundColor: colors.surface,
+                borderRadius: radii.chip,
+                borderWidth: 1,
+                borderColor: colors.hairline,
+                paddingHorizontal: 12,
+                height: 44,
+                marginBottom: 8,
+              }}
+            >
+              <Search size={16} color={colors.midGrey} strokeWidth={2} />
+              <TextInput
+                value={query}
+                onChangeText={setQuery}
+                placeholder={t("taxonomy.searchPlaceholder")}
+                placeholderTextColor={colors.placeholder}
+                accessibilityLabel={t("taxonomy.searchPlaceholder")}
+                style={{
+                  flex: 1,
+                  fontFamily: FONT.regular,
+                  fontSize: 15,
+                  color: colors.navy,
+                  padding: 0,
+                }}
+              />
+            </View>
+
+            <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+              {filtered.map((s) => (
+                <Tappable
+                  key={s.id}
+                  accessibilityRole="button"
+                  accessibilityLabel={s.name}
+                  onPress={() => {
+                    if (!openCategory) return;
+                    setSelection({ type: "sub", category: openCategory, sub: s });
+                    setCustomName("");
+                    setError(null);
+                    setOpenCategory(null);
+                  }}
+                  pressedOpacity={0.7}
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: 12,
+                    paddingVertical: 13,
+                    paddingHorizontal: 6,
+                    borderBottomWidth: 1,
+                    borderBottomColor: colors.hairline,
+                  }}
+                >
+                  <Text style={{ fontSize: 20 }}>{s.emoji}</Text>
+                  <Text style={{ fontFamily: FONT.semibold, fontSize: 15.5, color: colors.navy }}>
+                    {s.name}
+                  </Text>
+                </Tappable>
+              ))}
+
+              {/* "Altra lingua…" — nome libero che resta nella macrocategoria. */}
+              <Tappable
+                accessibilityRole="button"
+                accessibilityLabel={openCategory?.otherLabel ?? ""}
+                onPress={() => {
+                  if (!openCategory) return;
+                  setSelection({ type: "free", category: openCategory });
+                  setCustomName("");
+                  setError(null);
+                  setOpenCategory(null);
+                }}
+                pressedOpacity={0.7}
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 12,
+                  paddingVertical: 13,
+                  paddingHorizontal: 6,
+                }}
+              >
+                <PenLine size={18} color={colors.midGrey} strokeWidth={1.8} />
+                <Text style={{ fontFamily: FONT.semibold, fontSize: 15.5, color: colors.midGrey }}>
+                  {openCategory?.otherLabel ?? ""}
+                </Text>
+              </Tappable>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }

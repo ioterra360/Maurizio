@@ -12,6 +12,7 @@
 
 import type { FolderKind, MemoryState, ReviewResponse } from "./constants";
 import type { PhaseState, ReviewPhase } from "@/features/srs/phases";
+import { LEGACY_KIND_TO_TEMPLATE, type FolderCategory } from "./folder-taxonomy";
 
 // ============================================================================
 // Profile
@@ -73,9 +74,16 @@ export function mapProfile(row: ProfileRow): Profile {
 export type FolderRow = {
   id: string;
   user_id: string;
+  /** LEGACY: colonna ponte per i client vecchi (migration 20260902130000). */
   kind: FolderKind | string;
   name: string;
   priority: number;
+  /** Macrocategoria della tassonomia; null solo su righe pre-migrazione. */
+  category?: FolderCategory | null;
+  /** Sottocategoria scelta alla creazione; null = personalizzata. */
+  template_id?: string | null;
+  /** Glifo del FolderTile. */
+  emoji?: string | null;
   color: string | null;
   icon: string | null;
   paused: boolean;
@@ -88,9 +96,16 @@ export type FolderRow = {
 export type Folder = {
   id: string;
   userId: string;
+  /** LEGACY: solo per compatibilità col periodo di transizione. Non usarla per logica nuova. */
   kind: FolderKind | string;
   name: string;
   priority: number;
+  /** Macrocategoria della tassonomia (lingue/materie/lavoro/interessi/custom). */
+  category: FolderCategory;
+  /** Sottocategoria (es. ja, medicina, vino); null = personalizzata. */
+  templateId: string | null;
+  /** Glifo del FolderTile. Sempre presente: fallback dal kind legacy. */
+  emoji: string;
   color: string | null;
   icon: string | null;
   paused: boolean;
@@ -101,12 +116,17 @@ export type Folder = {
 };
 
 export function mapFolder(row: FolderRow): Folder {
+  // Riga pre-migrazione letta da un client nuovo: deriva dal kind legacy.
+  const legacy = LEGACY_KIND_TO_TEMPLATE[row.kind] ?? LEGACY_KIND_TO_TEMPLATE.custom;
   return {
     id: row.id,
     userId: row.user_id,
     kind: row.kind,
     name: row.name,
     priority: row.priority,
+    category: row.category ?? legacy.category,
+    templateId: row.template_id ?? legacy.templateId,
+    emoji: row.emoji ?? legacy.emoji,
     color: row.color,
     icon: row.icon,
     paused: row.paused,

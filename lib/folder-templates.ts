@@ -1,50 +1,29 @@
 /**
- * Pure helpers for the "Scegli il tuo argomento" step (app/choose-topic.tsx)
- * and for anything that turns a template / custom name into a folder row.
+ * Pure helpers per il flusso "Cosa vuoi ricordare?" (app/choose-topic.tsx)
+ * e per chiunque trasformi una scelta della tassonomia in una riga folders.
+ *
+ * Dal 2026-09-02 l'identità di una cartella è folders.id e la scelta passa
+ * dalla tassonomia (lib/folder-taxonomy.ts), non più dai 4 template chiusi.
  *
  * No React, no Supabase — unit-tested in folder-templates.test.ts.
  */
 
+import { FOLDER_NAME_MAX_LENGTH } from "./constants";
 import {
-  CUSTOM_FOLDER_KIND,
-  CUSTOM_ITEM_TYPES,
-  FOLDER_NAME_MAX_LENGTH,
-  FOLDER_TEMPLATES,
-  TEMPLATE_KINDS,
-  type FolderKind,
-  type FolderTemplate,
-  type ItemTypeOption,
-  type TemplateKind,
-} from "./constants";
+  CUSTOM_FOLDER_EMOJI,
+  type FolderCategory,
+  type TaxonomySub,
+} from "./folder-taxonomy";
 import { t } from "@/lib/i18n";
 
-/** What createFolder needs. itemTypes are client-side (keyed by kind). */
+/** Quello che serve a createFolder. */
 export type NewFolderInput = {
-  kind: FolderKind;
   name: string;
-  itemTypes: readonly ItemTypeOption[];
+  category: FolderCategory;
+  /** Sottocategoria della tassonomia; null = cartella personalizzata. */
+  templateId: string | null;
+  emoji: string;
 };
-
-/** The user's choice on the topic-pick step. */
-export type TopicChoice =
-  | { type: "template"; kind: TemplateKind }
-  | { type: "custom"; name: string };
-
-export function isTemplateKind(kind: string | null | undefined): kind is TemplateKind {
-  return (TEMPLATE_KINDS as readonly string[]).includes(kind ?? "");
-}
-
-export function getTemplate(kind: TemplateKind): FolderTemplate {
-  const tpl = FOLDER_TEMPLATES.find((x) => x.kind === kind);
-  // FOLDER_TEMPLATES covers every TemplateKind by construction.
-  if (!tpl) throw new Error(`Unknown folder template: ${kind}`);
-  return tpl;
-}
-
-/** Item-type chips for any folder kind (templates + custom). */
-export function itemTypesForKind(kind: FolderKind): readonly ItemTypeOption[] {
-  return isTemplateKind(kind) ? getTemplate(kind).itemTypes : CUSTOM_ITEM_TYPES;
-}
 
 export type FolderNameValidation =
   | { ok: true; name: string }
@@ -79,17 +58,27 @@ export function nextFolderPriority(existing: ReadonlyArray<{ priority: number }>
   return max + 1;
 }
 
+/** Sottocategoria della tassonomia → input di createFolder. */
+export function folderInputFromSubcategory(
+  category: FolderCategory,
+  sub: TaxonomySub,
+): NewFolderInput {
+  return { name: sub.name, category, templateId: sub.id, emoji: sub.emoji };
+}
+
 /**
- * Turn the topic-pick choice into a createFolder input. Throws on an invalid
- * custom name — callers validate first (validateFolderName) to show the
- * message inline; this is the last line of defence.
+ * Nome libero → input di createFolder. `category` è la macrocategoria da
+ * cui l'utente è partito ("Altra lingua…" resta una lingua), o "custom"
+ * dal box "Crea cartella personalizzata". Throws su nome invalido — i
+ * chiamanti validano prima (validateFolderName) per il messaggio inline;
+ * questa è l'ultima linea di difesa.
  */
-export function folderInputFromChoice(choice: TopicChoice): NewFolderInput {
-  if (choice.type === "template") {
-    const tpl = getTemplate(choice.kind);
-    return { kind: tpl.kind, name: tpl.name, itemTypes: tpl.itemTypes };
-  }
-  const v = validateFolderName(choice.name);
+export function folderInputFromCustomName(
+  name: string,
+  category: FolderCategory = "custom",
+  emoji: string = CUSTOM_FOLDER_EMOJI,
+): NewFolderInput {
+  const v = validateFolderName(name);
   if (!v.ok) throw new Error(v.message);
-  return { kind: CUSTOM_FOLDER_KIND, name: v.name, itemTypes: CUSTOM_ITEM_TYPES };
+  return { name: v.name, category, templateId: null, emoji };
 }

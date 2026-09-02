@@ -31,6 +31,7 @@ type Props = {
   delayLongPress?: number;
   accessibilityRole?: AccessibilityRole;
   accessibilityLabel?: string;
+  accessibilityHint?: string;
   accessibilityState?: { selected?: boolean; disabled?: boolean; busy?: boolean };
 };
 
@@ -51,6 +52,7 @@ export function Tappable({
   delayLongPress,
   accessibilityRole = "button",
   accessibilityLabel,
+  accessibilityHint,
   accessibilityState,
 }: Props) {
   const [pressed, setPressed] = useState(false);
@@ -65,6 +67,7 @@ export function Tappable({
       hitSlop={hitSlop}
       accessibilityRole={accessibilityRole}
       accessibilityLabel={accessibilityLabel}
+      accessibilityHint={accessibilityHint}
       accessibilityState={{ disabled, ...accessibilityState }}
       style={containerStyle}
     >

@@ -250,11 +250,11 @@ export const fr: Record<keyof typeof it, string> = {
   "chooseTopic.sectionTemplates": "Modèles",
   "chooseTopic.subtitleLimitEnforced": "Memika commence avec un seul dossier : celui que tu veux protéger de l'oubli. D'autres dossiers arriveront avec Premium.",
   "chooseTopic.subtitleLimitOff": "Le sujet par lequel commencer. Tu pourras en ajouter d'autres depuis l'écran Dossiers.",
-  "chooseTopic.subtitleNewFolder": "Un modèle, ou un sujet à toi. Chaque type de dossier une seule fois.",
+  "chooseTopic.subtitleNewFolder": "Choisis un point de départ, ou nomme un sujet à toi.",
   "chooseTopic.templateLabel": "{name} — {hint}",
   "chooseTopic.templateOwnedLabel": "{name} — déjà ajouté",
-  "chooseTopic.titleChooseTopic": "Choisis ton sujet",
-  "chooseTopic.titleNewFolder": "Nouveau dossier",
+  "chooseTopic.titleChooseTopic": "Que veux-tu retenir ?",
+  "chooseTopic.titleNewFolder": "Que veux-tu retenir ?",
 
   // ---- coachTip ------------------------------------------------------------
   "coachTip.closeTip": "Fermer le conseil",
