@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from "react";
 import { ScrollView, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import Animated, {
   useAnimatedStyle,
@@ -152,6 +152,10 @@ function OutcomeBar({
 }
 
 export default function CompleteScreen() {
+  // Android edge-to-edge (app.json edgeToEdgeEnabled): senza il bottom
+  // inset il CTA finisce sotto la barra di sistema a 3 pulsanti (~48dp).
+  // Maurizio 2026-09-01. Pattern canonico: (app)/_layout.tsx.
+  const insets = useSafeAreaInsets();
   const { t, tp } = useT();
   const totals = useReviewStore((s) => s.totals);
   const results = useReviewStore((s) => s.results);
@@ -217,7 +221,7 @@ export default function CompleteScreen() {
             {t("complete.emptyBody")}
           </Text>
         </View>
-        <View style={{ paddingHorizontal: 22, paddingBottom: 36 }}>
+        <View style={{ paddingHorizontal: 22, paddingBottom: Math.max(insets.bottom, 36) }}>
           <PrimaryButton label={t("complete.backToToday")} onPress={goHome} />
         </View>
       </SafeAreaView>

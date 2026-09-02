@@ -217,6 +217,13 @@ export const TIME_BUDGETS = [
 export const DAILY_INPUT_CAP_DEFAULT = 20;
 
 /**
+ * Limite duro sul termine da ricordare (Maurizio 2026-09-01: "mettiamo un
+ * limite di 50 lettere"). Il contatore compare da TERM_COUNTER_FROM in su.
+ */
+export const TERM_MAX_LENGTH = 50;
+export const TERM_COUNTER_FROM = 40;
+
+/**
  * Paywall kill-switch. The "Memika Premium" row in Settings and the
  * Premium row in Settings stays hidden until the RevenueCat in-app-purchase paywall
  * (the old external-checkout screen was deleted on 2026-08-29)

@@ -20,6 +20,8 @@ import { FONT, colors, radii } from "@/theme/tokens";
 import {
   DAILY_INPUT_CAP_DEFAULT,
   FOLDER_KINDS,
+  TERM_COUNTER_FROM,
+  TERM_MAX_LENGTH,
   type FolderKind,
 } from "@/lib/constants";
 import { applyFolderOrder, priorityOf, useFolderOrderStore } from "@/lib/folder-order-store";
@@ -339,6 +341,7 @@ export default function AddScreen() {
               placeholder={t("add.termPlaceholder")}
               placeholderTextColor={colors.placeholder}
               accessibilityLabel={t("add.termLabel")}
+              maxLength={TERM_MAX_LENGTH}
               style={{
                 backgroundColor: colors.surface,
                 borderRadius: 14,
@@ -352,6 +355,22 @@ export default function AddScreen() {
                 letterSpacing: -0.2,
               }}
             />
+            {/* Contatore visibile solo nell'ultimo tratto (da 40 su 50), come
+                da richiesta Maurizio 2026-09-01: limite duro a 50 lettere. */}
+            {term.length >= TERM_COUNTER_FROM ? (
+              <Text
+                style={{
+                  alignSelf: "flex-end",
+                  marginTop: -6,
+                  fontFamily: FONT.medium,
+                  fontSize: 11.5,
+                  color: term.length >= TERM_MAX_LENGTH ? colors.danger : colors.midGrey,
+                  fontVariant: ["tabular-nums"],
+                }}
+              >
+                {term.length} / {TERM_MAX_LENGTH}
+              </Text>
+            ) : null}
             {missing === "term" ? (
               <FieldHint>{t("add.termMissingHint")}</FieldHint>
             ) : null}

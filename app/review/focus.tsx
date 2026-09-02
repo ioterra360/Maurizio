@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { router, useFocusEffect } from "expo-router";
 
 import { DeckErrorScreen } from "@/components/DeckErrorScreen";
@@ -17,6 +17,10 @@ import { FONT, colors } from "@/theme/tokens";
 
 export default function FocusScreen() {
   const { t } = useT();
+  // Android edge-to-edge (app.json edgeToEdgeEnabled): senza il bottom
+  // inset il CTA finisce sotto la barra di sistema a 3 pulsanti (~48dp).
+  // Maurizio 2026-09-01. Pattern canonico: (app)/_layout.tsx.
+  const insets = useSafeAreaInsets();
   const ensureSession = useReviewStore((s) => s.ensureSession);
   // s.cards() in the selector loops zustand v5 on folder-scoped decks —
   // see the note in review/scan.tsx.
@@ -169,7 +173,7 @@ export default function FocusScreen() {
 
       {/* Recall buttons appear only after the answer is revealed — Focus is
           active recall, so the answer stays hidden until the user commits. */}
-      <View style={{ paddingHorizontal: 22, paddingBottom: 32, gap: 10 }}>
+      <View style={{ paddingHorizontal: 22, paddingBottom: Math.max(insets.bottom, 32), gap: 10 }}>
         {revealed ? (
           <>
             <RecallButton variant="forgot" onPress={() => advance("forgot")} />
