@@ -123,3 +123,111 @@ export function firstReview(createdAt: Date = new Date()): PhaseState {
     lastReviewedAt: null,
   };
 }
+
+export type ReviewOutcome = "remembered" | "forgot";
+
+/**
+ * Dove si rientra dopo il recupero a 24 ore, in base alla fase in cui si è
+ * dimenticato (screenshot 03). Più stabile era il ricordo, più dolce il
+ * rientro: chi dimentica a 20 ore riparte da 48 ore, chi dimentica a un
+ * anno riparte da due mesi.
+ *
+ * Le fasi di recupero mappano su sé stesse: dimenticare durante un recupero
+ * non lo rende più aggressivo — `recoveryFrom` resta quello di partenza e
+ * questa tabella non viene nemmeno consultata.
+ */
+export const RECOVERY_ENTRY: Record<ReviewPhase, ReviewPhase> = {
+  p20h: "r48h",
+  p48h: "r3d",
+  p7d: "r3d",
+  p30d: "r7d",
+  p3m: "r14d",
+  p6m: "r30d",
+  p1y: "r2m",
+  done: "r2m",
+  r24h: "r48h",
+  r48h: "r48h",
+  r3d: "r3d",
+  r7d: "r7d",
+  r14d: "r14d",
+  r30d: "r30d",
+  r2m: "r2m",
+};
+
+const RECOVERY_PHASES: ReadonlySet<ReviewPhase> = new Set([
+  "r24h",
+  "r48h",
+  "r3d",
+  "r7d",
+  "r14d",
+  "r30d",
+  "r2m",
+]);
+
+/** La finestra è scaduta senza che il ripasso sia stato fatto. */
+export function isOverdue(state: PhaseState, now: Date = new Date()): boolean {
+  if (!state.reviewWindowEnd) return false;
+  return now.getTime() > Date.parse(state.reviewWindowEnd);
+}
+
+/**
+ * Applica una risposta e restituisce il nuovo stato.
+ *
+ * Tre rami:
+ *  - dimenticato    → recupero a +24h, ricordando da dove si viene
+ *  - ricordato in ritardo → RIPETE la stessa fase una volta (screenshot 05);
+ *    non serve un contatore, perché la finestra riparte da adesso e il
+ *    ripasso successivo, se puntuale, avanza da solo
+ *  - ricordato in orario  → avanza di una fase
+ *
+ * `lifecycle` descrive com'era la carta QUANDO l'utente l'ha vista, non come
+ * sarà dopo: dopo un ripasso la scadenza è sempre nel futuro, quindi lo
+ * stato "fresco" non direbbe nulla di utile.
+ */
+export function applyReview(
+  state: PhaseState,
+  outcome: ReviewOutcome,
+  now: Date = new Date(),
+): PhaseState & { lifecycle: "active" | "fading" } {
+  const lifecycle = isOverdue(state, now) ? ("fading" as const) : ("active" as const);
+  const lastReviewedAt = now.toISOString();
+
+  if (outcome === "forgot") {
+    // Se era già in recupero, la sorgente NON cambia: dimenticare durante un
+    // recupero non deve renderlo più duro.
+    const recoveryFrom = state.recoveryFrom ?? state.phase;
+    return {
+      phase: "r24h",
+      ...scheduleFor("r24h", now),
+      recoveryFrom,
+      lastReviewedAt,
+      lifecycle,
+    };
+  }
+
+  // Ricordato, ma la finestra era scaduta: si ripete la stessa fase.
+  if (lifecycle === "fading") {
+    return {
+      phase: state.phase,
+      ...scheduleFor(state.phase, now),
+      recoveryFrom: state.recoveryFrom,
+      lastReviewedAt,
+      lifecycle,
+    };
+  }
+
+  // Ricordato in orario. Dal recupero a 24 ore si rientra dove dice la
+  // tabella; dalle altre fasi di recupero si rientra nella scala canonica.
+  const nextPhase: ReviewPhase =
+    state.phase === "r24h"
+      ? RECOVERY_ENTRY[state.recoveryFrom ?? "p20h"]
+      : PHASE_SPEC[state.phase].next;
+
+  return {
+    phase: nextPhase,
+    ...scheduleFor(nextPhase, now),
+    recoveryFrom: RECOVERY_PHASES.has(nextPhase) ? state.recoveryFrom : null,
+    lastReviewedAt,
+    lifecycle,
+  };
+}
