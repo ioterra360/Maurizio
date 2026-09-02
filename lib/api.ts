@@ -49,7 +49,8 @@ import { nextFolderPriority, type NewFolderInput } from "./folder-templates";
 import { isoFromRelativeLabel } from "./format";
 import { DEMO_DUE_COUNTS, type LayerCounts } from "./queue";
 import type { LayerKey } from "@/theme/tokens";
-import { initialSrsState, type UpdatedSrs } from "@/features/srs/types";
+import { type UpdatedSrs } from "@/features/srs/types";
+import { firstReview } from "@/features/srs/phases";
 
 // ---------------------------------------------------------------------------
 // Profile
@@ -438,10 +439,13 @@ export async function updateMemoryNotes(id: string, notes: string | null): Promi
 }
 
 /**
- * Crea un ricordo con lo stato SRS iniziale ESPLICITO da initialSrsState()
- * (il default DB di srs_interval_days è 1, non 0 — non fidarsi dei default
- * per i campi che l'algoritmo legge). next_review_at = now(): entra subito
- * in coda — il toast "primo ripasso domani" è framing UX (docs/SRS.md).
+ * Crea un ricordo e lo programma sulla scala di Maurizio: il primo ripasso
+ * cade a T0 + 20 ore, dove T0 è QUESTO istante. Prima entrava subito in coda
+ * e il toast "primo ripasso domani" era una bugia gentile; ora la copy e il
+ * calendario dicono la stessa cosa.
+ *
+ * Le colonne srs_* restano scritte finché esistono righe e binari che le
+ * leggono; lo scheduler non le guarda più.
  * Demo: no-op → null.
  */
 export async function createMemory(input: {
@@ -454,7 +458,7 @@ export async function createMemory(input: {
   itemType?: string;
 }): Promise<Memory | null> {
   if (isDemoMode) return null;
-  const srs = initialSrsState();
+  const phase = firstReview();
   const { data, error } = await supabase
     .from("memories")
     .insert({
@@ -465,11 +469,14 @@ export async function createMemory(input: {
       definition: input.definition,
       example: input.example ?? null,
       item_type: input.itemType ?? null,
-      srs_interval_days: srs.intervalDays,
-      srs_ease_factor: srs.easeFactor,
-      srs_repetitions: srs.repetitions,
-      last_reviewed_at: srs.lastReviewedAt,
-      next_review_at: srs.nextReviewAt,
+      srs_interval_days: 0,
+      srs_ease_factor: 2.5,
+      srs_repetitions: 0,
+      last_reviewed_at: null,
+      next_review_at: phase.nextReviewAt,
+      review_phase: phase.phase,
+      review_window_end: phase.reviewWindowEnd,
+      recovery_from: null,
     })
     .select("*")
     .single<MemoryRow>();
@@ -647,6 +654,9 @@ export async function fetchFolderDetail(
       // "Never reviewed" once the adapter swaps to lastReviewedAt.
       lastReviewedAt: isoFromRelativeLabel(it.reviewed, now),
       nextReviewAt: now.toISOString(),
+      phase: "p20h",
+      reviewWindowEnd: null,
+      recoveryFrom: null,
       deletedAt: null,
       createdAt: now.toISOString(),
       updatedAt: now.toISOString(),

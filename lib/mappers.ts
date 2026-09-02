@@ -11,6 +11,7 @@
  */
 
 import type { FolderKind, MemoryState, ReviewResponse } from "./constants";
+import type { PhaseState, ReviewPhase } from "@/features/srs/phases";
 
 // ============================================================================
 // Profile
@@ -194,6 +195,11 @@ export type MemoryRow = {
   srs_repetitions: number;
   last_reviewed_at: string | null;
   next_review_at: string;
+  /** Fase della scala (migration 20260902100000). Opzionale: le righe lette da un client vecchio non ce l'hanno. */
+  review_phase?: ReviewPhase | null;
+  review_window_end?: string | null;
+  recovery_from?: ReviewPhase | null;
+  last_result?: string | null;
   /** Nel cestino da questo istante; null = vivo (migration 20260830120000). */
   deleted_at?: string | null;
   created_at: string;
@@ -221,6 +227,12 @@ export type Memory = {
   };
   lastReviewedAt: string | null;
   nextReviewAt: string;
+  /** Fase della scala di Maurizio. Decide il layer di ripasso. */
+  phase: ReviewPhase;
+  /** Fine finestra; oltre questa il ricordo è in ritardo. null = non scade. */
+  reviewWindowEnd: string | null;
+  /** Fase da cui viene il recupero in corso; null = non in recupero. */
+  recoveryFrom: ReviewPhase | null;
   /** Nel cestino da questo istante; null = vivo. */
   deletedAt: string | null;
   createdAt: string;
@@ -249,9 +261,23 @@ export function mapMemory(row: MemoryRow): Memory {
     },
     lastReviewedAt: row.last_reviewed_at,
     nextReviewAt: row.next_review_at,
+    phase: row.review_phase ?? "p20h",
+    reviewWindowEnd: row.review_window_end ?? null,
+    recoveryFrom: row.recovery_from ?? null,
     deletedAt: row.deleted_at ?? null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+  };
+}
+
+/** Memory → lo stato che features/srs/phases si aspetta. */
+export function toPhaseState(m: Memory): PhaseState {
+  return {
+    phase: m.phase,
+    nextReviewAt: m.nextReviewAt,
+    reviewWindowEnd: m.reviewWindowEnd,
+    recoveryFrom: m.recoveryFrom,
+    lastReviewedAt: m.lastReviewedAt,
   };
 }
 
