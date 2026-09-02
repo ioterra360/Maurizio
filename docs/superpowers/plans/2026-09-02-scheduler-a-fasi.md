@@ -92,7 +92,7 @@ Due regole che cadono fuori da qui e vanno rispettate:
   - `scheduleFor(phase: ReviewPhase, anchor: Date): { nextReviewAt: string; reviewWindowEnd: string | null }`
   - `firstReview(createdAt: Date): PhaseState`
 
-- [ ] **Step 1: Scrivere i test che falliscono**
+- [x] **Step 1: Scrivere i test che falliscono**
 
 Crea `features/srs/phases.test.ts`:
 
@@ -203,12 +203,12 @@ describe("layerForPhase", () => {
 });
 ```
 
-- [ ] **Step 2: Eseguire i test e verificare che falliscano**
+- [x] **Step 2: Eseguire i test e verificare che falliscano**
 
 Run: `npm test -- features/srs/phases.test.ts`
 Expected: FAIL — `Failed to resolve import "./phases"`.
 
-- [ ] **Step 3: Scrivere `features/srs/phases.ts`**
+- [x] **Step 3: Scrivere `features/srs/phases.ts`**
 
 ```ts
 /**
@@ -338,12 +338,12 @@ export function firstReview(createdAt: Date = new Date()): PhaseState {
 }
 ```
 
-- [ ] **Step 4: Eseguire i test e verificare che passino**
+- [x] **Step 4: Eseguire i test e verificare che passino**
 
 Run: `npm test -- features/srs/phases.test.ts`
 Expected: PASS, tutti.
 
-- [ ] **Step 5: Aggiungere i tipi condivisi a `types.ts`**
+- [x] **Step 5: Aggiungere i tipi condivisi a `types.ts`**
 
 In `features/srs/types.ts`, subito sotto `export type MemoryLifecycleState = "active" | "fading" | "archived";` (riga 40), aggiungi:
 
@@ -352,12 +352,12 @@ In `features/srs/types.ts`, subito sotto `export type MemoryLifecycleState = "ac
 export type { PhaseState, ReviewPhase } from "./phases";
 ```
 
-- [ ] **Step 6: Typecheck**
+- [x] **Step 6: Typecheck**
 
 Run: `npm run lint`
 Expected: nessun errore.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add features/srs/phases.ts features/srs/phases.test.ts features/srs/types.ts
@@ -380,7 +380,7 @@ git commit -m "feat(srs): scala a fasi di Maurizio — tabella, finestre e layer
   - `applyReview(state: PhaseState, outcome: ReviewOutcome, now: Date): PhaseState & { lifecycle: "active" | "fading" }`
   - `isOverdue(state: PhaseState, now: Date): boolean`
 
-- [ ] **Step 1: Scrivere i test che falliscono**
+- [x] **Step 1: Scrivere i test che falliscono**
 
 Aggiungi in fondo a `features/srs/phases.test.ts`:
 
@@ -508,12 +508,12 @@ describe("applyReview — dimenticato", () => {
 });
 ```
 
-- [ ] **Step 2: Eseguire i test e verificare che falliscano**
+- [x] **Step 2: Eseguire i test e verificare che falliscano**
 
 Run: `npm test -- features/srs/phases.test.ts`
 Expected: FAIL — `RECOVERY_ENTRY`, `applyReview`, `isOverdue` non esportati.
 
-- [ ] **Step 3: Implementare in `features/srs/phases.ts`**
+- [x] **Step 3: Implementare in `features/srs/phases.ts`**
 
 Aggiungi in fondo al file:
 
@@ -627,12 +627,12 @@ export function applyReview(
 }
 ```
 
-- [ ] **Step 4: Eseguire i test e verificare che passino**
+- [x] **Step 4: Eseguire i test e verificare che passino**
 
 Run: `npm test -- features/srs/phases.test.ts`
 Expected: PASS.
 
-- [ ] **Step 5: Typecheck e commit**
+- [x] **Step 5: Typecheck e commit**
 
 ```bash
 npm run lint
@@ -650,7 +650,7 @@ git commit -m "feat(srs): avanzamento, ripetizione in fading e percorsi di recup
 **Interfaces:**
 - Produces: su `public.memories` le colonne `review_phase text NOT NULL DEFAULT 'p20h'`, `review_window_end timestamptz`, `recovery_from text`, `last_result text`; indice `memories_user_phase_idx`.
 
-- [ ] **Step 1: Scrivere la migrazione**
+- [x] **Step 1: Scrivere la migrazione**
 
 Crea `supabase/migrations/20260902100000_review_phases.sql`:
 
@@ -734,7 +734,7 @@ create index memories_user_window_idx
   where deleted_at is null and review_window_end is not null;
 ```
 
-- [ ] **Step 2: Applicare la migrazione in locale e verificare il backfill**
+- [x] **Step 2: Applicare la migrazione in locale e verificare il backfill**
 
 Run:
 ```bash
@@ -754,7 +754,7 @@ from public.memories where deleted_at is null and review_window_end is null;
 
 Expected: `senza_finestra` = 0. Le fasi presenti riflettono le ripetizioni che c'erano.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add supabase/migrations/20260902100000_review_phases.sql
@@ -774,7 +774,7 @@ git commit -m "feat(db): colonne di fase, finestra e recupero su memories, con b
 - Consumes: `firstReview`, `ReviewPhase` da `@/features/srs/phases`.
 - Produces: `Memory.phase: ReviewPhase`, `Memory.reviewWindowEnd: string | null`, `Memory.recoveryFrom: ReviewPhase | null`; `toPhaseState(m: Memory): PhaseState`.
 
-- [ ] **Step 1: Scrivere il test che fallisce**
+- [x] **Step 1: Scrivere il test che fallisce**
 
 Crea `lib/mappers.phases.test.ts`:
 
@@ -833,12 +833,12 @@ describe("toPhaseState", () => {
 });
 ```
 
-- [ ] **Step 2: Eseguire e verificare che fallisca**
+- [x] **Step 2: Eseguire e verificare che fallisca**
 
 Run: `npm test -- lib/mappers.phases.test.ts`
 Expected: FAIL — `toPhaseState` non esportata, `phase` non esiste su `Memory`.
 
-- [ ] **Step 3: Estendere `lib/mappers.ts`**
+- [x] **Step 3: Estendere `lib/mappers.ts`**
 
 In `MemoryRow`, sotto `next_review_at: string;`, aggiungi:
 
@@ -890,12 +890,12 @@ export function toPhaseState(m: Memory): PhaseState {
 }
 ```
 
-- [ ] **Step 4: Eseguire i test e verificare che passino**
+- [x] **Step 4: Eseguire i test e verificare che passino**
 
 Run: `npm test -- lib/mappers.phases.test.ts`
 Expected: PASS.
 
-- [ ] **Step 5: Far nascere il ricordo a T0+20h**
+- [x] **Step 5: Far nascere il ricordo a T0+20h**
 
 In `lib/api.ts`, sostituisci il commento e il corpo di `createMemory` (righe 441-478). Il commento vecchio dice *"next_review_at = now(): entra subito in coda — il toast «primo ripasso domani» è framing UX"*: va tolto, perché ora è falso.
 
@@ -960,7 +960,7 @@ import { type UpdatedSrs } from "@/features/srs/types";
 import { firstReview } from "@/features/srs/phases";
 ```
 
-- [ ] **Step 6: Typecheck, test, commit**
+- [x] **Step 6: Typecheck, test, commit**
 
 ```bash
 npm run lint
@@ -983,7 +983,7 @@ git commit -m "feat(srs): il ricordo nasce programmato a T0+20h, non piu' scadut
 - Consumes: `layerForPhase`, `ReviewPhase`, `PHASE_SPEC` dal Task 1; `Memory.phase` dal Task 4.
 - Produces: `layerFor(phase: ReviewPhase, state: MemoryState): LayerKey | null`; `PHASES_BY_LAYER: Record<LayerKey, ReviewPhase[]>`.
 
-- [ ] **Step 1: Aggiornare i test di `layerFor`**
+- [x] **Step 1: Aggiornare i test di `layerFor`**
 
 In `lib/queue.test.ts`, sostituisci il blocco `describe` di `layerFor` con:
 
@@ -1016,12 +1016,12 @@ describe("layerFor", () => {
 });
 ```
 
-- [ ] **Step 2: Eseguire e verificare che fallisca**
+- [x] **Step 2: Eseguire e verificare che fallisca**
 
 Run: `npm test -- lib/queue.test.ts`
 Expected: FAIL — `layerFor` accetta ancora un numero.
 
-- [ ] **Step 3: Riscrivere `layerFor` in `lib/queue.ts`**
+- [x] **Step 3: Riscrivere `layerFor` in `lib/queue.ts`**
 
 Sostituisci le righe 62-68 con:
 
@@ -1063,7 +1063,7 @@ import { type FolderKind, type MemoryState } from "./constants";
 
 (togli `LAYER_REPS_FOCUS_BELOW` e `LAYER_REPS_REINFORCEMENT_BELOW` dall'import da `./constants`.)
 
-- [ ] **Step 4: Ordinare le carte in ritardo per prime**
+- [x] **Step 4: Ordinare le carte in ritardo per prime**
 
 In `lib/queue.ts`, dentro `allocateByFolderPriority`, sostituisci il comparatore alla riga 94:
 
@@ -1085,7 +1085,7 @@ con:
   );
 ```
 
-- [ ] **Step 5: Riscrivere i predicati in `lib/api.ts`**
+- [x] **Step 5: Riscrivere i predicati in `lib/api.ts`**
 
 In `fetchDueMemoriesByLayer` sostituisci il blocco dei predicati di livello (le righe con `srs_repetitions`) con:
 
@@ -1106,7 +1106,7 @@ In `fetchDueCounts` sostituisci le tre query dell'array con:
 
 Aggiorna gli import di `lib/api.ts`: togli `LAYER_REPS_FOCUS_BELOW` e `LAYER_REPS_REINFORCEMENT_BELOW`, aggiungi `PHASES_BY_LAYER` all'import esistente da `./queue`.
 
-- [ ] **Step 6: Aggiungere la lettura dei ritardatari**
+- [x] **Step 6: Aggiungere la lettura dei ritardatari**
 
 In `lib/api.ts`, subito dopo `fetchDueCounts`, aggiungi:
 
@@ -1135,7 +1135,7 @@ export async function fetchOverdueCount(userId: string): Promise<number> {
 }
 ```
 
-- [ ] **Step 7: Ritirare le costanti morte**
+- [x] **Step 7: Ritirare le costanti morte**
 
 In `lib/constants.ts`, sostituisci il blocco di commento e le due costanti (righe ~157-175) con:
 
@@ -1150,7 +1150,7 @@ In `lib/constants.ts`, sostituisci il blocco di commento e le due costanti (righ
  */
 ```
 
-- [ ] **Step 8: Eseguire tutto, typecheck, commit**
+- [x] **Step 8: Eseguire tutto, typecheck, commit**
 
 ```bash
 npm test
@@ -1171,7 +1171,7 @@ git commit -m "feat(srs): coda affettata per fase, ritardatari per finestra"
 - Consumes: `applyReview`, `toPhaseState` dai Task 2 e 4.
 - Produces: `applyPhaseUpdate(memoryId: string, next: PhaseState & { lifecycle }, result: ReviewOutcome): Promise<void>`.
 
-- [ ] **Step 1: Sostituire la persistenza in `lib/api.ts`**
+- [x] **Step 1: Sostituire la persistenza in `lib/api.ts`**
 
 Sostituisci `applyScheduledUpdate` (righe 763-785) con:
 
@@ -1205,7 +1205,7 @@ export async function applyPhaseUpdate(
 
 Aggiorna gli import di `lib/api.ts`: aggiungi `type PhaseState, type ReviewOutcome` all'import da `@/features/srs/phases`.
 
-- [ ] **Step 2: Collegare il review store**
+- [x] **Step 2: Collegare il review store**
 
 In `lib/review-store.ts`, l'import dello scheduler:
 
@@ -1263,7 +1263,7 @@ con:
       );
 ```
 
-- [ ] **Step 3: Portare la fase dentro `ReviewCard`**
+- [x] **Step 3: Portare la fase dentro `ReviewCard`**
 
 In `lib/queue.ts`, `toReviewCard` deve trasportare lo stato di fase. Sostituisci il ritorno:
 
@@ -1282,12 +1282,12 @@ e aggiungi `phase: PhaseState;` al tipo `ReviewCard` in `lib/review-store.ts`, a
 
 Rinomina lo stato locale `srsByCard` in `phaseByCard` con tipo `Record<string, PhaseState>` (stessa meccanica, altro contenuto). L'"amend" dello Scan (`amendLastAnswer`, righe ~787-816) continua a funzionare: riapplica `applyReview` sullo stato precedente conservato.
 
-- [ ] **Step 4: Eseguire tutto e verificare**
+- [x] **Step 4: Eseguire tutto e verificare**
 
 Run: `npm test && npm run lint`
 Expected: PASS, nessun errore di tipo.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add lib/api.ts lib/review-store.ts lib/queue.ts lib/mappers.ts
@@ -1306,7 +1306,7 @@ git commit -m "feat(srs): il ripasso applica la scala a fasi e persiste fase, fi
 - Consumes: `firstReview` dal Task 1.
 - Produces: la chiave `add.previewFirstReview` guadagna il segnaposto `{time}`.
 
-- [ ] **Step 1: Cambiare le tre stringhe in tutti e quattro i cataloghi**
+- [x] **Step 1: Cambiare le tre stringhe in tutti e quattro i cataloghi**
 
 `lib/i18n/it.ts`:
 
@@ -1340,7 +1340,7 @@ git commit -m "feat(srs): il ripasso applica la scala a fasi e persiste fase, fi
   "add.useItTodayHint": "Essaie de l'utiliser dans la vraie vie aujourd'hui — la première révision est dans 20 heures.",
 ```
 
-- [ ] **Step 2: Calcolare l'orario reale in `app/add.tsx`**
+- [x] **Step 2: Calcolare l'orario reale in `app/add.tsx`**
 
 Alla riga 570, sostituisci `{t("add.previewFirstReview")}` con `{firstReviewLabel}` e aggiungi, sopra il `return` del componente:
 
@@ -1400,12 +1400,12 @@ describe("shortDateTime", () => {
 });
 ```
 
-- [ ] **Step 3: Verificare la parità dei cataloghi**
+- [x] **Step 3: Verificare la parità dei cataloghi**
 
 Run: `npm test -- lib/i18n/i18n.test.ts`
 Expected: PASS — insiemi di chiavi identici e `{time}` presente in tutte e quattro le lingue.
 
-- [ ] **Step 4: Typecheck e commit**
+- [x] **Step 4: Typecheck e commit**
 
 ```bash
 npm run lint
@@ -1425,7 +1425,7 @@ git commit -m "fix(copy): il primo ripasso e' tra 20 ore, con l'orario vero al p
 **Interfaces:**
 - Produces: nessuna. Rimozione di codice non più raggiungibile.
 
-- [ ] **Step 1: Verificare che nulla li importi più**
+- [x] **Step 1: Verificare che nulla li importi più**
 
 Run:
 ```bash
@@ -1433,7 +1433,7 @@ grep -rn "srs/scheduler\|initialSrsState\|UpdatedSrs\|LayerOutcome\|qualityFor\|
 ```
 Expected: nessun risultato fuori da `features/srs/scheduler.ts` e `features/srs/types.ts`. Se ne restano, sono call site dimenticati nei Task 4-6: sistemali prima di proseguire.
 
-- [ ] **Step 2: Rimuovere**
+- [x] **Step 2: Rimuovere**
 
 ```bash
 git rm features/srs/scheduler.ts features/srs/scheduler.test.ts
@@ -1441,11 +1441,11 @@ git rm features/srs/scheduler.ts features/srs/scheduler.test.ts
 
 In `features/srs/types.ts` togli `initialSrsState`, `LayerOutcome`, `Quality`, `UpdatedSrs`, `DEFAULT_EASE`, `MIN_EASE`, `FADING_OVERDUE_MULTIPLIER`. Restano `MemoryLifecycleState`, `SrsState` (le colonne legacy esistono ancora a DB) e i ri-export di fase.
 
-- [ ] **Step 3: Aggiornare `docs/SRS.md`**
+- [x] **Step 3: Aggiornare `docs/SRS.md`**
 
 Riscrivi la sezione dell'algoritmo con la scala a fasi. In particolare vanno via le tre affermazioni ora false: che `next_review_at = now() + interval days`; che il layer si deduce da `srs_repetitions`; e la riga 137-139 che ammetteva *"The 'first review tomorrow' toast on Add is intentional UX framing, not a real schedule push"* — ora è una programmazione vera.
 
-- [ ] **Step 4: Verificare che tutto regga**
+- [x] **Step 4: Verificare che tutto regga**
 
 ```bash
 npm test
@@ -1453,7 +1453,7 @@ npm run lint
 ```
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add -A features/srs docs/SRS.md
