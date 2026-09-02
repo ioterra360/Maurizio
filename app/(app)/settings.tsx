@@ -46,7 +46,7 @@ import {
 } from "@/lib/account-deletion";
 import type { Profile } from "@/lib/mappers";
 import { tap, error as errorFeedback } from "@/lib/feedback";
-import { FONT, colors, radii } from "@/theme/tokens";
+import { FONT, radii, useColors } from "@/theme/tokens";
 
 /**
  * Real version + build of the running binary. `expoConfig.version` is the
@@ -110,6 +110,7 @@ function memberSinceParts(
 }
 
 export default function SettingsScreen() {
+  const colors = useColors();
   const user = useAuthStore((s) => s.user);
   const { t: tr } = useT();
   const signOut = useAuthStore((s) => s.signOut);
@@ -568,7 +569,7 @@ export default function SettingsScreen() {
                 width: 36,
                 height: 4,
                 borderRadius: 2,
-                backgroundColor: "#D9D7D1",
+                backgroundColor: colors.switchTrackOff,
                 marginBottom: 16,
               }}
             />
@@ -639,6 +640,7 @@ function DangerCard({
   danger?: boolean;
   onPress: () => void;
 }) {
+  const colors = useColors();
   return (
     <Tappable
       onPress={onPress}
@@ -702,6 +704,7 @@ function DangerCard({
  * risolto, così "Default" resta accesa anche quando risolve a chiaro.
  */
 function ThemePicker() {
+  const colors = useColors();
   const { t: tr } = useT();
   const preference = useThemeStore((s) => s.preference);
   const setThemePreference = useThemeStore((s) => s.setPreference);
@@ -764,6 +767,7 @@ function ThemePicker() {
  * (every screen reads strings through useT) and persist in AsyncStorage.
  */
 function LanguagePicker() {
+  const colors = useColors();
   const { t: tr } = useT();
   const preference = useLocaleStore((s) => s.preference);
   const setPreference = useLocaleStore((s) => s.setPreference);
@@ -797,9 +801,9 @@ function LanguagePicker() {
                 paddingVertical: 10,
                 paddingHorizontal: 12,
                 borderRadius: 999,
-                backgroundColor: on ? colors.navy : colors.warmWhite,
+                backgroundColor: on ? colors.accent : colors.warmWhite,
                 borderWidth: 1,
-                borderColor: on ? colors.navy : colors.hairlineStrong,
+                borderColor: on ? colors.accent : colors.hairlineStrong,
               }}
             >
               <Text
@@ -807,7 +811,7 @@ function LanguagePicker() {
                 style={{
                   fontFamily: FONT.semibold,
                   fontSize: 13,
-                  color: on ? colors.warmWhite : colors.navy,
+                  color: on ? colors.onAccent : colors.navy,
                 }}
               >
                 {o.label}

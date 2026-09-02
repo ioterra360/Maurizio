@@ -5,7 +5,7 @@ import { router } from "expo-router";
 import { ErrorCard } from "@/components/ErrorCard";
 import { Tappable } from "@/components/Tappable";
 import { useT } from "@/lib/i18n";
-import { FONT, colors } from "@/theme/tokens";
+import { FONT, useColors } from "@/theme/tokens";
 
 type Props = {
   /** Reload the current layer's deck (useReviewStore().retryDeckLoad). */
@@ -21,6 +21,7 @@ type Props = {
  * Complete with 0 cards. The user can retry in place or leave.
  */
 export function DeckErrorScreen({ onRetry, fallbackHref = "/(app)/today" }: Props) {
+  const colors = useColors();
   const { t } = useT();
   const goBack = () => {
     if (router.canGoBack()) router.back();

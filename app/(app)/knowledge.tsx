@@ -20,11 +20,12 @@ import { useAuthStore } from "@/lib/auth-store";
 import { reportError } from "@/lib/report-error";
 import { markAddOpenedIntentionally } from "@/lib/add-gate";
 import { useT } from "@/lib/i18n";
-import { FONT, colors } from "@/theme/tokens";
+import { FONT, useColors } from "@/theme/tokens";
 import { FOLDER_LIMIT_ENFORCED, type FolderKind } from "@/lib/constants";
 
 export default function KnowledgeScreen() {
   const { t, tp } = useT();
+  const colors = useColors();
   const userId = useAuthStore((s) => s.user?.id);
   const { folders, loading, error, refetch } = useFoldersWithStats();
   // Quanti elementi (cartelle + ricordi singoli) sono nel cestino: la riga
@@ -359,17 +360,17 @@ export default function KnowledgeScreen() {
           width: 56,
           height: 56,
           borderRadius: 28,
-          backgroundColor: colors.navy,
+          backgroundColor: colors.accent,
           alignItems: "center",
           justifyContent: "center",
-          shadowColor: colors.navy,
+          shadowColor: "#0F1B33",
           shadowOpacity: 0.35,
           shadowOffset: { width: 0, height: 10 },
           shadowRadius: 24,
           elevation: 8,
         }}
       >
-        <Plus size={22} color={colors.warmWhite} strokeWidth={2.2} />
+        <Plus size={22} color={colors.onAccent} strokeWidth={2.2} />
       </Tappable>
       )}
     </SafeAreaView>

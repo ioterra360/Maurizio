@@ -6,7 +6,7 @@ import { Tappable } from "@/components/Tappable";
 import { tap } from "@/lib/feedback";
 import { FOLDER_SORTS, type FolderSort } from "@/lib/folder-sort";
 import { useT, type TKey } from "@/lib/i18n";
-import { FONT, colors } from "@/theme/tokens";
+import { FONT, useColors } from "@/theme/tokens";
 
 /** Catalog keys per sort option — resolved at render so the language switch applies. */
 export const SORT_LABEL_KEY: Record<FolderSort, TKey> = {
@@ -30,6 +30,7 @@ type Props = {
  */
 export function FolderSortSheet({ visible, current, onSelect, onClose }: Props) {
   const { t } = useT();
+  const colors = useColors();
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <View style={{ flex: 1, justifyContent: "flex-end" }}>
@@ -64,7 +65,7 @@ export function FolderSortSheet({ visible, current, onSelect, onClose }: Props) 
               width: 36,
               height: 4,
               borderRadius: 2,
-              backgroundColor: "#D9D7D1",
+              backgroundColor: colors.switchTrackOff,
               marginBottom: 16,
             }}
           />

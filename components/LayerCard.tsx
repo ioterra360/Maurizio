@@ -1,7 +1,7 @@
 import { Text, View } from "react-native";
 import { ChevronRight, Radar, Repeat, Target, type LucideIcon } from "lucide-react-native";
 import { Tappable } from "@/components/Tappable";
-import { FONT, colors, layer, radii, type LayerKey } from "@/theme/tokens";
+import { FONT, radii, useThemeTokens, type LayerKey } from "@/theme/tokens";
 import { useT } from "@/lib/i18n";
 
 type Props = {
@@ -23,6 +23,7 @@ const ICONS: Record<LayerKey, LucideIcon> = {
  */
 export function LayerCard({ layerKey, items, subtitle, onPress }: Props) {
   const { t, tp } = useT();
+  const { colors, layer } = useThemeTokens();
   const { color, label } = layer[layerKey];
   const Icon = ICONS[layerKey];
 

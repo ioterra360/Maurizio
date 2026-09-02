@@ -18,7 +18,7 @@ import { SectionLabel } from "@/components/SectionLabel";
 import { useReviewStore, type RecapEntry } from "@/lib/review-store";
 import { success } from "@/lib/feedback";
 import { useT, type TKey } from "@/lib/i18n";
-import { FONT, colors, layer as layerTokens, statusTint, type LayerKey } from "@/theme/tokens";
+import { FONT, useThemeTokens, type LayerKey } from "@/theme/tokens";
 
 /**
  * Recap di fine sessione (spec core-loop §7): mascotte animata, messaggio a
@@ -28,11 +28,6 @@ import { FONT, colors, layer as layerTokens, statusTint, type LayerKey } from "@
  */
 
 type Outcome = RecapEntry["response"];
-
-const OUTCOME_COLOR: Record<Outcome, string> = {
-  remembered: statusTint.active.text,
-  forgot: statusTint.fading.text,
-};
 
 /** Catalog keys — resolved with t() at render so the language switch applies at once. */
 const OUTCOME_LABEL_KEY: Record<Outcome, TKey> = {
@@ -94,7 +89,13 @@ function OutcomeBar({
   value: number;
   max: number;
 }) {
+  const { colors, statusTint } = useThemeTokens();
   const { t } = useT();
+  // Dentro il componente (non a livello di modulo) così segue il tema corrente.
+  const OUTCOME_COLOR: Record<Outcome, string> = {
+    remembered: statusTint.active.text,
+    forgot: statusTint.fading.text,
+  };
   const pct = max > 0 ? (value / max) * 100 : 0;
   return (
     <View className="flex-row items-center" style={{ gap: 10, paddingVertical: 6 }}>
@@ -156,7 +157,13 @@ export default function CompleteScreen() {
   // inset il CTA finisce sotto la barra di sistema a 3 pulsanti (~48dp).
   // Maurizio 2026-09-01. Pattern canonico: (app)/_layout.tsx.
   const insets = useSafeAreaInsets();
+  const { colors, statusTint, layer: layerTokens } = useThemeTokens();
   const { t, tp } = useT();
+  // Dentro il componente (non a livello di modulo) così segue il tema corrente.
+  const OUTCOME_COLOR: Record<Outcome, string> = {
+    remembered: statusTint.active.text,
+    forgot: statusTint.fading.text,
+  };
   const totals = useReviewStore((s) => s.totals);
   const results = useReviewStore((s) => s.results);
   const mode = useReviewStore((s) => s.mode);

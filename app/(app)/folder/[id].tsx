@@ -22,7 +22,7 @@ import { FilterChip } from "@/components/FilterChip";
 import { ItemRow } from "@/components/ItemRow";
 import { SectionLabel } from "@/components/SectionLabel";
 import { Tappable } from "@/components/Tappable";
-import { FONT, colors, radii } from "@/theme/tokens";
+import { FONT, radii, useColors } from "@/theme/tokens";
 import { useT } from "@/lib/i18n";
 import { FOLDER_KINDS, type FolderKind, type MemoryState } from "@/lib/constants";
 import { useFolderDetail } from "@/lib/use-folders";
@@ -37,6 +37,7 @@ import { markAddOpenedIntentionally } from "@/lib/add-gate";
 import type { FolderItem } from "@/lib/folder-data";
 
 export default function FolderDetailScreen() {
+  const colors = useColors();
   const { t, tp } = useT();
   const params = useLocalSearchParams<{ id: string }>();
   // Identità = folders.id; il resolver accetta anche un kind legacy per le
@@ -467,17 +468,17 @@ export default function FolderDetailScreen() {
           width: 56,
           height: 56,
           borderRadius: 28,
-          backgroundColor: colors.navy,
+          backgroundColor: colors.accent,
           alignItems: "center",
           justifyContent: "center",
-          shadowColor: colors.navy,
+          shadowColor: "#0F1B33",
           shadowOpacity: 0.35,
           shadowOffset: { width: 0, height: 10 },
           shadowRadius: 24,
           elevation: 8,
         }}
       >
-        <Plus size={24} color={colors.warmWhite} strokeWidth={2.2} />
+        <Plus size={24} color={colors.onAccent} strokeWidth={2.2} />
       </Tappable>
 
       <FolderSortSheet

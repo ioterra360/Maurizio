@@ -13,9 +13,10 @@ import { PrimaryButton } from "@/components/PrimaryButton";
 import { useReviewStore } from "@/lib/review-store";
 import { useT } from "@/lib/i18n";
 import { success, error } from "@/lib/feedback";
-import { FONT, colors } from "@/theme/tokens";
+import { FONT, useColors } from "@/theme/tokens";
 
 export default function FocusScreen() {
+  const colors = useColors();
   const { t } = useT();
   // Android edge-to-edge (app.json edgeToEdgeEnabled): senza il bottom
   // inset il CTA finisce sotto la barra di sistema a 3 pulsanti (~48dp).

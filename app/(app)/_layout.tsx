@@ -12,12 +12,15 @@ import { reportError } from "@/lib/report-error";
 import { useFolderOrderStore } from "@/lib/folder-order-store";
 import { useFolderSortStore } from "@/lib/folder-sort-store";
 import { useT } from "@/lib/i18n";
-import { colors } from "@/theme/tokens";
+import { useColors } from "@/theme/tokens";
+import { useThemeStore } from "@/theme/theme-store";
 
 export default function AppLayout() {
   const gate = useAuthGate("app");
   const insets = useSafeAreaInsets();
   const { t } = useT();
+  const colors = useColors();
+  const scheme = useThemeStore((s) => s.scheme);
   // Hydrate the persisted folder order once for every (app) surface, so
   // folder detail (and anything else reading priorities) doesn't depend on
   // Knowledge having mounted first.
@@ -56,6 +59,7 @@ export default function AppLayout() {
   // doesn't overlap the labels on notched devices.
   const barPaddingBottom = Math.max(insets.bottom, 22);
   const barHeight = 10 + 44 + barPaddingBottom;
+  const barBg = scheme === "dark" ? "rgba(14,16,21,0.92)" : "rgba(250,248,244,0.92)";
 
   return (
     <Tabs
@@ -68,7 +72,7 @@ export default function AppLayout() {
         tabBarActiveTintColor: colors.navy,
         tabBarInactiveTintColor: colors.midGrey,
         tabBarStyle: {
-          backgroundColor: "rgba(250,248,244,0.92)",
+          backgroundColor: barBg,
           borderTopColor: colors.hairline,
           borderTopWidth: 1,
           height: barHeight,
@@ -77,7 +81,11 @@ export default function AppLayout() {
           position: "absolute",
         },
         tabBarBackground: () => (
-          <BlurView intensity={40} tint="light" style={StyleSheet.absoluteFill} />
+          <BlurView
+            intensity={40}
+            tint={scheme === "dark" ? "dark" : "light"}
+            style={StyleSheet.absoluteFill}
+          />
         ),
         tabBarLabelStyle: {
           fontFamily: "Inter_600SemiBold",

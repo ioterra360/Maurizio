@@ -22,7 +22,7 @@ import { trashHoursLeft } from "@/lib/trash";
 import { useUIStore } from "@/lib/ui-store";
 import type { FolderKind } from "@/lib/constants";
 import { FOLDER_KINDS } from "@/lib/constants";
-import { FONT, colors, radii } from "@/theme/tokens";
+import { FONT, radii, useColors } from "@/theme/tokens";
 
 /**
  * Cestino — cartelle e ricordi eliminati nelle ultime 24 ore (Maurizio,
@@ -32,6 +32,7 @@ import { FONT, colors, radii } from "@/theme/tokens";
  * /add e /folder-settings, così il back torna alla schermata di provenienza.
  */
 export default function TrashScreen() {
+  const colors = useColors();
   const { t, tp } = useT();
   const user = useAuthStore((s) => s.user);
   const showToast = useUIStore((s) => s.showToast);
@@ -262,6 +263,7 @@ function TrashRow({
   disabled: boolean;
   onRestore: () => void;
 }) {
+  const colors = useColors();
   return (
     <View
       style={{

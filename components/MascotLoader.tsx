@@ -9,7 +9,7 @@ import Animated, {
 } from "react-native-reanimated";
 
 import { Mascot } from "@/components/Mascot";
-import { FONT, colors } from "@/theme/tokens";
+import { FONT, useColors } from "@/theme/tokens";
 
 type Props = { label?: string; size?: number };
 
@@ -21,6 +21,7 @@ type Props = { label?: string; size?: number };
 // 96 instead of 84: the idea artwork is wider than tall, so at the same box
 // the brain reads ~13% smaller than the old square default did.
 export function MascotLoader({ label, size = 96 }: Props) {
+  const colors = useColors();
   const sway = useSharedValue(0);
   useEffect(() => {
     sway.value = withRepeat(

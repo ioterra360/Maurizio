@@ -1,5 +1,5 @@
 import { Text, View } from "react-native";
-import { FONT, colors } from "@/theme/tokens";
+import { FONT, useColors } from "@/theme/tokens";
 
 type Props = {
   /** Optional mid-grey kicker above the title (e.g. greeting). */
@@ -19,6 +19,7 @@ type Props = {
  * Used on every primary screen for a consistent feel.
  */
 export function HeaderHero({ kicker, title, subtitle, reservedRight }: Props) {
+  const colors = useColors();
   const extraRight = reservedRight ?? 0;
   return (
     <View

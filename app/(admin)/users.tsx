@@ -8,16 +8,10 @@ import { InitialsAvatar } from "@/components/FolderTile";
 import { FilterChip } from "@/components/FilterChip";
 import { Tappable } from "@/components/Tappable";
 import { USERS, type AdminUser } from "@/lib/admin-data";
-import { FONT, colors, radii, statusTint } from "@/theme/tokens";
+import { FONT, radii, useThemeTokens } from "@/theme/tokens";
 import { t, useT } from "@/lib/i18n";
 
 type PlanFilter = "all" | "Pro" | "Free" | "At risk";
-
-const PLAN_TINT: Record<AdminUser["plan"], { bg: string; text: string }> = {
-  Pro:          { bg: colors.tagProBg, text: colors.tagProText },
-  Free:         statusTint.archived,
-  "At risk":    statusTint.fading,
-};
 
 /** Display labels for the plan pill — plan union literals stay English (they key filters/tints). */
 const PLAN_LABEL: Record<AdminUser["plan"], string> = {
@@ -26,13 +20,8 @@ const PLAN_LABEL: Record<AdminUser["plan"], string> = {
   get "At risk"() { return t("adminUsers.tagAtRisk"); },
 };
 
-const RETENTION_PILL: Record<"high" | "med" | "low", { bg: string; text: string }> = {
-  high: statusTint.active,
-  med:  statusTint.archived,
-  low:  statusTint.fading,
-};
-
 export default function AdminUsersScreen() {
+  const { colors } = useThemeTokens();
   const { t: tr } = useT();
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<PlanFilter>("all");
@@ -155,6 +144,18 @@ export default function AdminUsersScreen() {
 }
 
 function UserRow({ user }: { user: AdminUser }) {
+  const { colors, statusTint } = useThemeTokens();
+  // Moved inside the component: module scope would freeze these on the boot theme.
+  const PLAN_TINT: Record<AdminUser["plan"], { bg: string; text: string }> = {
+    Pro:          { bg: colors.tagProBg, text: colors.tagProText },
+    Free:         statusTint.archived,
+    "At risk":    statusTint.fading,
+  };
+  const RETENTION_PILL: Record<"high" | "med" | "low", { bg: string; text: string }> = {
+    high: statusTint.active,
+    med:  statusTint.archived,
+    low:  statusTint.fading,
+  };
   const tint = PLAN_TINT[user.plan];
   const retentionPill =
     user.retention >= 75 ? RETENTION_PILL.high :

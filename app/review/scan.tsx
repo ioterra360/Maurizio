@@ -12,13 +12,14 @@ import { Tappable } from "@/components/Tappable";
 import { AMEND_WINDOW_MS, useReviewStore } from "@/lib/review-store";
 import { success, tap } from "@/lib/feedback";
 import { useT } from "@/lib/i18n";
-import { FONT, colors, layerTint, radii } from "@/theme/tokens";
+import { FONT, radii, useThemeTokens } from "@/theme/tokens";
 
 export default function ScanScreen() {
   // Android edge-to-edge (app.json edgeToEdgeEnabled): senza il bottom
   // inset il CTA finisce sotto la barra di sistema a 3 pulsanti (~48dp).
   // Maurizio 2026-09-01. Pattern canonico: (app)/_layout.tsx.
   const insets = useSafeAreaInsets();
+  const { colors, layerTint } = useThemeTokens();
   const { t } = useT();
   const ensureSession = useReviewStore((s) => s.ensureSession);
   // Never call s.cards() inside the selector: folder-scoped decks are
@@ -280,10 +281,10 @@ export default function ScanScreen() {
               borderRadius: radii.pill,
               alignItems: "center",
               justifyContent: "center",
-              backgroundColor: colors.navy,
+              backgroundColor: colors.accent,
             }}
           >
-            <Text style={{ fontFamily: FONT.semibold, fontSize: 16, color: colors.warmWhite }}>
+            <Text style={{ fontFamily: FONT.semibold, fontSize: 16, color: colors.onAccent }}>
               {t("scan.goBack")}
             </Text>
           </Tappable>

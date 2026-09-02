@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Pressable, Text, View, type StyleProp, type ViewStyle } from "react-native";
-import { FONT, colors, radii } from "@/theme/tokens";
+import { FONT, radii, useColors } from "@/theme/tokens";
 
 type Props = {
   label: string;
@@ -18,6 +18,7 @@ type Props = {
  */
 export function GhostButton({ label, onPress, variant = "link", disabled, style }: Props) {
   const [pressed, setPressed] = useState(false);
+  const colors = useColors();
 
   if (variant === "outline") {
     return (

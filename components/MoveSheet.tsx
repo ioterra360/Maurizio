@@ -13,7 +13,7 @@ import { useT } from "@/lib/i18n";
 import type { Folder, Memory, Subfolder } from "@/lib/mappers";
 import { reportError } from "@/lib/report-error";
 import { useUIStore } from "@/lib/ui-store";
-import { FONT, colors, radii } from "@/theme/tokens";
+import { FONT, radii, useColors } from "@/theme/tokens";
 
 const tileKind = (kind: string): FolderKind =>
   ((FOLDER_KINDS as readonly string[]).includes(kind) ? kind : "custom") as FolderKind;
@@ -38,6 +38,7 @@ export function MoveSheet({
   onMoved: (destinationName: string) => void;
 }) {
   const { t } = useT();
+  const colors = useColors();
   const user = useAuthStore((s) => s.user);
   const showToast = useUIStore((s) => s.showToast);
 
@@ -124,7 +125,7 @@ export function MoveSheet({
               width: 36,
               height: 4,
               borderRadius: 2,
-              backgroundColor: "#D9D7D1",
+              backgroundColor: colors.switchTrackOff,
               marginBottom: 14,
             }}
           />
@@ -210,6 +211,7 @@ export function MoveSheet({
 }
 
 function SheetLabel({ text }: { text: string }) {
+  const colors = useColors();
   return (
     <Text
       style={{
@@ -238,6 +240,7 @@ function SheetRow({
   disabled: boolean;
   onPress: () => void;
 }) {
+  const colors = useColors();
   return (
     <Tappable
       onPress={onPress}

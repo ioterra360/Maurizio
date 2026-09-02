@@ -1,7 +1,7 @@
 import { PixelRatio, Text, useWindowDimensions, type StyleProp, type TextStyle } from "react-native";
 
 import { termFontSize, termLetterSpacing, termLineHeight, termLines } from "@/lib/term-typography";
-import { FONT, colors } from "@/theme/tokens";
+import { FONT, useColors } from "@/theme/tokens";
 
 type Props = {
   text: string;
@@ -25,6 +25,7 @@ const TEXT_PADDING = 8;
  * stays on as a safety net only.
  */
 export function TermText({ text, max, screenPadding, style }: Props) {
+  const colors = useColors();
   const { width } = useWindowDimensions();
   const fontScale = Math.min(PixelRatio.getFontScale(), MAX_FONT_MULTIPLIER);
   const box = (width - 2 * screenPadding - 2 * TEXT_PADDING) / Math.max(1, fontScale);

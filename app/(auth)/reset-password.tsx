@@ -18,7 +18,7 @@ import { useAuthStore } from "@/lib/auth-store";
 import { authErrorMessage } from "@/lib/auth-errors";
 import { useT } from "@/lib/i18n";
 import { useUIStore } from "@/lib/ui-store";
-import { colors, FONT } from "@/theme/tokens";
+import { FONT, useColors } from "@/theme/tokens";
 
 const MIN_PASSWORD_LENGTH = 8;
 
@@ -42,6 +42,7 @@ type LinkStatus = "verifying" | "ready" | "invalid";
  */
 export default function ResetPasswordScreen() {
   const { t } = useT();
+  const colors = useColors();
   const user = useAuthStore((s) => s.user);
   const authLink = useAuthStore((s) => s.authLink);
   const pendingPasswordReset = useAuthStore((s) => s.pendingPasswordReset);
@@ -310,6 +311,7 @@ function FieldLabel({
   children: React.ReactNode;
   style?: { marginTop?: number };
 }) {
+  const colors = useColors();
   return (
     <Text
       style={{

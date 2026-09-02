@@ -1,17 +1,9 @@
 import { Text, View, useWindowDimensions } from "react-native";
 import { Tappable } from "@/components/Tappable";
-import { FONT, colors, radii, statusTint } from "@/theme/tokens";
+import { FONT, radii, useThemeTokens } from "@/theme/tokens";
 import { useT } from "@/lib/i18n";
 import { lineFontSize } from "@/lib/term-typography";
 import type { FolderItem } from "@/lib/folder-data";
-
-// Labels are catalog KEYS, resolved with t() at render so the runtime
-// language switch applies at once.
-const STATE_META = {
-  active:   { dot: colors.active,   ...statusTint.active,   labelKey: "itemRow.stateStable" },
-  fading:   { dot: colors.fading,   ...statusTint.fading,   labelKey: "itemRow.stateFading" },
-  archived: { dot: colors.archived, ...statusTint.archived, labelKey: "itemRow.stateArchived" },
-} as const;
 
 // CJK detection: Hiragana (3040-309F), Katakana (30A0-30FF), CJK Unified
 // (4E00-9FFF), and ideographic space (3000). Covers Japanese contents in
@@ -33,7 +25,16 @@ type Props = {
  */
 export function ItemRow({ item, onPress }: Props) {
   const { t } = useT();
+  const { colors, statusTint } = useThemeTokens();
   const { width } = useWindowDimensions();
+  // Labels are catalog KEYS, resolved with t() at render so the runtime
+  // language switch applies at once. Dentro il componente perché dot/tint
+  // seguono il tema corrente (una costante di modulo si congela al boot).
+  const STATE_META = {
+    active:   { dot: colors.active,   ...statusTint.active,   labelKey: "itemRow.stateStable" },
+    fading:   { dot: colors.fading,   ...statusTint.fading,   labelKey: "itemRow.stateFading" },
+    archived: { dot: colors.archived, ...statusTint.archived, labelKey: "itemRow.stateArchived" },
+  } as const;
   const meta = STATE_META[item.state];
   const cjk = isCjk(item.front);
   // Il termine si RIMPICCIOLISCE per stare intero sulla riga (fino a 12 px)

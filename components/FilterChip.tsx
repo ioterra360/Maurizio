@@ -1,6 +1,6 @@
 import { Text, View } from "react-native";
 import { Tappable } from "@/components/Tappable";
-import { FONT, colors, radii } from "@/theme/tokens";
+import { FONT, radii, useColors } from "@/theme/tokens";
 import { useT } from "@/lib/i18n";
 
 type Props = {
@@ -16,6 +16,7 @@ type Props = {
  * Fading / Archived" toggle row.
  */
 export function FilterChip({ label, count, active, dot, onPress }: Props) {
+  const colors = useColors();
   const { t } = useT();
   return (
     <Tappable
@@ -30,7 +31,7 @@ export function FilterChip({ label, count, active, dot, onPress }: Props) {
         height: 32,
         paddingHorizontal: 12,
         gap: 7,
-        backgroundColor: active ? colors.navy : "transparent",
+        backgroundColor: active ? colors.accent : "transparent",
         borderWidth: active ? 0 : 1,
         borderColor: colors.hairline,
       }}
@@ -50,7 +51,7 @@ export function FilterChip({ label, count, active, dot, onPress }: Props) {
         style={{
           fontFamily: active ? FONT.semibold : FONT.medium,
           fontSize: 13.5,
-          color: active ? colors.warmWhite : colors.navy,
+          color: active ? colors.onAccent : colors.navy,
           letterSpacing: -0.07,
         }}
       >
@@ -60,7 +61,8 @@ export function FilterChip({ label, count, active, dot, onPress }: Props) {
         style={{
           fontFamily: FONT.semibold,
           fontSize: 12,
-          color: active ? "rgba(250,248,244,0.78)" : colors.midGrey,
+          color: active ? colors.onAccent : colors.midGrey,
+          opacity: active ? 0.78 : 1,
           fontVariant: ["tabular-nums"],
         }}
       >

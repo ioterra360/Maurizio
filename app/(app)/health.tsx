@@ -20,13 +20,14 @@ import { fetchDueCounts } from "@/lib/api";
 import { reportError } from "@/lib/report-error";
 import type { LayerCounts } from "@/lib/queue";
 import type { FolderWithStats } from "@/lib/mappers";
-import { FONT, colors } from "@/theme/tokens";
+import { FONT, useColors } from "@/theme/tokens";
 
 /** Carico cognitivo: 120 items ≈ tetto del budget 1h (spec core-loop §8). */
 const LOAD_CEILING_ITEMS = 120;
 
 export default function HealthScreen() {
   const { t, tp } = useT();
+  const colors = useColors();
   const user = useAuthStore((s) => s.user);
   const { folders, loading, error, refetch } = useFoldersWithStats();
   const order = useFolderOrderStore((s) => s.order);
@@ -189,7 +190,8 @@ export default function HealthScreen() {
                   marginTop: 14,
                   fontFamily: FONT.medium,
                   fontSize: 14,
-                  color: "rgba(250,248,244,0.82)",
+                  color: colors.warmWhite,
+                  opacity: 0.82,
                   letterSpacing: 0.52, // 0.04em on 13px (was 1.2 = too wide)
                   textTransform: "uppercase",
                   fontVariant: ["tabular-nums"],

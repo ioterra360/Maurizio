@@ -35,7 +35,7 @@ import { safeBack } from "@/lib/safe-back";
 import { relativeReviewed } from "@/lib/format";
 import { FOLDER_KINDS, type FolderKind } from "@/lib/constants";
 import { useT } from "@/lib/i18n";
-import { FONT, colors } from "@/theme/tokens";
+import { FONT, useColors } from "@/theme/tokens";
 
 /**
  * Folder settings — reached from the cog in FolderTopBar. Lives in the ROOT
@@ -44,6 +44,7 @@ import { FONT, colors } from "@/theme/tokens";
  * back pops naturally onto it.
  */
 export default function FolderSettingsScreen() {
+  const colors = useColors();
   const { t, tp } = useT();
   const params = useLocalSearchParams<{ id: string }>();
   const idParam = params.id && params.id.length > 0 ? params.id : null;

@@ -16,7 +16,7 @@ import { PrimaryButton } from "@/components/PrimaryButton";
 import { GhostButton } from "@/components/GhostButton";
 import { Tappable } from "@/components/Tappable";
 import { ADD_PREVIEW_BY_KIND } from "@/lib/folder-data";
-import { FONT, colors, radii } from "@/theme/tokens";
+import { FONT, radii, useColors } from "@/theme/tokens";
 import {
   DAILY_INPUT_CAP_DEFAULT,
   FOLDER_KINDS,
@@ -39,6 +39,7 @@ import { firstReview } from "@/features/srs/phases";
 import { itemTypesFor, legacyKindFor, templateHasReading } from "@/lib/folder-taxonomy";
 
 export default function AddScreen() {
+  const colors = useColors();
   // Add is a root-level modal (declared in app/_layout.tsx so it can slide
   // up over the tab bar), so it sits OUTSIDE the (app) auth gate. Guard
   // here explicitly — without this, a not-yet-logged-in user could land
@@ -299,7 +300,7 @@ export default function AddScreen() {
                     height: 36,
                     paddingHorizontal: 12,
                     gap: 6,
-                    backgroundColor: on ? colors.navy : colors.surface,
+                    backgroundColor: on ? colors.accent : colors.surface,
                     borderWidth: on ? 0 : 1,
                     borderColor: colors.hairline,
                   }}
@@ -308,7 +309,7 @@ export default function AddScreen() {
                     style={{
                       fontFamily: on ? FONT.semibold : FONT.medium,
                       fontSize: 14,
-                      color: on ? colors.warmWhite : colors.navy,
+                      color: on ? colors.onAccent : colors.navy,
                       letterSpacing: -0.07,
                     }}
                   >
@@ -471,7 +472,7 @@ export default function AddScreen() {
                     borderRadius: radii.chip,
                     height: 32,
                     paddingHorizontal: 14,
-                    backgroundColor: on ? colors.navy : colors.surface,
+                    backgroundColor: on ? colors.accent : colors.surface,
                     borderWidth: on ? 0 : 1,
                     borderColor: colors.hairline,
                   }}
@@ -480,7 +481,7 @@ export default function AddScreen() {
                     style={{
                       fontFamily: on ? FONT.semibold : FONT.medium,
                       fontSize: 13,
-                      color: on ? colors.warmWhite : colors.navy,
+                      color: on ? colors.onAccent : colors.navy,
                       letterSpacing: -0.04,
                     }}
                   >
@@ -581,7 +582,7 @@ export default function AddScreen() {
                 style={{
                   paddingHorizontal: 16,
                   paddingVertical: 10,
-                  backgroundColor: "#F7F5F0",
+                  backgroundColor: colors.canvas,
                   borderTopWidth: 1,
                   borderTopColor: colors.hairline,
                 }}
@@ -656,6 +657,7 @@ export default function AddScreen() {
 
 /** Inline reason under a required field that was left empty on save. */
 function FieldHint({ children }: { children: string }) {
+  const colors = useColors();
   return (
     <Text
       style={{

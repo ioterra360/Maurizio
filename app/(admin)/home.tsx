@@ -21,7 +21,8 @@ import { useAuthStore } from "@/lib/auth-store";
 import { ACTIVITY, FLAGS, KPIS, type KPI } from "@/lib/admin-data";
 import { dateBadge, firstName } from "@/lib/format";
 import { useT } from "@/lib/i18n";
-import { FONT, colors, layerTint, radii, statusTint } from "@/theme/tokens";
+import { FONT, radii, useThemeTokens } from "@/theme/tokens";
+import type { ThemeTokens } from "@/theme/tokens";
 
 const ICONS: Record<"folder" | "warn" | "sparkle" | "check", LucideIcon> = {
   folder: Folder,
@@ -31,6 +32,8 @@ const ICONS: Record<"folder" | "warn" | "sparkle" | "check", LucideIcon> = {
 };
 
 export default function AdminHomeScreen() {
+  const tokens = useThemeTokens();
+  const { colors } = tokens;
   const { t, tp } = useT();
   const user = useAuthStore((s) => s.user);
   const display = firstName(user?.name, t("adminHome.adminFallbackName"));
@@ -212,7 +215,7 @@ export default function AdminHomeScreen() {
                     width: 32,
                     height: 32,
                     borderRadius: 8,
-                    backgroundColor: tintFor(a.color),
+                    backgroundColor: tintFor(a.color, tokens),
                     alignItems: "center",
                     justifyContent: "center",
                   }}
@@ -261,6 +264,7 @@ export default function AdminHomeScreen() {
 }
 
 function KpiCard({ kpi }: { kpi: KPI }) {
+  const { colors, statusTint } = useThemeTokens();
   const up = kpi.delta.startsWith("+");
   return (
     <View
@@ -326,6 +330,7 @@ function KpiCard({ kpi }: { kpi: KPI }) {
 }
 
 function CompactLegend({ color, label, val }: { color: string; label: string; val: string }) {
+  const { colors } = useThemeTokens();
   return (
     <View className="flex-row items-center" style={{ gap: 5 }}>
       <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: color }} />
@@ -346,7 +351,8 @@ function CompactLegend({ color, label, val }: { color: string; label: string; va
   );
 }
 
-function tintFor(color: string): string {
+function tintFor(color: string, tokens: ThemeTokens): string {
+  const { colors, layerTint, statusTint } = tokens;
   if (color === colors.active)        return statusTint.active.bg;
   if (color === colors.fading)        return statusTint.fading.bg;
   if (color === colors.reinforcement) return layerTint.reinforcement;

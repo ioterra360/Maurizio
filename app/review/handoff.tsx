@@ -7,7 +7,7 @@ import { Mascot } from "@/components/Mascot";
 import { useT } from "@/lib/i18n";
 import { useReviewStore } from "@/lib/review-store";
 import { success } from "@/lib/feedback";
-import { FONT, colors, layer as layerTokens, type LayerKey } from "@/theme/tokens";
+import { FONT, useThemeTokens, type LayerKey } from "@/theme/tokens";
 
 /**
  * Interstitial automatico tra i livelli del flusso fluido: nessun tap
@@ -15,6 +15,7 @@ import { FONT, colors, layer as layerTokens, type LayerKey } from "@/theme/token
  * solo dopo un momento (spec core-loop §5).
  */
 export default function ReviewHandoffScreen() {
+  const { colors, layer: layerTokens } = useThemeTokens();
   const { t } = useT();
   const layer = useReviewStore((s) => s.layer);
   const layerCaps = useReviewStore((s) => s.layerCaps);

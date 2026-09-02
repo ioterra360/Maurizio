@@ -1,6 +1,7 @@
 import { Text, View } from "react-native";
 import Svg, { Circle } from "react-native-svg";
-import { FONT, colors } from "@/theme/tokens";
+import { FONT, useColors } from "@/theme/tokens";
+import { useThemeStore } from "@/theme/theme-store";
 
 type Segment = { color: string; pct: number };
 
@@ -12,7 +13,7 @@ type Props = {
   centerValue: string;
   /** The small label below the number (e.g. "Stable" or "%"). */
   centerLabel?: string;
-  /** Inner text color — defaults to white (used on the navy panel). */
+  /** Inner text color — defaults to warmWhite (used on the navy panel). */
   textColor?: string;
 };
 
@@ -27,8 +28,13 @@ export function RingChart({
   segments,
   centerValue,
   centerLabel,
-  textColor = colors.warmWhite,
+  textColor,
 }: Props) {
+  const colors = useColors();
+  const scheme = useThemeStore((s) => s.scheme);
+  const resolvedTextColor = textColor ?? colors.warmWhite;
+  const trackColor =
+    scheme === "dark" ? "rgba(14,16,21,0.14)" : "rgba(250,248,244,0.14)";
   const r = size / 2 - strokeWidth;
   const C = 2 * Math.PI * r;
   let cumulativeOffset = 0;
@@ -46,7 +52,7 @@ export function RingChart({
           cx={size / 2}
           cy={size / 2}
           r={r}
-          stroke="rgba(250,248,244,0.14)"
+          stroke={trackColor}
           strokeWidth={strokeWidth}
           fill="none"
         />
@@ -83,7 +89,7 @@ export function RingChart({
             style={{
               fontFamily: FONT.bold,
               fontSize: 34,
-              color: textColor,
+              color: resolvedTextColor,
               letterSpacing: -1,
               fontVariant: ["tabular-nums"],
               lineHeight: 36,
@@ -95,7 +101,7 @@ export function RingChart({
             style={{
               fontFamily: FONT.semibold,
               fontSize: 18,
-              color: textColor,
+              color: resolvedTextColor,
               opacity: 0.7,
             }}
           >
@@ -107,7 +113,7 @@ export function RingChart({
             style={{
               fontFamily: FONT.medium,
               fontSize: 12,
-              color: textColor,
+              color: resolvedTextColor,
               opacity: 0.65,
               letterSpacing: 1.1,
               textTransform: "uppercase",
@@ -125,7 +131,13 @@ export function RingChart({
 type LegendDotProps = { color: string; label: string; pct: string; onDark?: boolean };
 
 export function LegendDot({ color, label, pct, onDark = true }: LegendDotProps) {
-  const textColor = onDark ? "rgba(250,248,244,0.82)" : colors.midGrey;
+  const colors = useColors();
+  const scheme = useThemeStore((s) => s.scheme);
+  const textColor = onDark
+    ? scheme === "dark"
+      ? "rgba(14,16,21,0.82)"
+      : "rgba(250,248,244,0.82)"
+    : colors.midGrey;
   const pctColor = onDark ? colors.warmWhite : colors.navy;
   return (
     <View className="flex-row items-center" style={{ gap: 6 }}>

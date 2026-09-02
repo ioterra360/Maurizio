@@ -1,6 +1,6 @@
 import { View } from "react-native";
 import Svg, { Line, Polyline } from "react-native-svg";
-import { colors } from "@/theme/tokens";
+import { useColors } from "@/theme/tokens";
 
 type Props = {
   /** Width is provided by the parent; height defaults to mockup spec. */
@@ -17,6 +17,7 @@ const DAYS = 30;
  * terminal retention.
  */
 export function RetentionCurves({ width = 320, height = 90 }: Props) {
+  const colors = useColors();
   const focusEnd = 91;
   const reinfEnd = 74;
   const scanEnd = 62;

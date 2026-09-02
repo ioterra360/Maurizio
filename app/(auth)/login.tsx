@@ -18,10 +18,11 @@ import { useAuthStore, DEMO_ACCOUNTS, type DemoAccount } from "@/lib/auth-store"
 import { isDemoMode } from "@/lib/supabase";
 import { authErrorMessage } from "@/lib/auth-errors";
 import { useT } from "@/lib/i18n";
-import { colors, FONT, radii } from "@/theme/tokens";
+import { FONT, radii, useColors } from "@/theme/tokens";
 
 export default function LoginScreen() {
   const { t } = useT();
+  const colors = useColors();
   const signIn = useAuthStore((s) => s.signIn);
   const loading = useAuthStore((s) => s.loading);
 
@@ -226,6 +227,7 @@ function FieldLabel({
   children: React.ReactNode;
   style?: { marginBottom?: number; marginTop?: number };
 }) {
+  const colors = useColors();
   return (
     <Text
       style={{
@@ -251,6 +253,7 @@ function DemoCard({
   onPress: () => void;
 }) {
   const { t } = useT();
+  const colors = useColors();
   const isAdmin = account.role === "admin";
   const [pressed, setPressed] = useState(false);
   return (

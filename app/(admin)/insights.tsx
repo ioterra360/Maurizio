@@ -5,9 +5,10 @@ import { AdminTopBar } from "@/components/AdminTopBar";
 import { SectionLabel } from "@/components/SectionLabel";
 import { FUNNEL, RECALL } from "@/lib/admin-data";
 import { useT } from "@/lib/i18n";
-import { FONT, colors } from "@/theme/tokens";
+import { FONT, useColors } from "@/theme/tokens";
 
 export default function AdminInsightsScreen() {
+  const colors = useColors();
   const { t, locale } = useT();
 
   return (
@@ -86,7 +87,7 @@ export default function AdminInsightsScreen() {
                         style={{
                           height: "100%",
                           width: `${step.pct}%`,
-                          backgroundColor: colors.navy,
+                          backgroundColor: colors.accent,
                           opacity: 1 - i * 0.13,
                         }}
                       />
@@ -189,7 +190,7 @@ export default function AdminInsightsScreen() {
                   style={{
                     height: "100%",
                     width: `${row.accuracy}%`,
-                    backgroundColor: colors.navy,
+                    backgroundColor: colors.accent,
                   }}
                 />
               </View>
@@ -227,6 +228,7 @@ function LayerAdoption({
   sessions: number;
   share: number;
 }) {
+  const colors = useColors();
   const { tp, locale } = useT();
 
   return (

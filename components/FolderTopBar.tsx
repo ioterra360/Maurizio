@@ -4,7 +4,7 @@ import { ChevronLeft, Settings as SettingsIcon } from "lucide-react-native";
 
 import { FolderTile } from "@/components/FolderTile";
 import { Tappable } from "@/components/Tappable";
-import { FONT, colors } from "@/theme/tokens";
+import { FONT, useColors } from "@/theme/tokens";
 import { useT } from "@/lib/i18n";
 
 type Props = {
@@ -25,6 +25,7 @@ type Props = {
  */
 export function FolderTopBar({ folderId, emoji, name, priority }: Props) {
   const { t } = useT();
+  const colors = useColors();
   return (
     <View
       className="flex-row items-center justify-between"

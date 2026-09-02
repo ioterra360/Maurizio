@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Switch, Text, View } from "react-native";
 import { Tappable } from "@/components/Tappable";
-import { FONT, colors, radii } from "@/theme/tokens";
+import { FONT, radii, useColors } from "@/theme/tokens";
 
 type RowProps = {
   label: string;
@@ -16,6 +16,8 @@ type RowProps = {
  * renders a non-interactive View (no pressed feedback).
  */
 export function SettingsRow({ label, hint, value, onPress }: RowProps) {
+  const colors = useColors();
+
   if (onPress) {
     return (
       <Tappable
@@ -56,6 +58,7 @@ export function SettingsRow({ label, hint, value, onPress }: RowProps) {
 }
 
 function RowBody({ label, hint, value }: Omit<RowProps, "onPress">) {
+  const colors = useColors();
   return (
     <>
       <View className="flex-1" style={{ minWidth: 0 }}>
@@ -98,6 +101,7 @@ type ToggleProps = {
 };
 
 export function SettingsToggle({ label, hint, defaultOn = false, onChange }: ToggleProps) {
+  const colors = useColors();
   const [on, setOn] = useState(defaultOn);
   return (
     <View

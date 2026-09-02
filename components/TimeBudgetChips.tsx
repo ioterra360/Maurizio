@@ -1,6 +1,6 @@
 import { Text, View } from "react-native";
 import { Tappable } from "@/components/Tappable";
-import { FONT, colors, radii } from "@/theme/tokens";
+import { FONT, radii, useColors } from "@/theme/tokens";
 import { TIME_BUDGETS } from "@/lib/constants";
 import { tap } from "@/lib/feedback";
 import { useT } from "@/lib/i18n";
@@ -17,6 +17,7 @@ type Props = {
  * active, warm-white with hairline border when idle.
  */
 export function TimeBudgetChips({ value, onChange }: Props) {
+  const colors = useColors();
   const { t } = useT();
   return (
     <View>
@@ -54,7 +55,7 @@ export function TimeBudgetChips({ value, onChange }: Props) {
                 justifyContent: "center",
                 borderRadius: radii.chip,
                 paddingHorizontal: 8,
-                backgroundColor: on ? colors.navy : colors.surface,
+                backgroundColor: on ? colors.accent : colors.surface,
                 borderWidth: on ? 0 : 1,
                 borderColor: colors.hairline,
               }}
@@ -64,7 +65,7 @@ export function TimeBudgetChips({ value, onChange }: Props) {
                 style={{
                   fontFamily: on ? FONT.semibold : FONT.medium,
                   fontSize: 13.5,
-                  color: on ? colors.warmWhite : colors.navy,
+                  color: on ? colors.onAccent : colors.navy,
                   letterSpacing: -0.06,
                   fontVariant: ["tabular-nums"],
                 }}

@@ -14,7 +14,7 @@ import { PrimaryButton } from "@/components/PrimaryButton";
 import { Tappable } from "@/components/Tappable";
 import { useAuthStore } from "@/lib/auth-store";
 import { useT, type TKey } from "@/lib/i18n";
-import { colors, FONT, layerTint } from "@/theme/tokens";
+import { FONT, useThemeTokens } from "@/theme/tokens";
 
 const { width: SCREEN_W } = Dimensions.get("window");
 
@@ -28,49 +28,52 @@ type Step = {
   bodyKey: TKey;
 };
 
-const STEPS: Step[] = [
-  {
-    key: "welcome",
-    // "announce" (waving + megaphone) instead of "default": the default
-    // mascot is a 130 px cutout with a patchy alpha channel — at hero size
-    // the halo disc bled through the brain and read as a dark blob on top
-    // of it. Keep the hero on one of the ~500 px variants.
-    mascot: "announce",
-    // A plain white disc reads as deliberate next to the tinted discs of
-    // the three layer steps; warmWhite on canvas was a muddy near-match.
-    haloBg: colors.surface,
-    titleKey: "onboarding.welcomeTitle",
-    bodyKey: "onboarding.welcomeBody",
-  },
-  {
-    key: "scan",
-    mascot: "investigate",
-    haloBg: layerTint.scan,
-    titleKey: "onboarding.scanTitle",
-    bodyKey: "onboarding.scanBody",
-  },
-  {
-    key: "reinforcement",
-    mascot: "checklist",
-    haloBg: layerTint.reinforcement,
-    titleKey: "onboarding.reinforcementTitle",
-    bodyKey: "onboarding.reinforcementBody",
-  },
-  {
-    key: "focus",
-    mascot: "idea",
-    haloBg: layerTint.focus,
-    titleKey: "onboarding.focusTitle",
-    bodyKey: "onboarding.focusBody",
-  },
-];
-
 export default function OnboardingScreen() {
   const { t } = useT();
+  const { colors, layerTint } = useThemeTokens();
   const [step, setStep] = useState(0);
   const scrollRef = useRef<ScrollView>(null);
   const user = useAuthStore((s) => s.user);
   const setPendingOnboarding = useAuthStore((s) => s.setPendingOnboarding);
+
+  // Defined inside the component (not at module level) so haloBg reads the
+  // CURRENT theme's tokens — a module constant would freeze the boot scheme.
+  const STEPS: Step[] = [
+    {
+      key: "welcome",
+      // "announce" (waving + megaphone) instead of "default": the default
+      // mascot is a 130 px cutout with a patchy alpha channel — at hero size
+      // the halo disc bled through the brain and read as a dark blob on top
+      // of it. Keep the hero on one of the ~500 px variants.
+      mascot: "announce",
+      // A plain white disc reads as deliberate next to the tinted discs of
+      // the three layer steps; warmWhite on canvas was a muddy near-match.
+      haloBg: colors.surface,
+      titleKey: "onboarding.welcomeTitle",
+      bodyKey: "onboarding.welcomeBody",
+    },
+    {
+      key: "scan",
+      mascot: "investigate",
+      haloBg: layerTint.scan,
+      titleKey: "onboarding.scanTitle",
+      bodyKey: "onboarding.scanBody",
+    },
+    {
+      key: "reinforcement",
+      mascot: "checklist",
+      haloBg: layerTint.reinforcement,
+      titleKey: "onboarding.reinforcementTitle",
+      bodyKey: "onboarding.reinforcementBody",
+    },
+    {
+      key: "focus",
+      mascot: "idea",
+      haloBg: layerTint.focus,
+      titleKey: "onboarding.focusTitle",
+      bodyKey: "onboarding.focusBody",
+    },
+  ];
 
   // Clearing the flag lets the auth gate enforce the same destination even
   // if the explicit replace below is ever bypassed. A signed-in user goes to
@@ -209,7 +212,7 @@ export default function OnboardingScreen() {
                   width: on ? 22 : 7,
                   height: 7,
                   borderRadius: 999,
-                  backgroundColor: on ? colors.navy : colors.hairlineStrong,
+                  backgroundColor: on ? colors.accent : colors.hairlineStrong,
                 }}
               />
             );

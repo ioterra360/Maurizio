@@ -38,7 +38,7 @@ import { useUIStore } from "@/lib/ui-store";
 import { Mascot } from "@/components/Mascot";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { Toast } from "@/components/Toast";
-import { FONT, colors } from "@/theme/tokens";
+import { FONT } from "@/theme/tokens";
 
 /**
  * Sentry — crash + error reporting for TestFlight / Play builds.
@@ -126,6 +126,7 @@ async function handleDevSignOutLink(url: string): Promise<void> {
  * (`useT()` is a plain zustand hook — no provider — so it is safe here).
  */
 export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
+  const colors = useColors();
   const { t } = useT();
 
   useEffect(() => {

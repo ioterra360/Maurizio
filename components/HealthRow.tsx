@@ -1,5 +1,5 @@
 import { Text, View } from "react-native";
-import { FONT, colors, statusTint } from "@/theme/tokens";
+import { FONT, useThemeTokens } from "@/theme/tokens";
 import { RetentionBar } from "./RetentionBar";
 import { useT } from "@/lib/i18n";
 
@@ -13,19 +13,22 @@ type Props = {
   chip: Health;
 };
 
-const CHIP_STYLES: Record<Health, { bg: string; text: string }> = {
-  high:   statusTint.active,
-  medium: statusTint.fading,
-  low:    { bg: "#FBE3DD", text: "#9A3F2F" },
-};
 const CHIP_KEYS = { high: "healthRow.high", medium: "healthRow.medium", low: "healthRow.low" } as const;
 
 /**
  * A per-folder line on the Memory Health screen: name + retention bar + chip.
  */
 export function HealthRow({ name, active, fading, archived, chip }: Props) {
-  const s = CHIP_STYLES[chip];
+  const { colors, statusTint } = useThemeTokens();
   const { t } = useT();
+  // Dentro il componente: i tint seguono il tema corrente (una costante di
+  // modulo si congelerebbe sulla palette di boot).
+  const CHIP_STYLES: Record<Health, { bg: string; text: string }> = {
+    high:   statusTint.active,
+    medium: statusTint.fading,
+    low:    { bg: "#FBE3DD", text: "#9A3F2F" },
+  };
+  const s = CHIP_STYLES[chip];
   return (
     <View
       className="flex-row items-center rounded-chip bg-surface"

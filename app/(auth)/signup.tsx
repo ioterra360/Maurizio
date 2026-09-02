@@ -24,7 +24,7 @@ import { AUTH_LINK_PATHS } from "@/lib/auth-links";
 import { PRIVACY_URL, TERMS_URL } from "@/lib/constants";
 import { useT, type TKey } from "@/lib/i18n";
 import { reportError } from "@/lib/report-error";
-import { colors, FONT } from "@/theme/tokens";
+import { FONT, useColors } from "@/theme/tokens";
 
 /** True, verifiable trust signals — no offline/encryption claims the app can't keep. */
 const SIGNUP_BENEFIT_KEYS = [
@@ -38,6 +38,7 @@ const CONSENT_LINK_PATTERN = /(\{terms\}|\{privacy\})/;
 
 export default function SignupScreen() {
   const { t } = useT();
+  const colors = useColors();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -361,6 +362,7 @@ function FieldLabel({
   children: React.ReactNode;
   style?: { marginTop?: number };
 }) {
+  const colors = useColors();
   return (
     <Text
       style={{

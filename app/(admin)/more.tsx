@@ -19,7 +19,7 @@ import { InitialsAvatar } from "@/components/FolderTile";
 import { useAuthStore } from "@/lib/auth-store";
 import { useT } from "@/lib/i18n";
 import { Tappable } from "@/components/Tappable";
-import { FONT, colors, radii } from "@/theme/tokens";
+import { FONT, radii, useColors } from "@/theme/tokens";
 
 type Sub = {
   id: string;
@@ -31,6 +31,7 @@ type Sub = {
 };
 
 export default function AdminMoreScreen() {
+  const colors = useColors();
   const { t } = useT();
   const user = useAuthStore((s) => s.user);
   const signOut = useAuthStore((s) => s.signOut);
@@ -231,6 +232,7 @@ export default function AdminMoreScreen() {
 }
 
 function SubRow({ sub }: { sub: Sub }) {
+  const colors = useColors();
   const Icon = sub.icon;
   return (
     <Tappable

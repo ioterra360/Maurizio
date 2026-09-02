@@ -2,7 +2,7 @@ import { Text, View } from "react-native";
 import { Check, TriangleAlert, X, type LucideIcon } from "lucide-react-native";
 import { Tappable } from "@/components/Tappable";
 import { useT, type TKey } from "@/lib/i18n";
-import { FONT, colors, radii, statusTint } from "@/theme/tokens";
+import { FONT, radii, useColors, useThemeTokens } from "@/theme/tokens";
 
 export type Recall = "remembered" | "struggled" | "forgot";
 
@@ -11,20 +11,14 @@ type Props = {
   onPress?: () => void;
 };
 
-const META: Record<
-  Recall,
-  { labelKey: TKey; icon: LucideIcon; bg: string; border: string; text: string; iconColor: string; shadowColor?: string }
-> = {
-  // Per the Claude Design contract (reviews.jsx:410): the primary confirm
-  // is filled GREEN with a green glow shadow. Layer-local color, not navy.
-  // Deliberate a11y deviation from the mockup (screens.jsx:731): "forgot"
-  // keeps the peach border but uses statusTint.fading.text as ink — peach
-  // text on warm-white is ~1.8:1, far below the WCAG 3:1 large-text bar.
-  // Labels are catalog keys, resolved at render via useT() so the Settings
-  // language switch applies at once.
-  remembered: { labelKey: "recallButton.remembered", icon: Check,         bg: colors.active,    border: colors.active,         text: colors.warmWhite, iconColor: colors.warmWhite, shadowColor: colors.active },
-  struggled:  { labelKey: "recallButton.struggled",  icon: TriangleAlert, bg: "transparent",    border: colors.hairlineStrong, text: colors.navy,      iconColor: colors.navy },
-  forgot:     { labelKey: "recallButton.forgot",     icon: X,             bg: "transparent",    border: colors.fading,         text: statusTint.fading.text, iconColor: statusTint.fading.text },
+type RecallMeta = {
+  labelKey: TKey;
+  icon: LucideIcon;
+  bg: string;
+  border: string;
+  text: string;
+  iconColor: string;
+  shadowColor?: string;
 };
 
 /**
@@ -35,6 +29,21 @@ const META: Record<
  */
 export function RecallButton({ variant, onPress }: Props) {
   const { t } = useT();
+  const { colors, statusTint } = useThemeTokens();
+
+  // Per the Claude Design contract (reviews.jsx:410): the primary confirm
+  // is filled GREEN with a green glow shadow. Layer-local color, not navy.
+  // Deliberate a11y deviation from the mockup (screens.jsx:731): "forgot"
+  // keeps the peach border but uses statusTint.fading.text as ink — peach
+  // text on warm-white is ~1.8:1, far below the WCAG 3:1 large-text bar.
+  // Labels are catalog keys, resolved at render via useT() so the Settings
+  // language switch applies at once.
+  const META: Record<Recall, RecallMeta> = {
+    remembered: { labelKey: "recallButton.remembered", icon: Check,         bg: colors.active,    border: colors.active,         text: colors.warmWhite, iconColor: colors.warmWhite, shadowColor: colors.active },
+    struggled:  { labelKey: "recallButton.struggled",  icon: TriangleAlert, bg: "transparent",    border: colors.hairlineStrong, text: colors.navy,      iconColor: colors.navy },
+    forgot:     { labelKey: "recallButton.forgot",     icon: X,             bg: "transparent",    border: colors.fading,         text: statusTint.fading.text, iconColor: statusTint.fading.text },
+  };
+
   const m = META[variant];
   const Icon = m.icon;
   const label = t(m.labelKey);
@@ -83,12 +92,14 @@ export function RecallButton({ variant, onPress }: Props) {
 export function ProgressDots({
   total,
   active,
-  color = colors.navy,
+  color,
 }: {
   total: number;
   active: number;
   color?: string;
 }) {
+  const colors = useColors();
+  const fillColor = color ?? colors.navy;
   return (
     <View className="flex-row" style={{ gap: 7 }}>
       {Array.from({ length: total }, (_, i) => (
@@ -98,7 +109,7 @@ export function ProgressDots({
             width: i === active ? 20 : 8,
             height: 8,
             borderRadius: 4,
-            backgroundColor: i <= active ? color : colors.dotIdle,
+            backgroundColor: i <= active ? fillColor : colors.dotIdle,
           }}
         />
       ))}

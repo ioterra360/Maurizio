@@ -5,7 +5,7 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
-import { FONT, colors } from "@/theme/tokens";
+import { FONT, useColors } from "@/theme/tokens";
 
 type Props = {
   message: string | null;
@@ -21,6 +21,7 @@ type Props = {
  * the tab bar (~80px from the bottom). Calls onDismiss after duration.
  */
 export function Toast({ message, nonce, onDismiss, durationMs = 1800 }: Props) {
+  const colors = useColors();
   const opacity = useSharedValue(0);
   const translateY = useSharedValue(10);
 
@@ -66,7 +67,7 @@ export function Toast({ message, nonce, onDismiss, durationMs = 1800 }: Props) {
           paddingVertical: 12,
           paddingHorizontal: 18,
           borderRadius: 12,
-          backgroundColor: "#1A2C4F",
+          backgroundColor: colors.navy,
           shadowColor: "#1A2C4F",
           shadowOpacity: 0.35,
           shadowOffset: { width: 0, height: 16 },

@@ -1,7 +1,7 @@
 import { Text, View } from "react-native";
 import { ChevronLeft } from "lucide-react-native";
 import { Tappable } from "@/components/Tappable";
-import { FONT, colors } from "@/theme/tokens";
+import { FONT, useColors } from "@/theme/tokens";
 import { safeBack } from "@/lib/safe-back";
 import { useT } from "@/lib/i18n";
 
@@ -23,6 +23,7 @@ type Props = {
  */
 export function AdminTopBar({ title, subtitle, rightSlot, onBack }: Props) {
   const { t } = useT();
+  const colors = useColors();
   const handleBack = () => {
     if (typeof onBack === "function") onBack();
     else safeBack();

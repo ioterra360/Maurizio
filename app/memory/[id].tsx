@@ -28,14 +28,7 @@ import type { TKey } from "@/lib/i18n";
 import type { Memory } from "@/lib/mappers";
 import { reportError } from "@/lib/report-error";
 import { useUIStore } from "@/lib/ui-store";
-import { FONT, colors, radii, statusTint } from "@/theme/tokens";
-
-// Labels are catalog keys, resolved with t() at render so the language switch applies.
-const STATE_META: Record<Memory["state"], { bg: string; text: string; labelKey: TKey }> = {
-  active: { ...statusTint.active, labelKey: "memory.stateActive" },
-  fading: { ...statusTint.fading, labelKey: "memory.stateFading" },
-  archived: { ...statusTint.archived, labelKey: "memory.stateArchived" },
-};
+import { FONT, radii, useColors, useThemeTokens } from "@/theme/tokens";
 
 const NOTES_MAX = 2000;
 
@@ -51,6 +44,15 @@ export default function MemoryDetailScreen() {
   const { width } = useWindowDimensions();
   const { id } = useLocalSearchParams<{ id: string }>();
   const showToast = useUIStore((s) => s.showToast);
+  const { colors, statusTint } = useThemeTokens();
+
+  // Labels are catalog keys, resolved with t() at render so the language
+  // switch applies. Built inside the component: statusTint follows the theme.
+  const STATE_META: Record<Memory["state"], { bg: string; text: string; labelKey: TKey }> = {
+    active: { ...statusTint.active, labelKey: "memory.stateActive" },
+    fading: { ...statusTint.fading, labelKey: "memory.stateFading" },
+    archived: { ...statusTint.archived, labelKey: "memory.stateArchived" },
+  };
 
   const [memory, setMemory] = useState<Memory | null>(null);
   // Conteggio vero dei ripassi (righe review_items); null = non caricato →
@@ -467,6 +469,7 @@ export default function MemoryDetailScreen() {
 }
 
 function MetaRow({ label, value, last = false }: { label: string; value: string; last?: boolean }) {
+  const colors = useColors();
   return (
     <View
       style={{

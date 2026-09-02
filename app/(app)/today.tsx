@@ -25,13 +25,14 @@ import {
 } from "@/lib/queue";
 import { REVIEW_LAYERS, TIME_BUDGETS } from "@/lib/constants";
 import { firstName, dateBadge, timeGreeting } from "@/lib/format";
-import { FONT, colors } from "@/theme/tokens";
+import { FONT, useColors } from "@/theme/tokens";
 
 /** Chiave AsyncStorage del budget scelto — la proposta del giorno sopravvive al riavvio. */
 const BUDGET_KEY = "memika.time-budget-minutes";
 
 export default function TodayScreen() {
   const { t, tp } = useT();
+  const colors = useColors();
   const user = useAuthStore((s) => s.user);
   const display = firstName(user?.name ?? "", t("today.welcomeFallbackName"));
   const [budget, setBudget] = useState(15);

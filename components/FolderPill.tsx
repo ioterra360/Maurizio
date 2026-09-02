@@ -1,5 +1,5 @@
 import { Text, View } from "react-native";
-import { FONT, colors, layer as layerTokens, layerTint, type LayerKey } from "@/theme/tokens";
+import { FONT, useThemeTokens, type LayerKey } from "@/theme/tokens";
 
 type Props = {
   folder: string;
@@ -19,8 +19,9 @@ type Props = {
  *   focus → #EDF0F6 (pale navy)
  */
 export function FolderPill({ folder, layerKey }: Props) {
+  const { layerTint, layer } = useThemeTokens();
   const tint = layerTint[layerKey];
-  const color = layerTokens[layerKey].color;
+  const color = layer[layerKey].color;
   return (
     <View
       style={{

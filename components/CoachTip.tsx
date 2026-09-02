@@ -6,7 +6,7 @@ import { X } from "lucide-react-native";
 import { Mascot } from "./Mascot";
 import { Tappable } from "@/components/Tappable";
 import { useT } from "@/lib/i18n";
-import { FONT, colors } from "@/theme/tokens";
+import { FONT, useColors } from "@/theme/tokens";
 import type { CoachTip as Tip } from "@/lib/coach-tips";
 
 const DISMISSED_KEY_PREFIX = "memika.coachtip.dismissed.";
@@ -25,8 +25,10 @@ type Props = {
  * source citation. A close button persists the dismissal so the same tip
  * doesn't re-appear (unless persistDismiss is false).
  */
-export function CoachTip({ tip, persistDismiss = true, accent = colors.navy }: Props) {
+export function CoachTip({ tip, persistDismiss = true, accent }: Props) {
   const { t } = useT();
+  const colors = useColors();
+  const accentColor = accent ?? colors.navy;
   const [dismissed, setDismissed] = useState(false);
   const [checked, setChecked] = useState(!persistDismiss);
 
@@ -74,7 +76,7 @@ export function CoachTip({ tip, persistDismiss = true, accent = colors.navy }: P
         backgroundColor: colors.surface,
         borderWidth: 1,
         borderColor: colors.hairline,
-        shadowColor: colors.navy,
+        shadowColor: "#1A2C4F",
         shadowOpacity: 0.08,
         shadowOffset: { width: 0, height: 6 },
         shadowRadius: 18,
@@ -90,7 +92,7 @@ export function CoachTip({ tip, persistDismiss = true, accent = colors.navy }: P
           alignItems: "center",
           justifyContent: "center",
           borderWidth: 2,
-          borderColor: accent,
+          borderColor: accentColor,
         }}
       >
         <Mascot size={36} withShadow={false} />

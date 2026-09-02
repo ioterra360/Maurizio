@@ -4,7 +4,7 @@ import type { ComponentProps, Ref } from "react";
 import { Eye, EyeOff } from "lucide-react-native";
 
 import { Tappable } from "@/components/Tappable";
-import { colors, FONT } from "@/theme/tokens";
+import { FONT, useColors } from "@/theme/tokens";
 import { useT } from "@/lib/i18n";
 
 type AuthTextInputProps = ComponentProps<typeof TextInput> & {
@@ -34,6 +34,7 @@ export function AuthTextInput({
   ...rest
 }: AuthTextInputProps) {
   const { t } = useT();
+  const colors = useColors();
   const [focused, setFocused] = useState(false);
   const [revealed, setRevealed] = useState(false);
   const isPassword = Boolean(secureTextEntry);
@@ -58,7 +59,7 @@ export function AuthTextInput({
           height: FIELD_HEIGHT,
           fontFamily: FONT.medium,
           borderWidth: 1.5,
-          borderColor: focused ? colors.navy : colors.hairline,
+          borderColor: focused ? colors.accent : colors.hairline,
         },
         isPassword ? { paddingRight: EYE_SLOT + 8 } : null,
         style,

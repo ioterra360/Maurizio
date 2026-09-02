@@ -13,7 +13,7 @@ import { useT } from "@/lib/i18n";
 import { reportError } from "@/lib/report-error";
 import { ACCOUNT_DELETION_GRACE_HOURS, trashHoursLeft } from "@/lib/trash";
 import { useUIStore } from "@/lib/ui-store";
-import { FONT, colors } from "@/theme/tokens";
+import { FONT, useColors } from "@/theme/tokens";
 
 /**
  * Recupera account — mostrata quando un utente con eliminazione richiesta
@@ -23,6 +23,7 @@ import { FONT, colors } from "@/theme/tokens";
  * Il redirect qui parte dal layout (app) — vedi app/(app)/_layout.tsx.
  */
 export default function RecoverAccountScreen() {
+  const colors = useColors();
   const { t, tp } = useT();
   const user = useAuthStore((s) => s.user);
   const signOut = useAuthStore((s) => s.signOut);

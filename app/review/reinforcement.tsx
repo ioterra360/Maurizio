@@ -13,7 +13,7 @@ import { Tappable } from "@/components/Tappable";
 import { useReviewStore } from "@/lib/review-store";
 import { success, error, tap } from "@/lib/feedback";
 import { useT } from "@/lib/i18n";
-import { FONT, colors, radii, statusTint } from "@/theme/tokens";
+import { FONT, radii, useThemeTokens } from "@/theme/tokens";
 
 type Stage = "pre" | "hint" | "answer";
 
@@ -22,6 +22,7 @@ export default function ReinforcementScreen() {
   // inset il CTA finisce sotto la barra di sistema a 3 pulsanti (~48dp).
   // Maurizio 2026-09-01. Pattern canonico: (app)/_layout.tsx.
   const insets = useSafeAreaInsets();
+  const { colors, statusTint } = useThemeTokens();
   const ensureSession = useReviewStore((s) => s.ensureSession);
   // s.cards() in the selector loops zustand v5 on folder-scoped decks —
   // see the note in review/scan.tsx.
@@ -103,10 +104,10 @@ export default function ReinforcementScreen() {
               borderRadius: radii.pill,
               alignItems: "center",
               justifyContent: "center",
-              backgroundColor: colors.navy,
+              backgroundColor: colors.accent,
             }}
           >
-            <Text style={{ fontFamily: FONT.semibold, fontSize: 16, color: colors.warmWhite }}>
+            <Text style={{ fontFamily: FONT.semibold, fontSize: 16, color: colors.onAccent }}>
               {t("reinforcement.goBack")}
             </Text>
           </Tappable>

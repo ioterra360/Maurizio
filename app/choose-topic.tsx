@@ -37,7 +37,7 @@ import {
 import { useT } from "@/lib/i18n";
 import { useUIStore } from "@/lib/ui-store";
 import { reportError } from "@/lib/report-error";
-import { colors, FONT, radii } from "@/theme/tokens";
+import { FONT, radii, useColors } from "@/theme/tokens";
 
 /**
  * La scelta corrente: una sottocategoria della tassonomia, oppure un nome
@@ -79,6 +79,7 @@ function goToday() {
  * no-op'ing. A returning user with ≥1 folder is bounced straight to Today.
  */
 export default function ChooseTopicScreen() {
+  const colors = useColors();
   const { t } = useT();
   const insets = useSafeAreaInsets();
   const user = useAuthStore((s) => s.user);
@@ -273,7 +274,7 @@ export default function ChooseTopicScreen() {
                     backgroundColor: colors.surface,
                     borderRadius: radii.card,
                     borderWidth: active ? 1.5 : 1,
-                    borderColor: active ? colors.navy : colors.hairline,
+                    borderColor: active ? colors.accent : colors.hairline,
                     padding: 14,
                     gap: 6,
                   }}
@@ -324,7 +325,7 @@ export default function ChooseTopicScreen() {
               borderRadius: radii.card,
               borderWidth: selection?.type === "free" && !selection.category ? 1.5 : 1,
               borderColor:
-                selection?.type === "free" && !selection.category ? colors.navy : colors.hairline,
+                selection?.type === "free" && !selection.category ? colors.accent : colors.hairline,
               padding: 14,
             }}
           >
@@ -370,7 +371,7 @@ export default function ChooseTopicScreen() {
                   backgroundColor: colors.surface,
                   borderRadius: radii.chip,
                   borderWidth: 1.5,
-                  borderColor: colors.navy,
+                  borderColor: colors.accent,
                   paddingHorizontal: 14,
                   fontFamily: FONT.semibold,
                   fontSize: 16,
@@ -467,7 +468,7 @@ export default function ChooseTopicScreen() {
                 width: 36,
                 height: 4,
                 borderRadius: 999,
-                backgroundColor: "#D9D7D1",
+                backgroundColor: colors.switchTrackOff,
                 marginBottom: 12,
               }}
             />

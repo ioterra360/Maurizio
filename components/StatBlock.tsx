@@ -1,5 +1,5 @@
 import { Text, View } from "react-native";
-import { FONT, colors } from "@/theme/tokens";
+import { FONT, useColors } from "@/theme/tokens";
 
 type Props = {
   dot: string;
@@ -13,6 +13,7 @@ type Props = {
  * Memory Health screen. Dot + ALL-CAPS label, then big number + percentage.
  */
 export function StatBlock({ dot, label, count, pct }: Props) {
+  const colors = useColors();
   return (
     <View style={{ gap: 4 }}>
       <View className="flex-row items-center" style={{ gap: 6 }}>

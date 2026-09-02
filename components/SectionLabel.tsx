@@ -1,5 +1,5 @@
 import { Text, View } from "react-native";
-import { FONT, colors } from "@/theme/tokens";
+import { FONT, useColors } from "@/theme/tokens";
 
 type Props = {
   children: string;
@@ -24,6 +24,8 @@ type Props = {
  * for that one use.
  */
 export function SectionLabel({ children, bracketed = false, size = "default", topMargin = 0 }: Props) {
+  const colors = useColors();
+
   if (bracketed) {
     return (
       <View

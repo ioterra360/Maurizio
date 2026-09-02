@@ -11,17 +11,21 @@ import {
 } from "lucide-react-native";
 
 import { useAuthGate } from "@/lib/auth-gate";
-import { colors } from "@/theme/tokens";
+import { useColors } from "@/theme/tokens";
+import { useThemeStore } from "@/theme/theme-store";
 import { useT } from "@/lib/i18n";
 
 export default function AdminLayout() {
   const { t } = useT();
   const gate = useAuthGate("admin");
   const insets = useSafeAreaInsets();
+  const colors = useColors();
+  const scheme = useThemeStore((s) => s.scheme);
   if (gate) return gate;
 
   const barPaddingBottom = Math.max(insets.bottom, 22);
   const barHeight = 10 + 44 + barPaddingBottom;
+  const barBg = scheme === "dark" ? "rgba(14,16,21,0.92)" : "rgba(250,248,244,0.92)";
 
   return (
     <Tabs
@@ -30,7 +34,7 @@ export default function AdminLayout() {
         tabBarActiveTintColor: colors.navy,
         tabBarInactiveTintColor: colors.midGrey,
         tabBarStyle: {
-          backgroundColor: "rgba(250,248,244,0.92)",
+          backgroundColor: barBg,
           borderTopColor: colors.hairline,
           borderTopWidth: 1,
           height: barHeight,
@@ -39,7 +43,11 @@ export default function AdminLayout() {
           position: "absolute",
         },
         tabBarBackground: () => (
-          <BlurView intensity={40} tint="light" style={StyleSheet.absoluteFill} />
+          <BlurView
+            intensity={40}
+            tint={scheme === "dark" ? "dark" : "light"}
+            style={StyleSheet.absoluteFill}
+          />
         ),
         tabBarLabelStyle: {
           fontFamily: "Inter_600SemiBold",

@@ -1,5 +1,5 @@
 import { Text, View } from "react-native";
-import { FONT, colors } from "@/theme/tokens";
+import { FONT, useColors } from "@/theme/tokens";
 import { useT } from "@/lib/i18n";
 
 type Props = {
@@ -13,6 +13,7 @@ type Props = {
  */
 export function CognitiveLoadBar({ pct }: Props) {
   const { t } = useT();
+  const colors = useColors();
   const clamped = Math.max(0, Math.min(100, pct));
   const zone =
     clamped < 60 ? { color: colors.active, label: t("cognitiveLoadBar.sustainable") }

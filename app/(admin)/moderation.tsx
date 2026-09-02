@@ -5,14 +5,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { AdminTopBar } from "@/components/AdminTopBar";
 import { Tappable } from "@/components/Tappable";
 import { FLAGS, RULES, type FlagItem, type FlagSeverity } from "@/lib/admin-data";
-import { FONT, colors, palette, radii, severityTint, statusTint } from "@/theme/tokens";
+import { FONT, radii, useThemeTokens } from "@/theme/tokens";
 import { useT } from "@/lib/i18n";
-
-const SEVERITY_TINT: Record<FlagSeverity, { bg: string; text: string; label: string }> = {
-  high: { bg: statusTint.fading.bg,   text: statusTint.fading.text,   label: "ALTA" },
-  med:  { bg: severityTint.med.bg,    text: severityTint.med.text,    label: "MEDIA" },
-  low:  { bg: statusTint.archived.bg, text: statusTint.archived.text, label: "BASSA" },
-};
 
 export default function AdminModerationScreen() {
   const { t } = useT();
@@ -71,6 +65,13 @@ export default function AdminModerationScreen() {
 }
 
 function FlagCard({ flag }: { flag: FlagItem }) {
+  const { colors, palette, statusTint, severityTint } = useThemeTokens();
+  // Moved inside the component: module scope would freeze these on the boot theme.
+  const SEVERITY_TINT: Record<FlagSeverity, { bg: string; text: string; label: string }> = {
+    high: { bg: statusTint.fading.bg,   text: statusTint.fading.text,   label: "ALTA" },
+    med:  { bg: severityTint.med.bg,    text: severityTint.med.text,    label: "MEDIA" },
+    low:  { bg: statusTint.archived.bg, text: statusTint.archived.text, label: "BASSA" },
+  };
   const tint = SEVERITY_TINT[flag.severity];
   return (
     <View
@@ -216,6 +217,7 @@ function TabPill({
   active: boolean;
   onPress: () => void;
 }) {
+  const { colors } = useThemeTokens();
   return (
     <Tappable
       onPress={onPress}
@@ -232,7 +234,7 @@ function TabPill({
         borderRadius: radii.chip,
         height: 40,
         gap: 6,
-        backgroundColor: active ? colors.navy : "transparent",
+        backgroundColor: active ? colors.accent : "transparent",
         borderWidth: active ? 0 : 1,
         borderColor: colors.hairline,
       }}
@@ -241,7 +243,7 @@ function TabPill({
         style={{
           fontFamily: active ? FONT.semibold : FONT.medium,
           fontSize: 15,
-          color: active ? colors.warmWhite : colors.navy,
+          color: active ? colors.onAccent : colors.navy,
           letterSpacing: -0.07,
         }}
       >
@@ -251,7 +253,8 @@ function TabPill({
         style={{
           fontFamily: FONT.semibold,
           fontSize: 13.5,
-          color: active ? "rgba(250,248,244,0.78)" : colors.midGrey,
+          color: active ? colors.onAccent : colors.midGrey,
+          opacity: active ? 0.78 : 1,
           fontVariant: ["tabular-nums"],
         }}
       >
@@ -272,6 +275,7 @@ function RuleRow({
   value: boolean;
   onChange: (v: boolean) => void;
 }) {
+  const { colors } = useThemeTokens();
   return (
     <View
       className="flex-row items-center rounded-chip bg-surface"

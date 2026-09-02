@@ -1,5 +1,5 @@
 import { View, type DimensionValue } from "react-native";
-import { colors } from "@/theme/tokens";
+import { useColors } from "@/theme/tokens";
 import { useT } from "@/lib/i18n";
 
 type Props = {
@@ -23,6 +23,7 @@ export function RetentionBar({
   height = 8,
 }: Props) {
   const { t } = useT();
+  const colors = useColors();
   return (
     <View
       accessibilityRole="progressbar"

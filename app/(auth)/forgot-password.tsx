@@ -20,10 +20,11 @@ import { isDemoMode, supabase } from "@/lib/supabase";
 import { authErrorMessage } from "@/lib/auth-errors";
 import { AUTH_LINK_PATHS } from "@/lib/auth-links";
 import { useT } from "@/lib/i18n";
-import { colors, FONT } from "@/theme/tokens";
+import { FONT, useColors } from "@/theme/tokens";
 
 export default function ForgotPasswordScreen() {
   const { t } = useT();
+  const colors = useColors();
   const [email, setEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [sent, setSent] = useState(false);

@@ -4,7 +4,7 @@ import { KeyboardAvoidingView, Modal, Platform, Pressable, Text, TextInput, View
 import { GhostButton } from "@/components/GhostButton";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { useT } from "@/lib/i18n";
-import { FONT, colors, radii } from "@/theme/tokens";
+import { FONT, radii, useColors } from "@/theme/tokens";
 
 const NAME_MAX = 24;
 
@@ -31,6 +31,7 @@ export function NamePromptModal({
   onClose: () => void;
 }) {
   const { t } = useT();
+  const colors = useColors();
   const [name, setName] = useState(initialValue);
 
   // Reseed the field each time the modal opens for a different target.

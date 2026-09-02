@@ -1,6 +1,6 @@
 import { Text, View } from "react-native";
 import { BookOpen, Plus, Scale, Stethoscope } from "lucide-react-native";
-import { FONT, colors, folderTint } from "@/theme/tokens";
+import { FONT, useColors, useThemeTokens } from "@/theme/tokens";
 import type { FolderKind } from "@/lib/constants";
 
 type Props = {
@@ -16,6 +16,7 @@ type Props = {
  * Each kind has its own soft-tint background and icon/emoji.
  */
 export function FolderTile({ emoji, kind, size = 32 }: Props) {
+  const { colors, folderTint } = useThemeTokens();
   const base = {
     width: size,
     height: size,
@@ -95,6 +96,7 @@ export function InitialsAvatar({
   size?: number;
   variant?: "user" | "admin";
 }) {
+  const colors = useColors();
   const isAdmin = variant === "admin";
   return (
     <View

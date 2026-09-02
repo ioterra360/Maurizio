@@ -2,7 +2,7 @@ import { Text, View, type StyleProp, type ViewStyle } from "react-native";
 
 import { Tappable } from "@/components/Tappable";
 import { useT } from "@/lib/i18n";
-import { FONT, colors } from "@/theme/tokens";
+import { FONT, useColors } from "@/theme/tokens";
 
 type Props = {
   /** One honest sentence about what did not load. */
@@ -34,6 +34,7 @@ export function ErrorCard({
   retryAccessibilityLabel,
   style,
 }: Props) {
+  const colors = useColors();
   const { t } = useT();
   // Defaults resolve at render so the Settings language switch applies at once.
   const hint = hintProp ?? t("errorCard.defaultHint");

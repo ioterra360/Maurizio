@@ -7,7 +7,7 @@ import { MascotLoader } from "@/components/MascotLoader";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { useAuthStore } from "@/lib/auth-store";
 import { useT } from "@/lib/i18n";
-import { colors, FONT } from "@/theme/tokens";
+import { FONT, useColors } from "@/theme/tokens";
 
 /**
  * Landing route for the NON-recovery Supabase email links
@@ -23,6 +23,7 @@ import { colors, FONT } from "@/theme/tokens";
  */
 export default function AuthCallbackScreen() {
   const { t } = useT();
+  const colors = useColors();
   const authLink = useAuthStore((s) => s.authLink);
   const pendingPasswordReset = useAuthStore((s) => s.pendingPasswordReset);
   const applyAuthLink = useAuthStore((s) => s.applyAuthLink);

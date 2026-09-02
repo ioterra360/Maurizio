@@ -1,6 +1,6 @@
 import { Text, View } from "react-native";
 import { ChevronLeft, Radar, Repeat, Target, type LucideIcon } from "lucide-react-native";
-import { FONT, colors, layer as layerTokens, type LayerKey } from "@/theme/tokens";
+import { FONT, useThemeTokens, type LayerKey } from "@/theme/tokens";
 import { Tappable } from "@/components/Tappable";
 import { safeBack } from "@/lib/safe-back";
 import { useT } from "@/lib/i18n";
@@ -23,7 +23,8 @@ type Props = {
  */
 export function ReviewHeader({ layerKey, index, total }: Props) {
   const { t } = useT();
-  const { color, label } = layerTokens[layerKey];
+  const { colors, layer } = useThemeTokens();
+  const { color, label } = layer[layerKey];
   const Icon = ICONS[layerKey];
 
   return (

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ActivityIndicator, Pressable, Text, View, type StyleProp, type ViewStyle } from "react-native";
-import { FONT, colors, radii } from "@/theme/tokens";
+import { FONT, radii, useColors } from "@/theme/tokens";
 import { tap as tapFeedback } from "@/lib/feedback";
 
 type Props = {
@@ -29,10 +29,11 @@ type Props = {
  * pressable components, which previously made the navy fill disappear.)
  */
 export function PrimaryButton({ label, onPress, loading, disabled, variant = "fill", color, style }: Props) {
+  const colors = useColors();
   const isDisabled = disabled || loading;
   const [pressed, setPressed] = useState(false);
 
-  const fillColor = variant === "fill" && color ? color : colors.navy;
+  const fillColor = variant === "fill" && color ? color : colors.accent;
   const bg =
     variant === "fill"
       ? fillColor
@@ -43,7 +44,7 @@ export function PrimaryButton({ label, onPress, loading, disabled, variant = "fi
           : colors.surface;
 
   const textColor =
-    variant === "fill" || variant === "danger" ? colors.warmWhite : colors.navy;
+    variant === "fill" || variant === "danger" ? colors.onAccent : colors.navy;
 
   const borderColor = variant === "outline" ? colors.navy : "transparent";
   const borderWidth = variant === "outline" ? 1.5 : 0;

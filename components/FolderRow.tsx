@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Pressable, Text, View, useWindowDimensions } from "react-native";
 import { GripVertical } from "lucide-react-native";
-import { FONT, colors, radii } from "@/theme/tokens";
+import { FONT, radii, useColors } from "@/theme/tokens";
 import { FolderTile } from "./FolderTile";
 import { RetentionBar } from "./RetentionBar";
 import type { FolderKind } from "@/lib/constants";
@@ -51,6 +51,7 @@ export function FolderRow({
   onDrag,
   isActive,
 }: Props) {
+  const colors = useColors();
   const { t, tp } = useT();
   const { width } = useWindowDimensions();
   // Il nome si rimpicciolisce (fino a 12 px) prima di troncare: box stimato
@@ -88,7 +89,8 @@ export function FolderRow({
         // Subtle baseline elevation — keeps the card readable on the warm
         // canvas. While dragging, the card lifts with a stronger shadow so it
         // visibly floats above the list.
-        shadowColor: colors.navy,
+        // Shadows stay dark in both themes — fixed navy, not the themed alias.
+        shadowColor: "#1A2C4F",
         shadowOpacity: isActive ? 0.18 : 0.04,
         shadowOffset: { width: 0, height: isActive ? 8 : 1 },
         shadowRadius: isActive ? 16 : 2,

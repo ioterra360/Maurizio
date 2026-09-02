@@ -1,7 +1,8 @@
 import { Text, View } from "react-native";
 import { ChevronLeft } from "lucide-react-native";
 import { Tappable } from "@/components/Tappable";
-import { FONT, colors } from "@/theme/tokens";
+import { FONT, useColors } from "@/theme/tokens";
+import { useThemeStore } from "@/theme/theme-store";
 import { safeBack } from "@/lib/safe-back";
 import { useT } from "@/lib/i18n";
 
@@ -20,7 +21,10 @@ type Props = {
  * before navigation — see lib/safe-back.ts for the Android race this fixes.
  */
 export function TopBar({ title, onBack, rightSlot }: Props) {
+  const colors = useColors();
+  const scheme = useThemeStore((s) => s.scheme);
   const { t } = useT();
+  const barBg = scheme === "dark" ? "rgba(14,16,21,0.94)" : "rgba(250,248,244,0.94)";
   const handleBack = () => {
     if (onBack) onBack();
     else safeBack();
@@ -33,7 +37,7 @@ export function TopBar({ title, onBack, rightSlot }: Props) {
         paddingRight: 18,
         paddingVertical: 8,
         minHeight: 48,
-        backgroundColor: "rgba(250,248,244,0.94)",
+        backgroundColor: barBg,
         borderBottomColor: "transparent",
         borderBottomWidth: 1,
       }}
