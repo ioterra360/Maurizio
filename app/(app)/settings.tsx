@@ -25,6 +25,7 @@ import { SettingsRow, SettingsToggle } from "@/components/SettingsRow";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { GhostButton } from "@/components/GhostButton";
 import { Mascot } from "@/components/Mascot";
+import { MascotDialog } from "@/components/MascotDialog";
 import { Tappable } from "@/components/Tappable";
 import { useAuthStore } from "@/lib/auth-store";
 import { useReviewStore } from "@/lib/review-store";
@@ -127,6 +128,11 @@ export default function SettingsScreen() {
   // Real profile (null in demo mode — the hardcoded literals below act as
   // the fallback until pickers/persistence land for every field).
   const [profile, setProfile] = useState<Profile | null>(null);
+  // Cursore del limite giornaliero (Maurizio 2026-09-01): da 20 in su la
+  // mascotte avverte sul carico prima di salvare. Nessun blocco: e' uno
+  // strumento di autoregolazione, il confine commerciale arriva coi piani.
+  const [limitPickerOpen, setLimitPickerOpen] = useState(false);
+  const [pendingCap, setPendingCap] = useState<number | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -151,6 +157,27 @@ export default function SettingsScreen() {
       reportError("settings/name-save", err);
     });
   };
+
+  const DAILY_CAP_OPTIONS = [10, 15, 20, 25, 30, 50] as const;
+  const saveDailyCap = (cap: number) => {
+    if (!user) return;
+    setLimitPickerOpen(false);
+    setPendingCap(null);
+    setProfile((p) => (p ? { ...p, dailyInputCap: cap } : p));
+    updateProfile(user.id, { dailyInputCap: cap })
+      .then(() => showToast(tr("settings.dailyLimitSaved", { count: cap })))
+      .catch((err) => reportError("settings/daily-cap-save", err));
+  };
+  const pickDailyCap = (cap: number) => {
+    if (cap < 20) saveDailyCap(cap);
+    else setPendingCap(cap); // la mascotte chiede conferma
+  };
+  const warnTier = (cap: number): { title: string; body: string } =>
+    cap >= 30
+      ? { title: tr("settings.loadWarn30Title"), body: tr("settings.loadWarn30Body", { count: cap }) }
+      : cap >= 25
+        ? { title: tr("settings.loadWarn25Title"), body: tr("settings.loadWarn25Body") }
+        : { title: tr("settings.loadWarn20Title"), body: tr("settings.loadWarn20Body") };
 
   const initials = (name || "M")
     .split(" ")
@@ -334,6 +361,10 @@ export default function SettingsScreen() {
             label={tr("settings.dailyLimit")}
             hint={tr("settings.dailyLimitHint")}
             value={profile ? String(profile.dailyInputCap) : "20"}
+            onPress={() => {
+              tap();
+              setLimitPickerOpen(true);
+            }}
           />
         </View>
 
@@ -619,6 +650,119 @@ export default function SettingsScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* Picker del limite giornaliero — chips, stile TimeBudget. */}
+      <Modal
+        visible={limitPickerOpen}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setLimitPickerOpen(false)}
+      >
+        <Pressable
+          accessibilityLabel={tr("common.close")}
+          onPress={() => setLimitPickerOpen(false)}
+          style={{ position: "absolute", inset: 0, backgroundColor: "rgba(15,27,51,0.32)" }}
+        />
+        <View style={{ flex: 1, justifyContent: "flex-end" }} pointerEvents="box-none">
+          <View
+            style={{
+              backgroundColor: colors.warmWhite,
+              borderTopLeftRadius: 22,
+              borderTopRightRadius: 22,
+              paddingHorizontal: 22,
+              paddingTop: 16,
+              paddingBottom: 32,
+              shadowColor: "#0F1B33",
+              shadowOpacity: 0.18,
+              shadowOffset: { width: 0, height: -8 },
+              shadowRadius: 30,
+              elevation: 24,
+              gap: 12,
+            }}
+          >
+            <View
+              style={{
+                alignSelf: "center",
+                width: 36,
+                height: 4,
+                borderRadius: 999,
+                backgroundColor: colors.switchTrackOff,
+                marginBottom: 4,
+              }}
+            />
+            <Text
+              accessibilityRole="header"
+              style={{
+                fontFamily: FONT.bold,
+                fontSize: 20,
+                color: colors.navy,
+                letterSpacing: -0.4,
+              }}
+            >
+              {tr("settings.dailyLimitPickerTitle")}
+            </Text>
+            <Text
+              style={{
+                fontFamily: FONT.regular,
+                fontSize: 13.5,
+                lineHeight: 19,
+                color: colors.midGrey,
+              }}
+            >
+              {tr("settings.dailyLimitPickerHint")}
+            </Text>
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 4 }}>
+              {DAILY_CAP_OPTIONS.map((cap) => {
+                const on = (profile?.dailyInputCap ?? 20) === cap;
+                return (
+                  <Tappable
+                    key={cap}
+                    onPress={() => pickDailyCap(cap)}
+                    accessibilityRole="button"
+                    accessibilityLabel={String(cap)}
+                    accessibilityState={{ selected: on }}
+                    pressedOpacity={0.8}
+                    containerStyle={{ flexGrow: 1, flexBasis: "30%" }}
+                    style={{
+                      alignItems: "center",
+                      justifyContent: "center",
+                      paddingVertical: 12,
+                      borderRadius: 999,
+                      backgroundColor: on ? colors.accent : colors.surface,
+                      borderWidth: 1,
+                      borderColor: on ? colors.accent : colors.hairlineStrong,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontFamily: FONT.semibold,
+                        fontSize: 15,
+                        color: on ? colors.onAccent : colors.navy,
+                        fontVariant: ["tabular-nums"],
+                      }}
+                    >
+                      {cap}
+                    </Text>
+                  </Tappable>
+                );
+              })}
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* La mascotte avverte sul carico da 20 in su. */}
+      <MascotDialog
+        visible={pendingCap !== null}
+        title={pendingCap !== null ? warnTier(pendingCap).title : ""}
+        body={pendingCap !== null ? warnTier(pendingCap).body : ""}
+        confirmLabel={tr("settings.loadWarnConfirm")}
+        cancelLabel={tr("settings.loadWarnCancel")}
+        onConfirm={() => {
+          if (pendingCap !== null) saveDailyCap(pendingCap);
+        }}
+        onCancel={() => setPendingCap(null)}
+      />
     </SafeAreaView>
   );
 }
