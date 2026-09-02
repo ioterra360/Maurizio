@@ -39,6 +39,9 @@ export type SrsState = {
 
 export type MemoryLifecycleState = "active" | "fading" | "archived";
 
+/** Ri-export così i consumatori non devono dual-importare da phases.ts. */
+export type { PhaseState, ReviewPhase } from "./phases";
+
 export type UpdatedSrs = SrsState & {
   /** SM-2 quality used for this update — useful for telemetry/replay. */
   quality: Quality;
