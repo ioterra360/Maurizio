@@ -35,6 +35,11 @@ describe("lineFontSize — one-line fit with a readable floor", () => {
 describe("termFontSize floor override (memory sheet title)", () => {
   it("accepts a custom floor below the review default of 28", async () => {
     const { termFontSize } = await import("./term-typography");
-    expect(termFontSize("pneumonoultramicroscopicsilicovolcanoconiosis", 316, 42, 24)).toBe(24);
+    // Parola patologica (non entra su una riga nemmeno al floor): dal
+    // 2026-09-02 si dimensiona per riempire due righe invece di schiacciarsi
+    // al floor — il floor override resta il MINIMO garantito, non il valore.
+    const size = termFontSize("pneumonoultramicroscopicsilicovolcanoconiosis", 316, 42, 24);
+    expect(size).toBeGreaterThanOrEqual(24);
+    expect(size).toBeLessThanOrEqual(42);
   });
 });

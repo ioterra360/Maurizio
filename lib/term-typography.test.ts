@@ -55,8 +55,38 @@ describe("termFontSize — width-aware size for the review term", () => {
 });
 
 describe("termLines — how many lines the term may take", () => {
-  it("gives a single word two lines (a mid-word wrap beats clipping)", () => {
-    expect(termLines("sendero", BOX, termFontSize("sendero", BOX, 84))).toBe(2);
+  it("una parola singola sta su UNA riga: mai 'embarg / o'", () => {
+    // Maurizio 2026-09-01: fino a 12 lettere la parola non si spezza.
+    // Prima il modello sottostimava le parole con m/w (0.58em assunto contro
+    // 0.913em reale della m in Inter Bold) e concedeva sempre 2 righe, così
+    // React Native considerava "embarg/o" un fit valido.
+    for (const w of ["sendero", "embargo", "commercio", "memoria", "biblioteca"]) {
+      expect(termLines(w, BOX, termFontSize(w, BOX, 84))).toBe(1);
+    }
+  });
+
+  it("la regola dei 12 caratteri regge sul caso peggiore, su ogni schermo e layer", () => {
+    // Scatole reali delle schermate di ripasso: 320/360/393/412 dp − 2×24 − 2×8.
+    const boxes = [256, 296, 329, 348];
+    // 12 × 'm' è la parola più larga possibile (0.913 em a lettera);
+    // escabullirse e wwww… coprono i casi reali e patologici.
+    const worst = ["mmmmmmmmmmmm", "wwwwwwwwwwww", "escabullirse", "protuberanza"];
+    for (const box of boxes) {
+      for (const max of [84, 80, 72]) {
+        for (const w of worst) {
+          const size = termFontSize(w, box, max);
+          expect(termLines(w, box, size)).toBe(1);
+          expect(size).toBeGreaterThanOrEqual(24);
+        }
+      }
+    }
+  });
+
+  it("una parola impossibile (oltre ogni floor) può ancora andare a capo", () => {
+    const w = "pneumonoultramicroscopicsilicovolcanoconiosis";
+    const size = termFontSize(w, BOX, 84);
+    expect(size).toBe(28);
+    expect(termLines(w, BOX, size)).toBeGreaterThanOrEqual(2);
   });
 
   it("keeps a short two-word term on two lines at its size", () => {
