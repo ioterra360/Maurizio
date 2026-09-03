@@ -381,6 +381,26 @@ describe("il gemello Deno della derivazione RevenueCat", () => {
     expect(twinCode).not.toContain("grace ?? ent.expires_date");
   });
 
+  it("non declassa a free una concessione di cortesia", () => {
+    // Il seed di 20260903100000_plans.sql porta i due tester a
+    // plan='premium', plan_until null, rc_app_user_id null. RevenueCat non
+    // ha alcun entitlement per quegli account, quindi la derivazione dice
+    // 'free': senza questa guardia la cortesia durerebbe fino al primo
+    // avvio della build 3 (startPlanSync → refreshPlan → edge function),
+    // che e' il percorso normale, non un caso limite.
+    expect(twinCode).toContain(
+      'current.plan !== "free" && current.plan_until === null && current.rc_app_user_id === null',
+    );
+    expect(twinCode).toContain('if (plan === "free" && courtesyGrant)');
+    // La guardia deve stare PRIMA della scrittura, altrimenti non guarda
+    // nulla.
+    const guard = twinCode.indexOf("courtesyGrant");
+    const write = twinCode.indexOf(".update({ plan,");
+    expect(guard).toBeGreaterThanOrEqual(0);
+    expect(write).toBeGreaterThanOrEqual(0);
+    expect(guard).toBeLessThan(write);
+  });
+
   it("si dichiara gemello e valuta premium prima di pro", () => {
     expect(twin).toContain("gemello di lib/plan.ts planFromRcEntitlements");
     const premium = twinCode.indexOf("ENTITLEMENT_PREMIUM]");

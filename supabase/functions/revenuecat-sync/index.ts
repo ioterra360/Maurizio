@@ -173,6 +173,51 @@ Deno.serve(async (req: Request): Promise<Response> => {
     body.request_date,
   );
 
+  // La riga com'e' ADESSO, prima di scriverci sopra.
+  //
+  // Serve a riconoscere una CONCESSIONE DI CORTESIA. Il seed della migrazione
+  // 20260903100000_plans.sql porta i due tester a plan='premium' con
+  // plan_until null perche' Maurizio non si trovi hard-cappato a 10 ricordi
+  // su un binario senza paywall (DEPLOY.md § "Build 3"). Ma RevenueCat di
+  // quegli account non sa nulla: `subscriber.entitlements` e' vuoto e la
+  // derivazione qui sopra dice 'free'. Scrivere quel verdetto distruggerebbe
+  // la cortesia al PRIMO avvio della build 3 — startPlanSync() →
+  // identifyPurchases() → refreshPlan() → questa funzione — cioe' lungo il
+  // percorso previsto, non in un caso limite.
+  const { data: current, error: readError } = await admin
+    .from("profiles")
+    .select("plan, plan_until, rc_app_user_id")
+    .eq("id", appUserId)
+    .maybeSingle<{ plan: Plan; plan_until: string | null; rc_app_user_id: string | null }>();
+  if (readError) {
+    console.error("revenuecat-sync: lettura fallita", readError.message);
+    return json({ error: "read_failed" }, 500);
+  }
+  if (!current) {
+    // Nessun profilo con quell'id: account cancellato, o un app_user_id che
+    // non e' mai stato nostro. Riprovare non lo fara' comparire.
+    return isWebhook
+      ? json({ ok: true, ignored: "no_profile" }, 200)
+      : json({ error: "no_profile" }, 404);
+  }
+
+  // La firma di una concessione manuale: piano non-free, senza scadenza e mai
+  // sincronizzata con RevenueCat. Un abbonamento vero ha sempre o una
+  // scadenza o un rc_app_user_id — lo scrive questa stessa funzione al primo
+  // passaggio — quindi un declassamento legittimo (scadenza, rimborso,
+  // disdetta) non passa mai di qui. L'UPGRADE invece passa: se RevenueCat
+  // dice pro o premium si scrive comunque, e da quel momento la riga ha un
+  // rc_app_user_id e smette di essere una cortesia.
+  //
+  // Per TOGLIERE una cortesia serve una mano umana:
+  //   update public.profiles set plan = 'free' where email = '…';
+  const courtesyGrant =
+    current.plan !== "free" && current.plan_until === null && current.rc_app_user_id === null;
+  if (plan === "free" && courtesyGrant) {
+    console.log(`revenuecat-sync: concessione di cortesia mantenuta (${current.plan})`);
+    return json({ plan: current.plan, planUntil: null, kept: "courtesy_grant" }, 200);
+  }
+
   const { data: updated, error: updateError } = await admin
     .from("profiles")
     .update({ plan, plan_until: planUntil, rc_app_user_id: appUserId })

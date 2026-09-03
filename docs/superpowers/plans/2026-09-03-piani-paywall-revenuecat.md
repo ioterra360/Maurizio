@@ -4026,6 +4026,30 @@ npx supabase db query --linked "update public.profiles set plan = 'premium', pla
 5. Deploy della edge function con i suoi segreti (Step 2 qui sopra: `secrets
    set` + `functions deploy` + `functions list` = `ACTIVE`) — **dopo** il
    push, così la function non gira mai contro uno schema senza `plan`.
+
+   **BLOCCANTE — la funzione deployata deve contenere la guardia sulla
+   concessione di cortesia.** Il seed del punto 3 porta i due tester a
+   `plan = 'premium'` con `plan_until` null, ma RevenueCat di quegli account
+   non sa nulla: `subscriber.entitlements` è vuoto e la derivazione dice
+   `free`. Senza guardia, la prima apertura della build 3 su un telefono con
+   le chiavi (`startPlanSync` → `identifyPurchases` → `refreshPlan` → questa
+   funzione) riscriverebbe `plan = 'free'` e la cortesia durerebbe **un solo
+   avvio**. Verifica prima del deploy:
+
+```bash
+grep -n "courtesyGrant" supabase/functions/revenuecat-sync/index.ts
+```
+
+   Expected: due righe (la definizione e l'`if`), **sopra** la riga
+   `.update({ plan,`. Se non ci sono, fermarsi: `npx vitest run lib/plan.test.ts`
+   lo verifica anche in CI ("non declassa a free una concessione di
+   cortesia"). Dopo il deploy, la prova: aprire l'app con l'account di
+   Maurizio e rieseguire la query del punto 4 — deve dire ancora `premium`.
+   In alternativa (o in aggiunta) si può dare a entrambi gli account un
+   entitlement promozionale `premium` a vita nel cruscotto RevenueCat: allora
+   la lettura REST lo restituisce e la guardia non serve nemmeno.
+   Per **togliere** una cortesia serve una mano umana:
+   `update public.profiles set plan = 'free' where email = '…';`
 6. **Solo ora** il submit agli store: `eas submit -p ios --latest` e upload
    manuale dell'AAB in Play Console (punto 4 della "Sequenza" di
    `docs/DEPLOY.md` § "Build 3").

@@ -464,6 +464,13 @@ npx supabase db query --linked "select u.email, p.plan, p.plan_until from public
 #     acquisto della vc13 chiama un endpoint che non esiste e il piano non
 #     viene mai scritto.
 ls supabase/functions                   # deve elencare revenuecat-sync
+grep -n "courtesyGrant" supabase/functions/revenuecat-sync/index.ts
+#    → due righe, SOPRA la riga `.update({ plan,`. È la guardia che impedisce
+#    alla funzione di riscrivere a 'free' i due tester messi a 'premium' dal
+#    seed della migrazione: RevenueCat non ha entitlement per loro, quindi
+#    senza guardia la cortesia durerebbe un solo avvio dell'app. Se manca,
+#    NON deployare. (Per toglierla a mano, un domani:
+#    update public.profiles set plan = 'free' where email = '…';)
 npx supabase secrets set \
   REVENUECAT_SECRET_KEY=<la chiave sk_ dalla dashboard RevenueCat> \
   REVENUECAT_WEBHOOK_SECRET=<stringa lunga a caso, la stessa dell'header nel cruscotto RevenueCat> \
