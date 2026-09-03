@@ -70,7 +70,21 @@ export function startPlanSync(): () => void {
       .catch((err) => reportError("plan/identify", err));
   };
 
-  apply(useAuthStore.getState().user?.id);
+  // L'apply iniziale aspetta l'IDRATAZIONE, non il primo render.
+  //
+  // Lo store nasce con `user: null` (lib/auth-store.ts) e `hydrate()` e'
+  // asincrona (app/_layout.tsx la lancia in un effetto). Chiamare apply qui
+  // e basta significherebbe prendere SEMPRE, a ogni avvio a freddo, il ramo
+  // "nessun utente" e chiamare Purchases.logOut(): l'SDK ricorda l'appUserID
+  // fra un lancio e l'altro, quindi non e' anonimo, e il logOut creerebbe un
+  // cliente anonimo NUOVO a ogni apertura dell'app, butterebbe l'entitlement
+  // fino al logIn successivo e farebbe scattare un CustomerInfoUpdateListener
+  // — cioe' un refreshPlan() quando nello store non c'e' ancora sessione
+  // (401 + rumore su Sentry). Su una build con le chiavi RevenueCat e'
+  // esattamente il percorso normale, non un caso limite.
+  const first = useAuthStore.getState();
+  if (first.hydrated) apply(first.user?.id);
+
   stopListener = addCustomerPlanListener(() => {
     // L'SDK dice "e' cambiato qualcosa"; QUANTO sia cambiato lo decide il
     // server, che rilegge da RevenueCat con la chiave segreta.
@@ -78,7 +92,12 @@ export function startPlanSync(): () => void {
   });
 
   const unsubscribe = useAuthStore.subscribe((state, prev) => {
-    if (state.user?.id === prev.user?.id) return;
+    // Prima dell'idratazione non si decide nulla: `user` e' ancora il null
+    // iniziale, non una risposta. hydrate() scrive PRIMA l'utente e POI
+    // alza `hydrated` (due notifiche), quindi si ignora la prima e si agisce
+    // sulla seconda: un solo apply per avvio, con l'id giusto.
+    if (!state.hydrated) return;
+    if (prev.hydrated && state.user?.id === prev.user?.id) return;
     apply(state.user?.id);
   });
 
