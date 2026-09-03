@@ -269,3 +269,12 @@ describe("planForProductId", () => {
     expect(planForProductId("qualcosa_altro")).toBeNull();
   });
 });
+
+describe("il gemello Deno della derivazione RevenueCat", () => {
+  it("dichiara di essere un gemello e ordina premium prima di pro", async () => {
+    const { readFileSync } = await import("node:fs");
+    const src = readFileSync("supabase/functions/revenuecat-sync/index.ts", "utf8");
+    expect(src).toContain("gemello di lib/plan.ts planFromRcEntitlements");
+    expect(src.indexOf("ENTITLEMENT_PREMIUM]")).toBeLessThan(src.indexOf("ENTITLEMENT_PRO]"));
+  });
+});
