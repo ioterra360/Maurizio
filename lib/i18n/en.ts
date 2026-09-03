@@ -1071,4 +1071,11 @@ export const en: Record<keyof typeof it, string> = {
   "upcoming.emptyMonth": "No reviews scheduled this month",
   "upcoming.emptyDay": "No reviews for this day",
 
+  // ---- notifications (local: first review + daily reminder, spec F3 2026-09-03) ----
+  "notifications.channelName": "Review reminders",
+  "notifications.dailyTitle": "Today's review",
+  "notifications.dailyBody": "A few minutes for today's memories?",
+  "notifications.firstReviewTitle": "First review ready",
+  "notifications.firstReviewBody": "“{term}” is waiting for its first review.",
+
 };

@@ -1071,4 +1071,11 @@ export const fr: Record<keyof typeof it, string> = {
   "upcoming.emptyMonth": "Aucune révision prévue ce mois-ci",
   "upcoming.emptyDay": "Aucune révision pour ce jour",
 
+  // ---- notifications (locales : première révision + rappel quotidien, spec F3 2026-09-03) ----
+  "notifications.channelName": "Rappels de révision",
+  "notifications.dailyTitle": "Révision du jour",
+  "notifications.dailyBody": "Quelques minutes pour les souvenirs du jour ?",
+  "notifications.firstReviewTitle": "Première révision prête",
+  "notifications.firstReviewBody": "« {term} » t'attend pour la première révision.",
+
 };

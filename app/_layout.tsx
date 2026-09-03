@@ -36,6 +36,7 @@ import { parseDevSignOutToken } from "@/lib/auth-links";
 import { SUPPORT_EMAIL } from "@/lib/constants";
 import { reportError } from "@/lib/report-error";
 import { useUIStore } from "@/lib/ui-store";
+import { installNotificationHandler } from "@/lib/notifications";
 import { Mascot } from "@/components/Mascot";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { Toast } from "@/components/Toast";
@@ -69,6 +70,11 @@ Sentry.init({
   integrations: [navigationIntegration],
   enableNativeFramesTracking: !isRunningInExpoGo(),
 });
+
+// Come mostrare una notifica locale che arriva con l'app aperta: senza
+// questo l'OS non la mostra. Una volta sola, a livello di modulo, come
+// Sentry.init. No-op finché NOTIFICATIONS_ENABLED è spento o in demo.
+installNotificationHandler();
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 SplashScreen.setOptions({ fade: true, duration: 220 });

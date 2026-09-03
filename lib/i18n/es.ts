@@ -1071,4 +1071,11 @@ export const es: Record<keyof typeof it, string> = {
   "upcoming.emptyMonth": "No hay repasos programados este mes",
   "upcoming.emptyDay": "No hay repasos para este día",
 
+  // ---- notifications (locales: primer repaso + recordatorio diario, spec F3 2026-09-03) ----
+  "notifications.channelName": "Recordatorios de repaso",
+  "notifications.dailyTitle": "Repaso de hoy",
+  "notifications.dailyBody": "¿Unos minutos para los recuerdos de hoy?",
+  "notifications.firstReviewTitle": "Primer repaso listo",
+  "notifications.firstReviewBody": "«{term}» te espera para el primer repaso.",
+
 };

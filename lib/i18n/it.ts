@@ -1071,4 +1071,11 @@ export const it = {
   "upcoming.emptyMonth": "Nessun ripasso in programma questo mese",
   "upcoming.emptyDay": "Nessun ripasso per questo giorno",
 
+  // ---- notifications (locali: primo ripasso + promemoria, spec F3 2026-09-03) ----
+  "notifications.channelName": "Promemoria di ripasso",
+  "notifications.dailyTitle": "Ripasso di oggi",
+  "notifications.dailyBody": "Qualche minuto per i ricordi di oggi?",
+  "notifications.firstReviewTitle": "Primo ripasso pronto",
+  "notifications.firstReviewBody": "«{term}» ti aspetta per il primo ripasso.",
+
 } as const;
