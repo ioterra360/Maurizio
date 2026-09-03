@@ -36,6 +36,7 @@ import { relativeReviewed } from "@/lib/format";
 import { FOLDER_KINDS, type FolderKind } from "@/lib/constants";
 import { useT } from "@/lib/i18n";
 import { FONT, useColors } from "@/theme/tokens";
+import { cancelFirstReviewsInFolder } from "@/lib/notifications";
 
 /**
  * Folder settings — reached from the cog in FolderTopBar. Lives in the ROOT
@@ -135,6 +136,9 @@ export default function FolderSettingsScreen() {
     setDeleting(true);
     try {
       await deleteFolder(folder.id);
+      // deleteFolder non restituisce gli id: il filtro passa dal payload
+      // (folderId) delle notifiche in attesa.
+      void cancelFirstReviewsInFolder(folder.id);
       showToast(t("folderSettings.toastDeleted", { name: folder.name }));
       router.replace("/(app)/knowledge");
     } catch (err) {

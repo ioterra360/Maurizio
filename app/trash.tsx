@@ -10,6 +10,7 @@ import { SectionLabel } from "@/components/SectionLabel";
 import { Tappable } from "@/components/Tappable";
 import { TopBar } from "@/components/TopBar";
 import {
+  fetchMemoriesForFolder,
   fetchTrash,
   restoreFolder,
   restoreMemory,
@@ -23,6 +24,7 @@ import { useUIStore } from "@/lib/ui-store";
 import type { FolderKind } from "@/lib/constants";
 import { FOLDER_KINDS } from "@/lib/constants";
 import { FONT, radii, useColors } from "@/theme/tokens";
+import { scheduleFirstReview } from "@/lib/notifications";
 
 /**
  * Cestino — cartelle e ricordi eliminati nelle ultime 24 ore (Maurizio,
@@ -66,6 +68,13 @@ export default function TrashScreen() {
     setRestoring(id);
     try {
       await restoreFolder(id);
+      // I ricordi tornati vivi con nextReviewAt ancora nel futuro riavranno
+      // il loro avviso; gli altri sono già in coda e non serve nulla.
+      fetchMemoriesForFolder(id)
+        .then((items) => {
+          for (const m of items) void scheduleFirstReview(m);
+        })
+        .catch((e) => reportError("trash/reschedule-folder", e));
       showToast(t("trash.restoredFolder", { name }));
       await load();
     } catch (e) {
@@ -81,6 +90,8 @@ export default function TrashScreen() {
     setRestoring(id);
     try {
       await restoreMemory(id);
+      const restored = trash?.memories.find((m) => m.id === id);
+      if (restored) void scheduleFirstReview(restored);
       showToast(t("trash.restoredMemory"));
       await load();
     } catch (e) {

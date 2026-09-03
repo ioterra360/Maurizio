@@ -32,6 +32,7 @@ import { useReviewStore } from "@/lib/review-store";
 import { useUIStore } from "@/lib/ui-store";
 import { reportError } from "@/lib/report-error";
 import { fetchDeletionPreview, fetchProfile, requestAccountDeletion, updateProfile } from "@/lib/api";
+import { cancelAllReminders } from "@/lib/notifications";
 import {
   ACCOUNT_DELETION_URL,
   NOTIFICATIONS_ENABLED,
@@ -190,6 +191,9 @@ export default function SettingsScreen() {
     // Drop any in-progress review first: its fire-and-forget writes are
     // already .catch()-guarded, but a live deck must not outlive the user.
     useReviewStore.getState().reset();
+    // Le notifiche locali vivono nell'OS: senza sessione non hanno più
+    // niente da promettere. No-op a flag spento e in demo.
+    await cancelAllReminders();
     await signOut();
     router.replace("/(auth)/login");
   };
@@ -231,6 +235,7 @@ export default function SettingsScreen() {
     // locale — mazzo, sign out, login. I dati restano fino alla purga.
     useReviewStore.getState().reset();
     setConfirmDelete(false);
+    await cancelAllReminders();
     await signOut();
     setDeleting(false);
     router.replace("/(auth)/login");

@@ -20,6 +20,7 @@ import { SectionLabel } from "@/components/SectionLabel";
 import { Tappable } from "@/components/Tappable";
 import { TopBar } from "@/components/TopBar";
 import { deleteMemory, fetchMemoryById, fetchReviewCount, fetchSubfolders, updateMemoryNotes } from "@/lib/api";
+import { cancelFirstReview, scheduleFirstReview } from "@/lib/notifications";
 import { MoveSheet } from "@/components/MoveSheet";
 import { longDate, relativeReviewed } from "@/lib/format";
 import { termFontSize, termLineHeight } from "@/lib/term-typography";
@@ -118,6 +119,20 @@ export default function MemoryDetailScreen() {
     }, [load]),
   );
 
+  // Il payload della notifica porta il folderId CONGELATO al salvataggio,
+  // ma un ricordo può cambiare cartella (`moveMemory`, lib/api.ts:1165,
+  // raggiungibile dal MoveSheet montato qui sotto e dal giro
+  // /choose-topic). Senza riallineamento: cestinare la cartella NUOVA non
+  // cancella l'avviso (il filtro cerca la vecchia) e cestinare la VECCHIA
+  // cancella l'avviso di un ricordo vivo. L'identificatore è stabile, quindi
+  // riprogrammare RISCRIVE il payload; scheduleFirstReview scarta da sé fase
+  // ≠ p20h, date passate e cancelli chiusi. `load()` gira dopo ogni
+  // spostamento (`onMoved`, riga 460) e al rientro da /choose-topic
+  // (`useFocusEffect`), quindi entrambi i percorsi passano di qui.
+  useEffect(() => {
+    if (memory) void scheduleFirstReview(memory);
+  }, [memory]);
+
   const dirty = memory !== null && notes.trim() !== (memory.notes ?? "").trim();
 
   const save = async () => {
@@ -163,6 +178,9 @@ export default function MemoryDetailScreen() {
     setDeleting(true);
     try {
       await deleteMemory(memory.id);
+      // Un "primo ripasso pronto" per un ricordo nel cestino prometterebbe
+      // una coda che non lo contiene: via. Idempotente se non c'era.
+      void cancelFirstReview(memory.id);
       showToast(t("memory.deleted"));
       back(); // the folder list refetches on focus
     } catch (e) {
