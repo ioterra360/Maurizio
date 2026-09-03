@@ -21,7 +21,10 @@ import { reportError } from "@/lib/report-error";
 import { markAddOpenedIntentionally } from "@/lib/add-gate";
 import { useT } from "@/lib/i18n";
 import { FONT, useColors } from "@/theme/tokens";
-import { FOLDER_LIMIT_ENFORCED, type FolderKind } from "@/lib/constants";
+import { type FolderKind } from "@/lib/constants";
+import { canAddFolder, type PlanLimitKind } from "@/lib/plan";
+import { usePlan } from "@/lib/use-plan";
+import { PlanLimitDialog } from "@/components/PlanLimitDialog";
 
 export default function KnowledgeScreen() {
   const { t, tp } = useT();
@@ -99,11 +102,15 @@ export default function KnowledgeScreen() {
     [],
   );
 
-  // Test phase (FOLDER_LIMIT_ENFORCED=false): one folder per kind, so the
-  // button disappears once the 4 templates + the custom one all exist.
-  // Nessun tetto numerico dal 2026-09-02 (via unique(user_id,kind) e via i
-  // 5 slot): il confine tornera' coi piani Free/Pro/Premium, non qui.
-  const canAddFolder = !FOLDER_LIMIT_ENFORCED && !loading && !error && folders.length > 0;
+  // Il "+" resta VISIBILE anche al tetto, e dirama al tocco. Farlo sparire
+  // sarebbe la scelta peggiore: un utente free ha esattamente una cartella
+  // per costruzione, quindi in tutta la schermata Cartelle non incontrerebbe
+  // mai un motivo per passare a Pro. La spec chiede l'opposto — "il client
+  // rispecchia i limiti per l'UX (disabilita, spiega, propone l'upgrade)" —
+  // ed e' lo stesso comportamento di Add e delle sezioni.
+  const plan = usePlan();
+  const [planBlock, setPlanBlock] = useState<PlanLimitKind | null>(null);
+  const canAdd = !loading && !error && folders.length > 0;
 
   const header = (
     <View style={{ position: "relative" }}>
@@ -124,12 +131,16 @@ export default function KnowledgeScreen() {
       >
         <Mascot variant="checklist" size={92} withShadow={false} />
       </View>
-      {canAddFolder ? (
+      {canAdd ? (
         <View style={{ paddingHorizontal: 16, paddingBottom: 14 }}>
           <Tappable
-            onPress={() =>
-              router.push({ pathname: "/choose-topic", params: { mode: "new" } } as never)
-            }
+            onPress={() => {
+              if (!canAddFolder(folders.length, plan)) {
+                setPlanBlock("folders");
+                return;
+              }
+              router.push({ pathname: "/choose-topic", params: { mode: "new" } } as never);
+            }}
             accessibilityRole="button"
             accessibilityLabel={t("knowledge.newFolder")}
             containerStyle={{ alignSelf: "flex-start" }}
@@ -373,6 +384,7 @@ export default function KnowledgeScreen() {
         <Plus size={22} color={colors.onAccent} strokeWidth={2.2} />
       </Tappable>
       )}
+      <PlanLimitDialog limit={planBlock} plan={plan} onClose={() => setPlanBlock(null)} />
     </SafeAreaView>
   );
 }

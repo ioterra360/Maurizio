@@ -1035,7 +1035,6 @@ export const it = {
   "subfolders.deleted": "Sezione eliminata: le parole sono tornate nella cartella",
   "subfolders.duplicate": "C'è già una sezione con questo nome",
   "subfolders.failed": "Operazione non riuscita. Riprova.",
-  "subfolders.limit": "Massimo 3 sezioni per cartella",
   "subfolders.namePlaceholder": "Nome della sezione",
   "subfolders.renameTitle": "Rinomina sottocartella",
   "subfolders.renamed": "Sezione rinominata",

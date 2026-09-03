@@ -26,11 +26,13 @@ import {
 } from "@/lib/api";
 import { NamePromptModal } from "@/components/NamePromptModal";
 import { useAuthStore } from "@/lib/auth-store";
-import { SUBFOLDERS_MAX } from "@/lib/constants";
 import type { Subfolder } from "@/lib/mappers";
 import { useFolderDetail } from "@/lib/use-folders";
 import { useUIStore } from "@/lib/ui-store";
-import { reportError } from "@/lib/report-error";
+import { errorCode, reportError } from "@/lib/report-error";
+import { canAddSection, planLimitFromCode, type PlanLimitKind } from "@/lib/plan";
+import { usePlan } from "@/lib/use-plan";
+import { PlanLimitDialog } from "@/components/PlanLimitDialog";
 import { safeBack } from "@/lib/safe-back";
 import { relativeReviewed } from "@/lib/format";
 import { FOLDER_KINDS, type FolderKind } from "@/lib/constants";
@@ -58,6 +60,8 @@ export default function FolderSettingsScreen() {
     { mode: "add" } | { mode: "rename"; target: Subfolder } | null
   >(null);
   const [subSaving, setSubSaving] = useState(false);
+  const plan = usePlan();
+  const [planBlock, setPlanBlock] = useState<PlanLimitKind | null>(null);
   const settingsFolderId = folder?.id ?? null;
   const loadSubfolders = useCallback(async () => {
     if (!settingsFolderId) return;
@@ -317,9 +321,11 @@ export default function FolderSettingsScreen() {
         </View>
 
         {/* Sottocartelle */}
-        <View style={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 8 }}>
-          <SectionLabel>{t("subfolders.section")}</SectionLabel>
-        </View>
+        {subfolders.length > 0 || canAddSection(subfolders.length, plan) ? (
+          <View style={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 8 }}>
+            <SectionLabel>{t("subfolders.section")}</SectionLabel>
+          </View>
+        ) : null}
         <View style={{ paddingHorizontal: 16, gap: 8 }}>
           {subfolders.map((sub) => (
             <Tappable
@@ -369,7 +375,7 @@ export default function FolderSettingsScreen() {
               </Tappable>
             </Tappable>
           ))}
-          {subfolders.length < SUBFOLDERS_MAX ? (
+          {canAddSection(subfolders.length, plan) ? (
             <Tappable
               onPress={() => setSubModal({ mode: "add" })}
               accessibilityRole="button"
@@ -393,11 +399,7 @@ export default function FolderSettingsScreen() {
                 {t("subfolders.add")}
               </Text>
             </Tappable>
-          ) : (
-            <Text style={{ paddingHorizontal: 8, fontFamily: FONT.regular, fontSize: 12, color: colors.midGrey }}>
-              {t("subfolders.limit")}
-            </Text>
-          )}
+          ) : null}
         </View>
 
         <View style={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 8 }}>
@@ -477,15 +479,16 @@ export default function FolderSettingsScreen() {
               void loadSubfolders();
             })
             .catch((err) => {
+              const limit = planLimitFromCode(errorCode(err));
+              if (limit) {
+                setPlanBlock(limit);
+                return;
+              }
               reportError("folder-settings/subfolder-save", err);
-              const code = (err as { code?: string })?.code ?? "";
-              const msg = err instanceof Error ? err.message : String(err);
               showToast(
-                code === "23505" || msg.includes("duplicate")
+                errorCode(err) === "23505"
                   ? t("subfolders.duplicate")
-                  : msg.includes("limit")
-                    ? t("subfolders.limit")
-                    : t("subfolders.failed"),
+                  : t("subfolders.failed"),
               );
             })
             .finally(() => setSubSaving(false));
@@ -559,6 +562,7 @@ export default function FolderSettingsScreen() {
           </View>
         </View>
       </Modal>
+      <PlanLimitDialog limit={planBlock} plan={plan} onClose={() => setPlanBlock(null)} />
     </SafeAreaView>
   );
 }

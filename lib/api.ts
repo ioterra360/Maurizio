@@ -1135,7 +1135,9 @@ export async function restoreMemory(id: string): Promise<void> {
 
 // ---------------------------------------------------------------------------
 // Sottocartelle (sezioni dentro una cartella — migration 20260831010000) e
-// spostamento dei ricordi. Max SUBFOLDERS_MAX per cartella (anche a DB).
+// spostamento dei ricordi. Il tetto per cartella dipende dal piano
+// (PLAN_LIMITS in lib/plan.ts) ed e' applicato dal trigger
+// enforce_subfolder_rules.
 // ---------------------------------------------------------------------------
 
 export async function fetchSubfolders(folderId: string): Promise<Subfolder[]> {

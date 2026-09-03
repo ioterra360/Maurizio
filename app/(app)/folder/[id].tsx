@@ -6,9 +6,11 @@ import { ArrowUpDown, Plus, Repeat } from "lucide-react-native";
 import { NamePromptModal } from "@/components/NamePromptModal";
 import { createSubfolder, fetchSubfolders } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
-import { reportError } from "@/lib/report-error";
+import { errorCode, reportError } from "@/lib/report-error";
+import { canAddSection, planLimitFromCode, type PlanLimitKind } from "@/lib/plan";
+import { usePlan } from "@/lib/use-plan";
+import { PlanLimitDialog } from "@/components/PlanLimitDialog";
 import { useUIStore } from "@/lib/ui-store";
-import { SUBFOLDERS_MAX } from "@/lib/constants";
 import type { Subfolder } from "@/lib/mappers";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 
@@ -52,6 +54,8 @@ export default function FolderDetailScreen() {
   const [subFilter, setSubFilter] = useState<"all" | string>("all");
   const [subModalOpen, setSubModalOpen] = useState(false);
   const [subSaving, setSubSaving] = useState(false);
+  const plan = usePlan();
+  const [planBlock, setPlanBlock] = useState<PlanLimitKind | null>(null);
   const folderId = folder?.id ?? null;
   const loadSubfolders = useCallback(async () => {
     if (!folderId) return;
@@ -369,8 +373,8 @@ export default function FolderDetailScreen() {
           />
         </ScrollView>
 
-        {/* Sezioni (sottocartelle) — max SUBFOLDERS_MAX per cartella. */}
-        {subfolders.length > 0 || subfolders.length < SUBFOLDERS_MAX ? (
+        {/* Sezioni (sottocartelle) — il tetto per cartella dipende dal piano. */}
+        {subfolders.length > 0 || canAddSection(subfolders.length, plan) ? (
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -393,7 +397,7 @@ export default function FolderDetailScreen() {
                 onPress={() => setSubFilter(s.id)}
               />
             ))}
-            {subfolders.length < SUBFOLDERS_MAX ? (
+            {canAddSection(subfolders.length, plan) ? (
               <Tappable
                 onPress={() => setSubModalOpen(true)}
                 accessibilityRole="button"
@@ -509,20 +513,22 @@ export default function FolderDetailScreen() {
               void loadSubfolders();
             })
             .catch((e) => {
+              const limit = planLimitFromCode(errorCode(e));
+              if (limit) {
+                setPlanBlock(limit);
+                return;
+              }
               reportError("folder/subfolder-create", e);
-              const code = (e as { code?: string })?.code ?? "";
-              const msg = e instanceof Error ? e.message : String(e);
               showToast(
-                code === "23505" || msg.includes("duplicate")
+                errorCode(e) === "23505"
                   ? t("subfolders.duplicate")
-                  : msg.includes("limit")
-                    ? t("subfolders.limit")
-                    : t("subfolders.failed"),
+                  : t("subfolders.failed"),
               );
             })
             .finally(() => setSubSaving(false));
         }}
       />
+      <PlanLimitDialog limit={planBlock} plan={plan} onClose={() => setPlanBlock(null)} />
     </SafeAreaView>
   );
 }

@@ -25,12 +25,14 @@ import {
   type FolderKind,
 } from "@/lib/constants";
 import { applyFolderOrder, priorityOf, useFolderOrderStore } from "@/lib/folder-order-store";
-import { createMemory, fetchProfile, fetchTodayInputCount } from "@/lib/api";
+import { countMemories, createMemory, fetchProfile, fetchTodayInputCount } from "@/lib/api";
 import { useFoldersWithStats } from "@/lib/use-folders";
 import type { FolderWithStats, Memory, Profile } from "@/lib/mappers";
 import { useAuthStore } from "@/lib/auth-store";
 import { useUIStore } from "@/lib/ui-store";
-import { reportError } from "@/lib/report-error";
+import { errorCode, reportError } from "@/lib/report-error";
+import { PLAN_LIMITS, canAddMemory, planLimitFromCode, type PlanLimitKind } from "@/lib/plan";
+import { usePlan } from "@/lib/use-plan";
 import { safeBack } from "@/lib/safe-back";
 import { consumeIntentionalAddOpen } from "@/lib/add-gate";
 import { useT } from "@/lib/i18n";
@@ -38,6 +40,7 @@ import { shortDateTime } from "@/lib/format";
 import { firstReview } from "@/features/srs/phases";
 import { itemTypesFor, legacyKindFor, templateHasReading } from "@/lib/folder-taxonomy";
 import { MascotDialog } from "@/components/MascotDialog";
+import { PlanLimitDialog } from "@/components/PlanLimitDialog";
 import { useNotificationPrefsStore } from "@/lib/notification-prefs-store";
 import {
   getPermission,
@@ -118,6 +121,12 @@ export default function AddScreen() {
   // Contatore giornaliero vero: inserimenti di oggi + tetto dal profilo.
   const [dailyCount, setDailyCount] = useState<number | null>(null);
   const [dailyMax, setDailyMax] = useState(DAILY_INPUT_CAP_DEFAULT);
+  const plan = usePlan();
+  // Totale dei ricordi dell'account, CESTINO COMPRESO (stesso predicato del
+  // trigger): e' il contatore del piano free (10 in tutto), diverso dal
+  // contatore giornaliero, che resta l'autoregolazione di Pro/Premium.
+  const [totalCount, setTotalCount] = useState<number | null>(null);
+  const [planBlock, setPlanBlock] = useState<PlanLimitKind | null>(null);
   // Profilo intero, non solo il tetto: serve per riallineare il promemoria
   // giornaliero appena il permesso viene concesso.
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -144,10 +153,11 @@ export default function AddScreen() {
   useEffect(() => {
     if (!user) return;
     let cancelled = false;
-    Promise.all([fetchTodayInputCount(user.id), fetchProfile(user.id)])
-      .then(([count, profile]) => {
+    Promise.all([fetchTodayInputCount(user.id), fetchProfile(user.id), countMemories(user.id)])
+      .then(([count, profile, total]) => {
         if (cancelled) return;
         setDailyCount(count);
+        setTotalCount(total);
         if (profile) {
           setDailyMax(profile.dailyInputCap);
           setProfile(profile);
@@ -207,6 +217,8 @@ export default function AddScreen() {
     time: shortDateTime(firstReview().nextReviewAt),
   });
   const dailyLimitReached = (dailyCount ?? 0) >= dailyMax;
+  const totalMax = PLAN_LIMITS[plan].memories;
+  const planLimitReached = totalMax !== null && !canAddMemory(totalCount ?? 0, plan);
   // "Salva e aggiungi un altro": campi puliti, si resta qui.
   const clearFields = () => {
     setTerm("");
@@ -249,6 +261,13 @@ export default function AddScreen() {
   // salvare anche oltre il tetto — domani il carico sarà solo più alto.
   const doSave = async (addAnother: boolean) => {
     if (saving || !user) return;
+    // Il tetto totale del piano free e' un blocco vero, non un avviso: si
+    // spiega e si propone l'upgrade invece di far scrivere una parola che
+    // il server rifiuterebbe.
+    if (planLimitReached) {
+      setPlanBlock("memories");
+      return;
+    }
     if (!term.trim()) {
       setMissing("term");
       termRef.current?.focus();
@@ -283,6 +302,7 @@ export default function AddScreen() {
         itemType: type,
       });
       setDailyCount((c) => (c ?? 0) + 1);
+      setTotalCount((c) => (c ?? 0) + 1);
       showToast(t("add.savedToast", { name: folderRow.name }));
       if (saved && canOfferPrompt) {
         // Il dialogo è un Modal DENTRO questa schermata: la navigazione
@@ -307,6 +327,11 @@ export default function AddScreen() {
         safeBack("/(app)/knowledge");
       }
     } catch (e) {
+      const limit = planLimitFromCode(errorCode(e));
+      if (limit) {
+        setPlanBlock(limit);
+        return;
+      }
       reportError("add/save", e);
       showToast(t("add.saveFailed"));
     } finally {
@@ -729,19 +754,25 @@ export default function AddScreen() {
         >
           <Text
             style={{
-              fontFamily: dailyLimitReached ? FONT.medium : FONT.regular,
-              fontSize: dailyLimitReached ? 12.5 : 12,
-              color: dailyLimitReached ? colors.danger : colors.midGrey,
+              fontFamily: dailyLimitReached || planLimitReached ? FONT.medium : FONT.regular,
+              fontSize: dailyLimitReached || planLimitReached ? 12.5 : 12,
+              color: dailyLimitReached || planLimitReached ? colors.danger : colors.midGrey,
               fontVariant: ["tabular-nums"],
               textAlign: "center",
               paddingHorizontal: 8,
             }}
           >
-            {dailyCount === null
-              ? "…"
-              : dailyLimitReached
-                ? t("add.overDailyLimit", { count: dailyCount, max: dailyMax })
-                : t("add.dailyCounter", { count: dailyCount, max: dailyMax })}
+            {totalMax !== null
+              ? totalCount === null
+                ? "…"
+                : planLimitReached
+                  ? t("add.totalLimitReached", { max: totalMax })
+                  : t("add.totalCounter", { count: totalCount, max: totalMax })
+              : dailyCount === null
+                ? "…"
+                : dailyLimitReached
+                  ? t("add.overDailyLimit", { count: dailyCount, max: dailyMax })
+                  : t("add.dailyCounter", { count: dailyCount, max: dailyMax })}
           </Text>
           <GhostButton
             label={t("add.saveAndAddAnother")}
@@ -764,6 +795,8 @@ export default function AddScreen() {
         onConfirm={() => void acceptPrompt()}
         onCancel={declinePrompt}
       />
+
+      <PlanLimitDialog limit={planBlock} plan={plan} onClose={() => setPlanBlock(null)} />
     </SafeAreaView>
   );
 }

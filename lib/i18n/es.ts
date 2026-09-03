@@ -1035,7 +1035,6 @@ export const es: Record<keyof typeof it, string> = {
   "subfolders.deleted": "Sección eliminada: sus palabras han vuelto a la carpeta",
   "subfolders.duplicate": "Ya existe una sección con ese nombre",
   "subfolders.failed": "Algo salió mal. Inténtalo de nuevo.",
-  "subfolders.limit": "Máximo 3 secciones por carpeta",
   "subfolders.namePlaceholder": "Nombre de la sección",
   "subfolders.renameTitle": "Renombrar subcarpeta",
   "subfolders.renamed": "Sección renombrada",

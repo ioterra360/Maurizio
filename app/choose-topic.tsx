@@ -20,7 +20,10 @@ import { Tappable } from "@/components/Tappable";
 import { TopBar } from "@/components/TopBar";
 import { countFolders, createFolder, moveMemory } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
-import { FOLDER_LIMIT_ENFORCED, FOLDER_NAME_MAX_LENGTH } from "@/lib/constants";
+import { FOLDER_NAME_MAX_LENGTH } from "@/lib/constants";
+import { planLimitFromCode, type PlanLimitKind } from "@/lib/plan";
+import { usePlan } from "@/lib/use-plan";
+import { PlanLimitDialog } from "@/components/PlanLimitDialog";
 import {
   folderInputFromCustomName,
   folderInputFromSubcategory,
@@ -36,7 +39,7 @@ import {
 } from "@/lib/folder-taxonomy";
 import { useT } from "@/lib/i18n";
 import { useUIStore } from "@/lib/ui-store";
-import { reportError } from "@/lib/report-error";
+import { errorCode, reportError } from "@/lib/report-error";
 import { FONT, radii, useColors } from "@/theme/tokens";
 
 /**
@@ -93,15 +96,17 @@ export default function ChooseTopicScreen() {
   const { mode, moveMemoryId } = useLocalSearchParams<{ mode?: string; moveMemoryId?: string }>();
   // Il flusso "Nuova cartella…" del MoveSheet (moveMemoryId) non deve MAI
   // rimbalzare su Oggi: anche a limite freemium attivo l'utente arriva qui
-  // con una cartella già sua (review 2026-08-31; il gate Premium nasconderà
-  // la voce a monte quando arriverà).
-  const addingAnother = (mode === "new" && !FOLDER_LIMIT_ENFORCED) || Boolean(moveMemoryId);
+  // con una cartella già sua (review 2026-08-31; il gate del piano vive a
+  // monte, in Cartelle, e qui la doppia cintura è l'errcode del trigger).
+  const addingAnother = mode === "new" || Boolean(moveMemoryId);
 
   const [checking, setChecking] = useState(!addingAnother);
   const [selection, setSelection] = useState<Selection>(null);
   const [customName, setCustomName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const plan = usePlan();
+  const [planBlock, setPlanBlock] = useState<PlanLimitKind | null>(null);
   /** Macrocategoria col selettore aperto; null = chiuso. */
   const [openCategory, setOpenCategory] = useState<TaxonomyCategory | null>(null);
   const [query, setQuery] = useState("");
@@ -179,6 +184,11 @@ export default function ChooseTopicScreen() {
         goToday();
       }
     } catch (e) {
+      const limit = planLimitFromCode(errorCode(e));
+      if (limit) {
+        setPlanBlock(limit);
+        return;
+      }
       reportError("choose-topic/create-folder", e);
       setError(t("chooseTopic.createFailed"));
     } finally {
@@ -198,7 +208,7 @@ export default function ChooseTopicScreen() {
 
   const subtitle = addingAnother
     ? t("chooseTopic.subtitleNewFolder")
-    : FOLDER_LIMIT_ENFORCED
+    : plan === "free"
       ? t("chooseTopic.subtitleLimitEnforced")
       : t("chooseTopic.subtitleLimitOff");
 
@@ -575,6 +585,7 @@ export default function ChooseTopicScreen() {
           </View>
         </View>
       </Modal>
+      <PlanLimitDialog limit={planBlock} plan={plan} onClose={() => setPlanBlock(null)} />
     </SafeAreaView>
   );
 }

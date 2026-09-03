@@ -18,13 +18,6 @@ import type { LayerKey } from "@/theme/tokens";
 export const TEMPLATE_KINDS = ["jp", "medicine", "es", "law"] as const;
 export type TemplateKind = (typeof TEMPLATE_KINDS)[number];
 
-/**
- * Sottocartelle per cartella (Maurizio 2026-08-31: "max 3, modalità pro").
- * Per ora il limite vale per tutti, come FOLDER_LIMIT_ENFORCED: quando
- * arriverà RevenueCat diventerà un vantaggio Premium.
- */
-export const SUBFOLDERS_MAX = 3;
-
 /** Kind slug of a user-named folder ("Altro…" at onboarding). */
 export const CUSTOM_FOLDER_KIND = "custom" as const;
 
@@ -135,20 +128,12 @@ export const CUSTOM_ITEM_TYPES: readonly ItemTypeOption[] = [
 export const FOLDER_NAME_MAX_LENGTH = 40;
 
 /**
- * Freemium: a free account owns exactly one folder. Creating/opening a
- * second one will raise the Premium sheet once RevenueCat lands; until then
- * no create-folder affordance exists beyond the onboarding pick.
+ * I limiti dei piani NON stanno piu' qui: stanno in lib/plan.ts
+ * (PLAN_LIMITS), che e' l'unico specchio della verita' server-side dei
+ * trigger di 20260903100000_plans.sql. FREE_FOLDER_LIMIT (codice morto),
+ * FOLDER_LIMIT_ENFORCED, SUBFOLDERS_MAX e PREMIUM_ENABLED (orfano, importato
+ * da zero file) sono stati rimossi il 2026-09-03.
  */
-export const FREE_FOLDER_LIMIT = 1;
-
-/**
- * 2026-08-27 (Angelo): during the test phase the app behaves like the full
- * version — any signed-in user can add folders from Knowledge, one per kind
- * (the DB has unique(user_id, kind) and the app keys folders by kind, so the
- * ceiling is the 4 templates + 1 custom). Flip to true when the RevenueCat
- * paywall lands and FREE_FOLDER_LIMIT becomes the gate again.
- */
-export const FOLDER_LIMIT_ENFORCED = false;
 
 export const MEMORY_STATES = ["active", "fading", "archived"] as const;
 export type MemoryState = (typeof MEMORY_STATES)[number];
@@ -222,15 +207,6 @@ export const DAILY_INPUT_CAP_DEFAULT = 20;
  */
 export const TERM_MAX_LENGTH = 50;
 export const TERM_COUNTER_FROM = 40;
-
-/**
- * Paywall kill-switch. The "Memika Premium" row in Settings and the
- * Premium row in Settings stays hidden until the RevenueCat in-app-purchase paywall
- * (the old external-checkout screen was deleted on 2026-08-29)
- * replaces the old external-checkout screen — a store build that links out to
- * a web checkout is rejected under Apple 3.1.1 / Play Payments policy.
- */
-export const PREMIUM_ENABLED = false;
 
 /**
  * Local notifications (spec 2026-09-02 §F3) are BUILT: lib/notifications.ts
