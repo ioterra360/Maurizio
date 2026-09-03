@@ -18,7 +18,7 @@ What's working today (2026-08-25):
   env, and `lib/demo-mode.ts` guarantees a release build never falls into demo
 - Hosted Supabase Auth URL configuration (password reset deep link works)
 - Sentry code-side (init, error boundary, `reportError`) — org/DSN pending
-- Icon v2 ("il cervello è il quadrato") wired for build 3 (vc13 / iOS 3); splash still v1; store icons v2 in `docs/store-assets/`
+- Icon v2 ("il cervello è il quadrato") wired for build 3 (vc13 / iOS 3); splash still v1 art, now with a dark variant on `#0E1015`; store icons v2 in `docs/store-assets/`
 - In-app account deletion, legal links, consent line, honest copy
 
 What's not yet set up:
@@ -362,7 +362,7 @@ does not cover it and no spec asks for it.
 | `assets/icon.png` | 1024×1024 RGBA (alpha all 255) = `assets/brand/icon-v2/icon.png`, byte for byte | `expo.icon`. Prebuild flattens it to RGB on white (`withIosIcons` → `removeTransparency`), so an opaque RGBA source is fine for Apple |
 | `assets/adaptive-icon.png` | 1024×1024 RGBA opaque, full-bleed pink brain = `assets/brand/icon-v2/adaptive-icon.png` | `expo.android.adaptiveIcon.foregroundImage` on `#F8D2C4` (v1 was navy on `#142450`) |
 | `assets/notification-icon.png` | 96×96 RGBA, WHITE on transparent (Android uses only the alpha), source `assets/brand/icon-v2/notification-icon.source.mjs` | `expo-notifications` plugin `icon`, tinted with `color` `#3B6BF5` — the DARK accent: the tint lands in a single `res/values/colors.xml` (no `values-night`), so it must read on a dark shade too |
-| `assets/splash-icon.png` | 1024×1024 RGBA | `expo-splash-screen` plugin, `imageWidth: 200` on `#F5F3EF` |
+| `assets/splash-icon.png` | 1024×1024 RGBA | `expo-splash-screen` plugin, `imageWidth: 200` on `#F5F3EF`; same art on `#0E1015` under `dark` (the dark palette's `bgScreen`) so a dark-themed phone gets no white flash before React mounts |
 | `assets/favicon.png` | 48×48 RGBA | `expo.web.favicon` |
 | `docs/store-assets/appstore-icon-1024.png` | 1024×1024 RGB, no alpha — the v2 **flattened**, byte for byte = `assets/brand/icon-v2/appstore-icon-1024.png` (this file goes through no pipeline and ASC rejects alpha) | App Store Connect listing icon (upload manually) |
 | `docs/store-assets/play-icon-512.png` | 512×512 RGBA = `assets/brand/icon-v2/play-icon-512.png`, byte for byte (Play accepts alpha) | Google Play Console "App icon" (upload manually) |
@@ -591,7 +591,7 @@ Android build into testers' hands first.
 - [x] EAS project `@ioterra/memika`, remote versioning, Supabase env in the
       `preview` / `production` profiles; release builds cannot run demo mode
 - [x] Hermes release-bundle blocker fixed (supabase-js 2.106.2, `d014aff`)
-- [x] Icon v2 (build 3) + adaptive icon on `#F8D2C4`; splash still v1; store
+- [x] Icon v2 (build 3) + adaptive icon on `#F8D2C4`; splash still v1 art + dark variant; store
       icons in `docs/store-assets/`
 - [x] Legal pages drafted (`docs/legal/`), URLs in `lib/constants.ts`, consent
       on signup, links + support mail in Settings

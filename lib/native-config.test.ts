@@ -196,6 +196,25 @@ describe("app.json — build 3", () => {
     expect(appJson.expo.android.blockedPermissions).toContain("android.permission.RECORD_AUDIO");
   });
 
+  it("lo splash ha la variante scura, così il telefono in tema scuro non lampeggia bianco", () => {
+    // Con userInterfaceStyle "automatic" il launch screen resterebbe #F5F3EF
+    // anche a telefono scuro: un lampo bianco prima che React monti. Il fondo
+    // scuro è bgScreen della palette scura (theme/palettes.ts), lo stesso che
+    // l'app disegna un istante dopo. L'arte non cambia: la sua placca navy
+    // (#132447 sul bordo) stacca a sufficienza sul nero.
+    const props = pluginProps("expo-splash-screen");
+    expect(props?.backgroundColor).toBe("#F5F3EF");
+    expect(props?.image).toBe("./assets/splash-icon.png");
+    // `dark` accetta SOLO image e backgroundColor: imageWidth resta quello di
+    // primo livello (node_modules/expo-splash-screen/plugin/build/withSplashScreen.d.ts).
+    expect(props?.dark).toEqual({
+      backgroundColor: "#0E1015",
+      image: "./assets/splash-icon.png",
+    });
+    // Senza "automatic" la variante scura non verrebbe mai scelta.
+    expect(appJson.expo.userInterfaceStyle).toBe("automatic");
+  });
+
   it("monta l'icona v2 byte per byte, su sfondo rosa", () => {
     expect(appJson.expo.icon).toBe("./assets/icon.png");
     expect(appJson.expo.android.adaptiveIcon.foregroundImage).toBe("./assets/adaptive-icon.png");
