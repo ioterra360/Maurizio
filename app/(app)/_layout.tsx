@@ -128,6 +128,7 @@ export default function AppLayout() {
           Expo Router would auto-mount it as a 5th, empty-titled tab. */}
       <Tabs.Screen name="folder/[id]" options={{ href: null }} />
       <Tabs.Screen name="upcoming" options={{ href: null }} />
+      <Tabs.Screen name="notifications" options={{ href: null }} />
     </Tabs>
   );
 }

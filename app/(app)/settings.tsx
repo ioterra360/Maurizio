@@ -21,7 +21,7 @@ import { SectionLabel } from "@/components/SectionLabel";
 import { useLocaleStore, useT, type LocalePreference, type TKey } from "@/lib/i18n";
 import { useThemeStore } from "@/theme/theme-store";
 import type { ThemePreference } from "@/theme/theme-store";
-import { SettingsRow, SettingsToggle } from "@/components/SettingsRow";
+import { SettingsRow } from "@/components/SettingsRow";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { GhostButton } from "@/components/GhostButton";
 import { Mascot } from "@/components/Mascot";
@@ -336,22 +336,6 @@ export default function SettingsScreen() {
           </View>
         </View>
 
-        {/* Schedule — hidden until notifications exist (NOTIFICATIONS_ENABLED). */}
-        {NOTIFICATIONS_ENABLED && (
-          <>
-        {/* Schedule */}
-        <View style={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 8 }}>
-          <SectionLabel>{tr("settings.scheduleSection")}</SectionLabel>
-        </View>
-        <View style={{ paddingHorizontal: 16, gap: 10 }}>
-          {/* Time values are HH:MM:SS from Postgres — show HH:MM. Rows stay
-              non-interactive until real time pickers exist. */}
-          <SettingsRow label={tr("settings.morningReview")} value={(profile?.morningReviewAt ?? "08:00").slice(0, 5)} />
-          <SettingsRow label={tr("settings.eveningReview")} value={(profile?.eveningReviewAt ?? "21:30").slice(0, 5)} />
-        </View>
-          </>
-        )}
-
         {/* Limits */}
         <View style={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 8 }}>
           <SectionLabel>{tr("settings.limitsSection")}</SectionLabel>
@@ -370,38 +354,21 @@ export default function SettingsScreen() {
 
         {NOTIFICATIONS_ENABLED && (
           <>
-        {/* Notifications */}
-        <View style={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 8 }}>
-          <SectionLabel>{tr("settings.notificationsSection")}</SectionLabel>
-        </View>
-        <View style={{ paddingHorizontal: 16, gap: 10 }}>
-          {/* Toggles are uncontrolled — the key remounts them once the real
-              profile loads so defaultOn reflects the stored value. */}
-          <SettingsToggle
-            key={profile ? `calm-${profile.calmMode}` : "calm"}
-            label={tr("settings.calmMode")}
-            hint={tr("settings.calmModeHint")}
-            defaultOn={profile ? profile.calmMode : true}
-            onChange={(v) => {
-              if (!user) return;
-              updateProfile(user.id, { calmMode: v }).catch((err) => {
-                reportError("settings/calm-mode-save", err);
-              });
-            }}
-          />
-          <SettingsToggle
-            key={profile ? `digest-${profile.weeklyDigest}` : "digest"}
-            label={tr("settings.weeklyDigest")}
-            hint={tr("settings.weeklyDigestHint")}
-            defaultOn={profile ? profile.weeklyDigest : false}
-            onChange={(v) => {
-              if (!user) return;
-              updateProfile(user.id, { weeklyDigest: v }).catch((err) => {
-                reportError("settings/weekly-digest-save", err);
-              });
-            }}
-          />
-        </View>
+            {/* Notifiche: una riga che apre la schermata (spec F3), non un blocco inline. */}
+            <View style={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 8 }}>
+              <SectionLabel>{tr("settings.notificationsSection")}</SectionLabel>
+            </View>
+            <View style={{ paddingHorizontal: 16, gap: 10 }}>
+              <SettingsRow
+                label={tr("notifications.settingsRow")}
+                hint={tr("notifications.settingsRowHint")}
+                chevron
+                onPress={() => {
+                  tap();
+                  router.push("/(app)/notifications" as never);
+                }}
+              />
+            </View>
           </>
         )}
 

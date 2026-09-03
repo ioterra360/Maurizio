@@ -21,7 +21,8 @@ app/
 ├── (app)/
 │   ├── _layout.tsx              Tabs nav (backBehavior "history"). Auth gate.
 │   ├── today.tsx · knowledge.tsx · health.tsx · settings.tsx
-│   ├── folder/[kind].tsx        Dettaglio cartella — tab nascosto (href: null)
+│   ├── folder/[id].tsx          Dettaglio cartella — tab nascosto (href: null)
+│   ├── notifications.tsx        Notifiche (spec F3) — tab nascosto (href: null), push da Impostazioni
 │
 ├── review/
 │   ├── _layout.tsx              Stack, auth-gated
@@ -49,7 +50,9 @@ app/
 | `/(app)/knowledge` | `app/(app)/knowledge.tsx` | Signed-in users |
 | `/(app)/health` | `app/(app)/health.tsx` | Signed-in users |
 | `/(app)/settings` | `app/(app)/settings.tsx` | Signed-in users |
-| `/(app)/folder/[kind]` | `app/(app)/folder/[kind].tsx` | Signed-in users |
+| `/(app)/notifications` | `app/(app)/notifications.tsx` | Signed-in users (riga visibile solo con `NOTIFICATIONS_ENABLED`) |
+| `/(app)/folder/[id]` | `app/(app)/folder/[id].tsx` | Signed-in users |
+| `/memory/[id]` | `app/memory/[id].tsx` | Signed-in users (destinazione del tocco su una notifica di primo ripasso; guardia auth propria, Task 7) |
 | `/review/scan · reinforcement · focus · handoff · complete` | `app/review/*` | Signed-in users |
 | `/(admin)/home` | `app/(admin)/home.tsx` | Signed-in admins |
 
