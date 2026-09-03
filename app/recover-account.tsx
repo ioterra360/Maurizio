@@ -10,6 +10,7 @@ import { PrimaryButton } from "@/components/PrimaryButton";
 import { cancelAccountDeletion, fetchDeletionRequestedAt } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
 import { useT } from "@/lib/i18n";
+import { cancelAllReminders } from "@/lib/notifications";
 import { reportError } from "@/lib/report-error";
 import { ACCOUNT_DELETION_GRACE_HOURS, trashHoursLeft } from "@/lib/trash";
 import { useUIStore } from "@/lib/ui-store";
@@ -75,6 +76,11 @@ export default function RecoverAccountScreen() {
     if (busy) return;
     setBusy(true);
     try {
+      // Stessa ragione di settings.tsx, ma qui pesa di più: l'utente ha già
+      // chiesto di eliminare l'account e se ne va. Le notifiche locali vivono
+      // nell'OS finché non le si cancella, e il body dei `first-review:*`
+      // porta il TERMINE scritto da lui. No-op a flag spento e in demo.
+      await cancelAllReminders();
       await signOut();
     } finally {
       setBusy(false);
