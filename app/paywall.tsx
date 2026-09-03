@@ -2,10 +2,12 @@ import { useEffect, useState } from "react";
 import { Linking, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Check } from "lucide-react-native";
+import { Redirect } from "expo-router";
 
 import { TopBar } from "@/components/TopBar";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { GhostButton } from "@/components/GhostButton";
+import { useAuthStore } from "@/lib/auth-store";
 import { useT } from "@/lib/i18n";
 import { useUIStore } from "@/lib/ui-store";
 import { reportError } from "@/lib/report-error";
@@ -47,6 +49,16 @@ export default function PaywallScreen() {
   const colors = useColors();
   const { t } = useT();
   const plan = usePlan();
+  // Il paywall e' nello stack ROOT, quindi FUORI dal gate di (app): senza
+  // questa guardia `memika://paywall` (schema in app.json) apre le schede in
+  // una sessione senza login. La' `usePlan()` direbbe "free" e in una build
+  // con le chiavi RevenueCat i bottoni sarebbero VIVI — l'SDK non ha bisogno
+  // della sessione Supabase — cosi' l'acquisto finirebbe sull'app-user-id
+  // anonimo, `refreshPlan()` non avrebbe nessuno da sincronizzare e il toast
+  // direbbe comunque "Ora sei Pro". Stessa coppia di app/add.tsx:188-189 e
+  // app/memory/[id].tsx:202-203.
+  const user = useAuthStore((s) => s.user);
+  const hydrated = useAuthStore((s) => s.hydrated);
   const showToast = useUIStore((s) => s.showToast);
   const [packages, setPackages] = useState<PlanPackage[] | null>(null);
   const [busy, setBusy] = useState(false);
@@ -149,6 +161,11 @@ export default function PaywallScreen() {
         : packages.length === 0
           ? t("paywall.noPrices")
           : null;
+
+  // Dopo gli hook: il ramo condizionale non deve mai cambiare l'ordine di
+  // useEffect/useState sopra.
+  if (!hydrated) return null;
+  if (!user) return <Redirect href="/(auth)/login" />;
 
   return (
     <SafeAreaView className="flex-1 bg-warm-white" edges={["top"]}>
