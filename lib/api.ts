@@ -46,6 +46,7 @@ import { getAllFolderSeeds, getFolderSeed, type FolderSeed } from "./folder-data
 import { nextFolderPriority, type NewFolderInput } from "./folder-templates";
 import { LEGACY_KIND_TO_TEMPLATE, legacyKindFor } from "./folder-taxonomy";
 import { isoFromRelativeLabel } from "./format";
+import type { Plan } from "./plan";
 import { DEMO_DUE_COUNTS, PHASES_BY_LAYER, type LayerCounts } from "./queue";
 import { groupByLocalDay } from "./upcoming";
 import type { LayerKey } from "@/theme/tokens";
@@ -148,6 +149,23 @@ export async function cancelAccountDeletion(): Promise<void> {
   if (isDemoMode) return;
   const { error } = await supabase.rpc("cancel_account_deletion");
   if (error) throw error;
+}
+
+/**
+ * Chiede al server di rileggere l'abbonamento da RevenueCat e di riscrivere
+ * profiles.plan. Il client non puo' scriverlo (le colonne non sono nella
+ * grant) e non deve: l'entitlement dell'SDK e' una lettura locale, la
+ * edge function lo verifica con l'API REST prima di fidarsi.
+ * Demo: premium, senza rete.
+ */
+export async function syncPlan(): Promise<{ plan: Plan; planUntil: string | null }> {
+  if (isDemoMode) return { plan: "premium", planUntil: null };
+  const { data, error } = await supabase.functions.invoke<{
+    plan: Plan;
+    planUntil: string | null;
+  }>("revenuecat-sync", { method: "POST", body: {} });
+  if (error) throw error;
+  return { plan: data?.plan ?? "free", planUntil: data?.planUntil ?? null };
 }
 
 /**
@@ -491,6 +509,27 @@ export async function countMemoriesInFolder(folderId: string): Promise<number> {
     .select("id", { count: "exact", head: true })
     .eq("folder_id", folderId)
     .is("deleted_at", null);
+  if (error) throw error;
+  return count ?? 0;
+}
+
+/**
+ * Quanti ricordi possiede l'utente, in tutto — CESTINO COMPRESO. E' lo
+ * specchio esatto del trigger memories_enforce_plan_limit: stesso predicato
+ * (solo user_id), nessun filtro su deleted_at e nessuno sulle cartelle in
+ * pausa. La pausa e' carico, non proprieta'; il cestino occupa lo slot
+ * finche' la purga a 24 ore non se lo porta via, altrimenti il ripristino
+ * (che e' una UPDATE) aggirerebbe il tetto.
+ * NON riusare countFolders / countMemoriesInFolder: quelli contano le sole
+ * righe vive, predicato diverso.
+ * Demo: zero, tanto la demo e' premium.
+ */
+export async function countMemories(userId: string): Promise<number> {
+  if (isDemoMode) return 0;
+  const { count, error } = await supabase
+    .from("memories")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", userId);
   if (error) throw error;
   return count ?? 0;
 }
