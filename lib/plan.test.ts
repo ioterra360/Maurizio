@@ -1,3 +1,7 @@
+import { readFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+
 import { describe, expect, it } from "vitest";
 
 import {
@@ -270,11 +274,121 @@ describe("planForProductId", () => {
   });
 });
 
+// ---------------------------------------------------------------------------
+// Il gemello Deno (supabase/functions/revenuecat-sync/index.ts)
+// ---------------------------------------------------------------------------
+
+/**
+ * Toglie commenti di riga e di blocco senza farsi ingannare dalle stringhe:
+ * nel gemello c'e' "https://api.revenuecat.com/v1/subscribers/", che una
+ * regex ingenua taglierebbe a meta'. Serve a due cose: confrontare il CODICE
+ * dei due file ignorando la prosa, e impedire che un commento soddisfi da
+ * solo un'asserzione sull'aritmetica.
+ */
+function stripComments(src: string): string {
+  let out = "";
+  let quote: string | null = null;
+  let i = 0;
+  while (i < src.length) {
+    const c = src[i];
+    const next = src[i + 1] ?? "";
+    if (quote !== null) {
+      if (c === "\\") {
+        out += c + next;
+        i += 2;
+        continue;
+      }
+      if (c === quote) quote = null;
+      out += c;
+      i += 1;
+      continue;
+    }
+    if (c === '"' || c === "'" || c === "`") {
+      quote = c;
+      out += c;
+      i += 1;
+      continue;
+    }
+    if (c === "/" && next === "/") {
+      while (i < src.length && src[i] !== "\n") i += 1;
+      continue;
+    }
+    if (c === "/" && next === "*") {
+      i += 2;
+      while (i < src.length && !(src[i] === "*" && src[i + 1] === "/")) i += 1;
+      i += 2;
+      continue;
+    }
+    out += c;
+    i += 1;
+  }
+  return out;
+}
+
+/**
+ * Il testo di `function <nome>(…) { … }`, dalla firma alla graffa di chiusura
+ * in colonna 0 — entrambi i file dichiarano queste tre funzioni al livello
+ * superiore. Il pareggio delle graffe verifica che il taglio abbia preso il
+ * corpo intero e non si sia fermato prima; l'assenza del nome e' un errore,
+ * non un confronto fra due stringhe vuote.
+ */
+function fnSource(src: string, name: string): string {
+  const start = src.indexOf(`function ${name}(`);
+  if (start < 0) throw new Error(`funzione ${name} non trovata`);
+  const end = src.indexOf("\n}", start);
+  if (end < 0) throw new Error(`corpo di ${name} mai chiuso`);
+  const body = src.slice(start, end + 2);
+  if (body.split("{").length !== body.split("}").length) {
+    throw new Error(`corpo di ${name} sbilanciato`);
+  }
+  return body;
+}
+
+/** Forma confrontabile fra i due file: niente commenti, accenti, spaziatura. */
+function twinShape(src: string, name: string): string {
+  return fnSource(stripComments(src), name)
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 describe("il gemello Deno della derivazione RevenueCat", () => {
-  it("dichiara di essere un gemello e ordina premium prima di pro", async () => {
-    const { readFileSync } = await import("node:fs");
-    const src = readFileSync("supabase/functions/revenuecat-sync/index.ts", "utf8");
-    expect(src).toContain("gemello di lib/plan.ts planFromRcEntitlements");
-    expect(src.indexOf("ENTITLEMENT_PREMIUM]")).toBeLessThan(src.indexOf("ENTITLEMENT_PRO]"));
+  // Path ancorati al file di test, non alla cwd: la guardia deve mordere
+  // anche se vitest parte da un'altra radice, non sparire in silenzio.
+  const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+  const twin = readFileSync(resolve(root, "supabase/functions/revenuecat-sync/index.ts"), "utf8");
+  const mine = readFileSync(resolve(root, "lib/plan.ts"), "utf8");
+  const twinCode = stripComments(twin);
+
+  // Un marcatore nei commenti e l'ordine premium/pro si possono lasciare
+  // intatti riscrivendo l'aritmetica sotto: qui si confronta il CORPO delle
+  // tre funzioni, che e' la cosa che deve restare identica.
+  it.each(["rcDeadline", "rcActive", "planFromRcEntitlements"])(
+    "%s e' la stessa funzione di lib/plan.ts",
+    (name) => {
+      expect(twinShape(twin, name)).toBe(twinShape(mine, name));
+    },
+  );
+
+  it("prende la PIU' TARDA fra scadenza e grazia, non la sola grazia", () => {
+    // La regressione da fermare e' `return grace ?? ent.expires_date;`: con
+    // una grazia vecchia accanto a una expires_date futura la funzione
+    // scriverebbe plan_until nel passato e current_plan() declasserebbe a
+    // free un abbonato che paga. Vincolata alla lettera, e sul codice senza
+    // commenti, cosi' non passa nemmeno se i due file regrediscono insieme.
+    expect(twinCode).toContain("return graceTs > expiresTs ? grace : ent.expires_date;");
+    expect(twinCode).not.toContain("grace ?? ent.expires_date");
+  });
+
+  it("si dichiara gemello e valuta premium prima di pro", () => {
+    expect(twin).toContain("gemello di lib/plan.ts planFromRcEntitlements");
+    const premium = twinCode.indexOf("ENTITLEMENT_PREMIUM]");
+    const pro = twinCode.indexOf("ENTITLEMENT_PRO]");
+    // indexOf torna -1 su un nome rinominato: senza queste due righe
+    // l'ordine passerebbe a vuoto, perche' -1 e' minore di qualunque indice.
+    expect(premium).toBeGreaterThanOrEqual(0);
+    expect(pro).toBeGreaterThanOrEqual(0);
+    expect(premium).toBeLessThan(pro);
   });
 });
