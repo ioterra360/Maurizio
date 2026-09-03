@@ -214,6 +214,37 @@ describe("planFromRcEntitlements — la risposta REST di RevenueCat", () => {
     expect(out).toEqual({ plan: "pro", planUntil: "2026-09-10T10:00:00Z" });
   });
 
+  it("una grazia gia' passata NON accorcia un abbonamento ancora valido", () => {
+    // RevenueCat puo' lasciare la grace_period_expires_date del retry
+    // andato a buon fine accanto a una expires_date futura: la grazia
+    // PROLUNGA l'accesso, non lo sostituisce. Prendere la grazia qui
+    // declasserebbe a free un abbonato che paga, e la Edge Function
+    // scriverebbe quel verdetto in profiles.plan.
+    const out = planFromRcEntitlements(
+      {
+        pro: {
+          expires_date: "2026-10-03T10:00:00Z",
+          grace_period_expires_date: "2026-08-20T10:00:00Z",
+        },
+      },
+      REQ,
+    );
+    expect(out).toEqual({ plan: "pro", planUntil: "2026-10-03T10:00:00Z" });
+  });
+
+  it("la grazia non accorcia l'accesso a vita (expires_date null)", () => {
+    const out = planFromRcEntitlements(
+      {
+        premium: {
+          expires_date: null,
+          grace_period_expires_date: "2026-08-20T10:00:00Z",
+        },
+      },
+      REQ,
+    );
+    expect(out).toEqual({ plan: "premium", planUntil: null });
+  });
+
   it("nessun entitlement = free senza scadenza", () => {
     expect(planFromRcEntitlements({}, REQ)).toEqual({ plan: "free", planUntil: null });
   });

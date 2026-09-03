@@ -150,11 +150,26 @@ export type RcEntitlement = {
 };
 
 /**
- * La scadenza dell'ACCESSO: la grazia, se c'è, altrimenti la scadenza
- * normale. null = non scade.
+ * La scadenza dell'ACCESSO: la PIÙ TARDA fra la scadenza normale e la
+ * finestra di grazia. null = non scade.
+ *
+ * La grazia PROLUNGA l'accesso, non lo sostituisce: se RevenueCat lascia
+ * una `grace_period_expires_date` vecchia accanto a una `expires_date`
+ * futura — succede quando un pagamento va a buon fine dopo un retry, prima
+ * che RC ripulisca il campo — prendere la grazia declasserebbe a free un
+ * abbonato che PAGA, e la Edge Function scriverebbe quel verdetto in
+ * `profiles.plan`. Quindi: massimo delle due, mai la sola grazia.
  */
 function rcDeadline(ent: RcEntitlement): string | null {
-  return ent.grace_period_expires_date ?? ent.expires_date ?? null;
+  // expires_date null = accesso a vita: nessuna grazia può accorciarlo.
+  if (ent.expires_date == null) return null;
+  const grace = ent.grace_period_expires_date;
+  if (!grace) return ent.expires_date;
+  const graceTs = Date.parse(grace);
+  if (Number.isNaN(graceTs)) return ent.expires_date;
+  const expiresTs = Date.parse(ent.expires_date);
+  if (Number.isNaN(expiresTs)) return grace;
+  return graceTs > expiresTs ? grace : ent.expires_date;
 }
 
 function rcActive(ent: RcEntitlement, at: number): boolean {
