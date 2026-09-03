@@ -18,7 +18,7 @@ What's working today (2026-08-25):
   env, and `lib/demo-mode.ts` guarantees a release build never falls into demo
 - Hosted Supabase Auth URL configuration (password reset deep link works)
 - Sentry code-side (init, error boundary, `reportError`) — org/DSN pending
-- Real icon / adaptive icon / splash; store icons in `docs/store-assets/`
+- Icon v2 ("il cervello è il quadrato") wired for build 3 (vc13 / iOS 3); splash still v1; store icons v2 in `docs/store-assets/`
 - In-app account deletion, legal links, consent line, honest copy
 
 What's not yet set up:
@@ -156,6 +156,15 @@ option 2 for any server-only values that get added later (none in Phase 1-3).
 > exported without them ships empty creds and every install fails fast on the
 > next launch (`release-missing-creds`). Run the Hermes pre-check first.
 
+> **Dalla build 3 (vc13 / iOS 3).** I due binari nascono dallo STESSO commit di
+> `main`, quindi un HEAD pulito produce esattamente i loro due fingerprint e
+> `eas update --channel production --message "…"` da `main` li raggiunge
+> entrambi. Prima di ogni publish: `npx expo-updates fingerprint:generate
+> --platform android` e `--platform ios` devono stampare gli hash registrati in
+> § "Build 3" qui sotto; se uno differisce, qualcuno ha toccato un input del
+> fingerprint dopo la build e quell'update NON arriverà a nessuno. La ricetta
+> checkout-dance di `TROUBLESHOOTING.md` vale SOLO per vc12 / iOS build 2.
+
 **Enabled 2026-08-26** (Angelo: testers must get fixes without new builds).
 `expo-updates` is installed, `app.json` has `updates.url` (u.expo.dev/<projectId>)
 and `runtimeVersion: { policy: "fingerprint" }`; `eas.json` maps profiles to
@@ -287,6 +296,10 @@ Angelo on his behalf) creates the Sentry account:
      --name SENTRY_AUTH_TOKEN --value <token> --visibility secret
    ```
 
+4. Since 2026-09-03 both store profiles carry `EXPO_PUBLIC_SENTRY_DSN: ""`
+   as a slot: paste the DSN there, do not add a new key. The full order of
+   operations is in § "Build 3" → "Sentry — checklist di Angelo".
+
 ### Builds WITHOUT a Sentry token fail — read this before the first EAS build
 
 The plugin's Xcode script (`scripts/sentry-xcode.sh`) and `sentry.gradle` run
@@ -331,26 +344,198 @@ only ship the `abort-controller` polyfill, which lacks it.
 
 ## Brand assets (icon, adaptive icon, splash, store icons)
 
-All launcher / splash artwork is derived from the navy brand tile in
-`assets/brand/icon.png` (475 px source, upscaled with Lanczos — acceptable for the
-unadvertised first release, re-export from a vector source before marketing).
+Launcher icons are the approved v2 (`assets/brand/icon-v2/`, vector source
+`brain-icon.source.mjs`, sharp — never in `package.json`). The splash still
+derives from the v1 navy tile in `assets/brand/icon.png`; the icon-v2 README
+does not cover it and no spec asks for it.
 
 | File | Size / mode | Used by |
 | --- | --- | --- |
-| `assets/icon.png` | 1024×1024 RGB, opaque, square corners | `expo.icon` (iOS app icon — Apple rejects alpha) |
-| `assets/adaptive-icon.png` | 1024×1024 opaque RGB, full-bleed navy (tile gradient extended to the edges), artwork inside the 672 px safe circle | `expo.android.adaptiveIcon.foregroundImage` on `#142450` (was `#F5F3EF`, which showed as a light ring around the tile) |
+| `assets/icon.png` | 1024×1024 RGBA (alpha all 255) = `assets/brand/icon-v2/icon.png`, byte for byte | `expo.icon`. Prebuild flattens it to RGB on white (`withIosIcons` → `removeTransparency`), so an opaque RGBA source is fine for Apple |
+| `assets/adaptive-icon.png` | 1024×1024 RGBA opaque, full-bleed pink brain = `assets/brand/icon-v2/adaptive-icon.png` | `expo.android.adaptiveIcon.foregroundImage` on `#F8D2C4` (v1 was navy on `#142450`) |
+| `assets/notification-icon.png` | 96×96 RGBA, WHITE on transparent (Android uses only the alpha), source `assets/brand/icon-v2/notification-icon.source.mjs` | `expo-notifications` plugin `icon`, tinted with `color` `#3B6BF5` — the DARK accent: the tint lands in a single `res/values/colors.xml` (no `values-night`), so it must read on a dark shade too |
 | `assets/splash-icon.png` | 1024×1024 RGBA | `expo-splash-screen` plugin, `imageWidth: 200` on `#F5F3EF` |
 | `assets/favicon.png` | 48×48 RGBA | `expo.web.favicon` |
-| `docs/store-assets/appstore-icon-1024.png` | 1024×1024 RGB, no alpha | App Store Connect listing icon (upload manually) |
-| `docs/store-assets/play-icon-512.png` | 512×512 RGB | Google Play Console "App icon" (upload manually) |
+| `docs/store-assets/appstore-icon-1024.png` | 1024×1024 RGB, no alpha — the v2 **flattened**, byte for byte = `assets/brand/icon-v2/appstore-icon-1024.png` (this file goes through no pipeline and ASC rejects alpha) | App Store Connect listing icon (upload manually) |
+| `docs/store-assets/play-icon-512.png` | 512×512 RGBA = `assets/brand/icon-v2/play-icon-512.png`, byte for byte (Play accepts alpha) | Google Play Console "App icon" (upload manually) |
 
 The splash is configured ONLY through the `expo-splash-screen` config plugin in
 `app.json` (SDK 54 reads the plugin, the legacy top-level `expo.splash` block was
 removed on purpose — do not add it back, it silently loses to the plugin). Sanity
 checks after touching any of these: `npx expo config --type introspect --json`
-must resolve without warnings and `npx expo-doctor` must stay at 18/18.
+must resolve with no NEW warning (`userInterfaceStyle: Install expo-system-ui in
+your project…` is emitted by the unversioned plugin for any non-empty value and
+has been there since before build 3 — harmless, `Appearance` follows the system
+anyway) and `npx expo-doctor` must stay at 18/18.
 
-## Release checklist (state as of 2026-08-29)
+## Build 3 (vc13 / iOS 3) — cosa porta e come esce
+
+Una sola build nativa per tutto il blocco (spec 2026-09-02, "Ordine di
+esecuzione"): ogni voce cambia il fingerprint e una build separata per ognuna
+avrebbe staccato quattro volte gli OTA dai binari in circolazione.
+
+| Voce | Piano | Dove |
+|---|---|---|
+| `userInterfaceStyle: "automatic"` (tema Default segue il telefono) | F1 | `app.json` |
+| plugin `expo-notifications` (icona bianca, tinta `#3B6BF5`, l'accent scuro: un solo `colors.xml`, deve leggersi anche sulla tendina scura) | F3 | `app.json`, `assets/notification-icon.png` |
+| plugin `expo-image-picker` (frasi italiane, microfono escluso, `RECORD_AUDIO` bloccato) | B5 | `app.json` |
+| `react-native-purchases` (autolink, `com.android.vending.BILLING`) + slot chiavi | B4 | `package.json`, `app.json`, `eas.json` |
+| icona v2 su sfondo `#F8D2C4` | — | `assets/`, `app.json` |
+| slot `EXPO_PUBLIC_SENTRY_DSN` (vuoto finché non c'è l'org) | — | `eas.json` |
+
+Numeri: `appVersionSource: "remote"` + `autoIncrement` → EAS assegna da sé
+**versionCode 13** e **buildNumber 3** (contatori letti il 2026-09-03: 12 e 2).
+Una build fallita consuma il numero: l'etichetta va scritta DOPO, da
+`eas build:list`.
+
+### Prima di lanciare (tutte umane, in quest'ordine)
+
+1. Gli OTA per i binari attuali sono già pubblicati da `main` con la ricetta
+   di `TROUBLESHOOTING.md` (una gamba per piattaforma) e **vc12 è su Play
+   internal testing** — dopo la build 3 quei runtime non ricevono più nulla.
+2. F3, B4 e B5 sono mergiati su `build-3`; il Task 5 del piano
+   `2026-09-03-build3-config-nativa.md` (attivazione) è committato.
+3. Sentry: o Angelo ha creato l'org e i valori sono in `app.json` (slug) e
+   `eas.json` (DSN, `SENTRY_DISABLE_AUTO_UPLOAD` tolto da preview/production,
+   token via `eas env:create`), oppure gli slot restano vuoti e Sentry resta
+   spento in questa build (aggiungerlo dopo = ancora una build nativa).
+4. RevenueCat: stesso bivio per `EXPO_PUBLIC_REVENUECAT_*_KEY`. Vuote = l'app è
+   Free per tutti e non chiama mai l'SDK.
+5. Nel worktree: `npm prune --legacy-peer-deps`, `npx expo-doctor`,
+   introspezione + `node scripts/native-config/check-introspect.cjs`,
+   `npm run lint`, `npm test`, pre-check Hermes, `git status` pulito.
+6. Le migrazioni di B4 (`20260903100000_plans.sql`) e B5
+   (`20260903110000_memory_photos.sql`) sono in `supabase/migrations/` del
+   branch, in quest'ordine, e quella di B4 contiene il seed `plan = 'premium'`
+   dei due tester PRIMA dei `create trigger`. Verifica:
+   `grep -n "premium\|create trigger" supabase/migrations/20260903100000_plans.sql`
+   deve mostrare l'`update public.profiles` **sopra** la prima riga
+   `create trigger`. (Il seed sta lì e non in una query a mano prima del push
+   perché la colonna `plan` nasce nella stessa migrazione: eseguirlo prima
+   fallirebbe con `42703`, eseguirlo dopo lascerebbe Maurizio — vc11, senza
+   paywall — bloccato a 10 ricordi nella finestra intermedia.)
+7. La **edge function di verifica RevenueCat** di B4 esiste sul branch
+   (`ls supabase/functions` deve elencare `revenuecat-sync`; oggi quella
+   cartella non esiste affatto: il repo ha solo `config.toml`, `migrations/`,
+   `templates/`) e Angelo ha sottomano la chiave segreta `sk_` di RevenueCat
+   da darle, più il valore di `REVENUECAT_WEBHOOK_SECRET`. La spec la rende
+   obbligatoria:
+   «il client legge l'entitlement e chiama una edge function che verifica con
+   l'API REST di RevenueCat prima di scrivere `profiles.plan`». Se B4 ha
+   spedito il paywall senza function, **fermarsi**: vc13 uscirebbe con un
+   client che chiama un endpoint inesistente e ogni acquisto fallirebbe a
+   scrivere il piano, in silenzio.
+
+### Sequenza
+
+```bash
+# 1. Merge su main e build dall'albero collegato (credenziali iOS + link Supabase)
+cd "C:/Users/Angelo/Desktop/Tailor App Studio/Memika/memika-app"
+git status --short                      # deve essere vuoto
+git merge build-3                       # o --ff-only se main non è avanzato
+npm ci                                  # .npmrc porta legacy-peer-deps
+npx expo-updates fingerprint:generate --platform android
+npx expo-updates fingerprint:generate --platform ios
+#    → gli stessi due hash calcolati nel worktree al punto 5 (stesso albero)
+
+# 2. Build (Angelo lancia; ~20-40 min in coda gratuita)
+eas build --profile production --platform all --non-interactive --no-wait
+eas build:list --limit 2 --json         # appBuildVersion 13 / 3, status FINISHED
+eas build:view <id-android> --json      # runtimeVersion = hash android di sopra
+eas build:view <id-ios> --json          # runtimeVersion = hash ios di sopra
+
+# 3. Migrazioni in produzione — DOPO che le build sono FINISHED, PRIMA del submit
+npx supabase db push --dry-run          # elenca SOLO le migrazioni B4/B5
+npx supabase db push
+npx supabase db query --linked "select u.email, p.plan, p.plan_until from public.profiles p join auth.users u on u.id = p.id order by u.created_at"
+#    → Angelo e Maurizio a 'premium'. Se NON lo sono, subito:
+#    npx supabase db query --linked "update public.profiles set plan = 'premium' where id in (select id from auth.users where email in ('<email Angelo dalla select>', '<email Maurizio dalla select>'))"
+
+# 3b. Edge function di B4 — revenuecat-sync (verifica l'entitlement con l'API
+#     REST di RevenueCat prima di scrivere profiles.plan). Senza questo, ogni
+#     acquisto della vc13 chiama un endpoint che non esiste e il piano non
+#     viene mai scritto.
+ls supabase/functions                   # deve elencare revenuecat-sync
+npx supabase secrets set \
+  REVENUECAT_SECRET_KEY=<la chiave sk_ dalla dashboard RevenueCat> \
+  REVENUECAT_WEBHOOK_SECRET=<stringa lunga a caso, la stessa dell'header nel cruscotto RevenueCat> \
+  --project-ref taekvxxljtgzsjrlmumo
+#    MAI EXPO_PUBLIC_: sono segreti, stanno solo qui. Il webhook secret va
+#    incollato IDENTICO in RevenueCat → Integrations → Webhooks (header
+#    Authorization, inviato verbatim, senza "Bearer").
+npx supabase functions deploy revenuecat-sync --project-ref taekvxxljtgzsjrlmumo
+npx supabase functions list --project-ref taekvxxljtgzsjrlmumo   # revenuecat-sync risulta ACTIVE
+
+# 4. Store
+eas submit -p ios --latest --non-interactive        # chiave ASC in eas.json → TestFlight "Memika interni"
+node scripts/ios-credentials/asc-ops.mjs status     # processing → VALID
+eas build:list --platform android --limit 1 --json  # artifacts.applicationArchiveUrl
+#    scarica l'AAB in Memika/builds/memika-android-vc13-<data>.aab e caricalo a
+#    mano in Play Console → Test interno (eas submit -p android non ha la
+#    Google Service Account Key). Nella scheda Play carica anche
+#    docs/store-assets/play-icon-512.png (icona v2).
+
+# 5. Registra i runtime e chiudi
+#    → tabella "Runtime della build 3" qui sotto + nota in TROUBLESHOOTING.md,
+#      commit "docs(deploy): runtime della build 3 registrati", push.
+```
+
+Perché le migrazioni vanno fra build e submit: il codice B4 della build 3
+legge `profiles.plan`, quindi le colonne devono esistere prima che un tester
+installi vc13; e il trigger dei 10 ricordi non deve toccare Maurizio (vc11,
+senza paywall) — per questo i tester sono `premium` dentro la migration
+stessa, non dopo.
+
+### Runtime della build 3
+
+Da compilare al punto 5 con `eas build:view <id> --json` → `runtimeVersion`.
+
+| Binario | EAS build id | Runtime (fingerprint) |
+|---|---|---|
+| Android vc13 | | |
+| iOS build 3 | | |
+
+Da qui in poi gli OTA partono da un HEAD pulito di `main` il cui
+`fingerprint:generate` coincide con questi due valori (vedi § OTA updates).
+
+### Sentry — checklist di Angelo (valori che il repo non può inventare)
+
+1. Creare l'org su Sentry in regione **EU** (Frankfurt, `de.sentry.io`) e il
+   progetto React Native `memika-app`.
+2. Copiare slug org e progetto in `app.json` → plugin `@sentry/react-native/expo`
+   (`organization`, `project`); se l'org è in regione US, **eliminare** la
+   chiave `url`.
+3. Incollare il DSN in `eas.json` → `build.preview.env.EXPO_PUBLIC_SENTRY_DSN` e
+   `build.production.env.EXPO_PUBLIC_SENTRY_DSN`, e in `.env` locale (per le
+   OTA, che leggono `.env`).
+4. Creare un auth token (scopes `project:releases`, `org:read`) e salvarlo
+   fuori da git:
+   `eas env:create --scope project --environment production --name SENTRY_AUTH_TOKEN --value <token> --visibility secret`
+   e lo stesso con `--environment preview`.
+5. Solo ORA togliere `SENTRY_DISABLE_AUTO_UPLOAD` da `preview` e `production`
+   (`development` lo tiene per sempre). Il test `lib/native-config.test.ts`
+   accetta la rimozione solo se il DSN non è vuoto.
+6. Tutto questo PRIMA di `eas build`: `app.json` ed `eas.json` sono input del
+   fingerprint, farlo dopo staccherebbe vc13 / iOS 3 dagli OTA.
+7. Dopo la build: nel log cercare `sentry-cli - Uploaded … source maps` (iOS)
+   / `:app:sentryUpload` (Android); in una build preview lanciare un errore di
+   prova e vederlo su Sentry con lo stack simbolizzato.
+
+### RevenueCat — checklist di Angelo
+
+1. Progetto RevenueCat sotto memikaapp@gmail.com, un'app per piattaforma
+   (bundle `studio.tailor.memika`), entitlement `pro` e `premium` (spec B4).
+2. Chiavi pubbliche `appl_…` / `goog_…` in `eas.json` →
+   `EXPO_PUBLIC_REVENUECAT_IOS_KEY` / `EXPO_PUBLIC_REVENUECAT_ANDROID_KEY`
+   (preview e production) e in `.env` locale. La chiave segreta `sk_` SOLO
+   nell'env della edge function di B4 (`npx supabase secrets set
+   REVENUECAT_SECRET_KEY=…`, punto 3b della Sequenza), mai `EXPO_PUBLIC_`:
+   una chiave `EXPO_PUBLIC_` finisce dentro il bundle JS spedito.
+3. Prerequisiti store: Paid Apps Agreement + In-App Purchase Key (.p8) su App
+   Store Connect; prodotti su Play (richiede vc13 su un track). Senza, le
+   offerte arrivano vuote — non è un bug del client.
+
+## Release checklist (state as of 2026-09-03, build 3)
 
 **2026-08-29 (Apple day):** enrollment approved (Team ID DT6SV2JMV3). App ID
 `studio.tailor.memika` registered; ASC app record created (Apple ID
@@ -366,6 +551,11 @@ copyright, manual release, 6.5" screenshots. en-US app name is
 App Review contact phone + demo password, App Privacy questionnaire, price Free,
 submit for review after DSA verification.
 
+> **Storico: valeva per vc11/vc12 / iOS build 2.** Dalla build 3 (vc13 / iOS 3)
+> i due binari nascono dallo stesso commit e `eas update --channel production`
+> (senza `--platform`) li raggiunge entrambi — vedi § "Build 3" e § "OTA
+> updates". Quanto segue resta come storia del 2026-08/09.
+>
 > ⚠️ **NON usare `eas update --channel production --platform all`.** Questa
 > riga diceva di farlo ed era SBAGLIATA: i runtime di vc12 e iOS build 2
 > hanno fingerprint diversi che richiedono due stati dell'albero mutuamente
@@ -386,7 +576,8 @@ Android build into testers' hands first.
 - [x] EAS project `@ioterra/memika`, remote versioning, Supabase env in the
       `preview` / `production` profiles; release builds cannot run demo mode
 - [x] Hermes release-bundle blocker fixed (supabase-js 2.106.2, `d014aff`)
-- [x] Icon / adaptive icon / splash real; store icons in `docs/store-assets/`
+- [x] Icon v2 (build 3) + adaptive icon on `#F8D2C4`; splash still v1; store
+      icons in `docs/store-assets/`
 - [x] Legal pages drafted (`docs/legal/`), URLs in `lib/constants.ts`, consent
       on signup, links + support mail in Settings
 - [x] In-app account deletion (`delete_own_account()` RPC → Settings)
@@ -396,11 +587,13 @@ Android build into testers' hands first.
 - [x] `npx expo-doctor` 18/18, `npx expo config --type introspect` clean
 
 **Builds**
-- [ ] Add `SENTRY_DISABLE_AUTO_UPLOAD=true` to every `eas.json` profile env
-      (remove from `preview`/`production` once `SENTRY_AUTH_TOKEN` exists)
+- [x] `SENTRY_DISABLE_AUTO_UPLOAD=true` in every `eas.json` profile env since
+      2026-08-25; DSN slots added 2026-09-03 (remove the flag from
+      `preview`/`production` only with a real DSN + `SENTRY_AUTH_TOKEN`)
 - [ ] Run the Hermes check (`docs/TROUBLESHOOTING.md`) after any dep change
-- [ ] `eas build --profile production --platform android` succeeds (the
-      re-run after `d014aff`); `eas submit -p android` to the Internal track
+- [ ] Android: production build OK; vc12 uploaded BY HAND to Play internal
+      (2026-09), vc13 the same way — `eas submit -p android` stays unusable
+      until the Google Service Account Key exists
 - [ ] First `eas build --profile production --platform ios` with Maurizio's
       Apple ID (Individual account: only the Account Holder can create the
       distribution certificate) — or an App Store Connect API key he generates

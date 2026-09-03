@@ -325,6 +325,13 @@ If you've spent more than 30 minutes on a single error message:
 
 ## OTA e runtime: i binari spediti NON hanno il fingerprint di HEAD (2026-08-31)
 
+> **Vale SOLO finché in circolazione ci sono vc12 e iOS build 2.** Dalla
+> build 3 (vc13 / iOS 3) i due binari nascono dallo stesso commit e gli OTA
+> si pubblicano da un HEAD pulito di `main` — regola e hash in
+> `docs/DEPLOY.md` § "Build 3" e § "OTA updates". Questa ricetta resta come
+> storia e come esempio di cosa succede quando `.gitignore` o `eas.json`
+> cambiano dopo una build.
+
 `.gitignore` ed `eas.json` sono input del fingerprint. Dopo la build vc12 /
 iOS build 2 sono cambiati (credenziali locali iOS), quindi il fingerprint di
 HEAD non corrisponde più ai runtime dei binari in circolazione:
