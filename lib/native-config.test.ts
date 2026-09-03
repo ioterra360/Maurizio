@@ -224,3 +224,49 @@ describe("app.json — build 3", () => {
     expect(sameBytes("docs/store-assets/play-icon-512.png", "assets/brand/icon-v2/play-icon-512.png")).toBe(true);
   });
 });
+
+type EasProfile = { env?: Record<string, string>; ios?: { credentialsSource?: string } };
+type EasJson = { cli: { appVersionSource: string }; build: Record<string, EasProfile> };
+
+const easJson = JSON.parse(readFileSync(path.join(ROOT, "eas.json"), "utf8")) as EasJson;
+const STORE_PROFILES = ["preview", "production"] as const;
+
+describe("eas.json — profili di build", () => {
+  it("i numeri di versione vivono su EAS, non in app.json", () => {
+    expect(easJson.cli.appVersionSource).toBe("remote");
+  });
+
+  it.each(STORE_PROFILES)("%s porta Supabase e gli slot di Sentry e RevenueCat", (profile) => {
+    const env = easJson.build[profile].env ?? {};
+    for (const key of [
+      "EXPO_PUBLIC_SUPABASE_URL",
+      "EXPO_PUBLIC_SUPABASE_ANON_KEY",
+      "EXPO_PUBLIC_SENTRY_DSN",
+      "EXPO_PUBLIC_REVENUECAT_IOS_KEY",
+      "EXPO_PUBLIC_REVENUECAT_ANDROID_KEY",
+    ]) {
+      expect(Object.keys(env), `${profile}.env.${key}`).toContain(key);
+    }
+  });
+
+  it.each(STORE_PROFILES)("%s: finché il DSN è vuoto l'upload delle sourcemap resta spento", (profile) => {
+    // Senza SENTRY_AUTH_TOKEN il passo sentry-cli fa FALLIRE la build
+    // (docs/DEPLOY.md § "Builds WITHOUT a Sentry token fail"). Il token nasce
+    // insieme al DSN: DSN vuoto significa che non c'è nemmeno il token.
+    const env = easJson.build[profile].env ?? {};
+    if ((env.EXPO_PUBLIC_SENTRY_DSN ?? "") === "") {
+      expect(env.SENTRY_DISABLE_AUTO_UPLOAD).toBe("true");
+    }
+  });
+
+  it("development tiene l'upload spento per sempre ed è l'unico profilo demo", () => {
+    expect(easJson.build.development.env?.SENTRY_DISABLE_AUTO_UPLOAD).toBe("true");
+    // AGENTS.md §3: mai EXPO_PUBLIC_DEMO_MODE in un profilo store.
+    expect(easJson.build.preview.env?.EXPO_PUBLIC_DEMO_MODE).toBeUndefined();
+    expect(easJson.build.production.env?.EXPO_PUBLIC_DEMO_MODE).toBeUndefined();
+  });
+
+  it("iOS firma con le credenziali locali", () => {
+    expect(easJson.build.production.ios?.credentialsSource).toBe("local");
+  });
+});
