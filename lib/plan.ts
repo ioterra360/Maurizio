@@ -25,7 +25,19 @@ export type PlanLimits = {
    * (lib/api.ts:468-471, "eliminare e reinserire non deve liberare quota").
    */
   memories: number | null;
-  /** Cartelle dell'account, cestino compreso. null = illimitate. */
+  /**
+   * Cartelle VIVE dell'account, cestino ESCLUSO. null = illimitate.
+   *
+   * Regola opposta a quella dei ricordi, di proposito: il tetto free vale 1
+   * e l'app non ha alcuna "elimina definitivamente", quindi contare anche il
+   * cestino lascerebbe chi cestina la sua unica cartella con zero cartelle e
+   * senza poterne creare una fino alla purga (24 ore). Lato server contano le
+   * sole righe vive (`folders_enforce_plan_limit`) e il buco del ciclo
+   * "cestina → crea → ripristina" si chiude sul ripristino
+   * (`folders_enforce_plan_limit_on_restore`, stesso P0005).
+   * `countFolders()` (lib/api.ts) filtra già `deleted_at is null`: il numero
+   * che il client passa qui è lo stesso che il trigger conta.
+   */
   folders: number | null;
   /** Sezioni (sottocartelle) per cartella. null = illimitate. */
   sections: number | null;
@@ -76,7 +88,7 @@ export function canAddMemory(count: number, plan: Plan): boolean {
   return under(count, PLAN_LIMITS[plan].memories);
 }
 
-/** `count` = cartelle dell'utente, cestino compreso. */
+/** `count` = cartelle VIVE dell'utente (cestino escluso, come countFolders). */
 export function canAddFolder(count: number, plan: Plan): boolean {
   return under(count, PLAN_LIMITS[plan].folders);
 }

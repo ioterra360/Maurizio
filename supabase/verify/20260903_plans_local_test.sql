@@ -172,4 +172,63 @@ begin
   end if;
 end $$;
 
+-- 6) Cartelle nel cestino: NON bloccano la creazione, ma non si ripristinano
+-- oltre il tetto. E' il caso del nuovo utente che sbaglia argomento — sceglie
+-- Spagnolo, voleva Inglese — cestina l'unica cartella e ricomincia: senza
+-- questo comportamento resterebbe con zero cartelle e nessun modo di crearne
+-- una fino alla purga (fino a 24 ore, e l'app non ha "elimina
+-- definitivamente"). Il piano qui vale free: il blocco 5 ha appena fatto
+-- scadere il pro.
+update public.memories
+   set deleted_at = now()
+ where user_id = 'aaaaaaaa-0000-4000-8000-000000000001';
+update public.folders
+   set deleted_at = now()
+ where user_id = 'aaaaaaaa-0000-4000-8000-000000000001'
+   and name = 'Prima';
+
+do $$
+begin
+  insert into public.folders (user_id, kind, name, category, emoji)
+  values ('aaaaaaaa-0000-4000-8000-000000000001', 'custom', 'Terza', 'custom', '📁');
+  raise notice 'ok: con l''unica cartella nel cestino se ne puo'' creare un''altra';
+exception when sqlstate 'P0005' then
+  raise exception 'REGRESSIONE: creazione rifiutata (P0005) con zero cartelle vive';
+end $$;
+
+-- 6-bis) L'altro capo del tetto: il ripristino non puo' portare a due
+-- cartelle su un piano che ne concede una.
+do $$
+begin
+  update public.folders
+     set deleted_at = null
+   where user_id = 'aaaaaaaa-0000-4000-8000-000000000001'
+     and name = 'Prima';
+  raise exception 'ATTESO FALLIMENTO: il ripristino ha dato due cartelle su un piano da una';
+exception when sqlstate 'P0005' then
+  raise notice 'ok: ripristino oltre il tetto bloccato (P0005)';
+end $$;
+
+-- 6-ter) E il rimedio esiste ed e' nelle mani dell'utente: liberato lo slot,
+-- la cartella torna. Nessun dato prigioniero del cestino.
+update public.folders
+   set deleted_at = now()
+ where user_id = 'aaaaaaaa-0000-4000-8000-000000000001'
+   and name = 'Terza';
+
+update public.folders
+   set deleted_at = null
+ where user_id = 'aaaaaaaa-0000-4000-8000-000000000001'
+   and name = 'Prima';
+
+do $$
+begin
+  if (select count(*) from public.folders
+       where user_id = 'aaaaaaaa-0000-4000-8000-000000000001'
+         and deleted_at is null) <> 1 then
+    raise exception 'liberato lo slot, il ripristino doveva riuscire';
+  end if;
+  raise notice 'ok: liberato lo slot, la cartella si ripristina';
+end $$;
+
 rollback;

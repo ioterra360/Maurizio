@@ -13,9 +13,15 @@
 -- quello che vogliamo. L'unico scrittore e' la Edge Function
 -- revenuecat-sync, che gira con il service_role.
 --
--- GRANDFATHERING: i tre trigger sono BEFORE INSERT e non toccano le righe
+-- GRANDFATHERING: i tre tetti sono BEFORE INSERT e non toccano le righe
 -- esistenti. Chi ha 40 ricordi li tiene tutti e semplicemente non puo'
 -- aggiungerne. E' la semantica scelta nella spec (:679-681).
+--
+-- L'unica guardia su UPDATE e' folders_enforce_plan_limit_on_restore, che
+-- rifiuta il RIPRISTINO di una cartella dal cestino quando le vive sono gia'
+-- al tetto: e' il prezzo per non contare il cestino fra le cartelle, cioe'
+-- per non lasciare a bocca asciutta chi cestina la sua unica cartella e
+-- vuole ricominciare. Tutto spiegato nella sezione "Cartelle" piu' sotto.
 
 alter table public.profiles
   add column plan text not null default 'free'
@@ -97,19 +103,24 @@ comment on function public.current_plan(uuid) is
 -- (restoreFolder lib/api.ts:1042-1055, restoreMemory :1063-1095) e non passa
 -- da un trigger BEFORE INSERT. Contando solo le righe vive, il ciclo
 -- "cestina 5 → inserisci 5 → ripristina 5" e' ripetibile all'infinito e il
--- tetto smette di esistere; sulle cartelle basterebbe "cestina l'unica →
--- creane una nuova → ripristina la vecchia" per averne due, poi tre, poi
--- quante si vuole. L'alternativa (un trigger anche sulla transizione
--- deleted_at→NULL) impedirebbe a un utente grandfathered di ripristinare
--- cio' che ha cestinato: perdita di dati per difendere una quota.
+-- tetto smette di esistere.
 --
 -- Contando tutto, il totale puo' solo SCENDERE (purga a 24 ore): il
--- ripristino non puo' mai portare sopra il tetto, quindi non serve nessun
--- trigger su UPDATE e il grandfathering resta intatto. E' la stessa
--- semantica gia' scelta dal repo per il contatore giornaliero
+-- ripristino non puo' mai portare sopra il tetto, quindi qui non serve
+-- nessun trigger su UPDATE e il grandfathering resta intatto — chi ha 40
+-- ricordi puo' sempre ritirare fuori dal cestino cio' che ci ha messo. E' la
+-- stessa semantica gia' scelta dal repo per il contatore giornaliero
 -- (lib/api.ts:468-471: "eliminare e reinserire non deve liberare quota").
--- Costo accettato e dichiarato nella copy: una riga nel cestino occupa il
+-- Costo accettato e dichiarato nella copy: un ricordo nel cestino occupa il
 -- suo posto fino alla purga.
+--
+-- Le CARTELLE seguono la regola OPPOSTA (solo righe vive, piu' una guardia
+-- sul ripristino); il perche' sta per esteso nella loro sezione. In breve:
+-- li' il tetto vale 1 e non esiste alcuna "elimina definitivamente", quindi
+-- il conteggio totale lascerebbe un utente nuovo con zero cartelle e senza
+-- poterne creare una per 24 ore. Qui il tetto e' 10: chi cestina un ricordo
+-- ha ancora nove righe di margine, vede quella nel cestino e la ripristina
+-- quando vuole.
 --
 -- L'ordine delle istruzioni conta: si legge PRIMA il piano e si esce subito
 -- per chi non ha tetto, poi si prende il lock. Cosi' un abbonato Pro o
@@ -171,17 +182,50 @@ create trigger memories_enforce_plan_limit
 -- ---------------------------------------------------------------------------
 -- Tutte le righe di public.folders sono di primo livello: le sezioni vivono
 -- nella tabella separata public.subfolders (20260831010000_subfolders.sql)
--- e folders non ha alcuna colonna parent. Non serve nessun filtro.
+-- e folders non ha alcuna colonna parent. Nessun filtro di gerarchia.
 --
 -- Le cartelle in pausa CONTANO: `paused` e' una scelta di carico
 -- (20260724235528_add_folders_paused.sql), non di proprieta', ed e'
 -- scrivibile dall'utente — escluderle sarebbe un modo per aggirare il tetto.
 --
--- E contano anche le cartelle NEL CESTINO, per la stessa ragione del tetto
--- ricordi qui sopra: restoreFolder e' una UPDATE, e senza questo predicato
--- "cestina l'unica cartella → creane una nuova → ripristina la vecchia"
--- darebbe due cartelle su un piano da una, ripetibile all'infinito.
--- Stesso ordine: piano prima, lock dopo, conteggio per ultimo.
+-- Le cartelle NEL CESTINO invece NON contano (`deleted_at is null`), al
+-- contrario del tetto ricordi qui sopra. La differenza e' voluta, e nasce da
+-- un caso raggiungibile nei primi minuti di vita di un account con un tetto
+-- che vale UNO:
+--   1) l'utente sceglie "Spagnolo" a /choose-topic, si accorge di volere
+--      "Inglese" e cestina la cartella;
+--   2) Conoscenza mostra lo stato vuoto e invita a "crea cartella";
+--   3) contando anche il cestino, quell'INSERT verrebbe rifiutato con P0005
+--      "folders limit reached (1 on the free plan)".
+-- Gli si direbbe che ha esaurito il piano mentre l'app gli mostra ZERO
+-- cartelle, e non potrebbe crearne nessuna — quindi nemmeno un ricordo —
+-- fino alla purga: fino a 24 ore, perche' l'app non ha alcuna "elimina
+-- definitivamente" e il cestino si svuota solo col cron orario
+-- (20260830120000_trash_soft_delete.sql:43, app/trash.tsx mostra solo il
+-- conto alla rovescia). Un tetto non deve mai bloccare chi e' sotto il
+-- tetto. Il conteggio delle sole righe vive e' anche l'unico coerente con
+-- countFolders() (lib/api.ts), che filtra gia' `deleted_at is null`: client
+-- e server dicono lo stesso numero.
+--
+-- Il buco che il conteggio totale difendeva — "cestina l'unica cartella →
+-- creane una nuova → ripristina la vecchia" = due cartelle su un piano da
+-- una, ripetibile all'infinito — si chiude dall'altro capo, sul RIPRISTINO:
+-- folders_enforce_plan_limit_on_restore (qui sotto) rifiuta la transizione
+-- deleted_at → null quando le cartelle vive sono gia' al tetto. Le vive non
+-- superano mai il tetto e la creazione non e' mai bloccata a torto.
+--
+-- Costo accettato, ed e' il rovescio di quello di prima: un utente
+-- grandfathered (piu' cartelle del tetto perche' le aveva gia') che ne
+-- cestina una non puo' riprenderla finche' resta al tetto — deve prima
+-- cestinarne un'altra. Il rifiuto e' immediato, spiegato e rimediabile
+-- dall'utente, e la riga resta nel cestino le sue 24 ore; il blocco alla
+-- creazione, invece, non aveva alcun rimedio se non pagare o aspettare.
+-- Restano possibili molte righe nel cestino (cicla crea → cestina), ma sono
+-- cartelle vuote e a termine: il tetto ricordi, che il cestino lo conta,
+-- tiene comunque il contenuto a 10 righe.
+--
+-- Ordine delle istruzioni: piano prima, lock dopo, conteggio per ultimo —
+-- stesse ragioni del tetto ricordi.
 create or replace function public.enforce_folder_plan_limit()
 returns trigger
 language plpgsql
@@ -201,7 +245,8 @@ begin
   perform 1 from public.profiles where id = new.user_id for update;
   select count(*) into used
     from public.folders
-   where user_id = new.user_id;
+   where user_id = new.user_id
+     and deleted_at is null;
   if used >= cap then
     raise exception 'folders limit reached (% on the % plan)', cap, eff
       using errcode = 'P0005', hint = 'plan-limit:folders';
@@ -213,6 +258,61 @@ $$;
 create trigger folders_enforce_plan_limit
   before insert on public.folders
   for each row execute function public.enforce_folder_plan_limit();
+
+-- Il ripristino dal cestino e' l'altra meta' del tetto cartelle: e' una
+-- UPDATE (restoreFolder, lib/api.ts; restoreMemory ripristina anche la
+-- cartella madre) e senza guardia riporterebbe sopra il tetto una riga
+-- creata quando lo slot era libero.
+--
+-- Si contano le altre righe VIVE dell'utente: la riga in ripristino, in un
+-- BEFORE UPDATE, e' ancora nel cestino nella tabella, ma `id <> new.id` lo
+-- rende esplicito invece che implicito. Il tetto e' lo stesso dell'INSERT e
+-- l'errcode e' lo stesso (P0005): per il client e' "hai finito le cartelle
+-- del piano", che e' esattamente cio' che e'. Cambia solo il messaggio (che
+-- contiene comunque la parola "limit", per i binari vecchi che riconoscono
+-- il tetto con msg.includes("limit")) e lo hint, cosi' nei log di PostgREST
+-- i due rifiuti restano distinguibili.
+--
+-- WHEN sulla sola transizione cestino → vivo: nessun costo sulle UPDATE
+-- normali (rinomina, priorita', pausa, ingresso nel cestino). Il BEFORE
+-- UPDATE che gira prima in ordine alfabetico, folders_clamp_deleted_at,
+-- tocca new.deleted_at solo all'INGRESSO nel cestino, quindi non puo'
+-- alterare la condizione.
+create or replace function public.enforce_folder_restore_plan_limit()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  eff text;
+  cap int;
+  used int;
+begin
+  eff := coalesce(public.current_plan(new.user_id), 'free');
+  cap := case eff when 'free' then 1 when 'pro' then 5 else null end;
+  if cap is null then
+    return new;
+  end if;
+  perform 1 from public.profiles where id = new.user_id for update;
+  select count(*) into used
+    from public.folders
+   where user_id = new.user_id
+     and deleted_at is null
+     and id <> new.id;
+  if used >= cap then
+    raise exception 'folders limit reached (% on the % plan): free a live slot before restoring', cap, eff
+      using errcode = 'P0005', hint = 'plan-limit:folders-restore';
+  end if;
+  return new;
+end;
+$$;
+
+create trigger folders_enforce_plan_limit_on_restore
+  before update on public.folders
+  for each row
+  when (old.deleted_at is not null and new.deleted_at is null)
+  execute function public.enforce_folder_restore_plan_limit();
 
 -- ---------------------------------------------------------------------------
 -- Sezioni: 0 free / 3 pro / illimitate premium
