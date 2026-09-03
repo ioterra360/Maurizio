@@ -31,6 +31,7 @@ import {
 import { useAuthStore } from "@/lib/auth-store";
 import { useLocaleStore, useT } from "@/lib/i18n";
 import { useThemeStore, useColors } from "@/theme/theme-store";
+import { useNotificationPrefsStore } from "@/lib/notification-prefs-store";
 import { parseDevSignOutToken } from "@/lib/auth-links";
 import { SUPPORT_EMAIL } from "@/lib/constants";
 import { reportError } from "@/lib/report-error";
@@ -249,10 +250,12 @@ function RootLayout() {
         reportError("root/initial-url", err);
       }
       // Locale + tema per primi (pochi ms da AsyncStorage) così il primo
-      // frame è già nella lingua E nel tema scelti, poi auth.
+      // frame è già nella lingua E nel tema scelti, poi auth. Le prefs
+      // notifiche viaggiano insieme: servono prima del primo salvataggio.
       await Promise.all([
         useLocaleStore.getState().hydrate(),
         useThemeStore.getState().hydrate(),
+        useNotificationPrefsStore.getState().hydrate(),
       ]);
       hydrate();
     })();
