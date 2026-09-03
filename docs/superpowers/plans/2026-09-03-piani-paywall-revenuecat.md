@@ -50,7 +50,8 @@ Tre cose che *non* cambiano qui:
 | Errcode | Chi lo solleva | Significato |
 |---|---|---|
 | `P0004` | `memories_enforce_plan_limit` | 10 ricordi raggiunti sul piano free (**cestino compreso**) |
-| `P0005` | `folders_enforce_plan_limit` | tetto cartelle raggiunto (1 free, 5 pro) — cestino compreso |
+| `P0005` | `folders_enforce_plan_limit` | tetto cartelle raggiunto (1 free, 5 pro) — solo le cartelle **vive**, cestino ESCLUSO |
+| `P0005` | `folders_enforce_plan_limit_on_restore` | ripristino dal cestino con le cartelle vive già al tetto (stesso codice, hint diverso) |
 | `P0003` | `subfolders_enforce_rules` | tetto sezioni raggiunto (0 free, 3 pro) — **codice già in uso** dal 2026-08-31, non cambia |
 | `P0001` | guardie di integrità esistenti | cartella nel cestino, proprietario diverso, ecc. — **non** un limite di piano |
 
@@ -390,7 +391,19 @@ export type PlanLimits = {
    * (lib/api.ts:468-471, "eliminare e reinserire non deve liberare quota").
    */
   memories: number | null;
-  /** Cartelle dell'account, cestino compreso. null = illimitate. */
+  /**
+   * Cartelle VIVE dell'account, cestino ESCLUSO. null = illimitate.
+   *
+   * Regola opposta a quella dei ricordi, di proposito: il tetto free vale 1
+   * e l'app non ha alcuna "elimina definitivamente", quindi contare anche il
+   * cestino lascerebbe chi cestina la sua unica cartella con zero cartelle e
+   * senza poterne creare una fino alla purga (24 ore). Lato server contano le
+   * sole righe vive (`folders_enforce_plan_limit`) e il buco del ciclo
+   * "cestina → crea → ripristina" si chiude sul ripristino
+   * (`folders_enforce_plan_limit_on_restore`, stesso P0005).
+   * `countFolders()` (lib/api.ts) filtra già `deleted_at is null`: il numero
+   * che il client passa qui è lo stesso che il trigger conta.
+   */
   folders: number | null;
   /** Sezioni (sottocartelle) per cartella. null = illimitate. */
   sections: number | null;
@@ -441,7 +454,7 @@ export function canAddMemory(count: number, plan: Plan): boolean {
   return under(count, PLAN_LIMITS[plan].memories);
 }
 
-/** `count` = cartelle dell'utente, cestino compreso. */
+/** `count` = cartelle VIVE dell'utente (cestino escluso, come countFolders). */
 export function canAddFolder(count: number, plan: Plan): boolean {
   return under(count, PLAN_LIMITS[plan].folders);
 }
@@ -515,11 +528,26 @@ export type RcEntitlement = {
 };
 
 /**
- * La scadenza dell'ACCESSO: la grazia, se c'è, altrimenti la scadenza
- * normale. null = non scade.
+ * La scadenza dell'ACCESSO: la PIÙ TARDA fra la scadenza normale e la
+ * finestra di grazia. null = non scade.
+ *
+ * La grazia PROLUNGA l'accesso, non lo sostituisce: se RevenueCat lascia
+ * una `grace_period_expires_date` vecchia accanto a una `expires_date`
+ * futura — succede quando un pagamento va a buon fine dopo un retry, prima
+ * che RC ripulisca il campo — prendere la grazia declasserebbe a free un
+ * abbonato che PAGA, e la Edge Function scriverebbe quel verdetto in
+ * `profiles.plan`. Quindi: massimo delle due, mai la sola grazia.
  */
 function rcDeadline(ent: RcEntitlement): string | null {
-  return ent.grace_period_expires_date ?? ent.expires_date ?? null;
+  // expires_date null = accesso a vita: nessuna grazia può accorciarlo.
+  if (ent.expires_date == null) return null;
+  const grace = ent.grace_period_expires_date;
+  if (!grace) return ent.expires_date;
+  const graceTs = Date.parse(grace);
+  if (Number.isNaN(graceTs)) return ent.expires_date;
+  const expiresTs = Date.parse(ent.expires_date);
+  if (Number.isNaN(expiresTs)) return grace;
+  return graceTs > expiresTs ? grace : ent.expires_date;
 }
 
 function rcActive(ent: RcEntitlement, at: number): boolean {
@@ -626,7 +654,7 @@ MSG
   - su `public.profiles`: `plan text not null default 'free' check (plan in ('free','pro','premium'))`, `plan_until timestamptz`, `rc_app_user_id text` — **fuori** dalla grant di UPDATE;
   - il seed `plan = 'premium'` dei due tester (`angelo.casula@gmail.com`, `memikaapp@gmail.com`) **dentro la migrazione e sopra i `create trigger`** — è il punto 6 della lista "Prima di lanciare" di `docs/superpowers/plans/2026-09-03-build3-config-nativa.md`, che lo verifica con un `grep`;
   - `public.current_plan(uid uuid) returns text`, `security definer`, execute revocato a `anon`/`authenticated`;
-  - trigger `memories_enforce_plan_limit` (P0004), `folders_enforce_plan_limit` (P0005), e `enforce_subfolder_rules` riscritta consapevole del piano (P0003).
+  - trigger `memories_enforce_plan_limit` (P0004), `folders_enforce_plan_limit` (P0005), `folders_enforce_plan_limit_on_restore` (P0005 sul ripristino dal cestino), e `enforce_subfolder_rules` riscritta consapevole del piano (P0003).
 
 - [ ] **Step 1: Scrivere la migrazione**
 
@@ -648,9 +676,15 @@ Crea `supabase/migrations/20260903100000_plans.sql`:
 -- quello che vogliamo. L'unico scrittore e' la Edge Function
 -- revenuecat-sync, che gira con il service_role.
 --
--- GRANDFATHERING: i tre trigger sono BEFORE INSERT e non toccano le righe
+-- GRANDFATHERING: i tre tetti sono BEFORE INSERT e non toccano le righe
 -- esistenti. Chi ha 40 ricordi li tiene tutti e semplicemente non puo'
 -- aggiungerne. E' la semantica scelta nella spec (:679-681).
+--
+-- L'unica guardia su UPDATE e' folders_enforce_plan_limit_on_restore, che
+-- rifiuta il RIPRISTINO di una cartella dal cestino quando le vive sono gia'
+-- al tetto: e' il prezzo per non contare il cestino fra le cartelle, cioe'
+-- per non lasciare a bocca asciutta chi cestina la sua unica cartella e
+-- vuole ricominciare. Tutto spiegato nella sezione "Cartelle" piu' sotto.
 
 alter table public.profiles
   add column plan text not null default 'free'
@@ -806,16 +840,34 @@ create trigger memories_enforce_plan_limit
 -- ---------------------------------------------------------------------------
 -- Tutte le righe di public.folders sono di primo livello: le sezioni vivono
 -- nella tabella separata public.subfolders (20260831010000_subfolders.sql)
--- e folders non ha alcuna colonna parent. Non serve nessun filtro.
+-- e folders non ha alcuna colonna parent. Nessun filtro di gerarchia.
 --
 -- Le cartelle in pausa CONTANO: `paused` e' una scelta di carico
 -- (20260724235528_add_folders_paused.sql), non di proprieta', ed e'
 -- scrivibile dall'utente — escluderle sarebbe un modo per aggirare il tetto.
 --
--- E contano anche le cartelle NEL CESTINO, per la stessa ragione del tetto
--- ricordi qui sopra: restoreFolder e' una UPDATE, e senza questo predicato
--- "cestina l'unica cartella → creane una nuova → ripristina la vecchia"
--- darebbe due cartelle su un piano da una, ripetibile all'infinito.
+-- Le cartelle NEL CESTINO invece NON contano (`deleted_at is null`), al
+-- contrario del tetto ricordi qui sopra. La differenza e' voluta, e nasce da
+-- un caso raggiungibile nei primi minuti di vita di un account con un tetto
+-- che vale UNO:
+--   1) l'utente sceglie "Spagnolo" a /choose-topic, si accorge di volere
+--      "Inglese" e cestina la cartella;
+--   2) Conoscenza mostra lo stato vuoto e invita a "crea cartella";
+--   3) contando anche il cestino, quell'INSERT verrebbe rifiutato con P0005
+--      "folders limit reached (1 on the free plan)".
+-- Gli si direbbe che ha esaurito il piano mentre l'app gli mostra ZERO
+-- cartelle, e non potrebbe crearne nessuna — quindi nemmeno un ricordo —
+-- fino alla purga: fino a 24 ore, perche' l'app non ha alcuna "elimina
+-- definitivamente". Un tetto non deve mai bloccare chi e' sotto il tetto. Il
+-- conteggio delle sole righe vive e' anche l'unico coerente con
+-- countFolders() (lib/api.ts), che filtra gia' `deleted_at is null`.
+--
+-- Il buco che il conteggio totale difendeva — "cestina l'unica cartella →
+-- creane una nuova → ripristina la vecchia" = due cartelle su un piano da
+-- una, ripetibile all'infinito — si chiude dall'altro capo, sul RIPRISTINO:
+-- folders_enforce_plan_limit_on_restore (qui sotto) rifiuta la transizione
+-- deleted_at → null quando le cartelle vive sono gia' al tetto.
+--
 -- Stesso ordine: piano prima, lock dopo, conteggio per ultimo.
 create or replace function public.enforce_folder_plan_limit()
 returns trigger
@@ -836,7 +888,8 @@ begin
   perform 1 from public.profiles where id = new.user_id for update;
   select count(*) into used
     from public.folders
-   where user_id = new.user_id;
+   where user_id = new.user_id
+     and deleted_at is null;
   if used >= cap then
     raise exception 'folders limit reached (% on the % plan)', cap, eff
       using errcode = 'P0005', hint = 'plan-limit:folders';
@@ -848,6 +901,61 @@ $$;
 create trigger folders_enforce_plan_limit
   before insert on public.folders
   for each row execute function public.enforce_folder_plan_limit();
+
+-- Il ripristino dal cestino e' l'altra meta' del tetto cartelle: e' una
+-- UPDATE (restoreFolder, lib/api.ts; restoreMemory ripristina anche la
+-- cartella madre) e senza guardia riporterebbe sopra il tetto una riga
+-- creata quando lo slot era libero.
+--
+-- Si contano le altre righe VIVE dell'utente: la riga in ripristino, in un
+-- BEFORE UPDATE, e' ancora nel cestino nella tabella, ma `id <> new.id` lo
+-- rende esplicito invece che implicito. Il tetto e' lo stesso dell'INSERT e
+-- l'errcode e' lo stesso (P0005): per il client e' "hai finito le cartelle
+-- del piano", che e' esattamente cio' che e'. Cambia solo il messaggio (che
+-- contiene comunque la parola "limit", per i binari vecchi che riconoscono
+-- il tetto con msg.includes("limit")) e lo hint, cosi' nei log di PostgREST
+-- i due rifiuti restano distinguibili.
+--
+-- WHEN sulla sola transizione cestino → vivo: nessun costo sulle UPDATE
+-- normali (rinomina, priorita', pausa, ingresso nel cestino). Il BEFORE
+-- UPDATE che gira prima in ordine alfabetico, folders_clamp_deleted_at,
+-- tocca new.deleted_at solo all'INGRESSO nel cestino, quindi non puo'
+-- alterare la condizione.
+create or replace function public.enforce_folder_restore_plan_limit()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  eff text;
+  cap int;
+  used int;
+begin
+  eff := coalesce(public.current_plan(new.user_id), 'free');
+  cap := case eff when 'free' then 1 when 'pro' then 5 else null end;
+  if cap is null then
+    return new;
+  end if;
+  perform 1 from public.profiles where id = new.user_id for update;
+  select count(*) into used
+    from public.folders
+   where user_id = new.user_id
+     and deleted_at is null
+     and id <> new.id;
+  if used >= cap then
+    raise exception 'folders limit reached (% on the % plan): free a live slot before restoring', cap, eff
+      using errcode = 'P0005', hint = 'plan-limit:folders-restore';
+  end if;
+  return new;
+end;
+$$;
+
+create trigger folders_enforce_plan_limit_on_restore
+  before update on public.folders
+  for each row
+  when (old.deleted_at is not null and new.deleted_at is null)
+  execute function public.enforce_folder_restore_plan_limit();
 
 -- ---------------------------------------------------------------------------
 -- Sezioni: 0 free / 3 pro / illimitate premium
@@ -1254,9 +1362,17 @@ type RcSubscriberResponse = {
   subscriber: { entitlements?: Record<string, RcEntitlement | undefined> };
 };
 
-/** La scadenza dell'ACCESSO: la grazia, se c'e', altrimenti quella normale. */
+/** La scadenza dell'ACCESSO: la PIU' TARDA fra scadenza e grazia. */
 function rcDeadline(ent: RcEntitlement): string | null {
-  return ent.grace_period_expires_date ?? ent.expires_date ?? null;
+  // expires_date null = accesso a vita: nessuna grazia puo' accorciarlo.
+  if (ent.expires_date == null) return null;
+  const grace = ent.grace_period_expires_date;
+  if (!grace) return ent.expires_date;
+  const graceTs = Date.parse(grace);
+  if (Number.isNaN(graceTs)) return ent.expires_date;
+  const expiresTs = Date.parse(ent.expires_date);
+  if (Number.isNaN(expiresTs)) return grace;
+  return graceTs > expiresTs ? grace : ent.expires_date;
 }
 
 function rcActive(ent: RcEntitlement, at: number): boolean {
@@ -3473,6 +3589,15 @@ MSG
 **Interfaces:**
 - Produces: nessuna interfaccia di codice. È il commit che impedisce al prossimo agente di disfare il lavoro.
 
+> **Il testo dettato qui sotto NON è la fonte: lo sono i file spediti.**
+> Corretto il 2026-09-04, dopo la revisione dell'intero branch: la semantica
+> delle cartelle è cambiata con `2f5c385` (contano le sole righe VIVE, più un
+> quarto trigger sul ripristino) e `rcDeadline` con `7a4c2f2`/`e4ab47a` (la
+> grazia prolunga, non sostituisce). Se una frase di questo piano e una riga
+> di `lib/plan.ts`, di `supabase/migrations/20260903100000_plans.sql` o della
+> Edge Function dicono cose diverse, vince il file: scrivi la doc leggendo
+> quello.
+
 - [ ] **Step 1: Riscrivere `docs/PAYMENTS.md`**
 
 ```bash
@@ -3527,13 +3652,22 @@ Chi ha già più di 10 ricordi, più di una cartella o delle sezioni li tiene
 tutti e semplicemente non può aggiungerne. Cade fuori gratis dai trigger, che
 sono `BEFORE INSERT` e non guardano le righe esistenti.
 
-I tetti contano **tutte** le righe dell'utente, cestino compreso. È voluto: il
-ripristino dal cestino è una UPDATE e non passa dai trigger, quindi contando
-le sole righe vive il ciclo "cestina, inserisci, ripristina" aggirerebbe il
-tetto all'infinito. Contando tutto, il totale può solo scendere (purga a 24
-ore): nessun ripristino può mai fallire e il grandfathering resta intatto. Il
-prezzo — una riga nel cestino occupa il suo posto fino alla purga — è detto
-nella copy del limite.
+Il tetto dei **ricordi** conta tutte le righe dell'utente, cestino compreso. È
+voluto: il ripristino dal cestino è una UPDATE e non passa da un trigger
+`BEFORE INSERT`, quindi contando le sole righe vive il ciclo "cestina,
+inserisci, ripristina" aggirerebbe il tetto all'infinito. Contando tutto, il
+totale può solo scendere (purga a 24 ore): nessun ripristino di un ricordo può
+fallire. Il prezzo — una riga nel cestino occupa il suo posto fino alla purga —
+è detto nella copy del limite.
+
+Il tetto delle **cartelle** fa l'opposto: conta le sole righe vive. Lì il tetto
+free vale UNO e l'app non ha alcuna "elimina definitivamente", quindi contare
+anche il cestino lascerebbe chi cestina la sua unica cartella con zero cartelle
+e senza poterne creare una per 24 ore — un tetto che blocca chi è sotto il
+tetto. Il ciclo "cestina → crea → ripristina" si chiude dall'altro capo, con un
+quarto trigger sul RIPRISTINO (`folders_enforce_plan_limit_on_restore`, stesso
+`P0005`): chi è al tetto deve prima liberare uno slot vivo. Il cestino lo dice
+con la mascotte, non con un "riprova".
 
 ## Dove vive la verità
 
@@ -3555,13 +3689,14 @@ dall'utente e quindi inutile come limite.
 passato — valutazione pigra, nessun cron di downgrade. `lib/plan.ts`
 `effectivePlan()` ne è lo specchio esatto lato client.
 
-Tre trigger `BEFORE INSERT` applicano i tetti e sollevano errcode dedicati:
+Quattro trigger applicano i tetti e sollevano errcode dedicati:
 
-| Errcode | Trigger | Limite |
-|---|---|---|
-| `P0004` | `memories_enforce_plan_limit` | 10 ricordi, cestino compreso (free) |
-| `P0005` | `folders_enforce_plan_limit` | 1 cartella (free), 5 (pro) — cestino compreso |
-| `P0003` | `subfolders_enforce_rules` | 0 sezioni (free), 3 (pro) |
+| Errcode | Trigger | Quando | Limite |
+|---|---|---|---|
+| `P0004` | `memories_enforce_plan_limit` | BEFORE INSERT | 10 ricordi, cestino compreso (free) |
+| `P0005` | `folders_enforce_plan_limit` | BEFORE INSERT | 1 cartella (free), 5 (pro) — solo le vive |
+| `P0005` | `folders_enforce_plan_limit_on_restore` | BEFORE UPDATE (cestino → vivo) | ripristino con le vive già al tetto |
+| `P0003` | `subfolders_enforce_rules` | BEFORE INSERT OR UPDATE | 0 sezioni (free), 3 (pro) |
 
 Il client li mappa **per codice**, mai per sottostringa del messaggio
 (`planLimitFromCode()` in `lib/plan.ts`).
@@ -3683,11 +3818,12 @@ MD
 | `rc_app_user_id` | text | App User ID RevenueCat (= `profiles.id`) |
 ```
 
-2. Nella tabella dei trigger, tre righe nuove:
+2. Nella tabella dei trigger, quattro righe nuove:
 
 ```markdown
 | `memories_enforce_plan_limit` | `memories` | BEFORE INSERT | 10 ricordi sul piano free, **cestino compreso** (`where user_id`, nessun filtro su `deleted_at`) → `P0004` |
-| `folders_enforce_plan_limit` | `folders` | BEFORE INSERT | 1 cartella (free) / 5 (pro), cestino compreso → `P0005` |
+| `folders_enforce_plan_limit` | `folders` | BEFORE INSERT | 1 cartella (free) / 5 (pro), solo le **vive** (`deleted_at is null`) → `P0005` |
+| `folders_enforce_plan_limit_on_restore` | `folders` | BEFORE UPDATE, solo `deleted_at` non-null → null | Ripristino dal cestino con le cartelle vive già al tetto → `P0005` (hint `plan-limit:folders-restore`) |
 | `subfolders_enforce_rules` | `subfolders` | BEFORE INSERT OR UPDATE | 0 sezioni (free) / 3 (pro) → `P0003`, più le guardie di integrità (`P0001`) |
 ```
 
@@ -3709,7 +3845,7 @@ che li conosce.
 | Errcode | Limite | i18n |
 |---|---|---|
 | `P0004` | ricordi (10 totali, cestino compreso, free) | `planLimit.memories*` |
-| `P0005` | cartelle (1 free, 5 pro, cestino compreso) | `planLimit.folders*` |
+| `P0005` | cartelle (1 free, 5 pro, solo le vive) — sia in creazione sia in ripristino dal cestino | `planLimit.folders*`, `planLimit.foldersRestore*` |
 | `P0003` | sezioni (0 free, 3 pro) | `planLimit.sections*` |
 | `P0001` | guardie di integrità, **non** un limite di piano | messaggio generico |
 
@@ -3736,7 +3872,9 @@ progetto: non è un guasto da inseguire.
 ```markdown
 Free accounts own one folder, pro accounts five, premium unlimited —
 enforced by `folders_enforce_plan_limit` (`P0005`, migration
-20260903100000), counting the trash too.
+20260903100000), counting **live** folders only; a restore from the trash
+that would push past the cap is refused by
+`folders_enforce_plan_limit_on_restore` with the same code.
 ```
 
 - [ ] **Step 2bis: Bonifica dei documenti che citano le costanti ritirate**
