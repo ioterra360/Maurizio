@@ -240,7 +240,12 @@ export default function NotificationsScreen() {
           >
             {slotHint}
           </Text>
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, opacity: slotsEnabled ? 1 : 0.45 }}>
+          {/* Niente opacità sul contenitore: le chip disattivate le sbiadisce
+              già Tappable (opacity 0.5, components/Tappable.tsx:74) e in RN
+              le due si moltiplicano — 0.45 × 0.5 = 0.225, testo navy
+              illeggibile proprio al primo ingresso (modalità calma è
+              `default true` a DB, quindi la griglia parte spenta). */}
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
             {SLOTS.map((value) => {
               const on = value === slot;
               return (
