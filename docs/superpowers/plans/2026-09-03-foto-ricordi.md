@@ -38,7 +38,7 @@ Cose che la spec lascia aperte e che il codice qui sotto chiude una volta per tu
 | Pipeline immagine | Picker con `quality: 1` (originale, anche HEIC) → manipulator: render per le dimensioni vere, `resize` di UN solo lato se il lato lungo > 1600, `saveAsync({ format: JPEG, compress: 0.8 })` → `fetch(file://).arrayBuffer()` | Una sola ricodifica JPEG (due degradano); il manipulator normalizza HEIC/PNG a JPEG; `fetch(file://)` è la via a zero dipendenze che RN 0.81 serve su iOS e Android |
 | Quando si ridimensiona | Subito **alla scelta** della foto (in `handlePickPhoto`), non al salvataggio: `photoUri` è già il JPEG piccolo, e anteprima e upload usano lo stesso file. Il **caricamento** resta al salvataggio | Un originale da 12 MP decodificato costa ~48 MB in memoria: `<Image>` lo decodifica a piena risoluzione anche dentro un box da 240. Ricodifiche sempre una sola: `uploadMemoryPhoto` riceve un file già pronto e non ripassa dal manipulator |
 | `upsert: true` | Sì — sostituire la foto scrive sullo stesso path | Un path stabile per ricordo; richiede la policy `update` sul bucket |
-| Gate Premium | Client, tramite `canUsePhotos(plan)` di `lib/plan.ts` (interfaccia di B4). Il gate lato server sul `photo_path` è un ramo del trigger dei piani di B4 (`new.photo_path is distinct from old.photo_path and new.photo_path is not null and plan <> 'premium'`), **non** di questo piano | La spec §B5 descrive solo il gate client; la colonna `profiles.plan` e il trigger nascono con B4 |
+| Gate Premium | Client, tramite `canUsePhotos(plan)` di `lib/plan.ts` (interfaccia di B4). **Il gate lato server sul `photo_path` NON esiste in questo ciclo**: la migrazione di B4 (`20260903100000_plans.sql`) porta tre trigger `BEFORE INSERT` sui tetti di ricordi, cartelle e sezioni e **nessun ramo su `photo_path`**. Aggiungerlo è il punto 3 di §"Passi umani aperti", e non appartiene né a B4 né a questo piano | La spec §B5 descrive solo il gate client; la colonna `profiles.plan` e i trigger nascono con B4, ma B4 non è stato esteso alle foto e allargarlo qui sarebbe scope non deciso. Finché il punto 3 non è fatto, chi conosce la REST API può scrivere `photo_path` da free |
 | Foto dopo il salvataggio | **Fuori scope.** La scheda ricordo MOSTRA la foto (spec :756-757 la elenca come superficie di visualizzazione), non la modifica. `removeMemoryPhoto` in `lib/photos.ts` esiste come API per il controllo futuro | Niente scope in più; il costo è che un upload fallito non ha via di ritentare se non ricreando il ricordo — accettato, vedi Rischi |
 | Salva e aggiungi un altro | Azzera la foto scelta, in ogni caso | È contenuto del ricordo, non contesto di sessione: se restasse, il salvataggio successivo la caricherebbe sotto un altro `memory_id` |
 
@@ -70,7 +70,7 @@ Il compito chiedeva di estendere `delete_own_account()` con `delete from storage
 | `lib/photo-utils.ts` **(nuovo)** | Costanti, `photoPathFor`, `resizeTarget`, `checkPhotoBytes`, `orphanPhotoPaths`, `makeSignedUrlCache`. Puro, nessun import nativo. |
 | `lib/photo-utils.test.ts` **(nuovo)** | Copertura dei cinque helper con orologio iniettato. |
 | `lib/photos.ts` **(nuovo)** | L'unico accesso a Storage: `pickPhoto`, `resizeForUpload`, `uploadMemoryPhoto`, `getPhotoUrl`, `removeMemoryPhoto`, `reconcilePhotos`. |
-| `lib/plan.ts` | Interfaccia di B4 (`Plan`, `canUsePhotos`, `usePlan`); stub se B4 non è ancora a bordo. |
+| `lib/plan.ts` · `lib/use-plan.ts` | Interfacce di B4, in DUE moduli distinti: `lib/plan.ts` esporta `type Plan` e `canUsePhotos(plan)` (puro); `lib/use-plan.ts` esporta l'hook `usePlan(): Plan`. Stub di entrambi solo se B4 non è ancora a bordo (Task 7, Step 1). |
 | `lib/mappers.ts` | `MemoryRow.photo_path`, `Memory.photoPath`. |
 | `lib/queue.ts` | `toReviewCard` porta `photoPath`. |
 | `lib/review-store.ts` | `ReviewCard.photoPath`. |
@@ -2063,7 +2063,7 @@ Quel commit cambierebbe il fingerprint: viaggia nella build 3 insieme a F1/F3/B4
 Nella tabella `memories`, sotto la riga `notes`, aggiungi:
 
 ```markdown
-| `photo_path` | text | null | Chiave dell'oggetto nel bucket privato `memory-photos` (`<user_id>/<memory_id>.jpg`, migration 20260903110000). null = nessuna foto. Mai un URL: si legge con URL firmati (`lib/photos.ts`). Premium (gate client `canUsePhotos`; gate server nel trigger dei piani di B4). |
+| `photo_path` | text | null | Chiave dell'oggetto nel bucket privato `memory-photos` (`<user_id>/<memory_id>.jpg`, migration 20260903110000). null = nessuna foto. Mai un URL: si legge con URL firmati (`lib/photos.ts`). Premium **solo lato client** (`canUsePhotos`): nessun trigger controlla questa colonna: i trigger di `20260903100000_plans.sql` guardano ricordi, cartelle e sezioni, non `photo_path`. Un gate server è una decisione aperta. |
 ```
 
 Nella tabella RLS (quella con una riga per tabella e le colonne read/write), aggiungi in fondo:
@@ -2144,13 +2144,13 @@ Nella sezione 3, subito dopo il punto che comincia con `- **The \`service_role\`
 In `docs/ARCHITECTURE.md`, la riga della tabella che comincia con `| Backend | Supabase` diventa:
 
 ```markdown
-| Backend | Supabase — Auth + Postgres (eu-central-1) + Storage (private bucket `memory-photos`). Edge Functions not used yet |
+| Backend | Supabase — Auth + Postgres (eu-central-1) + Storage (private bucket `memory-photos`) + one Edge Function (`revenuecat-sync`) |
 ```
 
 In `README.md`, la riga che comincia con `| Auth & DB | Supabase`:
 
 ```markdown
-| Auth & DB | Supabase — Auth + Postgres (EU, Frankfurt) + Storage (private `memory-photos` bucket); Edge Functions not used yet |
+| Auth & DB | Supabase — Auth + Postgres (EU, Frankfurt) + Storage (private `memory-photos` bucket) + Edge Function `revenuecat-sync` |
 ```
 
 - [ ] **Step 4: Commit**

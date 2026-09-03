@@ -38,7 +38,7 @@ La build 3 è una sola, ma i piani sono quattro. Questa tabella evita che due pi
 | `assets/notification-icon.png` + sorgente | **questo** |
 | Copy `settings.themeHint` (×4 lingue), commenti in `theme/theme-store.ts` e `tailwind.config.js`, `AGENTS.md` §6 | **questo** |
 | `NOTIFICATIONS_ENABLED` → `true` | **questo, Task 5**, DOPO il merge di F3 (F3 costruisce la schermata lasciando il flag a `false`) |
-| `PREMIUM_ENABLED`, `FREE_FOLDER_LIMIT`, `FOLDER_LIMIT_ENFORCED`, `SUBFOLDERS_MAX` (`lib/constants.ts:26,142,151,233`) | **B4**, insieme alla bonifica dei documenti che le descrivono come meccanismo vigente (`docs/PAYMENTS.md`, `docs/PRODUCT.md`, `docs/ARCHITECTURE.md`, `docs/ROADMAP.md`, `docs/DATA-MODEL.md`, `docs/app-store-listing.md`, `README.md`, `AGENTS.md` §1 — 11 occorrenze). Questo piano NON le tocca: cancellarle qui lascerebbe quei documenti a citare simboli inesistenti, ed è la stessa trappola del rischio 7 della spec. Il Task 5 si limita a **verificare** che B4 abbia fatto entrambe le metà |
+| `PREMIUM_ENABLED`, `FREE_FOLDER_LIMIT`, `FOLDER_LIMIT_ENFORCED`, `SUBFOLDERS_MAX` (`lib/constants.ts:26,142,151,233`) | **B4**, insieme alla bonifica dei documenti che le descrivono come meccanismo vigente (`docs/PAYMENTS.md`, `docs/PRODUCT.md`, `docs/ARCHITECTURE.md`, `docs/ROADMAP.md`, `docs/DATA-MODEL.md`, `docs/app-store-listing.md`, `docs/store-listing.md`, `README.md`, `AGENTS.md` §1 — 15 occorrenze in 9 file, verificate il 2026-09-03 con `--exclude-dir=superpowers`; B4 le chiude fra il Task 9 Step 2, Step 2bis e Step 3). Questo piano NON le tocca: cancellarle qui lascerebbe quei documenti a citare simboli inesistenti, ed è la stessa trappola del rischio 7 della spec. Il Task 5 si limita a **verificare** che B4 abbia fatto entrambe le metà |
 | Schermata `/notifications`, permesso dopo il primo ricordo, `scheduleNotificationAsync`, canali Android, `setNotificationHandler` | **F3** |
 | `Purchases.configure` (dietro `isDemoMode` e dietro chiave vuota), paywall, edge function, migration `profiles.plan` + trigger + **seed dei tester dentro la migration** | **B4** |
 | Bottone `+` in Add, bucket `memory-photos`, `memories.photo_path`, upload, migration B5 | **B5** |
@@ -1213,16 +1213,23 @@ export const NOTIFICATIONS_ENABLED = true;
 
 - [ ] **Step 2: Le costanti del paywall — verificare che B4 le abbia già ritirate, e la documentazione con loro**
 
-`PREMIUM_ENABLED`, `FREE_FOLDER_LIMIT`, `FOLDER_LIMIT_ENFORCED` e `SUBFOLDERS_MAX` **non si toccano in questo piano**: le ritira B4 (`2026-09-03-piani-paywall-revenuecat.md`, Task 8 Step 2), che gira prima di questo Task, insieme alla bonifica dei documenti che le descrivono come meccanismo vigente. Non è una divisione arbitraria: quelle costanti sono citate come vigenti in **11 punti della documentazione** — `docs/PAYMENTS.md`, `docs/PRODUCT.md`, `docs/ARCHITECTURE.md`, `docs/ROADMAP.md`, `docs/DATA-MODEL.md`, `docs/app-store-listing.md`, `README.md`, `AGENTS.md` §1 — e `AGENTS.md` §2 impone quei documenti come lettura obbligatoria. Cancellare i simboli senza bonificare i documenti è il rischio 7 della spec applicato ai piani: il prossimo agente cerca un simbolo che non esiste, e `npm run lint` non se ne accorge. Chi possiede la gating per piano possiede anche `docs/PAYMENTS.md`: rimozione e bonifica stanno nello stesso commit, di B4.
+`PREMIUM_ENABLED`, `FREE_FOLDER_LIMIT`, `FOLDER_LIMIT_ENFORCED` e `SUBFOLDERS_MAX` **non si toccano in questo piano**: le ritira B4 (`2026-09-03-piani-paywall-revenuecat.md`, Task 8 Step 2), che gira prima di questo Task, insieme alla bonifica dei documenti che le descrivono come meccanismo vigente. Non è una divisione arbitraria: quelle costanti sono citate come vigenti in **15 punti della documentazione**, in 9 file — `docs/PAYMENTS.md`, `docs/PRODUCT.md`, `docs/ARCHITECTURE.md`, `docs/ROADMAP.md`, `docs/DATA-MODEL.md`, `docs/app-store-listing.md`, `docs/store-listing.md`, `README.md`, `AGENTS.md` §1 — e `AGENTS.md` §2 impone quei documenti come lettura obbligatoria. Cancellare i simboli senza bonificare i documenti è il rischio 7 della spec applicato ai piani: il prossimo agente cerca un simbolo che non esiste, e `npm run lint` non se ne accorge. Chi possiede la gating per piano possiede anche `docs/PAYMENTS.md`: rimozione e bonifica stanno nello stesso commit, di B4.
 
 Qui si verifica soltanto che il lavoro sia stato fatto per intero:
 
 ```bash
+# a) nessuna dichiarazione viva
+grep -rn "export const \(PREMIUM_ENABLED\|FREE_FOLDER_LIMIT\|FOLDER_LIMIT_ENFORCED\|SUBFOLDERS_MAX\)" lib
+# b) nessun uso vivo (import, JSX, confronto)
 grep -rn "PREMIUM_ENABLED\|FREE_FOLDER_LIMIT\|FOLDER_LIMIT_ENFORCED\|SUBFOLDERS_MAX" app lib components features --include=*.ts --include=*.tsx
-grep -rn "PREMIUM_ENABLED\|FREE_FOLDER_LIMIT\|FOLDER_LIMIT_ENFORCED\|SUBFOLDERS_MAX" docs README.md AGENTS.md
+# c) nessun documento che li descriva come meccanismo in funzione.
+#    --exclude-dir=superpowers è obbligatorio: piani e spec di questo ciclo
+#    PARLANO di quelle costanti per dire che vanno ritirate, e senza
+#    l'esclusione questo grep non può mai uscire vuoto.
+grep -rn "PREMIUM_ENABLED\|FREE_FOLDER_LIMIT\|FOLDER_LIMIT_ENFORCED\|SUBFOLDERS_MAX" docs README.md AGENTS.md --exclude-dir=superpowers
 ```
 
-Expected: il primo `grep` non trova **nulla** (nemmeno in `lib/constants.ts`: B4 lascia lì solo un commento di rimando a `lib/plan.ts`); il secondo trova al massimo righe che ne parlano al passato ("removed on 2026-09-03"). Se il primo `grep` trova ancora un simbolo vivo, o il secondo trova un documento che li descrive come meccanismo in funzione, **fermati e chiudi il lavoro di B4 prima di proseguire** — non rimediare qui: la bonifica è un commit di B4, non di questo piano. Riporta l'esito nel corpo del commit dello Step 5.
+Expected: (a) non trova **nulla**; (b) trova SOLO le due righe di commento storico che B4 lascia di proposito — il blocco di rimando a `lib/plan.ts` in `lib/constants.ts` («… sono stati rimossi il 2026-09-03», B4 Task 8 Step 2) ed eventualmente il commento riscritto di `lib/api.ts`; (c) trova al massimo righe che ne parlano al passato ("removed on 2026-09-03"). Se (a) trova una dichiarazione, se (b) trova un import o un uso (non un commento), o se (c) trova un documento che li descrive come meccanismo in funzione, **fermati e chiudi il lavoro di B4 prima di proseguire** — non rimediare qui: la bonifica è un commit di B4 (Task 9, Step 2bis), non di questo piano. Riporta l'esito nel corpo del commit dello Step 5.
 
 - [ ] **Step 3: La copy del tema dice la verità**
 

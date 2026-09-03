@@ -3466,8 +3466,9 @@ MSG
 
 **Files:**
 - Modify: `docs/PAYMENTS.md` (riscritto)
-- Modify: `docs/DATA-MODEL.md:37-48` (tabella `profiles`), `:165-172` (trigger), `:174-182` (funzioni), `:278-285` (non modellato)
+- Modify: `docs/DATA-MODEL.md:37-48` (tabella `profiles`), `:59` (frase sulle cartelle free), `:165-172` (trigger), `:174-182` (funzioni), `:278-285` (non modellato)
 - Modify: `AGENTS.md:22-25` (freemium), `:70-73` (dentro la regola dura sulle cartelle), `:43-99` (coda delle regole dure), `:234-238` (anti-pattern sul checkout web)
+- Modify (Step 2bis, bonifica delle costanti ritirate): `docs/PRODUCT.md:57,95`, `docs/ARCHITECTURE.md:18`, `docs/ROADMAP.md:119,158`, `docs/app-store-listing.md:226`, `docs/store-listing.md:37`, `README.md:25`
 
 **Interfaces:**
 - Produces: nessuna interfaccia di codice. È il commit che impedisce al prossimo agente di disfare il lavoro.
@@ -3640,15 +3641,23 @@ header del webhook nei secrets Supabase, URL del webhook =
 
 ## Ordine di attivazione
 
-1. Build 3 su entrambi gli store (contiene `react-native-purchases`).
-2. Solo dopo: `npx supabase db push` dal worktree linkato `memika-app`.
+La sequenza completa e autorevole è in `docs/DEPLOY.md` § "Build 3 (vc13 /
+iOS 3)". Per la parte piani, in breve:
+
+1. Build 3 `FINISHED` su EAS (contiene `react-native-purchases`), **prima del
+   submit**.
+2. `npx supabase db push` dal worktree linkato `memika-app`, poi
+   `supabase secrets set` + `functions deploy revenuecat-sync`. Solo dopo,
+   `eas submit` / upload Play: le colonne devono esistere prima che un tester
+   installi vc13, perché il client legge `profiles.plan` e la edge function la
+   scrive.
 3. I due tester passano a `plan = 'premium'` **dentro la migrazione stessa**,
    sopra i `create trigger` — non con una query prima del push, che
    fallirebbe con `42703` perché la colonna non esiste ancora, né dopo, che
    lascerebbe una finestra in cui chi ha già più di 10 ricordi si trova
    bloccato su un binario senza paywall. Verifica dopo il push:
    `select email, plan from public.profiles where plan <> 'free';`
-4. `supabase secrets set` + `functions deploy`.
+4. `eas submit -p ios` + upload manuale dell'AAB in Play Console.
 5. Acquisto sandbox su entrambe le piattaforme, con verifica che
    `profiles.plan` cambi entro pochi secondi.
 
@@ -3721,6 +3730,92 @@ progetto: non è un guasto da inseguire.
   servisse in locale, allora una tabella.
 ```
 
+6. Nella sezione `folders` (frase finale del paragrafo introduttivo), sostituisci
+   `Free accounts own one folder (\`FREE_FOLDER_LIMIT\`, enforced in the UI for now).` con:
+
+```markdown
+Free accounts own one folder, pro accounts five, premium unlimited —
+enforced by `folders_enforce_plan_limit` (`P0005`, migration
+20260903100000), counting the trash too.
+```
+
+- [ ] **Step 2bis: Bonifica dei documenti che citano le costanti ritirate**
+
+Il Task 8 ha cancellato `PREMIUM_ENABLED`, `FREE_FOLDER_LIMIT`,
+`FOLDER_LIMIT_ENFORCED` e `SUBFOLDERS_MAX`. Fuori da `PAYMENTS.md`,
+`DATA-MODEL.md` e `AGENTS.md` restano **otto punti** in altri sei documenti
+che le descrivono ancora come meccanismo vigente (`grep` verificato il
+2026-09-03: `docs/PRODUCT.md` ×2, `docs/ROADMAP.md` ×2, `docs/ARCHITECTURE.md`,
+`docs/app-store-listing.md`, `docs/store-listing.md`, `README.md`). Vanno chiusi **in questo
+commit**: `AGENTS.md` §2 impone quei documenti come lettura obbligatoria, e
+lasciarli lì è il rischio 7 della spec (il prossimo agente cerca un simbolo
+che non esiste e `npm run lint` non se ne accorge). È anche la precondizione
+verificata dal Task 5, Step 2 del piano `2026-09-03-build3-config-nativa.md`,
+che si **ferma** se ne trova ancora uno.
+
+1. `docs/PRODUCT.md` — il paragrafo che comincia con `**Freemium:** a free account owns exactly ONE folder (\`FREE_FOLDER_LIMIT\`).` (fino a `affordance after onboarding.`) diventa:
+
+```markdown
+**Freemium:** three plans (2026-09-02). Free = 10 memories in total, ONE
+folder, no sections; Pro = unlimited memories, 5 folders, 3 sections;
+Premium = everything unlimited plus photos on memories. The caps are enforced
+by Postgres triggers (`20260903100000_plans.sql`), mirrored client-side by
+`PLAN_LIMITS` in `lib/plan.ts`. Hitting one raises the mascot dialog that
+leads to `/paywall`.
+```
+
+2. `docs/PRODUCT.md` — nel paragrafo dei pagamenti, sostituisci
+   `The old external-checkout screen was deleted on 2026-08-29; the paywall will be rebuilt on RevenueCat behind \`PREMIUM_ENABLED\`. Free = one`
+   … fino a `quota for free users (not decided).` con:
+
+```markdown
+The old external-checkout screen was deleted on 2026-08-29 and replaced on
+2026-09-03 by the in-app paywall `app/paywall.tsx` (RevenueCat, entitlements
+`pro` and `premium`). Free = 10 memories and one folder; Pro and Premium as
+in `docs/PAYMENTS.md`.
+```
+
+3. `docs/ARCHITECTURE.md` — la riga della tabella che comincia con `| Payments |`:
+
+```markdown
+| Payments | RevenueCat in-app subscriptions — paywall `app/paywall.tsx`, three plans enforced by Postgres triggers (see `PAYMENTS.md`); inert until the store products and keys exist |
+```
+
+4. `docs/ROADMAP.md` — nel blocco "Batch 1", sostituisci `\`PREMIUM_ENABLED=false\` kill-switch.` con `\`PREMIUM_ENABLED=false\` kill-switch (constant removed on 2026-09-03).` (è un registro storico: si annota, non si riscrive).
+
+5. `docs/ROADMAP.md` — la voce `- [ ] **RevenueCat Premium** …` (sei righe, fino a `See \`docs/PAYMENTS.md\`.`) diventa:
+
+```markdown
+- [x] **RevenueCat plans** — three plans Free/Pro/Premium built 2026-09-03
+      (`lib/plan.ts`, `app/paywall.tsx`, `lib/purchases.ts`, edge function
+      `revenuecat-sync`, migration `20260903100000_plans.sql`). INERT until
+      the owner prerequisites are done (Paid Apps Agreement, W-8BEN, banking;
+      Play payments profile) and the RevenueCat keys are in `eas.json`. See
+      `docs/PAYMENTS.md` § "Ordine di attivazione".
+```
+
+6. `docs/app-store-listing.md` — il punto 6, sostituisci
+   `chiavi di catalogo; \`PREMIUM_ENABLED\` resta per il paywall RevenueCat.` con
+   `chiavi di catalogo; dalla build 3 il paywall in-app è \`app/paywall.tsx\` (RevenueCat).`
+
+7. `docs/store-listing.md` — la nota che comincia con `> Nota 2026-08-27:` diventa:
+
+```markdown
+> Nota 2026-09-03: dalla build 3 il limite delle cartelle è applicato dal database (free = 1, pro = 5, premium illimitate; trigger `folders_enforce_plan_limit`). Gli account dei due tester sono `premium` dal seed della migrazione, quindi non lo incontrano. La frase "gratuita con una cartella" è di nuovo vera.
+```
+
+8. `README.md` — la riga della tabella che comincia con `| Payments |`:
+
+```markdown
+| Payments | RevenueCat in-app subscriptions — three plans (free = 10 memories + 1 folder; pro; premium + photos), enforced by Postgres triggers; paywall `app/paywall.tsx` |
+```
+
+Verifica (deve stampare **solo** righe al passato — nessun documento che li descriva come meccanismo in funzione):
+
+```bash
+grep -rn "PREMIUM_ENABLED\|FREE_FOLDER_LIMIT\|FOLDER_LIMIT_ENFORCED\|SUBFOLDERS_MAX" docs README.md AGENTS.md --exclude-dir=superpowers
+```
+
 - [ ] **Step 3: Aggiornare `AGENTS.md`**
 
 1. Il paragrafo freemium della sezione 1 (righe 22-25) diventa:
@@ -3772,7 +3867,7 @@ abbonamenti in-app via RevenueCat. Vedi `docs/PAYMENTS.md`.
 - [ ] **Step 4: Commit**
 
 ```bash
-git add docs/PAYMENTS.md docs/DATA-MODEL.md AGENTS.md
+git add docs/PAYMENTS.md docs/DATA-MODEL.md AGENTS.md docs/PRODUCT.md docs/ARCHITECTURE.md docs/ROADMAP.md docs/app-store-listing.md docs/store-listing.md README.md
 git commit -F- <<'MSG'
 docs(payments): tre piani, trigger, errcode e edge function
 
@@ -3780,7 +3875,10 @@ PAYMENTS.md riscritta sul modello a tre piani (era ferma a un solo
 premium_until e al webhook mai scritto); DATA-MODEL.md guadagna le colonne,
 i trigger e la tabella degli errcode; AGENTS.md le tre regole dure che
 impediscono di disfare il lavoro, piu' le due frasi che questo ciclo rende
-false (FOLDER_LIMIT_ENFORCED cancellato, paywall ora costruito).
+false (FOLDER_LIMIT_ENFORCED cancellato, paywall ora costruito). Bonificati
+anche PRODUCT, ARCHITECTURE, ROADMAP, app-store-listing, store-listing e
+README, che descrivevano ancora le quattro costanti ritirate dal Task 8 come
+meccanismo vigente.
 
 Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>
 MSG
@@ -3836,7 +3934,11 @@ EXPO_PUBLIC_REVENUECAT_ANDROID_KEY=goog_…
 `eas.json` è un input del fingerprint: vanno messe **prima** di lanciare la
 build 3, altrimenti servirà un'altra build.
 
-La segreta e l'header del webhook vanno solo nei secrets Supabase:
+La segreta e l'header del webhook vanno solo nei secrets Supabase. **I due
+comandi qui sotto si lanciano DOPO il `db push` dello Step 3**, non adesso: la
+function scrive `profiles.plan` e prima della migrazione quella colonna non
+esiste (è il punto 3b della "Sequenza" di `docs/DEPLOY.md` § "Build 3"). Qui
+si preparano solo i valori.
 
 ```bash
 npx supabase secrets set \
@@ -3853,29 +3955,40 @@ Nel cruscotto RevenueCat → Integrations → Webhooks:
 
 - [ ] **Step 3: L'ordine di applicazione della migrazione — il punto delicato**
 
-La migrazione dei limiti **non va applicata finché la build 3 non è su
-entrambi gli store**. Un tester con il binario vecchio (Maurizio ha vc11) non
-ha né paywall né schermata dei piani: se il trigger entra in funzione prima,
-si trova bloccato a 10 ricordi senza alcun modo di uscirne.
+> **La sequenza umana della build 3 è UNA sola e vive in `docs/DEPLOY.md`
+> § "Build 3 (vc13 / iOS 3)"** (la scrive il piano
+> `2026-09-03-build3-config-nativa.md`, Task 4; la esegue il suo Task 6).
+> Questo step ne è il dettaglio per la parte B4, non una seconda sequenza:
+> se le due divergono, vale DEPLOY.md.
 
-Il vincolo regge in entrambe le direzioni solo perché **la build 3 sopravvive
-allo schema pre-migrazione**: `buildAuthUserFromSession` legge il profilo con
-`select("*")` e non con l'elenco delle colonne (Task 4 Step 5.4), quindi nella
-finestra fra la pubblicazione e il `db push` — giorni, fra revisione e
-rollout — non chiede a PostgREST colonne che ancora non esistono. Se qualcuno
-rimettesse lì `.select("role, name, plan, plan_until")`, in quella finestra
-ogni accesso fallirebbe con `42703`, l'admin perderebbe il ruolo e il nome
-tornerebbe a quello derivato dall'email.
+La migrazione dei limiti si applica **fra la build FINISHED e il submit agli
+store**: le colonne devono esistere prima che un tester installi vc13, perché
+il codice di B4 nella build 3 legge `profiles.plan` e la edge function
+`revenuecat-sync` la scrive — con lo schema vecchio ogni acquisto fallirebbe
+con `42703`.
 
-I due tester **non** si portano a Premium con una query prima del push: la
-colonna `plan` non esiste ancora e quella `update` fallirebbe con `42703`. Il
-seed sta **dentro** la migrazione, sopra i `create trigger` (Task 2 Step 1),
-così nella stessa transazione in cui i tetti nascono Angelo e Maurizio sono già
-Premium e la finestra di esposizione è zero.
+La finestra dalla parte opposta — `db push` fatto mentre in circolazione ci
+sono ancora vc11 e vc12, senza paywall — è **chiusa dal seed dentro la
+migrazione**: nella stessa transazione in cui i tetti nascono, Angelo e
+Maurizio sono già Premium, e non esistono altri utenti. I due tester **non**
+si portano a Premium con una query prima del push: la colonna `plan` non
+esiste ancora e quella `update` fallirebbe con `42703`; il seed sta dentro la
+migrazione, sopra i `create trigger` (Task 2 Step 1).
+
+Regge comunque anche una finestra inversa (vc13 installata prima del push),
+perché **la build 3 sopravvive allo schema pre-migrazione**:
+`buildAuthUserFromSession` legge il profilo con `select("*")` e non con
+l'elenco delle colonne (Task 4 Step 5.4), quindi non chiede a PostgREST
+colonne che ancora non esistono — l'utente resta semplicemente `free`. Se
+qualcuno rimettesse lì `.select("role, name, plan, plan_until")`, in quella
+finestra ogni accesso fallirebbe con `42703`, l'admin perderebbe il ruolo e
+il nome tornerebbe a quello derivato dall'email.
 
 Ordine corretto:
 
-1. Build 3 pubblicata su Play (canale interno) e TestFlight.
+1. Build 3 `FINISHED` su EAS per entrambe le piattaforme (**non ancora
+   sottomessa** agli store): è il punto 2 della "Sequenza" di
+   `docs/DEPLOY.md` § "Build 3".
 2. Controllare che il seed sia davvero nel file, **prima** di lanciare il push:
 
 ```bash
@@ -3909,6 +4022,13 @@ email — rimediare subito, con la colonna che adesso esiste:
 ```bash
 npx supabase db query --linked "update public.profiles set plan = 'premium', plan_until = null where email in ('angelo.casula@gmail.com', 'memikaapp@gmail.com');"
 ```
+
+5. Deploy della edge function con i suoi segreti (Step 2 qui sopra: `secrets
+   set` + `functions deploy` + `functions list` = `ACTIVE`) — **dopo** il
+   push, così la function non gira mai contro uno schema senza `plan`.
+6. **Solo ora** il submit agli store: `eas submit -p ios --latest` e upload
+   manuale dell'AAB in Play Console (punto 4 della "Sequenza" di
+   `docs/DEPLOY.md` § "Build 3").
 
 - [ ] **Step 4: Acquisto sandbox, una volta per piattaforma**
 
