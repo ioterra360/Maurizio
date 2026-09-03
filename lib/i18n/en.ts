@@ -779,6 +779,8 @@ export const en: Record<keyof typeof it, string> = {
   "planLimit.foldersBodyFree": "The Free plan holds one. Pro holds five, Premium as many as you like.",
   "planLimit.foldersTitlePro": "Five folders, all taken",
   "planLimit.foldersBodyPro": "Five is the Pro ceiling. With Premium folders are unlimited.",
+  "planLimit.foldersRestoreTitle": "No free slot",
+  "planLimit.foldersRestoreBody": "Your live folders are already at your plan's ceiling: to restore this one, move another to the trash first, or move to a plan with more folders.",
   "planLimit.sectionsTitleFree": "Sections come with Pro",
   "planLimit.sectionsBodyFree": "Sections split a folder into parts. Pro gives you three per folder, Premium as many as you like.",
   "planLimit.sectionsTitlePro": "Three sections per folder",

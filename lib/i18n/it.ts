@@ -779,6 +779,8 @@ export const it = {
   "planLimit.foldersBodyFree": "Il piano Free ne tiene una. Pro ne tiene cinque, Premium quante ne vuoi.",
   "planLimit.foldersTitlePro": "Cinque cartelle piene",
   "planLimit.foldersBodyPro": "Cinque è il tetto di Pro. Con Premium le cartelle sono illimitate.",
+  "planLimit.foldersRestoreTitle": "Nessuno slot libero",
+  "planLimit.foldersRestoreBody": "Le cartelle attive sono già al tetto del tuo piano: per ripristinare questa devi prima spostarne un'altra nel cestino, oppure passare a un piano con più cartelle.",
   "planLimit.sectionsTitleFree": "Le sezioni arrivano con Pro",
   "planLimit.sectionsBodyFree": "Le sezioni dividono una cartella in parti. Con Pro ne hai tre per cartella, con Premium quante vuoi.",
   "planLimit.sectionsTitlePro": "Tre sezioni per cartella",

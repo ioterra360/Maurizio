@@ -779,6 +779,8 @@ export const fr: Record<keyof typeof it, string> = {
   "planLimit.foldersBodyFree": "Le plan Free en garde un. Pro en garde cinq, Premium autant que tu veux.",
   "planLimit.foldersTitlePro": "Cinq dossiers, tous pris",
   "planLimit.foldersBodyPro": "Cinq est le plafond de Pro. Avec Premium les dossiers sont illimités.",
+  "planLimit.foldersRestoreTitle": "Aucune place libre",
+  "planLimit.foldersRestoreBody": "Tes dossiers actifs sont déjà au plafond de ton plan : pour restaurer celui-ci, mets-en d'abord un autre à la corbeille, ou passe à un plan avec plus de dossiers.",
   "planLimit.sectionsTitleFree": "Les sections arrivent avec Pro",
   "planLimit.sectionsBodyFree": "Les sections divisent un dossier en parties. Pro t'en donne trois par dossier, Premium autant que tu veux.",
   "planLimit.sectionsTitlePro": "Trois sections par dossier",

@@ -9,22 +9,36 @@ type Props = {
   limit: PlanLimitKind | null;
   plan: Plan;
   onClose: () => void;
+  /**
+   * Da dove arriva il rifiuto. `"add"` (default) = stavi creando qualcosa.
+   * `"restore"` = stavi tirando fuori dal cestino una cartella e le vive
+   * sono gia' al tetto (trigger folders_enforce_plan_limit_on_restore,
+   * stesso P0005): li' "il piano ne tiene una" non basta, perche' il rimedio
+   * non e' solo pagare — basta liberare uno slot vivo.
+   */
+  context?: "add" | "restore";
 };
 
 /**
  * La mascotte spiega quale limite hai incontrato e propone l'upgrade.
  *
- * Un solo componente per quattro schermate (Add, Nuova cartella, Sezioni in
- * due punti): la copy cambia col limite E col piano — a un utente Pro non
- * si dice "passa a Pro".
+ * Un solo componente per cinque schermate (Add, Nuova cartella, Sezioni in
+ * due punti, Cestino): la copy cambia col limite, col piano E con il
+ * contesto — a un utente Pro non si dice "passa a Pro".
  *
  * Il dialogo si chiude PRIMA della navigazione: un Modal ancora montato
  * mentre il router spinge una rotta lascia il backdrop sopra la schermata
  * nuova (stessa precauzione di settings.tsx col picker del limite).
  */
-export function PlanLimitDialog({ limit, plan, onClose }: Props) {
+export function PlanLimitDialog({ limit, plan, onClose, context = "add" }: Props) {
   const { t } = useT();
   const copy = (): { title: string; body: string } => {
+    if (limit === "folders" && context === "restore") {
+      return {
+        title: t("planLimit.foldersRestoreTitle"),
+        body: t("planLimit.foldersRestoreBody"),
+      };
+    }
     if (limit === "memories") {
       return { title: t("planLimit.memoriesTitle"), body: t("planLimit.memoriesBody") };
     }

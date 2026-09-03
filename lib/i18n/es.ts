@@ -779,6 +779,8 @@ export const es: Record<keyof typeof it, string> = {
   "planLimit.foldersBodyFree": "El plan Free guarda una. Pro guarda cinco, Premium las que quieras.",
   "planLimit.foldersTitlePro": "Cinco carpetas, todas ocupadas",
   "planLimit.foldersBodyPro": "Cinco es el techo de Pro. Con Premium las carpetas son ilimitadas.",
+  "planLimit.foldersRestoreTitle": "Ningún hueco libre",
+  "planLimit.foldersRestoreBody": "Tus carpetas activas ya están en el techo de tu plan: para restaurar esta, mueve antes otra a la papelera o pasa a un plan con más carpetas.",
   "planLimit.sectionsTitleFree": "Las secciones llegan con Pro",
   "planLimit.sectionsBodyFree": "Las secciones dividen una carpeta en partes. Pro te da tres por carpeta, Premium las que quieras.",
   "planLimit.sectionsTitlePro": "Tres secciones por carpeta",
