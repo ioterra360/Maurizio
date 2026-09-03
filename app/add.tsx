@@ -130,6 +130,14 @@ export default function AddScreen() {
   const setPrefs = useNotificationPrefsStore((s) => s.setPrefs);
   const [canOfferPrompt, setCanOfferPrompt] = useState(false);
   const [notifPrompt, setNotifPrompt] = useState<{ memory: Memory; addAnother: boolean } | null>(null);
+  // Doppio tap sul dialogo: `notifPrompt` si azzera solo DOPO il foglio di
+  // sistema (parecchi giri nativi), quindi la guardia sullo stato non ferma
+  // il secondo tap — il dialogo resta toccabile per tutta l'attesa. Questo
+  // ref si alza in modo SINCRONO nel gesto, come `saving` fa per doSave:
+  // senza, due tap chiedono il permesso due volte e chiamano `safeBack`
+  // due volte, chiudendo anche la schermata sotto la modale. È condiviso
+  // dai due gesti, così vale anche per "Sì" seguito subito da "Non ora".
+  const promptBusy = useRef(false);
   const showToast = useUIStore((s) => s.showToast);
   const { t } = useT();
 
@@ -215,7 +223,8 @@ export default function AddScreen() {
   };
 
   const acceptPrompt = async () => {
-    if (!notifPrompt) return;
+    if (!notifPrompt || promptBusy.current) return;
+    promptBusy.current = true;
     const { memory, addAnother } = notifPrompt;
     setPrefs({ promptSeen: true });
     const perm = await requestPermission();
@@ -230,7 +239,8 @@ export default function AddScreen() {
   // "Non ora" NON chiama il permesso di sistema: resta chiedibile dalla
   // schermata Notifiche. Il flag evita di riproporre il dialogo.
   const declinePrompt = () => {
-    if (!notifPrompt) return;
+    if (!notifPrompt || promptBusy.current) return;
+    promptBusy.current = true;
     setPrefs({ promptSeen: true });
     finishPrompt(notifPrompt.addAnother);
   };
@@ -279,6 +289,7 @@ export default function AddScreen() {
         // aspetta la risposta, altrimenti lo smonterebbe.
         if (addAnother) clearFields();
         setCanOfferPrompt(false);
+        promptBusy.current = false;
         setNotifPrompt({ memory: saved, addAnother });
         return;
       }
