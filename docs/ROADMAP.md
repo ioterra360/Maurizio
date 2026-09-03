@@ -116,7 +116,7 @@ admin tools (Phase 4).
 > legacy-peer-deps for `npm ci` on EAS; `d014aff` supabase-js 2.106.2 (2.106.0
 > broke the Hermes release bundle); `lib/demo-mode.ts` (release builds never run
 > demo); migration `20260825121500` column grants on `profiles`;
-> `PREMIUM_ENABLED=false` kill-switch.
+> `PREMIUM_ENABLED=false` kill-switch (constant removed on 2026-09-03).
 >
 > **Batch 2** — `1a8cecb` Italian legal drafts (`docs/legal/` privacy, terms,
 > account-deletion, md + html); `a7394bd` + `862d017` real icon / adaptive icon
@@ -152,13 +152,15 @@ gets Premium.
       in the earlier admin pass, unchanged today
 
 **Scope (left):**
-- [ ] **RevenueCat Premium** — `react-native-purchases`, rewrite
-      `app/(app)/subscribe.tsx` as the IAP paywall, second-folder sheet,
-      `profiles.premium_until` + webhook Edge Function + insert trigger, then
-      flip `PREMIUM_ENABLED`. Owner prerequisites first (Paid Apps Agreement,
-      W-8BEN, banking; Play payments profile). See `docs/PAYMENTS.md`.
-- [ ] Free-tier **word quota** (number / period undecided — do not implement
-      before the owner decides)
+- [x] **RevenueCat plans** — three plans Free/Pro/Premium built 2026-09-03
+      (`lib/plan.ts`, `app/paywall.tsx`, `lib/purchases.ts`, edge function
+      `revenuecat-sync`, migration `20260903100000_plans.sql`). INERT until
+      the owner prerequisites are done (Paid Apps Agreement, W-8BEN, banking;
+      Play payments profile) and the RevenueCat keys are in `eas.json`. See
+      `docs/PAYMENTS.md` § "Ordine di attivazione".
+- [x] Free-tier quota — decided 2026-09-02 and shipped with the plans: **10
+      memories in total** (not per day), enforced by
+      `memories_enforce_plan_limit`
 - [ ] **Play closed test**: Personal developer accounts must run a closed test
       with **at least 12 testers opted-in for 14 continuous days** before
       production access is granted — recruit testers (Angelo, Maurizio, friends)

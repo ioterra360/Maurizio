@@ -10,8 +10,9 @@
 **Memika** (final brand name) is a calm, editorial spaced-repetition
 mobile app. Three review rhythms in a fixed order: **Scan → Reinforcement →
 Focus**. It runs on Expo SDK 54 + React Native 0.81 + TypeScript with Supabase
-as the backend. Payments will be **in-app purchases via RevenueCat** (not built yet — decided
-2026-07-25, confirmed 2026-08-25). There is no marketing site and no web
+as the backend. Payments are **in-app purchases via RevenueCat** (decided
+2026-07-25, confirmed 2026-08-25, built 2026-09-03; inert until the store
+products and the keys exist). There is no marketing site and no web
 checkout for Memika.
 
 Owner and publisher: Maurizio Cocco (product; ditta individuale, Tresnuraghes;
@@ -19,9 +20,11 @@ Apple Individual + Play Personal developer accounts; support
 memikaapp@gmail.com). Developer: Angelo Casula / Tailor App Studio
 (implementation). See `docs/PRODUCT.md` for full domain context.
 
-Freemium: a free account owns exactly ONE folder; Premium (RevenueCat, not
-built) unlocks unlimited folders. `PREMIUM_ENABLED=false` in
-`lib/constants.ts` keeps the Premium row hidden (the old external-checkout screen was deleted on 2026-08-29). See
+Freemium: tre piani **Free / Pro / Premium** (2026-09-02). Free = 10 ricordi
+TOTALI, 1 cartella, 0 sezioni; Pro = ricordi illimitati, 5 cartelle, 3 sezioni;
+Premium = tutto illimitato più le foto sui ricordi. I limiti sono applicati da
+quattro trigger Postgres (`20260903100000_plans.sql`), non dal client.
+Pagamenti: abbonamenti in-app via RevenueCat, paywall `app/paywall.tsx`. Vedi
 `docs/PAYMENTS.md`.
 
 ## 2. Read these before touching code
@@ -68,8 +71,14 @@ These exist because of past decisions documented elsewhere in `docs/`.
   do not build new logic on it; it goes away with a future migration. The
   old 4-template constants (`FOLDER_TEMPLATES` in `lib/constants.ts`) now
   serve DEMO MODE ONLY. Nothing is auto-seeded: a user starts with ONE
-  folder chosen at onboarding. Freemium gating (`FOLDER_LIMIT_ENFORCED`,
-  still `false` in the test phase) returns with the Free/Pro/Premium plans.
+  folder chosen at onboarding. Freemium gating is now server-side: three
+  plans Free/Pro/Premium enforced by the triggers of
+  `20260903100000_plans.sql` (free = 1 folder, pro = 5, premium unlimited),
+  counting the user's **live** folders — the trash does not count, and the
+  "trash → create → restore" loop is closed on the restore instead
+  (`folders_enforce_plan_limit_on_restore`). The client mirrors the caps with
+  `PLAN_LIMITS` in `lib/plan.ts`; `FOLDER_LIMIT_ENFORCED` and
+  `FREE_FOLDER_LIMIT` were removed on 2026-09-03.
 - **Demo accounts are: `angelo.casula@gmail.com` (user) and
   `memikaapp@gmail.com` (admin).** Admin role is granted ONLY by the
   `public.admin_emails` allowlist (seeded with `memikaapp@gmail.com`, migration
@@ -97,6 +106,26 @@ These exist because of past decisions documented elsewhere in `docs/`.
 - **Every caught error goes through `reportError(tag, err)`**
   (`lib/report-error.ts`); no bare `console.warn` in a `catch`. Never put
   personal data in the `extra` payload.
+- **`profiles.plan`, `plan_until` e `rc_app_user_id` non entrano MAI nella
+  grant di UPDATE per `authenticated`**
+  (`20260825121500_lock_profiles_columns.sql`). L'unico scrittore è la Edge
+  Function `revenuecat-sync`, che gira con il `service_role` iniettato dalla
+  piattaforma. Un piano scrivibile dal client è un piano regalato. La stessa
+  funzione non declassa a `free` una concessione di cortesia (`plan <> 'free'`
+  + `plan_until is null` + `rc_app_user_id is null`): è così che il seed
+  `premium` dei due tester sopravvive alla prima apertura dell'app.
+- **I limiti si mappano per errcode, mai per il testo dell'errore.**
+  `P0004` ricordi, `P0005` cartelle (creazione **e** ripristino dal cestino),
+  `P0003` sezioni; `P0001` sono le guardie di integrità e NON è un limite di
+  piano. Il solo posto che li conosce è `planLimitFromCode()` in
+  `lib/plan.ts`. Un `msg.includes("limit")` si rompe alla prima traduzione —
+  è già successo.
+- **Il client rispecchia i limiti, non li decide.** `lib/plan.ts` esiste per
+  disabilitare e spiegare prima del rifiuto; se diverge dai trigger, il bug è
+  nel client. Ogni superficie che può ricevere un errcode di piano monta
+  `PlanLimitDialog` — Add, Conoscenza, `/choose-topic`, `/folder/[id]`,
+  Impostazioni cartella, Cestino: un toast "riprova" su un limite di piano è
+  un bug, perché riprovare non può funzionare.
 
 ## 4. Conventions you must follow
 
@@ -145,8 +174,11 @@ lib/
   auth-links.ts     Pure parser for memika://reset-password#… / auth-callback#… deep links.
   report-error.ts   reportError(tag, err, extra) — console.warn in dev, Sentry.captureException in release. Use it in every catch.
   network.ts        withRequestTimeout(fetch, ms) — the 15 s Supabase request timeout (no AbortSignal.timeout on Hermes).
+  plan.ts           PURE: plan limits, effectivePlan, canAdd*, errcode → limit. No React, no Supabase. Mirrors the DB triggers.
+  purchases.ts      RevenueCat SDK behind `purchasesAvailable` (false in Expo Go, demo mode, or without keys).
+  use-plan.ts       usePlan() + startPlanSync() — the glue between the auth store, the SDK and the edge function.
 theme/              Design tokens mirroring tailwind.config.js for non-NW consumers.
-supabase/           Versioned database (config.toml + migrations/).
+supabase/           Versioned database (config.toml + migrations/) + functions/ (Deno edge functions, outside the app's tsconfig) + verify/ (read-only smoke SQL).
 docs/               Architectural docs.
 assets/brand/       Mascot, icon, logo — never inline base64 these.
 _design_drop/       Source-of-truth visual mockup (HTML) — outside the app, do not import from it.
@@ -233,9 +265,10 @@ The `--legacy-peer-deps` flag is required because `lucide-react-native` over-dec
 - **A monorepo / Nx setup.** Memika is one app. Premature.
 - **Web checkout / external payment links.** Payments are in-app purchases via
   RevenueCat. A store build that links out to a web checkout is rejected under
-  Apple 3.1.1 / Play Payments policy — the old external-checkout screen was deleted on
-  2026-08-29; the IAP paywall is not built yet. `docs/PAYMENTS.md`
-  describes the RevenueCat model and the enforcement plan.
+  Apple 3.1.1 / Play Payments policy — the old external-checkout screen was
+  deleted on 2026-08-29 and replaced on 2026-09-03 by the in-app paywall
+  `app/paywall.tsx` (RevenueCat). `docs/PAYMENTS.md` describes the model and
+  the enforcement.
 - **Auto-seeding folders at signup.** Replaced (2026-08-25) by the one-folder
   pick in `/choose-topic`. Do not reintroduce `seedDefaultFolders`.
 - **Fake numbers in loading / error states.** Health, Today and the review

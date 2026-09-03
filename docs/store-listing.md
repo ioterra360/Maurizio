@@ -34,7 +34,7 @@ Memika è gratuita con una cartella di ricordi. Le cartelle illimitate arriveran
 I ricordi sono tuoi. Puoi cancellare tutto quando vuoi dalle Impostazioni e chiederci una copia dei tuoi dati in qualsiasi momento. Informativa sulla privacy: https://ioterra360.github.io/memika-legal/privacy/
 ```
 
-> Nota 2026-08-27: nelle build di test il limite di una cartella è disattivato (`FOLDER_LIMIT_ENFORCED=false`): i tester possono creare fino a 5 cartelle (4 modelli + 1 personalizzata). La frase "gratuita con una cartella" descrive il prodotto finale; riattivare il flag prima della produzione o adeguare il testo.
+> Nota 2026-09-03: dalla build 3 il limite delle cartelle è applicato dal database (free = 1, pro = 5, premium illimitate; trigger `folders_enforce_plan_limit`, che conta le sole cartelle vive). Gli account dei due tester sono `premium` dal seed della migrazione, quindi non lo incontrano. La frase "gratuita con una cartella" è di nuovo vera.
 
 **Categoria**: App → Istruzione
 **Tag** (max 5, se disponibili): Apprendimento, Flashcard, Lingue, Studio

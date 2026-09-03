@@ -223,7 +223,7 @@ costruiscono entrambe le piattaforme dallo stesso commit.
    `NOTIFICATIONS_ENABLED = false` finché non fanno nulla (Linee guida 2.1).
 5. Nome visualizzato facoltativo alla registrazione (5.1.1, minimizzazione).
 6. Vecchia schermata checkout web (`subscribe.tsx`) rimossa dal binario con le sue
-   chiavi di catalogo; `PREMIUM_ENABLED` resta per il paywall RevenueCat.
+   chiavi di catalogo; dalla build 3 il paywall in-app e' `app/paywall.tsx` (RevenueCat).
 7. Se il DSN di Sentry arriva in tempo: slug reali in app.json, DSN in `eas.json`,
    `SENTRY_AUTH_TOKEN` come segreto EAS, via `SENTRY_DISABLE_AUTO_UPLOAD`.
 

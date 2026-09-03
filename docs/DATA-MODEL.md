@@ -45,6 +45,9 @@ is in the `admin_emails` allowlist (currently `memikaapp@gmail.com`).
 | `weekly_digest` | boolean | Saved preference only — no digest is sent yet; default `false` |
 | `morning_review_at` | time | Daily reminder slot (HH:MM, the client floors to a 30-minute slot); default 08:00 |
 | `evening_review_at` | time | UNUSED since 2026-09-03 (single reminder); kept for pre-OTA clients, drop in a later migration |
+| `plan` | text | `free` / `pro` / `premium`, default `free`. **Not** in the UPDATE grant: only the `revenuecat-sync` edge function writes it (migration 20260903100000) |
+| `plan_until` | timestamptz | Entitlement expiry; in the past = the plan is worth `free` (`current_plan()`). null = never expires (lifetime, promo, or a courtesy grant) |
+| `rc_app_user_id` | text | RevenueCat App User ID (= `profiles.id`). null on a row RevenueCat has never synced |
 | `created_at` / `updated_at` | timestamptz | |
 
 ### `folders`
@@ -55,8 +58,11 @@ taxonomy — 4 macrocategories, ~44 subcategories (`lib/folder-taxonomy.ts`) —
 or names a custom folder (1–40 chars client-side). **Identity is `id`**
 (migration 20260902130000): `unique(user_id, kind)` is gone, duplicates are
 legal, the route is `/folder/[id]`. Insert is allowed by
-`folders_all_own_or_admin` (user_id = auth.uid()). Free accounts
-own one folder (`FREE_FOLDER_LIMIT`, enforced in the UI for now).
+`folders_all_own_or_admin` (user_id = auth.uid()). Free accounts own one
+folder, pro accounts five, premium unlimited — enforced by
+`folders_enforce_plan_limit` (`P0005`, migration 20260903100000), counting
+**live** folders only; a restore from the trash that would push past the cap
+is refused by `folders_enforce_plan_limit_on_restore` with the same code.
 
 | Column | Type | Notes |
 |---|---|---|
@@ -170,6 +176,35 @@ sidesteps the recursive-RLS-on-profiles problem.
 | `profiles_set_updated_at` | `profiles` | BEFORE UPDATE | Touch `updated_at` |
 | `folders_set_updated_at` | `folders` | BEFORE UPDATE | Touch `updated_at` |
 | `memories_set_updated_at` | `memories` | BEFORE UPDATE | Touch `updated_at` |
+| `memories_enforce_plan_limit` | `memories` | BEFORE INSERT | 10 memories on the free plan, **trash included** (`where user_id`, no `deleted_at` filter) → `P0004` |
+| `folders_enforce_plan_limit` | `folders` | BEFORE INSERT | 1 folder (free) / 5 (pro), **live rows only** (`deleted_at is null`) → `P0005` |
+| `folders_enforce_plan_limit_on_restore` | `folders` | BEFORE UPDATE, only on `deleted_at` non-null → null | Restore from the trash while the live folders are already at the cap → `P0005` (hint `plan-limit:folders-restore`) |
+| `subfolders_enforce_rules` | `subfolders` | BEFORE INSERT OR UPDATE | 0 sections (free) / 3 (pro) → `P0003`, plus the integrity guards (`P0001`) |
+
+The two caps count the trash the opposite way on purpose: a memory restore can
+never fail (the total only goes down), while a folder cap of ONE must not lock
+out a user who trashed their only folder and owns none — the loop is closed on
+the restore instead. The reasoning is in `docs/PAYMENTS.md` § "Grandfathering,
+e come contano i tetti" and, at length, in the migration's comments.
+
+### Errcode dei limiti
+
+Clients map the **code**, never a substring of the message (a translation would
+break it). `lib/plan.ts` `planLimitFromCode()` is the only place that knows
+them.
+
+| Errcode | Limit | i18n |
+|---|---|---|
+| `P0004` | memories (10 in total, trash included, free) | `planLimit.memories*` |
+| `P0005` | folders (1 free, 5 pro, live rows only) — both on create and on restore | `planLimit.folders*`, `planLimit.foldersRestore*` |
+| `P0003` | sections (0 free, 3 pro) | `planLimit.sections*` |
+| `P0001` | integrity guards, **not** a plan limit | generic message |
+
+PostgREST serves `P0003`/`P0004`/`P0005` as **HTTP 500** — its SQLSTATE→HTTP
+table promotes only `P0001` to 400 — but the body with `code` still reaches the
+client, which is what `planLimitFromCode()` works on. So plan refusals, a
+normal outcome for a free user, show up as 500 in the project logs: not a fault
+to chase.
 
 ## Functions
 
@@ -180,6 +215,7 @@ sidesteps the recursive-RLS-on-profiles problem.
 | `set_updated_at()` | trigger | nobody (trigger-only) | Touches `updated_at` |
 | `review_items_consistency()` | trigger | nobody (trigger-only) | Session, memory and item must share `user_id` |
 | `delete_own_account()` | DEFINER | `authenticated` only (revoked from `public` and `anon`) | In-app account deletion (Apple 5.1.1(v) / Google Play): `delete from auth.users where id = auth.uid()`; raises `42501` when there is no authenticated caller |
+| `current_plan(uid)` | DEFINER, execute revoked from `public`/`anon`/`authenticated` | the plan triggers only | The plan that is worth something now: `plan`, degraded to `free` when `plan_until` is past. Mirrored client-side by `effectivePlan()` in `lib/plan.ts` |
 
 ### Account deletion
 
@@ -279,9 +315,9 @@ order by completed_at desc;
 
 These are conscious omissions, not oversights:
 
-- **Subscription state** — a future `profiles.premium_until` column written
-  by the RevenueCat webhook Edge Function (`docs/PAYMENTS.md`). Not created
-  until the paywall is built.
+- **Subscription history** — `profiles.plan` + `plan_until` are enough for a
+  permission with an expiry; the full history lives in RevenueCat. If we ever
+  need it locally, then a table.
 - **Push notification tokens** — Phase 4.
 - **Content templates / "marketplace" folders** — admin shipping pre-built
   decks. Deferred until after launch.

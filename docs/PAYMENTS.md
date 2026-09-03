@@ -1,196 +1,236 @@
 # Payments
 
-> Freemium + one Premium tier, sold as **in-app subscriptions through
-> RevenueCat**. Decided 2026-07-25, confirmed 2026-08-25. This doc replaces the
-> earlier Wix / web-checkout ("Spotify pattern") plan, which is dead: a store
-> build that links out to an external checkout is rejected under Apple
-> Guideline 3.1.1 and the Google Play Payments policy.
+> Tre piani — Free / Pro / Premium — venduti come **abbonamenti in-app via
+> RevenueCat**. Decisione 2026-07-25, confermata 2026-08-25, parametri fissati
+> 2026-09-02, costruiti 2026-09-03. Nessun checkout web: un binario che rimanda
+> a un pagamento esterno viene rifiutato sotto Apple 3.1.1 e Google Play
+> Payments.
 
-## Status (2026-08-25)
+## Stato (2026-09-04)
 
-🚧 **Not implemented.** Nothing in the app talks to RevenueCat yet.
+Implementato in codice, **non ancora attivo**: mancano il progetto RevenueCat,
+i prodotti negli store e le chiavi. Fino ad allora
+`EXPO_PUBLIC_REVENUECAT_IOS_KEY` / `_ANDROID_KEY` sono stringhe vuote in
+`eas.json`, `purchasesAvailable` è falso, nessuna riga tocca l'SDK e il paywall
+mostra le tre schede con i bottoni spenti. La migrazione dei limiti **non va
+applicata a produzione** finché la build 3 non è sugli store (vedi "Ordine di
+attivazione").
 
-What exists today:
+## I piani
 
-| Piece | State |
-|---|---|
-| `PREMIUM_ENABLED` in `lib/constants.ts` | `false` — kill-switch. The Premium row in Settings and the future RevenueCat paywall stay hidden until it flips. |
-| (deleted 2026-08-29) | The old external-checkout screen `app/(app)/subscribe.tsx` and its catalog keys were removed before the first iOS build (Guideline 3.1.1 hygiene). The IAP paywall will be a new screen. |
-| `FREE_FOLDER_LIMIT = 1` in `lib/constants.ts` | The freemium rule. Onboarding creates exactly one folder (`/choose-topic`); no create-folder affordance exists anywhere else. |
-| `profiles` entitlement column | Does not exist yet (see "Data model" below). |
-| Store prerequisites | Apple Developer (Individual) and Google Play (Personal) accounts opened 2026-08-25 under Maurizio Cocco. Paid Apps Agreement / merchant profile not yet completed. |
+| | Free | Pro | Premium |
+|---|---|---|---|
+| Ricordi | **10 totali** sull'account | illimitati | illimitati |
+| Cartelle | 1 | 5 | illimitate |
+| Sezioni per cartella | 0 | 3 | illimitate |
+| Foto sui ricordi | — | — | ✓ |
 
-Do NOT build the paywall or wire RevenueCat until the owner says go. Do build
-everything else so that it does not get in the way (this doc says how).
+I 10 ricordi sono un tetto **totale**, non giornaliero. Il cursore in
+Impostazioni (`profiles.daily_input_cap`) è un'altra cosa: autoregolazione del
+carico per chi ha Pro o Premium, con gli avvisi della mascotte a 20/25/30. Un
+utente free non lo incontra mai.
 
-## The model
+Prezzi, durata e periodo di prova sono configurazione RevenueCat: non toccano
+una riga di codice. Gli identificativi dei prodotti sì, e sono in
+`lib/plan.ts` (`PRODUCT_IDS`): `memika_pro_monthly`, `memika_pro_yearly`,
+`memika_premium_monthly`, `memika_premium_yearly`. Ogni id che viene creato
+deve essere identico in App Store Connect, Play Console e RevenueCat.
 
-**Free** (default for every account):
+Entitlement RevenueCat: **`pro` e `premium`** (due, non uno). Offerta:
+`default`, che **in questo ciclo contiene solo i due pacchetti mensili**. Il
+paywall ha un bottone per scheda e nessun selettore di periodicità: un
+pacchetto annuale accanto a un mensile sarebbe configurato, caricato e mai
+vendibile. I due id annuali restano riservati e `planForProductId()` li
+riconosce già, così aggiungere il piano annuale in futuro sarà lavoro di
+interfaccia e di offerta, non di mappa.
 
-- Exactly **one folder** (topic). The user picks it at onboarding: one of the
-  four templates (Giapponese / Medicina / Spagnolo / Diritto) or a custom name.
-- Later: a **word quota** per day or per month (number and period NOT decided).
-  Not implemented; nothing may block it.
-- Everything else — the three review rhythms, Health, Settings — is free.
+## Grandfathering, e come contano i tetti
 
-**Premium** (auto-renewing subscription, monthly and/or yearly — pricing TBD):
+Chi ha già più di 10 ricordi, più di una cartella o delle sezioni li tiene
+tutti e semplicemente non può aggiungerne. Cade fuori gratis dai tetti, che
+sono `BEFORE INSERT` e non guardano le righe esistenti.
 
-- **Unlimited folders.**
-- No word quota (or a much higher one — decided together with the quota).
-- No other feature is gated. Premium buys *breadth*, not the core loop.
+I due tetti contano il cestino in modo **opposto**, e la differenza è voluta.
 
-When a free user tries to open or create a second folder, the app shows the
-**subscription sheet** (the RevenueCat paywall). Until it exists, the affordance
-simply does not exist: no "+" for folders, no "create folder" route.
+- **Ricordi: cestino compreso.** Il ripristino è una UPDATE e non passa da un
+  trigger `BEFORE INSERT`: contando le sole righe vive, il ciclo "cestina 5 →
+  inserisci 5 → ripristina 5" sarebbe ripetibile all'infinito e il tetto
+  smetterebbe di esistere. Contando tutto, il totale può solo scendere (purga a
+  24 ore), quindi nessun ripristino di un ricordo può fallire. Il prezzo — un
+  ricordo nel cestino occupa il suo posto fino alla purga — è detto nella copy
+  della mascotte.
+- **Cartelle: solo le vive.** Lì il tetto free vale UNO e l'app non ha alcuna
+  "elimina definitivamente". Contando anche il cestino, chi sceglie "Spagnolo"
+  a `/choose-topic`, cambia idea e lo cestina si troverebbe con ZERO cartelle,
+  lo stato vuoto che invita a crearne una, e un rifiuto `P0005` per 24 ore: un
+  tetto che blocca chi è sotto il tetto. È anche l'unico conteggio coerente con
+  `countFolders()` (`lib/api.ts`), che filtra già `deleted_at is null`.
+  Il buco del ciclo "cestina → crea → ripristina" si chiude dall'altro capo,
+  sul **ripristino**: `folders_enforce_plan_limit_on_restore` rifiuta la
+  transizione cestino → vivo quando le cartelle vive sono già al tetto. Costo
+  accettato: un utente al tetto che cestina una cartella deve liberare uno slot
+  prima di riprenderla — un rifiuto immediato, spiegato e rimediabile, contro
+  un blocco alla creazione che non aveva rimedio se non pagare o aspettare.
+  Il Cestino mostra quel rifiuto con la mascotte (`planLimit.foldersRestore*`),
+  non con "Riprova".
 
-Copy is Italian and honest: no fake "limited-time" claims, no invented user
-counts, no benefits the app does not deliver. The current `BENEFITS` list in
-The old paywall promised "Ricordi illimitati" and "Insight personalizzati" —
-both must be re-checked against what Premium actually unlocks before reuse.
+## Dove vive la verità
 
-## Why RevenueCat (and not a webhook of our own)
-
-- Apple and Google each need their own IAP integration (StoreKit 2 / Play
-  Billing Library). RevenueCat wraps both behind one SDK (`react-native-purchases`)
-  and one "entitlement" concept.
-- Receipt validation, renewal, grace period, refund and cancellation events
-  are handled server-side by RevenueCat — we never parse a receipt.
-- Free tier up to $2.5k MTR; no fixed cost while the app is unadvertised.
-- Their Expo docs cover SDK 54 with a config plugin (`react-native-purchases`
-  needs a development build — Expo Go cannot run it).
-
-The store cut (15 % with Apple's Small Business Program once enrolled, 15 % on
-Play for the first $1 M/year, 30 % otherwise) is accepted. It is the price of being allowed in the store at all.
-
-## Prerequisites (owner side — Maurizio)
-
-Nothing here can be done from this repo.
-
-**Apple**
-
-1. Apple Developer Program (Individual) — opened 2026-08-25.
-2. App Store Connect → Agreements, Tax, and Banking → **Paid Apps Agreement**
-   accepted.
-3. Tax forms: as a non-US person, **W-8BEN** (individual). Italian tax
-   residency; no US TIN needed.
-4. Banking: an IBAN under Maurizio's name (the ditta individuale is not a
-   separate legal person).
-5. Create the subscription group + products in App Store Connect
-   (e.g. `memika_premium_monthly`, `memika_premium_yearly`) with Italian
-   localized names and descriptions, and a **sandbox tester** Apple ID.
-6. Generate the **In-App Purchase Key** (App Store Connect → Users and Access →
-   Integrations → In-App Purchase) for RevenueCat's server-to-server
-   validation, and the **App Store Server Notifications** URL from RevenueCat
-   pasted into App Store Connect.
-
-**Google Play**
-
-1. Google Play Console (Personal) — opened 2026-08-25.
-2. Play Console → Setup → **Payments profile** (merchant account) — required
-   before any in-app product can be created. Personal accounts must also pass
-   the **12 testers × 14 days closed test** before production access (see
-   `docs/DEPLOY.md`).
-3. Create the subscription + base plans (monthly / yearly) under
-   Monetize → Products → Subscriptions, Italian listing.
-4. Google Cloud service account with the "Financial data" permission linked
-   to the Play developer account, its JSON key pasted into RevenueCat.
-5. Add Angelo and Maurizio as **license testers** (Play Console → Setup →
-   License testing) so test purchases are free.
-
-**RevenueCat**
-
-1. Account under memikaapp@gmail.com, project "Memika", one app per platform
-   (`studio.tailor.memika` both).
-2. One **entitlement**: `premium`. One **offering** ("default") with the two
-   packages (`$rc_monthly`, `$rc_annual`).
-3. Public SDK keys per platform → `EXPO_PUBLIC_REVENUECAT_IOS_KEY` /
-   `EXPO_PUBLIC_REVENUECAT_ANDROID_KEY` in `eas.json` `env` (they are public,
-   same category as the Supabase anon key).
-4. Webhook → Supabase Edge Function (see below); the webhook **authorization
-   header** value is a secret stored only in the Edge Function's env.
-
-## Data model (future migration)
-
-Entitlement state lives on `profiles`, written only server-side:
+**Nel database.** `supabase/migrations/20260903100000_plans.sql`:
 
 ```sql
--- future migration, not written yet
 alter table public.profiles
-  add column premium_until timestamptz,          -- null = free
-  add column rc_app_user_id text;                 -- RevenueCat app user id (= auth.users.id)
--- authenticated may SELECT these columns; UPDATE is NOT granted
--- (20260825121500_lock_profiles_columns.sql grants update on an explicit
--- column list — the new columns must not be added to it).
+  add column plan text not null default 'free' check (plan in ('free','pro','premium')),
+  add column plan_until timestamptz,
+  add column rc_app_user_id text;
 ```
 
-`premium_until > now()` is the single source of truth for "is Premium". A
-column rather than a `subscriptions` table because the app only needs a
-boolean-with-expiry; RevenueCat keeps the full history. If we ever need the
-history locally, add a table then.
+Nessuna delle tre entra nella grant di UPDATE per `authenticated`
+(`20260825121500_lock_profiles_columns.sql` elenca esattamente sei colonne, e
+resta così). È la lezione diretta di `daily_input_cap`, che è scrivibile
+dall'utente e quindi inutile come limite.
 
-The app user id passed to RevenueCat (`Purchases.logIn(userId)`) is the
-Supabase `auth.users.id`, so the webhook can address the profile directly.
+`public.current_plan(uid)` degrada a `free` un piano con `plan_until` nel
+passato — valutazione pigra, nessun cron di downgrade. `lib/plan.ts`
+`effectivePlan()` ne è lo specchio esatto lato client.
 
-## Server-side enforcement plan
+Quattro trigger applicano i tetti e sollevano errcode dedicati:
 
-The client-side flag is UX, not security. Enforce in Postgres:
+| Errcode | Trigger | Quando | Limite |
+|---|---|---|---|
+| `P0004` | `memories_enforce_plan_limit` | BEFORE INSERT | 10 ricordi (free), cestino compreso |
+| `P0005` | `folders_enforce_plan_limit` | BEFORE INSERT | 1 cartella (free), 5 (pro) — solo le vive |
+| `P0005` | `folders_enforce_plan_limit_on_restore` | BEFORE UPDATE, cestino → vivo | ripristino con le vive già al tetto (hint `plan-limit:folders-restore`) |
+| `P0003` | `subfolders_enforce_rules` | BEFORE INSERT OR UPDATE | 0 sezioni (free), 3 (pro) |
 
-1. **Edge Function `revenuecat-webhook`** (service_role, never in the client —
-   AGENTS.md hard rule): verifies the `Authorization` header, reads
-   `event.type` (`INITIAL_PURCHASE`, `RENEWAL`, `CANCELLATION`, `EXPIRATION`,
-   `BILLING_ISSUE`, `PRODUCT_CHANGE`, …) and `event.app_user_id`, and upserts
-   `profiles.premium_until = event.expiration_at_ms`. Idempotent: the same
-   event id applied twice yields the same row.
-2. **RLS / trigger on `folders` insert**: a `before insert` trigger (security
-   definer) that raises `P0001 'folder_limit'` when the user has
-   `premium_until` null/past and already owns `FREE_FOLDER_LIMIT` folders.
-   `lib/api.ts createFolder` maps that code to the Italian "Serve Premium"
-   message and opens the sheet. Belt and braces: the client never shows the
-   affordance, the server never accepts the row.
-3. **Word quota** (later): same shape — a counter query in a trigger on
-   `memories` insert, period and number from a `profiles` column or a
-   constant, decided with the owner.
-4. **Restore purchases**: `Purchases.restorePurchases()` on the paywall and in
-   Settings; the webhook `TRANSFER` event moves the entitlement to the new
-   app user id.
-5. **Account deletion** (`delete_own_account()` RPC, live): cascades the
-   profile; RevenueCat keeps the store subscription record (the user cancels
-   it in the store — `docs/legal/account-deletion.md` says so).
+Il client li mappa **per codice**, mai per sottostringa del messaggio
+(`planLimitFromCode()` in `lib/plan.ts`).
 
-Client refresh: `CustomerInfo` from the RevenueCat SDK is the *fast path* for
-the paywall UI; `profiles.premium_until` (fetched with the profile in
-`auth-store`) is what gates folder creation. The two agree after the webhook
-lands (seconds); until then the client trusts the SDK for the current session.
+PostgREST serve `P0003`/`P0004`/`P0005` come **HTTP 500** (solo `P0001`
+diventa 400): il corpo JSON con `code` arriva comunque al client e l'app si
+comporta correttamente, ma nei log del progetto i rifiuti di piano — un esito
+normale per un utente free — compaiono come 500. È noto e voluto: cambiare
+classe di errcode romperebbe i binari già in circolazione che riconoscono
+`P0003` per le sezioni.
 
-## What the client will need (when the owner says go)
+## Sincronizzazione con RevenueCat
 
-- `npx expo install react-native-purchases` (+ `react-native-purchases-ui` if
-  we use RevenueCat's hosted paywall templates). Development build required.
-- `Purchases.configure({ apiKey, appUserID: user.id })` in `auth-store` after
-  sign-in; `Purchases.logOut()` on sign-out. Demo mode branches before any
-  SDK call.
-- Build the paywall screen (new `app/(app)/subscribe.tsx`): offerings → package list → `purchasePackage`
-  → on `entitlements.active.premium` navigate back with a toast. Handle
-  `userCancelled`, `PURCHASE_NOT_ALLOWED`, `PAYMENT_PENDING` with Italian copy.
-  Terms + Privacy links (`TERMS_URL`, `PRIVACY_URL`) are mandatory on an
-  auto-renewing subscription screen (Apple 3.1.2), plus the price, period and
-  "si rinnova automaticamente, disdici dalle impostazioni dello store" line.
-- `PREMIUM_ENABLED` becomes `true` only in the commit that ships the rewritten
-  screen. The Settings row and the second-folder sheet hang off the same flag.
-- Sandbox purchase end-to-end on both stores is a release-checklist item
-  (`docs/DEPLOY.md`).
+`supabase/functions/revenuecat-sync/index.ts` è l'unica cosa che scrive
+`profiles.plan`. Due ingressi:
 
-## Tax / fiscal context (Italy)
+1. **L'app**, con il JWT dell'utente (`supabase.functions.invoke`): l'app user
+   id è `auth.uid()`.
+2. **Il webhook RevenueCat**, con l'header `Authorization` concordato nel
+   cruscotto: l'app user id è `event.app_user_id`.
 
-Maurizio operates as a **ditta individuale** (forfettario regime). Apple and
-Google act as merchant of record for in-app purchases: they collect VAT from
-the buyer, keep their commission and pay out the net. Maurizio invoices /
-records the payout, not each sale. The 40 % revenue share to Angelo (deal
-terms, memory `[[memika-deal-terms]]`) is computed on the **net store payout**
-unless the deal is renegotiated — flag this with Maurizio before the first
-payout, because the previous Wix plan computed it on gross.
+In entrambi i casi il piano **non** viene dal corpo della richiesta: si rilegge
+da `GET https://api.revenuecat.com/v1/subscribers/{app_user_id}` con la chiave
+segreta `sk_`. Il client non è una fonte attendibile per un permesso, e il
+payload di un webhook nemmeno.
 
-Above the forfettario ceiling (€85k/year) Maurizio must exit the regime and
-incorporate; the store accounts (Individual / Personal) would then need to be
-migrated to an organization — that is a store-side procedure, not a code
-change.
+`verify_jwt = false` per quella funzione (`supabase/config.toml`) perché il
+webhook non ha un JWT; la verifica del token utente la fa la funzione con
+`auth.getUser(token)`.
+
+**Concessioni di cortesia.** La funzione rilegge la riga prima di scriverla e
+NON declassa a `free` un profilo la cui firma è quella di una concessione
+manuale: `plan <> 'free'`, `plan_until is null`, `rc_app_user_id is null`. È il
+caso dei due tester, portati a `premium` dal seed della migrazione: RevenueCat
+non ha alcun entitlement per loro e risponderebbe "free", quindi senza questa
+guardia la cortesia durerebbe fino alla prima apertura dell'app. Un abbonamento
+vero ha sempre una scadenza o un `rc_app_user_id` — lo scrive questa stessa
+funzione al primo passaggio — quindi scadenze, rimborsi e disdette passano come
+prima, e un upgrade a pro/premium si scrive comunque. Per **togliere** una
+cortesia serve una mano umana:
+`update public.profiles set plan = 'free' where email = '…';`
+
+Secrets (mai nel repo):
+
+```bash
+npx supabase secrets set \
+  REVENUECAT_SECRET_KEY=sk_xxx \
+  REVENUECAT_WEBHOOK_SECRET=<valore identico a quello nel cruscotto RevenueCat> \
+  --project-ref taekvxxljtgzsjrlmumo
+npx supabase functions deploy revenuecat-sync --project-ref taekvxxljtgzsjrlmumo
+```
+
+`SUPABASE_SERVICE_ROLE_KEY` la inietta la piattaforma: il `service_role` non
+entra mai nel repo (AGENTS.md).
+
+## Il client
+
+- `lib/plan.ts` — puro: tabella dei limiti, piano efficace, `canAdd*`,
+  `canUsePhotos` (consumato dalle foto), mappa errcode. Coperto da vitest, che
+  vincola anche il **gemello Deno** delle tre funzioni RevenueCat dentro la
+  Edge Function: se cambia una, deve cambiare l'altra.
+- `lib/purchases.ts` — l'SDK dietro `purchasesAvailable`, falso in Expo Go, in
+  modalità demo e con le chiavi vuote. Nessuna riga tocca l'SDK in quei casi.
+- `lib/use-plan.ts` — `usePlan()` per le schermate; `startPlanSync()` lega
+  l'identità RevenueCat all'utente Supabase (`Purchases.logIn(user.id)`),
+  ascolta i cambi di abbonamento e chiama la edge function. Il primo `apply`
+  aspetta l'**idratazione** dello store: prima di quella `user` è ancora il
+  null iniziale, e un `logOut()` su quel null creerebbe un cliente anonimo
+  nuovo a ogni avvio.
+- `app/paywall.tsx` — stack ROOT (come `/add` e `/trash`, perché tre dei
+  punti di ingresso sono schermate root e una rotta di `(app)` spinta da lì
+  monterebbe un secondo navigatore a tab), tre schede, "Ripristina acquisti",
+  piede legale con Termini e Privacy (Apple 3.1.2).
+- `components/PlanLimitDialog.tsx` — la mascotte che spiega il limite e porta
+  al paywall. Montata in Add, Conoscenza, `/choose-topic`, `/folder/[id]`,
+  Impostazioni cartella e Cestino (dove usa `context="restore"`).
+- Impostazioni → Abbonamento: piano attuale, "Passa a Pro", "Ripristina
+  acquisti".
+
+## Prerequisiti lato proprietario (Maurizio)
+
+Nulla di tutto questo si fa da questo repo.
+
+**Apple**: Paid Apps Agreement, W-8BEN, IBAN, gruppo di abbonamenti con i due
+prodotti mensili (`memika_pro_monthly`, `memika_premium_monthly`), In-App
+Purchase Key per RevenueCat, tester sandbox.
+
+**Google Play**: profilo pagamenti, i due abbonamenti con il solo piano base
+mensile, service account con permesso sui dati finanziari collegato a
+RevenueCat, license tester.
+
+**RevenueCat**: progetto "Memika", un'app per piattaforma
+(`studio.tailor.memika`), entitlement `pro` e `premium`, offerta `default`
+con i due pacchetti mensili, chiavi pubbliche in `eas.json`, chiave segreta e
+header del webhook nei secrets Supabase, URL del webhook =
+`https://taekvxxljtgzsjrlmumo.supabase.co/functions/v1/revenuecat-sync`.
+
+## Ordine di attivazione
+
+La sequenza completa e autorevole è in `docs/DEPLOY.md` § "Build 3 (vc13 /
+iOS 3)". Per la parte piani, in breve:
+
+1. Build 3 `FINISHED` su EAS (contiene `react-native-purchases`), **prima del
+   submit**.
+2. `npx supabase db push` dal worktree linkato `memika-app`, poi
+   `supabase secrets set` + `functions deploy revenuecat-sync`. Solo dopo,
+   `eas submit` / upload Play: le colonne devono esistere prima che un tester
+   installi vc13, perché il client legge `profiles.plan` e la edge function la
+   scrive.
+3. I due tester passano a `plan = 'premium'` **dentro la migrazione stessa**,
+   sopra i `create trigger` — non con una query prima del push, che
+   fallirebbe con `42703` perché la colonna non esiste ancora, né dopo, che
+   lascerebbe una finestra in cui chi ha già più di 10 ricordi si trova
+   bloccato su un binario senza paywall. Verifica dopo il push:
+   `select email, plan from public.profiles where plan <> 'free';`
+4. Prima del deploy della funzione, controllo **bloccante**:
+   `grep -n "courtesyGrant" supabase/functions/revenuecat-sync/index.ts` deve
+   trovare la guardia, **sopra** la riga `.update({ plan,`. Senza, il seed del
+   punto 3 dura un solo avvio dell'app.
+5. `eas submit -p ios` + upload manuale dell'AAB in Play Console.
+6. Acquisto sandbox su entrambe le piattaforme, con verifica che
+   `profiles.plan` cambi entro pochi secondi.
+
+## Contesto fiscale (Italia)
+
+Maurizio opera come ditta individuale in regime forfettario. Apple e Google
+sono merchant of record: incassano l'IVA, trattengono la commissione e pagano
+il netto. La quota del 40 % ad Angelo si calcola sul **netto incassato dallo
+store**, non sul lordo: da confermare con Maurizio prima del primo pagamento,
+perché il vecchio piano Wix la calcolava sul lordo. Sopra gli 85k€ annui il
+regime forfettario decade e gli account store (Individual / Personal) vanno
+migrati a un'organizzazione — procedura di store, non modifica di codice.

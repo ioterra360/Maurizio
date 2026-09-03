@@ -14,8 +14,8 @@
 | Icons | `lucide-react-native` (1.75 stroke width by default) |
 | Fonts | Inter 400/500/600/700 via `@expo-google-fonts/inter` |
 | Local storage | `@react-native-async-storage/async-storage` + `expo-secure-store` |
-| Backend | Supabase — Auth + Postgres (eu-central-1). Storage and Edge Functions not used yet |
-| Payments | RevenueCat in-app subscriptions — not built, `PREMIUM_ENABLED=false` (see `PAYMENTS.md`) |
+| Backend | Supabase — Auth + Postgres (eu-central-1) + one Edge Function (`revenuecat-sync`). Storage not used yet |
+| Payments | RevenueCat in-app subscriptions — paywall `app/paywall.tsx`, three plans enforced by Postgres triggers (see `PAYMENTS.md`); inert until the store products and keys exist |
 | Push | Expo Notifications for local reminders — not installed yet |
 | Monitoring | Sentry `@sentry/react-native` ~7.2 — wired in `app/_layout.tsx` + `lib/report-error.ts`, active only in release builds with `EXPO_PUBLIC_SENTRY_DSN` |
 

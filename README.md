@@ -21,8 +21,8 @@ Memika helps you keep what you've already learned alive, in three rhythms:
 | Animations | Reanimated 4 + Moti |
 | Icons | lucide-react-native |
 | Fonts | Inter (400/500/600/700) via `@expo-google-fonts/inter` |
-| Auth & DB | Supabase — Auth + Postgres (EU, Frankfurt); Storage / Edge Functions not used yet |
-| Payments | RevenueCat in-app subscriptions (not built yet; `PREMIUM_ENABLED=false`) — freemium: one folder free, Premium = unlimited folders |
+| Auth & DB | Supabase — Auth + Postgres (EU, Frankfurt) + one Edge Function (`revenuecat-sync`); Storage not used yet |
+| Payments | RevenueCat in-app subscriptions — three plans (free = 10 memories + 1 folder; pro; premium + photos), enforced by Postgres triggers; paywall `app/paywall.tsx` |
 | Push | Expo Notifications (local reminders, not installed yet) |
 | Monitoring | Sentry (`@sentry/react-native` ~7.2, wired; DSN / org placeholders to fill — see `docs/DEPLOY.md`) |
 
