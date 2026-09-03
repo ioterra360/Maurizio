@@ -29,6 +29,7 @@ import {
 } from "@expo-google-fonts/inter";
 
 import { useAuthStore } from "@/lib/auth-store";
+import { usePlanSync } from "@/lib/use-plan";
 import { useLocaleStore, useT } from "@/lib/i18n";
 import { useThemeStore, useColors } from "@/theme/theme-store";
 import { useNotificationPrefsStore } from "@/lib/notification-prefs-store";
@@ -330,6 +331,11 @@ function RootLayout() {
   useEffect(() => {
     return subscribeAuthChanges();
   }, [subscribeAuthChanges]);
+
+  // RevenueCat: configura l'SDK, lega l'identita' all'utente in sessione e
+  // rilegge il piano dal server a ogni cambio di abbonamento. Inerte in
+  // Expo Go, in demo e con le chiavi vuote (lib/purchases.ts).
+  usePlanSync();
 
   // Bootstrap timeout — force-hydrate after the deadline so a dead network
   // can't lock us on the splash.
