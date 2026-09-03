@@ -2043,10 +2043,27 @@ In `app/_layout.tsx`, dopo l'effetto della password (righe 284-288) aggiungi:
   // la scheda del ricordo, il giornaliero apre Oggi. Dopo navigator e auth,
   // come l'effetto sopra. Senza utente la destinazione si perde: il gate
   // manda al login e dopo il login si atterra su Oggi — accettato.
+  //
+  // Oggi NON si può spingere. `(app)` è la radice di questo stack, quindi
+  // quando il tocco arriva con un modale davanti (Aggiungi, scheda ricordo,
+  // ripasso, cestino, impostazioni cartella…) la divergenza cade sullo
+  // stack di root e push/navigate/replace montano un SECONDO tab navigator
+  // sopra il modale: stato dei tab doppio e un back in più su Android.
+  // `navigate` non basta — lo StackRouter riusa una rotta esistente solo se
+  // è quella a fuoco (@react-navigation/routers 7.5.5 StackRouter.tsx:377-388,
+  // e expo-router non passa mai `pop`). Quindi prima si chiudono i modali
+  // (POP_TO_TOP riporta a fuoco la `(app)` che c'è già) e poi si cambia
+  // scheda. La scheda del ricordo invece è una rotta sorella: lì il push è
+  // quello giusto, anche sopra un altro modale.
   useEffect(() => {
     if (!hydrated || !navReady) return;
     return subscribeToNotificationTaps((route) => {
       if (!useAuthStore.getState().user) return;
+      if (route.pathname === "/(app)/today") {
+        if (router.canDismiss()) router.dismissAll();
+        router.navigate(route as never);
+        return;
+      }
       router.push(route as never);
     });
   }, [hydrated, navReady]);
