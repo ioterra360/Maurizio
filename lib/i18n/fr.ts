@@ -1094,5 +1094,9 @@ export const fr: Record<keyof typeof it, string> = {
   "notifications.firstReviewSwitch": "Préviens-moi quand un souvenir est prêt pour sa première révision",
   "notifications.firstReviewSwitchHint": "Vingt heures après l'enregistrement, pour chaque nouveau souvenir. Le mode calme n'y change rien.",
   "notifications.saveFailed": "Réglage non enregistré. Réessaie.",
+  "notifications.promptTitle": "Je te préviens quand c'est l'heure ?",
+  "notifications.promptBody": "La première révision de ce mot est dans 20 heures. Avec les notifications, je te le rappelle — sans compteurs, sans insister.",
+  "notifications.promptConfirm": "Oui, préviens-moi",
+  "notifications.promptCancel": "Pas maintenant",
 
 };

@@ -1094,5 +1094,9 @@ export const it = {
   "notifications.firstReviewSwitch": "Avvisami quando un ricordo è pronto per il primo ripasso",
   "notifications.firstReviewSwitchHint": "Venti ore dopo il salvataggio, per ogni ricordo nuovo. Non dipende dalla modalità calma.",
   "notifications.saveFailed": "Impostazione non salvata. Riprova.",
+  "notifications.promptTitle": "Ti avviso quando è ora?",
+  "notifications.promptBody": "Il primo ripasso di questa parola è tra 20 ore. Con le notifiche te lo ricordo io — senza contatori e senza insistere.",
+  "notifications.promptConfirm": "Sì, avvisami",
+  "notifications.promptCancel": "Non ora",
 
 } as const;

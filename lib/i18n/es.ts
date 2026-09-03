@@ -1094,5 +1094,9 @@ export const es: Record<keyof typeof it, string> = {
   "notifications.firstReviewSwitch": "Avísame cuando un recuerdo esté listo para el primer repaso",
   "notifications.firstReviewSwitchHint": "Veinte horas después de guardarlo, para cada recuerdo nuevo. No depende del modo calma.",
   "notifications.saveFailed": "Ajuste no guardado. Inténtalo de nuevo.",
+  "notifications.promptTitle": "¿Te aviso cuando sea la hora?",
+  "notifications.promptBody": "El primer repaso de esta palabra es en 20 horas. Con las notificaciones te lo recuerdo yo, sin contadores y sin insistir.",
+  "notifications.promptConfirm": "Sí, avísame",
+  "notifications.promptCancel": "Ahora no",
 
 };

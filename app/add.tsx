@@ -27,7 +27,7 @@ import {
 import { applyFolderOrder, priorityOf, useFolderOrderStore } from "@/lib/folder-order-store";
 import { createMemory, fetchProfile, fetchTodayInputCount } from "@/lib/api";
 import { useFoldersWithStats } from "@/lib/use-folders";
-import type { FolderWithStats } from "@/lib/mappers";
+import type { FolderWithStats, Memory, Profile } from "@/lib/mappers";
 import { useAuthStore } from "@/lib/auth-store";
 import { useUIStore } from "@/lib/ui-store";
 import { reportError } from "@/lib/report-error";
@@ -37,6 +37,15 @@ import { useT } from "@/lib/i18n";
 import { shortDateTime } from "@/lib/format";
 import { firstReview } from "@/features/srs/phases";
 import { itemTypesFor, legacyKindFor, templateHasReading } from "@/lib/folder-taxonomy";
+import { MascotDialog } from "@/components/MascotDialog";
+import { useNotificationPrefsStore } from "@/lib/notification-prefs-store";
+import {
+  getPermission,
+  notificationsAvailable,
+  requestPermission,
+  scheduleFirstReview,
+  syncDailyReminder,
+} from "@/lib/notifications";
 
 export default function AddScreen() {
   const colors = useColors();
@@ -109,6 +118,18 @@ export default function AddScreen() {
   // Contatore giornaliero vero: inserimenti di oggi + tetto dal profilo.
   const [dailyCount, setDailyCount] = useState<number | null>(null);
   const [dailyMax, setDailyMax] = useState(DAILY_INPUT_CAP_DEFAULT);
+  // Profilo intero, non solo il tetto: serve per riallineare il promemoria
+  // giornaliero appena il permesso viene concesso.
+  const [profile, setProfile] = useState<Profile | null>(null);
+  // Permesso notifiche: si chiede DOPO il primo ricordo salvato su questo
+  // telefono, mai all'avvio (spec F3). Pre-caricato qui così dopo il
+  // salvataggio la decisione è sincrona. Il dialogo trattiene il ricordo
+  // appena salvato: la notifica si programma solo a permesso concesso.
+  const promptSeen = useNotificationPrefsStore((s) => s.prefs.promptSeen);
+  const notifEnabled = useNotificationPrefsStore((s) => s.prefs.enabled);
+  const setPrefs = useNotificationPrefsStore((s) => s.setPrefs);
+  const [canOfferPrompt, setCanOfferPrompt] = useState(false);
+  const [notifPrompt, setNotifPrompt] = useState<{ memory: Memory; addAnother: boolean } | null>(null);
   const showToast = useUIStore((s) => s.showToast);
   const { t } = useT();
 
@@ -119,7 +140,10 @@ export default function AddScreen() {
       .then(([count, profile]) => {
         if (cancelled) return;
         setDailyCount(count);
-        if (profile) setDailyMax(profile.dailyInputCap);
+        if (profile) {
+          setDailyMax(profile.dailyInputCap);
+          setProfile(profile);
+        }
       })
       .catch((e) => {
         reportError("add/daily-count-load", e);
@@ -128,6 +152,30 @@ export default function AddScreen() {
       cancelled = true;
     };
   }, [user]);
+
+  useEffect(() => {
+    if (!notificationsAvailable() || promptSeen) {
+      setCanOfferPrompt(false);
+      return;
+    }
+    let cancelled = false;
+    getPermission().then((p) => {
+      // Il cancello NON può essere solo `undetermined`: su Android con
+      // SDK_INT < 33 (Android 12 e giù, e il minSdk di Expo 54 è 24) il
+      // modulo prende il ramo "classic" e mappa areNotificationsEnabled()
+      // in GRANTED o DENIED — `undetermined` non arriva MAI
+      // (node_modules/expo-notifications/android/src/main/java/expo/modules/
+      // notifications/permissions/NotificationPermissionsModule.kt:36,91-112).
+      // Lì il permesso di sistema c'è già ma l'interruttore di Memika no, e
+      // senza dialogo `prefs.enabled` resterebbe false per sempre: nessuna
+      // notifica, mai, su un intero intervallo di versioni Android. Il
+      // dialogo serve a portare `enabled` a true, non solo a chiedere all'OS.
+      if (!cancelled) setCanOfferPrompt(p.undetermined || (p.allowed && !notifEnabled));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [promptSeen, notifEnabled]);
 
   if (!hydrated) return null;
   if (!user) return <Redirect href="/(auth)/login" />;
@@ -151,6 +199,42 @@ export default function AddScreen() {
     time: shortDateTime(firstReview().nextReviewAt),
   });
   const dailyLimitReached = (dailyCount ?? 0) >= dailyMax;
+  // "Salva e aggiungi un altro": campi puliti, si resta qui.
+  const clearFields = () => {
+    setTerm("");
+    setReading("");
+    setDefinition("");
+    setExample("");
+  };
+
+  // Dopo il dialogo si riprende da dove il salvataggio si era fermato.
+  const finishPrompt = (addAnother: boolean) => {
+    setNotifPrompt(null);
+    if (addAnother) termRef.current?.focus();
+    else safeBack("/(app)/knowledge");
+  };
+
+  const acceptPrompt = async () => {
+    if (!notifPrompt) return;
+    const { memory, addAnother } = notifPrompt;
+    setPrefs({ promptSeen: true });
+    const perm = await requestPermission();
+    if (perm.allowed) {
+      setPrefs({ enabled: true });
+      await scheduleFirstReview(memory);
+      void syncDailyReminder(profile);
+    }
+    finishPrompt(addAnother);
+  };
+
+  // "Non ora" NON chiama il permesso di sistema: resta chiedibile dalla
+  // schermata Notifiche. Il flag evita di riproporre il dialogo.
+  const declinePrompt = () => {
+    if (!notifPrompt) return;
+    setPrefs({ promptSeen: true });
+    finishPrompt(notifPrompt.addAnother);
+  };
+
   // Limite giornaliero = avviso MORBIDO, mai blocco (docs/SRS.md): si può
   // salvare anche oltre il tetto — domani il carico sarà solo più alto.
   const doSave = async (addAnother: boolean) => {
@@ -179,7 +263,7 @@ export default function AddScreen() {
     }
     setSaving(true);
     try {
-      await createMemory({
+      const saved = await createMemory({
         userId: user.id,
         folderId: folderRow.id,
         term: term.trim(),
@@ -190,12 +274,20 @@ export default function AddScreen() {
       });
       setDailyCount((c) => (c ?? 0) + 1);
       showToast(t("add.savedToast", { name: folderRow.name }));
+      if (saved && canOfferPrompt) {
+        // Il dialogo è un Modal DENTRO questa schermata: la navigazione
+        // aspetta la risposta, altrimenti lo smonterebbe.
+        if (addAnother) clearFields();
+        setCanOfferPrompt(false);
+        setNotifPrompt({ memory: saved, addAnother });
+        return;
+      }
+      // Notifica "primo ripasso pronto" a T0+20h — no-op senza permesso,
+      // senza interruttore o con "Avvisami" spento.
+      if (saved) void scheduleFirstReview(saved);
       if (addAnother) {
         // Keep the fields cleared for fast successive adds; no nav.
-        setTerm("");
-        setReading("");
-        setDefinition("");
-        setExample("");
+        clearFields();
         termRef.current?.focus();
       } else {
         // Toast is rendered at the root layout — it survives this unmount.
@@ -651,6 +743,16 @@ export default function AddScreen() {
         </ScrollView>
       </KeyboardAvoidingView>
 
+      {/* Pre-prompt del permesso: solo al primo salvataggio su questo telefono. */}
+      <MascotDialog
+        visible={notifPrompt !== null}
+        title={t("notifications.promptTitle")}
+        body={t("notifications.promptBody")}
+        confirmLabel={t("notifications.promptConfirm")}
+        cancelLabel={t("notifications.promptCancel")}
+        onConfirm={() => void acceptPrompt()}
+        onCancel={declinePrompt}
+      />
     </SafeAreaView>
   );
 }

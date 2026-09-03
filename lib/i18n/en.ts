@@ -1094,5 +1094,9 @@ export const en: Record<keyof typeof it, string> = {
   "notifications.firstReviewSwitch": "Tell me when a memory is ready for its first review",
   "notifications.firstReviewSwitchHint": "Twenty hours after saving, for every new memory. Calm mode doesn't affect it.",
   "notifications.saveFailed": "Setting not saved. Try again.",
+  "notifications.promptTitle": "Want me to tell you when it's time?",
+  "notifications.promptBody": "This word's first review is in 20 hours. With notifications I'll remind you — no counters, no nagging.",
+  "notifications.promptConfirm": "Yes, remind me",
+  "notifications.promptCancel": "Not now",
 
 };
