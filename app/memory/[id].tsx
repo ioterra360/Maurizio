@@ -12,7 +12,7 @@ import {
 } from "react-native";
 import { FolderInput, Trash2 } from "lucide-react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
+import { Redirect, router, useFocusEffect, useLocalSearchParams } from "expo-router";
 
 import { MascotLoader } from "@/components/MascotLoader";
 import { PrimaryButton } from "@/components/PrimaryButton";
@@ -28,6 +28,7 @@ import { useT } from "@/lib/i18n";
 import type { TKey } from "@/lib/i18n";
 import type { Memory } from "@/lib/mappers";
 import { reportError } from "@/lib/report-error";
+import { useAuthStore } from "@/lib/auth-store";
 import { useUIStore } from "@/lib/ui-store";
 import { FONT, radii, useColors, useThemeTokens } from "@/theme/tokens";
 
@@ -46,6 +47,10 @@ export default function MemoryDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const showToast = useUIStore((s) => s.showToast);
   const { colors, statusTint } = useThemeTokens();
+  // Fuori dal gate di (app) e raggiungibile da un deep link (notifica):
+  // guardia esplicita, come Add.
+  const user = useAuthStore((s) => s.user);
+  const hydrated = useAuthStore((s) => s.hydrated);
 
   // Labels are catalog keys, resolved with t() at render so the language
   // switch applies. Built inside the component: statusTint follows the theme.
@@ -70,6 +75,10 @@ export default function MemoryDetailScreen() {
   const [sectionName, setSectionName] = useState<string | null>(null);
 
   const load = useCallback(async () => {
+    // Il render qui sotto redirige, ma gli effetti di QUESTO render sono già
+    // registrati e girano lo stesso al commit: la query si ferma qui, non
+    // nel JSX. Niente PostgREST da disconnessi.
+    if (!useAuthStore.getState().user) return;
     if (!id) return;
     setLoading(true);
     setError(false);
@@ -189,6 +198,9 @@ export default function MemoryDetailScreen() {
       setDeleting(false);
     }
   };
+
+  if (!hydrated) return null;
+  if (!user) return <Redirect href="/(auth)/login" />;
 
   const meta = memory ? STATE_META[memory.state] : null;
 

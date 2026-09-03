@@ -36,7 +36,7 @@ import { parseDevSignOutToken } from "@/lib/auth-links";
 import { SUPPORT_EMAIL } from "@/lib/constants";
 import { reportError } from "@/lib/report-error";
 import { useUIStore } from "@/lib/ui-store";
-import { installNotificationHandler } from "@/lib/notifications";
+import { installNotificationHandler, subscribeToNotificationTaps } from "@/lib/notifications";
 import { Mascot } from "@/components/Mascot";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { Toast } from "@/components/Toast";
@@ -295,6 +295,18 @@ function RootLayout() {
     if (pathname === RESET_PASSWORD_PATHNAME) return;
     router.replace("/(auth)/reset-password" as never);
   }, [pendingPasswordReset, hydrated, navReady, pathname]);
+
+  // Tocco su una notifica locale → rotta (spec F3): il primo ripasso apre
+  // la scheda del ricordo, il giornaliero apre Oggi. Dopo navigator e auth,
+  // come l'effetto sopra. Senza utente la destinazione si perde: il gate
+  // manda al login e dopo il login si atterra su Oggi — accettato.
+  useEffect(() => {
+    if (!hydrated || !navReady) return;
+    return subscribeToNotificationTaps((route) => {
+      if (!useAuthStore.getState().user) return;
+      router.push(route as never);
+    });
+  }, [hydrated, navReady]);
 
   // Listen to Supabase auth state changes (token refresh / global sign-out)
   // for the lifetime of the app.
