@@ -156,14 +156,22 @@ option 2 for any server-only values that get added later (none in Phase 1-3).
 > exported without them ships empty creds and every install fails fast on the
 > next launch (`release-missing-creds`). Run the Hermes pre-check first.
 
-> **Dalla build 3 (vc13 / iOS 3).** I due binari nascono dallo STESSO commit di
-> `main`, quindi un HEAD pulito produce esattamente i loro due fingerprint e
-> `eas update --channel production --message "…"` da `main` li raggiunge
-> entrambi. Prima di ogni publish: `npx expo-updates fingerprint:generate
-> --platform android` e `--platform ios` devono stampare gli hash registrati in
-> § "Build 3" qui sotto; se uno differisce, qualcuno ha toccato un input del
-> fingerprint dopo la build e quell'update NON arriverà a nessuno. La ricetta
-> checkout-dance di `TROUBLESHOOTING.md` vale SOLO per vc12 / iOS build 2.
+> **Dalla build 3 (vc13 / iOS 3) — e SOLO quando la build 3 è uscita.** I due
+> binari nascono dallo STESSO commit di `main`, quindi un HEAD pulito produce
+> esattamente i loro due fingerprint e `eas update --channel production
+> --message "…"` da `main` li raggiunge entrambi. Prima di ogni publish:
+> `npx expo-updates fingerprint:generate --platform android` e `--platform ios`
+> devono stampare gli hash registrati in § "Runtime della build 3" qui sotto; se
+> uno differisce, qualcuno ha toccato un input del fingerprint dopo la build e
+> quell'update NON arriverà a nessuno.
+>
+> **Finché le due celle della tabella § "Runtime della build 3" sono vuote la
+> build 3 non è uscita** e questo paragrafo non si applica: in circolazione ci
+> sono ancora vc11/vc12 / iOS build 2, e per loro vale la ricetta di
+> `TROUBLESHOOTING.md` § "OTA e runtime: i binari spediti NON hanno il
+> fingerprint di HEAD". In quella finestra `eas update --channel production` da
+> un HEAD pulito non raggiunge nessun binario e non dà alcun errore — produce
+> solo update orfani, com'è già successo con 33c8a878 / d02cdb80.
 
 **Enabled 2026-08-26** (Angelo: testers must get fixes without new builds).
 `expo-updates` is installed, `app.json` has `updates.url` (u.expo.dev/<projectId>)
@@ -495,6 +503,11 @@ Da compilare al punto 5 con `eas build:view <id> --json` → `runtimeVersion`.
 | Android vc13 | | |
 | iOS build 3 | | |
 
+> **Finché queste due celle sono vuote la build 3 non è uscita:** per i binari
+> in circolazione vale ancora la ricetta di `TROUBLESHOOTING.md` § "OTA e
+> runtime: i binari spediti NON hanno il fingerprint di HEAD", non
+> `eas update --channel production` da un HEAD pulito.
+
 Da qui in poi gli OTA partono da un HEAD pulito di `main` il cui
 `fingerprint:generate` coincide con questi due valori (vedi § OTA updates).
 
@@ -551,10 +564,12 @@ copyright, manual release, 6.5" screenshots. en-US app name is
 App Review contact phone + demo password, App Privacy questionnaire, price Free,
 submit for review after DSA verification.
 
-> **Storico: valeva per vc11/vc12 / iOS build 2.** Dalla build 3 (vc13 / iOS 3)
-> i due binari nascono dallo stesso commit e `eas update --channel production`
-> (senza `--platform`) li raggiunge entrambi — vedi § "Build 3" e § "OTA
-> updates". Quanto segue resta come storia del 2026-08/09.
+> **Storico — ma solo a build 3 uscita.** Dalla build 3 (vc13 / iOS 3) i due
+> binari nascono dallo stesso commit e `eas update --channel production`
+> (senza `--platform`) li raggiunge entrambi — vedi § "Runtime della build 3" e
+> § "OTA updates". Finché però le due celle di quella tabella sono vuote la
+> build 3 non è uscita e quanto segue NON è storia: è la regola in vigore per i
+> binari in circolazione.
 >
 > ⚠️ **NON usare `eas update --channel production --platform all`.** Questa
 > riga diceva di farlo ed era SBAGLIATA: i runtime di vc12 e iOS build 2
