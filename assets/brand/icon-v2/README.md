@@ -12,6 +12,21 @@ Al momento della PROSSIMA BUILD NATIVA (build 3 / vc13):
 3. in app.json: `android.adaptiveIcon.backgroundColor` da `#142450` a `#F8D2C4`
 4. caricare `play-icon-512.png` come icona della scheda in Play Console
 
+**Passi 1-3 eseguiti il 2026-09-03** (piano
+`docs/superpowers/plans/2026-09-03-build3-config-nativa.md`, Task 2); le
+copie per gli store sono in `docs/store-assets/`. Il passo 4 resta manuale
+in Play Console al momento dell'upload di vc13.
+
+`appstore-icon-1024.png` è `icon.png` **appiattita a RGB** (App Store Connect
+rifiuta il canale alpha e quel file si carica a mano, non passa da prebuild).
+Per rigenerarla:
+
+```bash
+npm install --no-save sharp
+node -e "const sharp=require('sharp');sharp('assets/brand/icon-v2/icon.png').flatten({background:'#FFFFFF'}).png({palette:false}).toFile('assets/brand/icon-v2/appstore-icon-1024.png')"
+npm prune --legacy-peer-deps
+```
+
 ## Icona di notifica (2026-09-03)
 
 `notification-icon.source.mjs` → `assets/notification-icon.png` (96×96, bianca

@@ -6,9 +6,8 @@ module.exports = {
     "./features/**/*.{js,jsx,ts,tsx}",
   ],
   presets: [require("nativewind/preset")],
-  // Tema deciso da theme/theme-store.ts via colorScheme.set() — non dal
-  // sistema: finché app.json porta userInterfaceStyle "light" l'OS non
-  // consegna mai il tratto scuro (si sblocca con la build nativa 3).
+  // Tema deciso da theme/theme-store.ts via colorScheme.set(): dalla build 3
+  // (userInterfaceStyle "automatic") segue davvero il sistema.
   darkMode: "class",
   theme: {
     extend: {

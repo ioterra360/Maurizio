@@ -243,8 +243,10 @@ The `--legacy-peer-deps` flag is required because `lucide-react-native` over-dec
   No placeholder statistics, no "planning…" spinner that never resolves.
 - **Server-side auth roles set from the client.** Roles come from the
   `handle_new_user` trigger, period.
-- **Light/dark mode toggle now.** The editorial design assumes light. Dark
-  comes in a later phase if at all.
+- **Static light-only styling.** Light AND dark ship since 2026-09-02
+  (`theme/theme-store.ts`, `theme/palettes.ts`; `userInterfaceStyle` is
+  `automatic` from build 3). Never read `colors` from `@/theme/tokens` at
+  module scope — call `useColors()` / `useThemeTokens()` inside the render.
 
 ## 7. When to ask a human
 

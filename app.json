@@ -6,7 +6,7 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "scheme": "memika",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": false,
@@ -27,14 +27,15 @@
       "package": "studio.tailor.memika",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#142450"
+        "backgroundColor": "#F8D2C4"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "permissions": [
         "android.permission.MODIFY_AUDIO_SETTINGS",
-        "android.permission.MODIFY_AUDIO_SETTINGS"
-      ]
+        "com.android.vending.BILLING"
+      ],
+      "blockedPermissions": ["android.permission.RECORD_AUDIO"]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -59,6 +60,21 @@
         }
       ],
       "expo-asset",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#3B6BF5"
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Memika legge le tue foto per allegarle ai ricordi.",
+          "cameraPermission": "Memika usa la fotocamera per allegare immagini ai tuoi ricordi.",
+          "microphonePermission": false
+        }
+      ],
       [
         "@sentry/react-native/expo",
         {
