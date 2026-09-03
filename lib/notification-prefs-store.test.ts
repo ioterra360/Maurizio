@@ -42,8 +42,12 @@ describe("notification prefs store", () => {
   });
 
   it("una scelta fatta mentre lo storage rispondeva vince sulla snapshot", async () => {
+    // La scelta viva si scrive direttamente nello store, SENZA passare da
+    // setPrefs: la sua persist() sovrascriverebbe subito il seme (lo stub
+    // AsyncStorage scrive in modo sincrono) e hydrate rileggerebbe già
+    // enabled:true, lasciando il ramo "changed vince" non esercitato.
     await AsyncStorage.setItem(KEY, JSON.stringify({ enabled: false }));
-    useNotificationPrefsStore.getState().setPrefs({ enabled: true });
+    useNotificationPrefsStore.setState({ prefs: { ...DEFAULT_NOTIFICATION_PREFS, enabled: true } });
     await useNotificationPrefsStore.getState().hydrate();
     expect(useNotificationPrefsStore.getState().prefs.enabled).toBe(true);
   });
