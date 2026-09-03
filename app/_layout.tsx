@@ -399,6 +399,20 @@ function RootLayout() {
                 contentStyle: { backgroundColor: themeColors.warmWhite },
               }}
             />
+            {/* Paywall: raggiunto da Impostazioni, da /folder/[id] e dai
+                dialoghi di limite di /add, /choose-topic e
+                /folder-settings — cioe' sia da dentro che da fuori i tab.
+                Nello stack ROOT come /add e /trash: una rotta di (app)
+                spinta da una schermata root monterebbe un SECONDO
+                navigatore a tab (choose-topic.tsx:52-60). */}
+            <Stack.Screen
+              name="paywall"
+              options={{
+                presentation: Platform.OS === "ios" ? "modal" : "card",
+                animation: "slide_from_bottom",
+                contentStyle: { backgroundColor: themeColors.warmWhite },
+              }}
+            />
           </Stack>
           <GlobalToast />
         </View>

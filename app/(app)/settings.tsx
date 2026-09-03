@@ -48,6 +48,8 @@ import {
 } from "@/lib/account-deletion";
 import type { Profile } from "@/lib/mappers";
 import { tap, error as errorFeedback } from "@/lib/feedback";
+import { purchasesAvailable, restorePlan } from "@/lib/purchases";
+import { PLAN_NAME_KEY, refreshPlan, usePlan } from "@/lib/use-plan";
 import { FONT, radii, useColors } from "@/theme/tokens";
 
 /**
@@ -134,6 +136,27 @@ export default function SettingsScreen() {
   // strumento di autoregolazione, il confine commerciale arriva coi piani.
   const [limitPickerOpen, setLimitPickerOpen] = useState(false);
   const [pendingCap, setPendingCap] = useState<number | null>(null);
+  const plan = usePlan();
+  const [restoring, setRestoring] = useState(false);
+  const restorePurchases = () => {
+    if (restoring) return;
+    tap();
+    setRestoring(true);
+    restorePlan()
+      .then(async (restored) => {
+        await refreshPlan();
+        showToast(
+          restored === "free"
+            ? tr("paywall.restoreNone")
+            : tr("paywall.restored", { plan: tr(PLAN_NAME_KEY[restored]) }),
+        );
+      })
+      .catch((err) => {
+        reportError("settings/restore-purchases", err);
+        showToast(tr("paywall.restoreFailed"));
+      })
+      .finally(() => setRestoring(false));
+  };
 
   useEffect(() => {
     if (!user) return;
@@ -391,6 +414,45 @@ export default function SettingsScreen() {
         </View>
         <View style={{ paddingHorizontal: 16 }}>
           <LanguagePicker />
+        </View>
+
+        {/* Abbonamento — ricreata dopo la cancellazione del vecchio
+            checkout esterno (3cd141e). Il paywall e' in-app: nessun link
+            fuori dall'app (Apple 3.1.1 / Play Payments). */}
+        <View style={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 8 }}>
+          <SectionLabel>{tr("settings.subscriptionSection")}</SectionLabel>
+        </View>
+        <View style={{ paddingHorizontal: 16, gap: 10 }}>
+          <SettingsRow
+            label={tr("settings.planLabel")}
+            hint={tr("settings.planHint")}
+            value={tr(PLAN_NAME_KEY[plan])}
+          />
+          {/* Tre casi, non due: `settings.upgrade` e' la stringa fissa
+              "Passa a Pro", e un abbonato Pro se la leggerebbe due righe
+              sotto "Piano: Pro". */}
+          <SettingsRow
+            label={
+              plan === "free"
+                ? tr("settings.upgrade")
+                : plan === "pro"
+                  ? tr("settings.upgradePremium")
+                  : tr("settings.seePlans")
+            }
+            value={tr("settings.open")}
+            onPress={() => {
+              tap();
+              router.push("/paywall" as never);
+            }}
+          />
+          {purchasesAvailable ? (
+            <SettingsRow
+              label={tr("settings.restorePurchases")}
+              hint={tr("settings.restorePurchasesHint")}
+              value={tr("settings.open")}
+              onPress={restorePurchases}
+            />
+          ) : null}
         </View>
 
         {/* About */}

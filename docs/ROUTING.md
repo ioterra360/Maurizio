@@ -12,6 +12,7 @@ app/
 ├── auth-callback.tsx            Landing dei link email NON di recovery (conferma signup) — root-level
 ├── choose-topic.tsx             Scegli il tuo argomento — crea l'UNICA cartella (root-level, vedi sotto)
 ├── folder-settings.tsx          Impostazioni cartella (`?kind=`) — push root-level sopra i tab
+├── paywall.tsx                  Piani Free/Pro/Premium — root-level (foglio dal basso), fuori dai tab
 │
 ├── (auth)/
 │   ├── _layout.tsx              Redirects out if user already signed in
@@ -43,6 +44,7 @@ app/
 | `/add` | `app/add.tsx` | Signed-in users (gated da add-gate; 0 cartelle → redirect a `/choose-topic`) |
 | `/choose-topic` | `app/choose-topic.tsx` | Signed-in users con 0 cartelle (≥1 → redirect a Today) |
 | `/folder-settings?kind=` | `app/folder-settings.tsx` | Signed-in users |
+| `/paywall` | `app/paywall.tsx` | Signed-in users — da Impostazioni, da `/folder/[id]` o da un limite di piano |
 | `/(auth)/login` | `app/(auth)/login.tsx` | Only when signed out |
 | `/(auth)/reset-password` | `app/(auth)/reset-password.tsx` | Chi apre il link di recovery (gate: `pendingPasswordReset`) |
 | `/auth-callback` | `app/auth-callback.tsx` | Chi apre un link email di conferma (root-level, con o senza sessione) |
