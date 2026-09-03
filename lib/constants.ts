@@ -233,11 +233,17 @@ export const TERM_COUNTER_FROM = 40;
 export const PREMIUM_ENABLED = false;
 
 /**
- * Notifications (schedule rows, calm mode, weekly digest) are not built yet:
- * expo-notifications is not a dependency and the profile columns only store
- * a preference. Apple 2.1 rejects placeholder features, so the Settings
- * sections stay hidden until the definitive server push lands (deferred by
- * Angelo, 2026-08-27).
+ * Local notifications (spec 2026-09-02 §F3) are BUILT: lib/notifications.ts
+ * schedules "primo ripasso pronto" at T0+20h per saved memory and one daily
+ * reminder at profiles.morning_review_at; app/(app)/notifications.tsx is the
+ * screen. Every entry point checks this flag, so `false` keeps the code
+ * inert and the Settings row hidden.
+ *
+ * Flipping to `true` is the FINAL activation task of the native-config plan
+ * for build 3: it needs the `expo-notifications` config plugin in app.json
+ * (Android white-on-transparent icon + color), which changes the fingerprint
+ * and therefore ships only with the native build — never via OTA. To test on
+ * a device before that, flip it locally without committing.
  */
 export const NOTIFICATIONS_ENABLED = false;
 

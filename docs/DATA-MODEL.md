@@ -41,10 +41,10 @@ is in the `admin_emails` allowlist (currently `memikaapp@gmail.com`).
 | `name` | text | Display name (derived from email if not provided) |
 | `role` | enum `user_role` | `user` or `admin` |
 | `daily_input_cap` | int | Max new memories per day (default 20, 1–200) |
-| `calm_mode` | boolean | Suppress notification badges, default `true` |
-| `weekly_digest` | boolean | Sunday-evening summary, default `false` |
-| `morning_review_at` | time | When the morning nudge fires (default 08:00) |
-| `evening_review_at` | time | When the evening nudge fires (default 21:30) |
+| `calm_mode` | boolean | Suppresses the daily reminder (the first-review alert stays), default `true` — so the daily reminder is opt-out. Spec 2026-09-02 §F3 |
+| `weekly_digest` | boolean | Saved preference only — no digest is sent yet; default `false` |
+| `morning_review_at` | time | Daily reminder slot (HH:MM, the client floors to a 30-minute slot); default 08:00 |
+| `evening_review_at` | time | UNUSED since 2026-09-03 (single reminder); kept for pre-OTA clients, drop in a later migration |
 | `created_at` / `updated_at` | timestamptz | |
 
 ### `folders`
