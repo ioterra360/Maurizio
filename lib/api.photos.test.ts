@@ -55,7 +55,7 @@ vi.mock("./supabase", () => ({
   },
 }));
 
-import { fetchPhotoPaths } from "./api";
+import { fetchPhotoPaths, updateMemoryPhoto } from "./api";
 
 const call = (i: number, name: string) => log[i].calls.filter(([n]) => n === name).map(([, a]) => a);
 /** Il cursore di ogni richiesta: `undefined` sulla prima (nessun `gt`). */
@@ -182,5 +182,48 @@ describe("fetchPhotoPaths", () => {
     results = [{ data: rows(["u1/a.jpg"]) }, { error: { message: "boom" } }];
 
     await expect(fetchPhotoPaths("u1")).rejects.toMatchObject({ message: "boom" });
+  });
+});
+
+describe("updateMemoryPhoto — photo_path dice COSA, photo_added_at dice QUANDO", () => {
+  /** Il solo oggetto passato a .update(): qui la patch È il comportamento. */
+  const patch = () => call(0, "update")[0][0] as Record<string, unknown>;
+
+  it("allegando scrive anche l'istante, uguale a updated_at", async () => {
+    // Da photo_path non si può derivare "quante foto ha allegato oggi":
+    // updated_at si muove per qualunque modifica del ricordo (note, testo,
+    // cestino). photo_added_at è l'unico dato su cui un tetto giornaliero
+    // possa contare — quello del piano free, che in questo ciclo non esiste.
+    results = [{ error: null }];
+
+    await updateMemoryPhoto("m1", "u1/m1.jpg");
+
+    expect(log[0].table).toBe("memories");
+    expect(call(0, "eq")).toContainEqual(["id", "m1"]);
+    expect(patch().photo_path).toBe("u1/m1.jpg");
+    expect(typeof patch().photo_added_at).toBe("string");
+    // Lo stesso istante di updated_at: due new Date() a distanza di una riga
+    // possono cadere in millisecondi diversi, e una foto "allegata prima
+    // dell'ultima modifica" è un dato che non vuol dire niente.
+    expect(patch().photo_added_at).toBe(patch().updated_at);
+  });
+
+  it("rimuovendo NON tocca photo_added_at", async () => {
+    // Il tetto conterà quanti ricordi hanno RICEVUTO una foto oggi, non
+    // quante foto ci sono adesso: azzerando qui, "allega → rimuovi → allega
+    // altrove" restituirebbe quota all'infinito. Stessa regola del contatore
+    // giornaliero dei ricordi e del tetto ricordi, che conta anche il cestino.
+    results = [{ error: null }];
+
+    await updateMemoryPhoto("m1", null);
+
+    expect(patch().photo_path).toBeNull();
+    expect(Object.keys(patch())).not.toContain("photo_added_at");
+  });
+
+  it("propaga l'errore invece di dire che è andata bene", async () => {
+    results = [{ error: { message: "boom" } }];
+
+    await expect(updateMemoryPhoto("m1", "u1/m1.jpg")).rejects.toMatchObject({ message: "boom" });
   });
 });

@@ -99,6 +99,7 @@ when it's `<= now()`, the memory is due.
 | `definition` | text | Body — what to remember |
 | `notes` | text | Free-text user notes ("appunti"), optional; edited in the memory detail sheet (migration 20260827160000). |
 | `photo_path` | text | Chiave dell'oggetto nel bucket privato `memory-photos` (`<user_id>/<memory_id>.jpg`, migration 20260903110000). null = nessuna foto. Mai un URL: si legge con URL firmati (`lib/photos.ts`). Plus and Pro, **client-side only** (`canUsePhotos`, since 2026-09-04): no trigger looks at this column: i trigger di `20260903100000_plans.sql` guardano ricordi, cartelle e sezioni, non `photo_path`. Un gate server è una decisione aperta. |
+| `photo_added_at` | timestamptz | Quando è stata allegata l'ultima foto (migration 20260903110000). Scritta da `updateMemoryPhoto` **solo quando `photo_path` passa a un valore**, e mai azzerata alla rimozione. Nullable, senza default: **nessuno la legge ancora**. Esiste perché da `photo_path` non si può derivare "quante foto ha allegato oggi" — `updated_at` si muove per qualunque modifica — ed è il dato su cui si costruirà il tetto "due foto al giorno" del piano free. Il conteggio sarà quindi "quanti ricordi hanno RICEVUTO una foto oggi": togliere una foto non restituisce quota, come già per il contatore giornaliero dei ricordi. |
 | `example` | text | Example sentence, optional |
 | `item_type` | text | Folder-specific subtype (word/kanji/concept/drug/…) |
 | `state` | enum `memory_state` | `active` / `fading` / `archived` |
@@ -270,6 +271,9 @@ why SQL cannot delete files.
 ## Storage
 
 ### `memory-photos` (migration 20260903110000)
+
+The same migration also adds `memories.photo_added_at` — see the column table
+above. It is inert: nothing reads it yet.
 
 Private bucket (`public = false`), 5 MiB per object, `allowed_mime_types =
 {image/jpeg}`. One object per memory at `<user_id>/<memory_id>.jpg`; the key

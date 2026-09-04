@@ -44,4 +44,24 @@ describe("20260903110000_memory_photos.sql", () => {
       /do \$\$ begin if not exists \( select 1 from pg_constraint where conrelid = 'public\.memories'::regclass and conname = 'memories_photo_path_check' \) then/,
     );
   });
+
+  it("aggiunge photo_added_at in un ALTER separato, nullable e senza vincoli", () => {
+    // Separato di proposito: infilarla nell'alter di photo_path romperebbe
+    // l'invariante qui sopra (il sotto-comando saltato si porta dietro tutto),
+    // e la colonna non ha niente da vincolare.
+    expect(flat).toContain(
+      "alter table public.memories add column if not exists photo_added_at timestamptz;",
+    );
+    // Nessun default e nessun not null: la colonna non deve cambiare il
+    // comportamento di una sola riga esistente.
+    expect(flat).not.toMatch(/photo_added_at timestamptz (not null|default)/);
+  });
+
+  it("dice sul posto che photo_added_at non si azzera alla rimozione", () => {
+    // È la scelta che rende la colonna utile a un tetto giornaliero: si conta
+    // quanti ricordi hanno RICEVUTO una foto oggi, non quante foto ci sono
+    // adesso, altrimenti "allega → rimuovi → allega altrove" restituisce quota
+    // all'infinito. Se qualcuno cambia idea, deve cambiarla anche qui.
+    expect(SQL).toContain("MAI azzerata alla rimozione");
+  });
 });

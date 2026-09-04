@@ -441,13 +441,31 @@ export async function updateMemoryNotes(id: string, notes: string | null): Promi
  * Scrive (o azzera con null) la chiave della foto sul ricordo. La chiamano
  * uploadMemoryPhoto e removeMemoryPhoto in lib/photos.ts, DOPO che il bucket
  * ha risposto: la riga dice la verità su ciò che esiste. Demo: no-op.
+ *
+ * Scrive anche `photo_added_at`, ma **solo quando si allega**: da
+ * `photo_path` non si può derivare "quante foto ha allegato oggi", perché
+ * `updated_at` si muove per qualunque modifica del ricordo. Nessuno legge
+ * ancora quella colonna (migration 20260903110000); è il dato su cui si
+ * costruirà il tetto "due foto al giorno" del piano free, che in questo ciclo
+ * non esiste.
+ *
+ * Alla RIMOZIONE la si lascia com'è, e non è una svista: il tetto conterà
+ * quanti ricordi hanno ricevuto una foto oggi, non quante foto ci sono adesso.
+ * Azzerandola, "allega → rimuovi → allega altrove" restituirebbe quota
+ * all'infinito — lo stesso buco che il contatore giornaliero dei ricordi
+ * (:468-471) e il tetto ricordi, che conta anche il cestino, chiudono già
+ * nello stesso modo. Sostituire la foto dello STESSO ricordo riscrive la sua
+ * riga e non consuma un secondo slot.
  */
 export async function updateMemoryPhoto(id: string, photoPath: string | null): Promise<void> {
   if (isDemoMode) return;
-  const { error } = await supabase
-    .from("memories")
-    .update({ photo_path: photoPath, updated_at: new Date().toISOString() })
-    .eq("id", id);
+  const now = new Date().toISOString();
+  const patch: { photo_path: string | null; updated_at: string; photo_added_at?: string } = {
+    photo_path: photoPath,
+    updated_at: now,
+  };
+  if (photoPath !== null) patch.photo_added_at = now;
+  const { error } = await supabase.from("memories").update(patch).eq("id", id);
   if (error) throw error;
 }
 

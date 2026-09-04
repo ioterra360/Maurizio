@@ -68,6 +68,32 @@ $$;
 comment on column public.memories.photo_path is
   'Chiave dell''oggetto nel bucket privato memory-photos (<user_id>/<memory_id>.jpg). null = nessuna foto. Mai un URL: si legge con URL firmati (lib/photos.ts).';
 
+-- (1-bis) QUANDO la foto e' stata allegata. Nullable, nessun default, nessun
+-- vincolo, nessun trigger: oggi NIENTE la legge e nessun comportamento cambia.
+-- Esiste perche' da photo_path non si puo' derivare "quante foto ha allegato
+-- oggi": updated_at si muove per qualunque modifica del ricordo (le note, il
+-- testo, il cestino), quindi contarlo darebbe un numero che non c'entra.
+--
+-- Serve al tetto del piano FREE — due foto al giorno, listino Maurizio
+-- 2026-09-04 — che in questo ciclo NON e' implementato (PLAN_LIMITS.free.photos
+-- resta false). Aggiungerla adesso costa una riga in una migrazione non ancora
+-- spinta; aggiungerla dopo costa una migrazione in piu' e lascia senza storia
+-- tutte le foto allegate nel frattempo.
+--
+-- Semantica scelta: si scrive quando si ALLEGA (lib/api.ts updateMemoryPhoto) e
+-- NON si azzera quando si rimuove. Il conteggio del tetto sara' quindi "quanti
+-- ricordi hanno ricevuto una foto oggi", non "quante foto ci sono adesso":
+-- togliere una foto non restituisce quota — la stessa regola gia' scelta dal
+-- repo per il contatore giornaliero dei ricordi (lib/api.ts, "eliminare e
+-- reinserire non deve liberare quota") e dal tetto ricordi, che conta anche il
+-- cestino. Sostituire la foto DELLO STESSO ricordo riscrive la sua riga e non
+-- consuma un secondo slot.
+alter table public.memories
+  add column if not exists photo_added_at timestamptz;
+
+comment on column public.memories.photo_added_at is
+  'Quando e'' stata allegata l''ultima foto a questo ricordo. Scritta da lib/api.ts updateMemoryPhoto solo quando photo_path passa a un valore, MAI azzerata alla rimozione: serve a contare gli allegamenti del giorno, non le foto presenti. Nessuno la legge ancora — e'' il dato su cui si costruira'' il tetto "due foto al giorno" del piano free.';
+
 -- (2) bucket — idempotente: rieseguire la migration aggiorna i limiti.
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values ('memory-photos', 'memory-photos', false, 5242880, array['image/jpeg'])
