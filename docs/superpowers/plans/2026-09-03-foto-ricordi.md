@@ -76,6 +76,7 @@ Il compito chiedeva di estendere `delete_own_account()` con `delete from storage
 | `lib/review-store.ts` | `ReviewCard.photoPath`. |
 | `lib/api.ts` | `updateMemoryPhoto`, `fetchPhotoPaths`; il ricordo demo porta `photoPath: null`. |
 | `lib/mappers.photo.test.ts` **(nuovo)**, `lib/queue.test.ts`, `lib/folder-sort.test.ts` | Mapping e fixture. |
+| `lib/api.photos.test.ts` **(nuovo)** | Query-shape della paginazione di `fetchPhotoPaths` (recorder su `./supabase`, come `api.trash.test.ts`): la lista referenziata alimenta l'unica cancellazione del piano. |
 | `lib/i18n/{it,en,fr,es}.ts` | 14 chiavi nuove. |
 | `components/MemoryPhoto.tsx` **(nuovo)** | La foto sul retro: risolve l'URL firmato, 4:3, angoli 12, cover, max 240. |
 | `components/PhotoSheet.tsx` **(nuovo)** | Foglio Fotocamera / Libreria / Rimuovi. |
@@ -598,6 +599,7 @@ EOF
 - Modify: `lib/api.ts` — accanto a `updateMemoryNotes` e nel ricordo demo di `fetchFolderDetail` (B4 ci ha già inserito `syncPlan` e `countMemories`, ~35 righe: usa i nomi, non i numeri)
 - Modify: `lib/queue.test.ts:14-35`, `lib/folder-sort.test.ts:7-25` (fixture)
 - Create: `lib/mappers.photo.test.ts`
+- Create: `lib/api.photos.test.ts` — paginazione di `fetchPhotoPaths` col recorder di `api.trash.test.ts` (`vi.mock("./supabase")` intercetta il modulo nativo prima che carichi, quindi gira in Node)
 
 **Interfaces:**
 - Produces: `MemoryRow.photo_path?: string | null`; `Memory.photoPath: string | null`; `ReviewCard.photoPath?: string`; `updateMemoryPhoto(id: string, photoPath: string | null): Promise<void>`; `fetchPhotoPaths(userId: string): Promise<string[]>`.
@@ -741,16 +743,25 @@ export async function updateMemoryPhoto(id: string, photoPath: string | null): P
  * riconciliazione degli oggetti (lib/photos.ts reconcilePhotos). Demo: [].
  *
  * PAGINATA di proposito, e con un `order` stabile. PostgREST tronca ogni
- * select a max_rows (1000 su questo progetto, supabase/config.toml:18) SENZA
- * errore: una lista referenziata parziale farebbe classificare come orfane —
- * e quindi CANCELLARE — foto ancora vive. Senza `order` le pagine si
- * sovrappongono e il buco resta.
+ * select al `max_rows` del progetto SENZA errore: una lista referenziata
+ * parziale farebbe classificare come orfane — e quindi CANCELLARE — foto
+ * ancora vive. Senza `order` le pagine si sovrappongono e il buco resta.
+ *
+ * Il ciclo NON assume di conoscere quel tetto: avanza di quante righe sono
+ * ARRIVATE e si ferma solo su una pagina VUOTA. Fermarsi su
+ * `rows.length < PAGE` sarebbe corretto solo finché `max_rows >= PAGE`, e
+ * quel valore è un'impostazione remota del progetto: il `max_rows = 1000` di
+ * supabase/config.toml è la configurazione del Supabase LOCALE e
+ * `supabase db push` non la pubblica. Costa un round trip in più in fondo
+ * alla lista, e in cambio è corretto con QUALSIASI tetto, anche se domani
+ * cambia dalla dashboard.
  */
 export async function fetchPhotoPaths(userId: string): Promise<string[]> {
   if (isDemoMode) return [];
   const PAGE = 1000;
   const out: string[] = [];
-  for (let from = 0; ; from += PAGE) {
+  let from = 0;
+  for (;;) {
     const { data, error } = await supabase
       .from("memories")
       .select("photo_path")
@@ -762,7 +773,8 @@ export async function fetchPhotoPaths(userId: string): Promise<string[]> {
     // Cast al confine: il client non è tipizzato sullo schema (lib/supabase.ts:103).
     const rows = (data ?? []) as { photo_path: string | null }[];
     for (const r of rows) if (r.photo_path) out.push(r.photo_path);
-    if (rows.length < PAGE) return out; // ultima pagina
+    if (rows.length === 0) return out; // fine: oltre `from` non c'è più niente
+    from += rows.length; // avanza di quanto è ARRIVATO, non di quanto ho chiesto
   }
 }
 ```
@@ -772,7 +784,7 @@ export async function fetchPhotoPaths(userId: string): Promise<string[]> {
 ```bash
 npm test
 npm run lint
-git add lib/mappers.ts lib/mappers.photo.test.ts lib/review-store.ts lib/queue.ts lib/queue.test.ts lib/folder-sort.test.ts lib/api.ts
+git add lib/mappers.ts lib/mappers.photo.test.ts lib/review-store.ts lib/queue.ts lib/queue.test.ts lib/folder-sort.test.ts lib/api.ts lib/api.photos.test.ts
 git commit -m "$(cat <<'EOF'
 feat(photos): photo_path nel modello, nelle carte di ripasso e nell'api
 
@@ -989,11 +1001,15 @@ export async function removeMemoryPhoto(memoryId: string, path: string): Promise
  * chiavi ancora referenziate (cestino incluso) e rimuove gli orfani.
  * Ritorna quanti ne ha rimossi. Demo: 0.
  *
- * Le DUE liste devono essere complete, perché la differenza è una CANCELLA:
- * fetchPhotoPaths è paginata (PostgREST tronca a max_rows senza errore) e
- * anche il list() del bucket si pagina qui (SearchOptions.limit ha default
- * 100, index.d.cts:267-285). Una vista parziale da una parte o dall'altra
- * cancellerebbe foto vive, e non c'è modo di riattaccarle.
+ * La lista REFERENZIATA deve essere completa, perché la differenza è una
+ * CANCELLA: se fetchPhotoPaths tornasse tronca, foto ancora vive finirebbero
+ * fra gli orfani e non ci sarebbe modo di riattaccarle. Per questo pagina
+ * avanzando di quante righe ha RICEVUTO e si ferma solo su una pagina vuota
+ * (lib/api.ts), senza fidarsi del `max_rows` remoto.
+ * Anche il list() del bucket si pagina qui (SearchOptions.limit ha default
+ * 100, index.d.cts:267-285), ma quel lato sbaglia in sicurezza: una vista
+ * parziale degli OGGETTI lascia indietro qualche orfano, non cancella nulla
+ * di vivo.
  */
 export async function reconcilePhotos(userId: string): Promise<number> {
   if (isDemoMode) return 0;
@@ -2199,7 +2215,7 @@ Automatizzare questo non ha senso: servono un telefono, il bucket vero e la buil
 ## Rischi e confini
 
 - **Timeout 15 s** (`lib/network.ts:14`): l'upload passa dal fetch dell'app e non può escludersi. Una foto ridimensionata pesa 200-500 KB e ci sta anche su 3G; se i tester segnalano fallimenti su reti lente, la leva è `PHOTO_MAX_EDGE` 1280 / qualità 0.7, non un client Storage separato.
-- **La riconciliazione è l'unica operazione distruttiva del piano** e lavora per differenza fra due liste. Per questo entrambe si paginano: `fetchPhotoPaths` con `range` + `order("id")` (PostgREST tronca a `max_rows = 1000`, `supabase/config.toml:18`, **senza errore**) e il `list()` del bucket con `offset` (`SearchOptions.limit` ha default 100). Una lista troncata da una delle due parti trasforma foto vive in orfani e le cancella a ogni apertura dell'app. Chi tocca quelle funzioni tiene la paginazione: senza modifica della foto dopo il salvataggio (fuori scope), un file cancellato per sbaglio non si può riattaccare.
+- **La riconciliazione è l'unica operazione distruttiva del piano** e lavora per differenza fra due liste. Per questo entrambe si paginano: `fetchPhotoPaths` con `range` + `order("id")` (PostgREST tronca al `max_rows` del progetto **senza errore**) e il `list()` del bucket con `offset` (`SearchOptions.limit` ha default 100). Il ciclo di `fetchPhotoPaths` avanza di quante righe ha RICEVUTO e si ferma solo su una pagina vuota: `max_rows` è un'impostazione REMOTA (il `max_rows = 1000` di `supabase/config.toml` è il Supabase locale, `db push` non lo pubblica), quindi il codice non può assumerlo. Una lista referenziata troncata trasforma foto vive in orfani e le cancella a ogni apertura dell'app; una lista oggetti troncata sbaglia invece in sicurezza (lascia indietro orfani). Chi tocca quelle funzioni tiene la paginazione: senza modifica della foto dopo il salvataggio (fuori scope), un file cancellato per sbaglio non si può riattaccare.
 - **File temporanei**: picker e manipulator scrivono nella cache dell'app (`<cache>/ImagePicker/*`, `<cache>/ImageManipulator/*.jpg`) che l'OS può svuotare. Con il ridimensionamento alla scelta, il JPEG piccolo nasce anche per una foto poi scartata (l'utente cambia idea, o abbandona Add): sono ~300 KB a colpo. Non li cancelliamo (servirebbe `expo-file-system` come dipendenza esplicita): la cache si pulisce da sola. Da rivalutare se cresce.
 - **EXIF/GPS**: la ricodifica JPEG del manipulator con ogni probabilità scarta i metadati, ma i typings non lo dicono. Verificarlo una volta sul dispositivo (scarica l'oggetto dal bucket e controlla l'EXIF): bucket privato o no, meglio che le coordinate non viaggino.
 - **Nessun controllo post-salvataggio**: un upload fallito non si ritenta se non ricreando il ricordo. Accettato per non allargare lo scope; `removeMemoryPhoto` e `uploadMemoryPhoto` sono già l'API per il controllo futuro nella scheda del ricordo.

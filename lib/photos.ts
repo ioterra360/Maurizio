@@ -189,11 +189,15 @@ export async function removeMemoryPhoto(memoryId: string, path: string): Promise
  * chiavi ancora referenziate (cestino incluso) e rimuove gli orfani.
  * Ritorna quanti ne ha rimossi. Demo: 0.
  *
- * Le DUE liste devono essere complete, perché la differenza è una CANCELLA:
- * fetchPhotoPaths è paginata (PostgREST tronca a max_rows senza errore) e
- * anche il list() del bucket si pagina qui (SearchOptions.limit ha default
- * 100, index.d.cts:267-285). Una vista parziale da una parte o dall'altra
- * cancellerebbe foto vive, e non c'è modo di riattaccarle.
+ * La lista REFERENZIATA deve essere completa, perché la differenza è una
+ * CANCELLA: se fetchPhotoPaths tornasse tronca, foto ancora vive finirebbero
+ * fra gli orfani e non ci sarebbe modo di riattaccarle. Per questo pagina
+ * avanzando di quante righe ha RICEVUTO e si ferma solo su una pagina vuota
+ * (lib/api.ts), senza fidarsi del `max_rows` remoto.
+ * Anche il list() del bucket si pagina qui (SearchOptions.limit ha default
+ * 100, index.d.cts:267-285), ma quel lato sbaglia in sicurezza: una vista
+ * parziale degli OGGETTI lascia indietro qualche orfano, non cancella nulla
+ * di vivo.
  */
 export async function reconcilePhotos(userId: string): Promise<number> {
   if (isDemoMode) return 0;

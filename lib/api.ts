@@ -457,16 +457,25 @@ export async function updateMemoryPhoto(id: string, photoPath: string | null): P
  * riconciliazione degli oggetti (lib/photos.ts reconcilePhotos). Demo: [].
  *
  * PAGINATA di proposito, e con un `order` stabile. PostgREST tronca ogni
- * select a max_rows (1000 su questo progetto, supabase/config.toml:18) SENZA
- * errore: una lista referenziata parziale farebbe classificare come orfane —
- * e quindi CANCELLARE — foto ancora vive. Senza `order` le pagine si
- * sovrappongono e il buco resta.
+ * select al `max_rows` del progetto SENZA errore: una lista referenziata
+ * parziale farebbe classificare come orfane — e quindi CANCELLARE — foto
+ * ancora vive. Senza `order` le pagine si sovrappongono e il buco resta.
+ *
+ * Il ciclo NON assume di conoscere quel tetto: avanza di quante righe sono
+ * ARRIVATE e si ferma solo su una pagina VUOTA. Fermarsi su
+ * `rows.length < PAGE` sarebbe corretto solo finché `max_rows >= PAGE`, e
+ * quel valore è un'impostazione remota del progetto: il `max_rows = 1000` di
+ * supabase/config.toml è la configurazione del Supabase LOCALE e
+ * `supabase db push` non la pubblica. Costa un round trip in più in fondo
+ * alla lista, e in cambio è corretto con QUALSIASI tetto, anche se domani
+ * cambia dalla dashboard.
  */
 export async function fetchPhotoPaths(userId: string): Promise<string[]> {
   if (isDemoMode) return [];
   const PAGE = 1000;
   const out: string[] = [];
-  for (let from = 0; ; from += PAGE) {
+  let from = 0;
+  for (;;) {
     const { data, error } = await supabase
       .from("memories")
       .select("photo_path")
@@ -478,7 +487,8 @@ export async function fetchPhotoPaths(userId: string): Promise<string[]> {
     // Cast al confine: il client non è tipizzato sullo schema (lib/supabase.ts:103).
     const rows = (data ?? []) as { photo_path: string | null }[];
     for (const r of rows) if (r.photo_path) out.push(r.photo_path);
-    if (rows.length < PAGE) return out; // ultima pagina
+    if (rows.length === 0) return out; // fine: oltre `from` non c'è più niente
+    from += rows.length; // avanza di quanto è ARRIVATO, non di quanto ho chiesto
   }
 }
 
