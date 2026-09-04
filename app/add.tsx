@@ -42,6 +42,7 @@ import {
 import { usePlan } from "@/lib/use-plan";
 import { safeBack } from "@/lib/safe-back";
 import { consumeIntentionalAddOpen } from "@/lib/add-gate";
+import { deferUntilModalDismissed } from "@/lib/modal-nav";
 import { useT } from "@/lib/i18n";
 import { shortDateTime } from "@/lib/format";
 import { firstReview } from "@/features/srs/phases";
@@ -174,6 +175,10 @@ export default function AddScreen() {
   // chiudersi (vedi requestPick). Su Android è sempre null.
   const [pendingSource, setPendingSource] = useState<PhotoSource | null>(null);
   const [premiumAsk, setPremiumAsk] = useState(false);
+  // Stessa attesa del picker, per la stessa ragione: su iOS /paywall e' una
+  // rotta `presentation: "modal"` e non puo' essere presentata finche' il
+  // Modal della mascotte e' ancora vivo (lib/modal-nav.ts).
+  const [pendingPaywall, setPendingPaywall] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -422,9 +427,10 @@ export default function AddScreen() {
     // è già presentato come modal su iOS (app/_layout.tsx:344): un picker
     // presentato sopra un Modal ancora vivo viene rifiutato da UIKit e non
     // compare mai. Su iOS quindi si aspetta onDismiss del Modal; su Android il
-    // Modal è un Dialog e non c'è conflitto di presentazione.
+    // Modal è un Dialog e non c'è conflitto di presentazione. La regola sta in
+    // lib/modal-nav.ts: vale identica per il push di /paywall qui sotto.
     setPhotoSheetOpen(false);
-    if (Platform.OS === "ios") setPendingSource(source);
+    if (deferUntilModalDismissed()) setPendingSource(source);
     else void handlePickPhoto(source);
   };
 
@@ -929,7 +935,9 @@ export default function AddScreen() {
         onClose={() => setPhotoSheetOpen(false)}
       />
       {/* Free/Pro: la mascotte spiega e manda al paywall (B4). Il Modal si
-          chiude PRIMA del push, come settings.tsx:164-165 fa con lo stato. */}
+          chiude PRIMA del push e su iOS il push ASPETTA che sia chiuso:
+          /add è già un modale e /paywall pure, quindi con il dialogo ancora
+          vivo UIKit rifiuterebbe la presentazione (lib/modal-nav.ts). */}
       <MascotDialog
         visible={premiumAsk}
         title={t("add.photoPremiumTitle")}
@@ -938,9 +946,16 @@ export default function AddScreen() {
         cancelLabel={t("add.photoPremiumCancel")}
         onConfirm={() => {
           setPremiumAsk(false);
-          router.push("/paywall" as never);
+          if (deferUntilModalDismissed()) setPendingPaywall(true);
+          else router.push("/paywall" as never);
         }}
         onCancel={() => setPremiumAsk(false)}
+        onDismissed={() => {
+          // onDismiss scatta anche su "Non ora": naviga solo se richiesto.
+          if (!pendingPaywall) return;
+          setPendingPaywall(false);
+          router.push("/paywall" as never);
+        }}
       />
 
       {/* Pre-prompt del permesso: solo al primo salvataggio su questo telefono. */}

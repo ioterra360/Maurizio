@@ -1,7 +1,9 @@
+import { useState } from "react";
 import { router } from "expo-router";
 
 import { MascotDialog } from "@/components/MascotDialog";
 import { useT } from "@/lib/i18n";
+import { deferUntilModalDismissed } from "@/lib/modal-nav";
 import type { Plan, PlanLimitKind } from "@/lib/plan";
 
 type Props = {
@@ -29,9 +31,22 @@ type Props = {
  * Il dialogo si chiude PRIMA della navigazione: un Modal ancora montato
  * mentre il router spinge una rotta lascia il backdrop sopra la schermata
  * nuova (stessa precauzione di settings.tsx col picker del limite).
+ *
+ * E su iOS non basta chiuderlo: bisogna ASPETTARE che sia chiuso. `/paywall`
+ * e' `presentation: "modal"` (app/_layout.tsx) e questo dialogo e' un
+ * `Modal` trasparente, cioe' un view controller gia' presentato sulla
+ * schermata — spesso a sua volta un modale, /add. Chiudere e spingere nello
+ * stesso tick significa chiedere a UIKit una seconda presentazione su un
+ * controller occupato: viene rifiutata in silenzio, il foglio scivola via e
+ * il paywall non compare, mentre lo stato del router dice il contrario.
+ * Stessa regola, stesso rimedio del picker delle foto in app/add.tsx
+ * (`requestPick`): `lib/modal-nav.ts`.
  */
 export function PlanLimitDialog({ limit, plan, onClose, context = "add" }: Props) {
   const { t } = useT();
+  // L'intenzione sopravvive alla chiusura del Modal e viene eseguita da
+  // onDismiss. Solo su iOS: su Android onDismiss non arriva mai.
+  const [pendingPaywall, setPendingPaywall] = useState(false);
   const copy = (): { title: string; body: string } => {
     if (limit === "folders" && context === "restore") {
       return {
@@ -61,9 +76,17 @@ export function PlanLimitDialog({ limit, plan, onClose, context = "add" }: Props
       cancelLabel={t("planLimit.notNow")}
       onConfirm={() => {
         onClose();
-        router.push("/paywall" as never);
+        if (deferUntilModalDismissed()) setPendingPaywall(true);
+        else router.push("/paywall" as never);
       }}
       onCancel={onClose}
+      onDismissed={() => {
+        // onDismiss scatta a OGNI chiusura, anche su "Non ora" e sul
+        // backdrop: naviga solo se e' stato il bottone di conferma.
+        if (!pendingPaywall) return;
+        setPendingPaywall(false);
+        router.push("/paywall" as never);
+      }}
     />
   );
 }
