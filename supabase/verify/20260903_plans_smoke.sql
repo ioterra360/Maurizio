@@ -15,12 +15,18 @@ select 'le tre colonne di piano esistono' as verifica,
    and column_name in ('plan', 'plan_until', 'rc_app_user_id')
 
 union all
-select 'plan e'' NOT NULL con default free',
+-- Il default e' 'pro', non 'free': attivazione del 2026-09-04. Finche' gli
+-- store non vendono abbonamenti, chi incontrasse un tetto non avrebbe via
+-- d'uscita dal client, quindi si nasce sulla fascia alta e i quattro trigger
+-- restano accesi senza mordere nessuno. Quando arrivano le chiavi RevenueCat
+-- una migrazione nuova riporta il default a 'free' e declassa chi non paga:
+-- da quel momento questo controllo va riscritto su '%free%'.
+select 'plan e'' NOT NULL con default pro (attivazione 2026-09-04)',
        count(*) = 1
   from information_schema.columns
  where table_schema = 'public' and table_name = 'profiles'
    and column_name = 'plan' and is_nullable = 'NO'
-   and column_default like '%free%'
+   and column_default like '%pro%'
 
 union all
 select 'le tre colonne NON sono aggiornabili da authenticated',
