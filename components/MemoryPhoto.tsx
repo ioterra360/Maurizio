@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Image, View, type StyleProp, type ViewStyle } from "react-native";
+import { Image, View, type ImageErrorEvent, type StyleProp, type ViewStyle } from "react-native";
 
 import { useT } from "@/lib/i18n";
 import { getPhotoUrl } from "@/lib/photos";
@@ -20,6 +20,9 @@ type Props = {
  * dentro il pannello rivelato, mai sul fronte (memoria visiva = àncora che
  * arriva DOPO il tentativo di ricordo). Senza URL — demo, errore di rete,
  * bucket irraggiungibile — non renderizza nulla: niente riquadri vuoti.
+ * Vale anche a valle: se l'URL c'è ma l'immagine non si carica (firma
+ * scaduta, oggetto rimosso, offline) `onError` riporta a "nessun URL", così
+ * il riquadro grigio del contenitore non resta mai da solo sullo schermo.
  */
 export function MemoryPhoto({ path, localUri, style }: Props) {
   const colors = useColors();
@@ -68,7 +71,16 @@ export function MemoryPhoto({ path, localUri, style }: Props) {
         source={{ uri }}
         style={{ width: "100%", height: "100%" }}
         resizeMode="cover"
-        accessibilityLabel={t("memory.photoA11y")}
+        // `alt` (e non `accessibilityLabel`) perché RN imposta accessible=true
+        // solo quando `alt` è definito: con la sola label l'immagine non è un
+        // elemento accessibile su iOS e VoiceOver non annuncia nulla.
+        alt={t("memory.photoA11y")}
+        onError={(e: ImageErrorEvent) => {
+          // `error` è tipato `any` da RN: lo confino subito in `unknown`.
+          const cause: unknown = e.nativeEvent?.error;
+          reportError("photo/image-load", cause ?? e);
+          setUri(null);
+        }}
       />
     </View>
   );
