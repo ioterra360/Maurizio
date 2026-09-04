@@ -76,16 +76,22 @@ comment on column public.profiles.rc_app_user_id is
 -- ---------------------------------------------------------------------------
 -- I due tester passano a pro PRIMA che i trigger esistano
 -- ---------------------------------------------------------------------------
--- RIDONDANTE dal 2026-09-04, e RESTA. Con il default 'pro' qui sopra le righe
--- di profiles che esistono gia' NON vengono toccate: un default vale per gli
--- INSERT futuri, non riscrive le righe presenti, quindi senza questo update
--- Maurizio e Angelo — i due account che esistono da prima della migrazione —
--- resterebbero a 'free'. L'update copre esattamente loro. Ma anche il giorno
--- in cui non coprisse piu' nessuno andrebbe tenuto: e' l'unica riga che
--- sopravvive all'inversione del default (la migrazione futura che rimette
--- 'free' revoca la cortesia di tutti gli altri e lascia in piedi questi due),
--- ed e' la sola cosa che tiene i due account di prova fuori dai tetti quando
--- i tetti torneranno a valere davvero.
+-- RIDONDANTE dal 2026-09-04, e RESTA.
+--
+-- Ridondante davvero, senza mezze misure: `add column ... not null default
+-- 'pro'` riempie con 'pro' anche le righe di profiles che ESISTONO GIA'
+-- — su una colonna not null Postgres non puo' lasciare buchi — quindi questo
+-- update non cambia il valore di nessuna riga, lo riscrive uguale.
+--
+-- Resta lo stesso, e la ragione non e' il valore ma il SIGNIFICATO. Dopo
+-- questa migrazione tutti sono 'pro', ma per due motivi diversi: gli altri per
+-- un default TEMPORANEO, che va revocato quando le chiavi arrivano; questi due
+-- per una concessione di cortesia, che non va revocata mai. La migrazione che
+-- invertira' il default deve poter distinguere gli uni dagli altri, e questa
+-- e' l'unica riga APPLICATA che dice quali sono i due account di prova:
+-- toglierla vorrebbe dire cancellare quel dato dalla storia del database e
+-- affidarlo a una email in una chat. E' anche l'unica riga che sopravvive a
+-- quell'inversione — la revoca in blocco esclude esattamente queste due.
 --
 -- Deve stare QUI dentro, e sopra i `create trigger`, non in una query a mano
 -- prima del push: la colonna `plan` nasce tre istruzioni fa, quindi un
@@ -93,7 +99,9 @@ comment on column public.profiles.rc_app_user_id is
 -- fallirebbe con SQLSTATE 42703 (column "plan" does not exist). E farlo DOPO
 -- il push aprirebbe una finestra in cui i tetti valgono anche per Maurizio,
 -- che ha vc11 e quindi non ha ne' paywall ne' schermata dei piani: si
--- troverebbe bloccato a 10 ricordi senza alcun modo di uscirne.
+-- troverebbe bloccato a 10 ricordi senza alcun modo di uscirne. (Dal
+-- 2026-09-04 quella finestra non esiste piu' — la chiude il default 'pro' —
+-- ma la posizione resta giusta e il vincolo del 42703 resta vero.)
 --
 -- La stessa istruzione, dentro la stessa transazione della migrazione, chiude
 -- la finestra a zero. E' il punto 6 della lista "Prima di lanciare" del piano

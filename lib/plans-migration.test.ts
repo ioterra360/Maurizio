@@ -94,10 +94,10 @@ describe("20260903100000_plans.sql — ripristino cartelle e grandfathering", ()
     expect(seed).toBeGreaterThan(-1);
     expect(firstTrigger).toBeGreaterThan(-1);
     expect(seed).toBeLessThan(firstTrigger);
-    // Ridondante dal 2026-09-04 (il default e' gia' 'pro') ma NON rimuovibile:
-    // un default vale per gli INSERT futuri e non riscrive le righe di
-    // profiles che esistono gia', cioe' proprio i due account di prova. Ed e'
-    // l'unica riga che sopravvive all'inversione del default.
+    // Ridondante dal 2026-09-04 — `not null default 'pro'` riempie anche le
+    // righe che esistono gia' — ma NON rimuovibile: e' l'unica riga applicata
+    // che dice quali sono i due account di cortesia, cioe' quelli che la
+    // migrazione futura dovra' escludere dalla revoca in blocco.
     expect(SQL).toContain("RIDONDANTE dal 2026-09-04, e RESTA");
   });
 });

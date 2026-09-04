@@ -52,6 +52,14 @@ senza `update` a mano e senza tenerla indietro. Da invertire con una
 **migrazione nuova** (non riscrivendo quella riga: a quel punto sarà già
 applicata) quando le chiavi arrivano.
 
+Nota sulle righe che esistono già: `add column … not null default 'pro'` le
+riempie tutte con `'pro'`, non solo le future — su una colonna `not null`
+Postgres non lascia buchi. Il seed delle due email di prova diventa quindi
+ridondante nel valore, e resta lo stesso: dopo il push tutti sono `pro` ma per
+due motivi diversi — gli altri per un default temporaneo da revocare, quei due
+per una cortesia da non revocare mai — e quella riga è l'unica, nel database
+applicato, che dice quali sono i due.
+
 ## I piani
 
 | | Free | Plus | Pro |
