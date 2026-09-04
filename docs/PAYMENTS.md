@@ -99,6 +99,32 @@ una riga di codice. Gli identificativi dei prodotti sì, e sono in
 `memika_pro_monthly`, `memika_pro_yearly`. Ogni id che viene creato
 deve essere identico in App Store Connect, Play Console e RevenueCat.
 
+### I prezzi (fissati da Maurizio il 2026-09-04)
+
+| Piano | Mensile | Annuale | Identificativi |
+|---|---|---|---|
+| **Plus** | 3,99 € | 29,99 € | `memika_plus_monthly` · `memika_plus_yearly` |
+| **Pro** | 6,99 € | 49,99 € | `memika_pro_monthly` · `memika_pro_yearly` |
+
+L'annuale costa quanto sette mesi e mezzo di Plus e sette di Pro: è lo sconto
+che l'utente vede, e va detto sulla scheda del paywall quando il selettore di
+periodicità esistera'.
+
+**Il paywall oggi non sa vendere l'annuale.** Ha un bottone per scheda e
+nessun selettore mensile/annuale, e `periodOf()` in `lib/purchases.ts`
+riconosce solo `P1M` e `P1Y`: se l'offerta corrente di RevenueCat portasse
+entrambi i pacchetti della stessa fascia, la scheda mostrerebbe il prezzo di
+uno solo. Due strade quando si creano i prodotti: crearli **tutti e quattro**
+(struttura permanente fatta bene una volta sola, in un solo gruppo di
+abbonamenti su Apple) ma tenere gli annuali **fuori dall'offerta corrente**
+finché il selettore non esiste; oppure crearne due e tornarci dopo, con il
+rischio di finire in un gruppo Apple diverso. La prima è preferibile.
+
+Attenzione a una durata diversa da mensile o annuale (trimestrale,
+semestrale): `periodOf()` la ignora, il pacchetto finisce comunque in
+`packages`, e la scheda resta **senza prezzo con il bottone acceso**. Non
+crearne.
+
 **Rinomina delle fasce (2026-09-04).** Fino al 2026-09-03 la fascia intermedia
 si chiamava `pro` e quella alta `premium`; il listino di Maurizio usa **Plus**
 (intermedia) e **Pro** (alta), e la parola "pro" cambia quindi significato. La
