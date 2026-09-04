@@ -170,13 +170,15 @@ Screenshot: `scripts/store-screenshots/specs.es.json` → `docs/store-assets/scr
   | Informazioni personali | Indirizzo email | Sì | No | Sì | Gestione account |
   | Informazioni personali | Nome | Sì | No | Sì (richiesto alla registrazione) | Funzionalità dell'app, Personalizzazione |
   | Attività nell'app | Altri contenuti generati dagli utenti (i ricordi) | Sì | No | Sì | Funzionalità dell'app |
+  | Foto e video | Foto | Sì | No | No (facoltative, solo se l'utente ne allega una a un ricordo) | Funzionalità dell'app |
   | Attività nell'app | Azioni nell'app (esiti dei ripassi) | Sì | No | Sì | Funzionalità dell'app |
   | Info e prestazioni app | Log degli arresti anomali | Sì* | No | No | Analisi |
   | Info e prestazioni app | Diagnostica | Sì* | No | No | Analisi |
   | Dispositivo o altri ID | Dispositivo o altri ID | Sì* | No | No | Analisi |
   \* Solo se Sentry è attivo nella build pubblicata (DSN impostato). **Le build attuali (vc7–vc11) NON hanno il DSN in `eas.json` → dichiarare "No" per log arresti anomali e diagnostica** e aggiornare il modulo quando si attiva.
   Nota: da vc9 in poi `expo-updates` invia un ID client EAS per installazione al server di aggiornamento di Expo (verifica aggiornamenti OTA): se la Console lo richiede, dichiararlo come "Dispositivo o altri ID · Raccolto · Non condiviso · Funzionalità dell'app" (fornitore di servizi, non condivisione).
-- Nessun dato trattato in modo effimero; nessuna raccolta di posizione, contatti, foto, file, messaggi.
+- **Foto** (dalla build 3, vc13): l'utente può allegare una foto a un ricordo. Il file viaggia in un bucket **privato** (`memory-photos`, Supabase EU), leggibile solo con URL firmati a scadenza; l'app non legge mai la galleria nel suo insieme, solo l'immagine scelta dal picker. La riga "Foto e video → Foto" della tabella qui sopra va spuntata **nella stessa sessione in cui si carica la vc13**: un modulo Data safety incompleto è motivo di rimozione (norme Google sui dati utente).
+- Nessun dato trattato in modo effimero; nessuna raccolta di posizione, contatti, file, messaggi, rubrica.
 
 ## Impostazioni store (Crescita → Presenza sullo store → Impostazioni)
 - Tipo app: App · Categoria: Istruzione

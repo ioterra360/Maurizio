@@ -46,8 +46,13 @@ TestFlight interno per Angelo + Maurizio.
 
 ## Privacy dell'app (etichetta "nutrition label")
 
-Il binario raccoglie solo dati account e contenuti tramite Supabase. Sentry è
+Il binario raccoglie dati account, contenuti e — dalla build 3 — le foto che
+l'utente sceglie di allegare a un ricordo, tutto tramite Supabase. Sentry è
 disattivato (DSN vuoto), nessuna pubblicità, nessuna analytics, nessun tracking.
+La riga "Foto o video" va compilata **prima di sottomettere la build 3**:
+un'etichetta privacy che non dichiara una raccolta che avviene ricade sotto le
+Linee guida 5.1.1(i) / 5.1.2, e la stessa raccolta è dichiarata nell'informativa
+pubblicata (`docs/legal/privacy.html` §3) — le due devono coincidere (2.3.1).
 
 **Raccogli dati?** Sì.
 
@@ -58,6 +63,7 @@ Dati **collegati all'utente**, finalità **Funzionalità dell'app**, non usati p
 | Informazioni di contatto | Indirizzo email | account |
 | Informazioni di contatto | Nome | nome visualizzato (facoltativo) |
 | Contenuti dell'utente | Altri contenuti dell'utente | ricordi, cartelle, appunti |
+| Contenuti dell'utente | Foto o video | foto allegate a un ricordo (facoltative, piano Premium; bucket privato, URL firmati) |
 | Dati di utilizzo | Altri dati di utilizzo | esiti dei ripassi (pianificazione) |
 | Identificatori | ID utente | uid Supabase |
 
