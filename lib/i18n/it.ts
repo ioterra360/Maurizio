@@ -860,7 +860,7 @@ export const it = {
   "settings.accountDeletedToast": "Eliminazione avviata: hai 72 ore per annullarla riaccedendo.",
   "settings.appearanceSection": "Aspetto",
   "settings.themeDark": "Scuro",
-  "settings.themeHint": "Cambia subito. «Default» seguirà il tema del telefono da un prossimo aggiornamento dello store.",
+  "settings.themeHint": "Cambia subito. «Default» segue il tema del telefono.",
   "settings.themeLight": "Chiaro",
   "settings.themeSystem": "Default",
   "settings.backToAdmin": "Torna al pannello admin",

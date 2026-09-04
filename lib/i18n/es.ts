@@ -860,7 +860,7 @@ export const es: Record<keyof typeof it, string> = {
   "settings.accountDeletedToast": "Eliminación iniciada: tienes 72 horas para cancelarla volviendo a entrar.",
   "settings.appearanceSection": "Aspecto",
   "settings.themeDark": "Oscuro",
-  "settings.themeHint": "Cambia al instante. «Default» seguirá el tema del teléfono en una próxima actualización de la tienda.",
+  "settings.themeHint": "Cambia al instante. «Default» sigue el tema del teléfono.",
   "settings.themeLight": "Claro",
   "settings.themeSystem": "Default",
   "settings.backToAdmin": "Volver al panel de admin",
