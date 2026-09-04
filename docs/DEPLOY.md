@@ -353,14 +353,18 @@ only ship the `abort-controller` polyfill, which lacks it.
 ## Brand assets (icon, adaptive icon, splash, store icons)
 
 Launcher icons are the approved v2 (`assets/brand/icon-v2/`, vector source
-`brain-icon.source.mjs`, sharp — never in `package.json`). The splash still
+`brain-icon.source.mjs`, sharp — never in `package.json`). iOS gets the art
+full-bleed (`assets/icon.png`, no mask); **Android does not** — the launcher
+masks the foreground, so `assets/adaptive-icon.png` carries the same art inset
+into the safe zone. Same drawing, two framings: do not re-copy `icon.png` over
+`adaptive-icon.png`. The splash still
 derives from the v1 navy tile in `assets/brand/icon.png`; the icon-v2 README
 does not cover it and no spec asks for it.
 
 | File | Size / mode | Used by |
 | --- | --- | --- |
 | `assets/icon.png` | 1024×1024 RGBA (alpha all 255) = `assets/brand/icon-v2/icon.png`, byte for byte | `expo.icon`. Prebuild flattens it to RGB on white (`withIosIcons` → `removeTransparency`), so an opaque RGBA source is fine for Apple |
-| `assets/adaptive-icon.png` | 1024×1024 RGBA opaque, full-bleed pink brain = `assets/brand/icon-v2/adaptive-icon.png` | `expo.android.adaptiveIcon.foregroundImage` on `#F8D2C4` (v1 was navy on `#142450`) |
+| `assets/adaptive-icon.png` | 1024×1024 RGBA opaque = `assets/brand/icon-v2/adaptive-icon.png`. **Not** full-bleed: the art sits in the adaptive-icon safe zone (the central 66.7 % = px 171…853) on a flat `#F8D2C4` field, which is also the brain's own base colour, so there is no visible seam. Regenerated 2026-09-04 — the previous 0.8 inset put 10.4 % of the navy outline outside that square (clipped by every launcher) and 48 % of the green folder outside the circular mask | `expo.android.adaptiveIcon.foregroundImage` on `#F8D2C4` (v1 was navy on `#142450`). `lib/native-config.test.ts` fails if any non-`#F8D2C4` pixel leaves the safe square |
 | `assets/notification-icon.png` | 96×96 RGBA, WHITE on transparent (Android uses only the alpha), source `assets/brand/icon-v2/notification-icon.source.mjs` | `expo-notifications` plugin `icon`, tinted with `color` `#3B6BF5` — the DARK accent: the tint lands in a single `res/values/colors.xml` (no `values-night`), so it must read on a dark shade too |
 | `assets/splash-icon.png` | 1024×1024 RGBA | `expo-splash-screen` plugin, `imageWidth: 200` on `#F5F3EF`; same art on `#0E1015` under `dark` (the dark palette's `bgScreen`) so a dark-themed phone gets no white flash before React mounts |
 | `assets/favicon.png` | 48×48 RGBA | `expo.web.favicon` |

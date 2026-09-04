@@ -45,7 +45,7 @@ function paeth(left: number, up: number, upLeft: number): number {
  * che sia USATO: un 96×96 bianco tutto opaco passerebbe il controllo sull'IHDR
  * ed è esattamente il quadrato pieno che Android disegnerebbe nella status bar.
  */
-function alphaStats(relative: string): { fullyTransparent: number; opaqueNonWhite: number } {
+function decodeRgba(relative: string): { width: number; height: number; px: Buffer } {
   const b = readPng(relative);
   const width = b.readUInt32BE(16);
   const height = b.readUInt32BE(20);
@@ -97,9 +97,15 @@ function alphaStats(relative: string): { fullyTransparent: number; opaqueNonWhit
     }
   }
 
+  return { width, height, px };
+}
+
+/** Pixel completamente trasparenti e pixel opachi che NON sono bianco puro. */
+function alphaStats(relative: string): { fullyTransparent: number; opaqueNonWhite: number } {
+  const { px } = decodeRgba(relative);
   let fullyTransparent = 0;
   let opaqueNonWhite = 0;
-  for (let i = 0; i < px.length; i += bpp) {
+  for (let i = 0; i < px.length; i += 4) {
     const alpha = px[i + 3];
     if (alpha === 0) {
       fullyTransparent += 1;
@@ -108,6 +114,39 @@ function alphaStats(relative: string): { fullyTransparent: number; opaqueNonWhit
     }
   }
   return { fullyTransparent, opaqueNonWhite };
+}
+
+/**
+ * Il rettangolo che racchiude tutti i pixel diversi dallo sfondo dato
+ * (`#RRGGBB` opaco, oppure alpha 0). Serve a misurare quanta arte esce dalla
+ * zona sicura dell'adaptive icon Android.
+ */
+function contentBounds(
+  relative: string,
+  background: [number, number, number],
+): { minX: number; minY: number; maxX: number; maxY: number } {
+  const { width, height, px } = decodeRgba(relative);
+  let minX = width;
+  let minY = height;
+  let maxX = -1;
+  let maxY = -1;
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const i = (y * width + x) * 4;
+      const isBackground =
+        px[i + 3] === 0 ||
+        (px[i + 3] === 255 &&
+          px[i] === background[0] &&
+          px[i + 1] === background[1] &&
+          px[i + 2] === background[2]);
+      if (isBackground) continue;
+      if (x < minX) minX = x;
+      if (x > maxX) maxX = x;
+      if (y < minY) minY = y;
+      if (y > maxY) maxY = y;
+    }
+  }
+  return { minX, minY, maxX, maxY };
 }
 
 describe("icona di notifica Android", () => {
@@ -222,6 +261,46 @@ describe("app.json — build 3", () => {
     expect(sameBytes("assets/adaptive-icon.png", "assets/brand/icon-v2/adaptive-icon.png")).toBe(true);
     expect(appJson.expo.android.adaptiveIcon.backgroundColor).toBe("#F8D2C4");
     expect(pngHeader("assets/icon.png")).toEqual({ width: 1024, height: 1024, colorType: 6 });
+  });
+
+  it("il foreground adattivo sta tutto nella zona sicura: il launcher non taglia il disegno", () => {
+    // Adaptive icon: il foreground e' 108dp ma il sistema ne mostra solo i 72dp
+    // centrali (66,7%), e dentro quel quadrato ogni OEM applica la sua maschera
+    // — cerchio su Pixel, squircle altrove. Tutto cio' che esce da 171..853 su
+    // 1024 e' tagliato SEMPRE, su ogni launcher.
+    //
+    // Il file precedente insettava l'arte all'80% (bbox 102..920): il 10,4% del
+    // contorno navy usciva dal quadrato e il 48% del verde della cartella
+    // finiva fuori dalla maschera circolare, cioe' la cartella — la seconda
+    // meta' dell'idea "cervello + cartella" — veniva amputata sul bordo.
+    //
+    // Lo sfondo e' lo stesso colore della base del cervello, quindi rimpicciolire
+    // l'arte non lascia nessuna cucitura visibile. E' un input del fingerprint:
+    // sbagliarlo dopo vc13 costa la build 4.
+    const { width, height, colorType } = pngHeader("assets/adaptive-icon.png");
+    expect({ width, height, colorType }).toEqual({ width: 1024, height: 1024, colorType: 6 });
+    const safeLow = Math.round((width * (1 - 2 / 3)) / 2); // 171
+    const safeHigh = width - safeLow; // 853
+    const bounds = contentBounds("assets/adaptive-icon.png", [0xf8, 0xd2, 0xc4]);
+    expect(bounds.minX).toBeGreaterThanOrEqual(safeLow);
+    expect(bounds.minY).toBeGreaterThanOrEqual(safeLow);
+    expect(bounds.maxX).toBeLessThanOrEqual(safeHigh);
+    expect(bounds.maxY).toBeLessThanOrEqual(safeHigh);
+    // E il disegno deve comunque RIEMPIRE la zona sicura: un'arte
+    // rimpicciolita per sbaglio passerebbe il controllo di sopra.
+    expect(bounds.maxX - bounds.minX).toBeGreaterThan((safeHigh - safeLow) * 0.9);
+    expect(bounds.maxY - bounds.minY).toBeGreaterThan((safeHigh - safeLow) * 0.9);
+  });
+
+  it("l'icona iOS resta a tutto campo: li' non c'e' nessuna maschera", () => {
+    // Stessa arte, due inquadrature. Se un domani qualcuno ricopiasse
+    // icon.png su adaptive-icon.png (o viceversa) uno dei due sarebbe sbagliato.
+    const bounds = contentBounds("assets/icon.png", [0xf8, 0xd2, 0xc4]);
+    expect(bounds.minX).toBe(0);
+    expect(bounds.minY).toBe(0);
+    expect(bounds.maxX).toBe(1023);
+    expect(bounds.maxY).toBe(1023);
+    expect(sameBytes("assets/icon.png", "assets/adaptive-icon.png")).toBe(false);
   });
 
   it("gli asset per gli store sono la v2, e quello Apple è senza alpha", () => {

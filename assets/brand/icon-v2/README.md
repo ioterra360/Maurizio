@@ -17,6 +17,36 @@ Al momento della PROSSIMA BUILD NATIVA (build 3 / vc13):
 copie per gli store sono in `docs/store-assets/`. Il passo 4 resta manuale
 in Play Console al momento dell'upload di vc13.
 
+## `adaptive-icon.png` non è `icon.png` (2026-09-04)
+
+Su iOS l'icona è a tutto campo e nessuno la maschera: `icon.png` va bene così.
+Su Android no. Il foreground di un adaptive icon è 108 dp ma il sistema ne mostra
+solo i **72 dp centrali** (il 66,7 %, su 1024 px = da 171 a 853), e dentro quel
+quadrato ogni produttore applica la sua maschera: cerchio sui Pixel, squircle
+altrove. Tutto ciò che esce dal quadrato è tagliato su **ogni** launcher.
+
+La prima versione insettava l'arte all'80 % (contenuto da 102 a 920): il 10,4 %
+del contorno navy usciva dal quadrato e il 48 % del verde della cartella cadeva
+fuori dalla maschera circolare — la cartella, cioè la seconda metà dell'idea
+"cervello + cartella", veniva amputata sul bordo e il suo bordo verde spariva.
+
+Ora l'arte sta esattamente in 171…852, su un campo pieno `#F8D2C4`. Non si vede
+nessuna cucitura perché quel colore è la base del cervello stesso: la differenza
+è solo che gyri, occhiali e cartella smettono un po' prima del bordo.
+
+Per rigenerarla dopo qualunque modifica a `icon.png`:
+
+```bash
+node assets/brand/icon-v2/adaptive-inset.source.cjs
+```
+
+(nessuna dipendenza: decoder/encoder PNG a mano, gira col solo Node). Il
+risultato è verificato da `lib/native-config.test.ts` — "il foreground adattivo
+sta tutto nella zona sicura" e "l'icona iOS resta a tutto campo". **Non**
+ricopiare `icon.png` su `adaptive-icon.png`: sono la stessa arte con due
+inquadrature diverse, e sono input del fingerprint (sbagliarle dopo vc13 costa
+una build in più).
+
 `appstore-icon-1024.png` è `icon.png` **appiattita a RGB** (App Store Connect
 rifiuta il canale alpha e quel file si carica a mano, non passa da prebuild).
 Per rigenerarla:
