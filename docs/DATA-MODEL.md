@@ -61,8 +61,13 @@ legal, the route is `/folder/[id]`. Insert is allowed by
 `folders_all_own_or_admin` (user_id = auth.uid()). Free accounts own one
 folder, pro accounts five, premium unlimited — enforced by
 `folders_enforce_plan_limit` (`P0005`, migration 20260903100000), counting
-**live** folders only; a restore from the trash that would push past the cap
-is refused by `folders_enforce_plan_limit_on_restore` with the same code.
+**live** folders only; a restore from the trash is refused by
+`folders_enforce_plan_limit_on_restore` with the same code **only when the
+account also owns a live folder created after this one was trashed** — that is
+the "trash the only folder → create a new one → restore the old one" loop.
+An account that is simply above the cap by grandfathering (folder creation was
+never enforced before this migration) restores freely: it cannot have created
+anything, the BEFORE INSERT refuses it.
 
 | Column | Type | Notes |
 |---|---|---|
@@ -180,7 +185,7 @@ sidesteps the recursive-RLS-on-profiles problem.
 | `memories_set_updated_at` | `memories` | BEFORE UPDATE | Touch `updated_at` |
 | `memories_enforce_plan_limit` | `memories` | BEFORE INSERT | 10 memories on the free plan, **trash included** (`where user_id`, no `deleted_at` filter) → `P0004` |
 | `folders_enforce_plan_limit` | `folders` | BEFORE INSERT | 1 folder (free) / 5 (pro), **live rows only** (`deleted_at is null`) → `P0005` |
-| `folders_enforce_plan_limit_on_restore` | `folders` | BEFORE UPDATE, only on `deleted_at` non-null → null | Restore from the trash while the live folders are already at the cap → `P0005` (hint `plan-limit:folders-restore`) |
+| `folders_enforce_plan_limit_on_restore` | `folders` | BEFORE UPDATE, only on `deleted_at` non-null → null | Restore from the trash while the live folders are at the cap **and** one of them was created after this row was trashed → `P0005` (hint `plan-limit:folders-restore`). Grandfathered accounts (live > cap, nothing created since) are not blocked |
 | `subfolders_enforce_rules` | `subfolders` | BEFORE INSERT OR UPDATE | 0 sections (free) / 3 (pro) → `P0003`, plus the integrity guards (`P0001`) |
 
 The two caps count the trash the opposite way on purpose: a memory restore can

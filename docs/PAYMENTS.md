@@ -67,12 +67,18 @@ I due tetti contano il cestino in modo **opposto**, e la differenza è voluta.
   `countFolders()` (`lib/api.ts`), che filtra già `deleted_at is null`.
   Il buco del ciclo "cestina → crea → ripristina" si chiude dall'altro capo,
   sul **ripristino**: `folders_enforce_plan_limit_on_restore` rifiuta la
-  transizione cestino → vivo quando le cartelle vive sono già al tetto. Costo
-  accettato: un utente al tetto che cestina una cartella deve liberare uno slot
-  prima di riprenderla — un rifiuto immediato, spiegato e rimediabile, contro
-  un blocco alla creazione che non aveva rimedio se non pagare o aspettare.
-  Il Cestino mostra quel rifiuto con la mascotte (`planLimit.foldersRestore*`),
-  non con "Riprova".
+  transizione cestino → vivo quando le cartelle vive sono al tetto **e almeno
+  una è nata dopo che questa è finita nel cestino** — cioè esattamente dentro
+  quel ciclo. Chi è sopra il tetto per grandfathering (la creazione non è mai
+  stata applicata prima di questa migrazione) ripristina liberamente: non può
+  aver creato niente, glielo impedisce la BEFORE INSERT. Senza quella seconda
+  condizione la promessa di `folderSettings` — "puoi ripristinarli entro 24
+  ore" — sarebbe falsa proprio per i tester che hanno più cartelle di quante
+  il piano free ne preveda, e `purge_trash()` cancellerebbe cartella e ricordi
+  il giorno dopo. Costo accettato: chi è dentro il ciclo deve liberare uno
+  slot prima di riprendersi la cartella — e cestinarne UNA basta sempre, che è
+  quello che dice la copy. Il Cestino mostra quel rifiuto con la mascotte
+  (`planLimit.foldersRestore*`), non con "Riprova".
 
 ## Dove vive la verità
 

@@ -273,6 +273,34 @@ create trigger folders_enforce_plan_limit
 -- il tetto con msg.includes("limit")) e lo hint, cosi' nei log di PostgREST
 -- i due rifiuti restano distinguibili.
 --
+-- MA il conto da solo non basta, e la differenza e' perdita di dati.
+-- La creazione di cartelle non e' MAI stata applicata nei binari in
+-- circolazione (FOLDER_LIMIT_ENFORCED era codice morto, tolto in questa
+-- stessa build): un tester arriva qui con 3 cartelle vive su un piano che ne
+-- prevede 1. Il grandfathering delle BEFORE INSERT gliele lascia tutte — ed
+-- e' la semantica scelta nella spec — ma un guard che guardasse solo
+-- `used >= cap` gli rifiuterebbe il ripristino di QUALUNQUE cartella
+-- cestinata per sbaglio, mentre folderSettings gli ha appena promesso "puoi
+-- ripristinarli entro 24 ore". Dopo 24 ore purge_trash() la cancella con
+-- tutti i suoi ricordi. Cestinarne un'altra per liberare lo slot non
+-- servirebbe (ne resterebbe comunque una = cap): l'unica uscita sarebbe
+-- svuotare tutto, cioe' mettere nel cestino ANCHE le altre e perderle.
+--
+-- Il buco che la guardia esiste per chiudere e' un altro ed e' preciso:
+-- "cestino l'unica cartella -> ne creo una nuova -> ripristino la vecchia",
+-- che porterebbe a cap+1 partendo da cap. In quel giro c'e' sempre una
+-- cartella viva NATA DOPO che questa e' finita nel cestino. Quindi si
+-- rifiuta solo li': `used >= cap` E esiste una cartella viva con
+-- `created_at > old.deleted_at`. Chi e' semplicemente sopra il tetto per
+-- grandfathering non puo' averne creata una (la BEFORE INSERT glielo
+-- impedisce) e ripristina liberamente.
+--
+-- Proprieta' utile: quando il rifiuto scatta, cestinare UNA cartella viva
+-- basta sempre a farlo passare — chi e' nel giro sopra e' per costruzione
+-- sceso sotto il tetto prima di creare. E' esattamente quello che dice la
+-- copy di PlanLimitDialog (planLimit.foldersRestoreBody, "spostane un'altra
+-- nel cestino"), che senza questa condizione sarebbe stata un consiglio
+-- sbagliato per un utente grandfathered.
 -- WHEN sulla sola transizione cestino → vivo: nessun costo sulle UPDATE
 -- normali (rinomina, priorita', pausa, ingresso nel cestino). Il BEFORE
 -- UPDATE che gira prima in ordine alfabetico, folders_clamp_deleted_at,
@@ -300,7 +328,15 @@ begin
    where user_id = new.user_id
      and deleted_at is null
      and id <> new.id;
-  if used >= cap then
+  -- old.deleted_at non e' mai null qui: lo garantisce il WHEN del trigger.
+  if used >= cap and exists (
+    select 1
+      from public.folders
+     where user_id = new.user_id
+       and deleted_at is null
+       and id <> new.id
+       and created_at > old.deleted_at
+  ) then
     raise exception 'folders limit reached (% on the % plan): free a live slot before restoring', cap, eff
       using errcode = 'P0005', hint = 'plan-limit:folders-restore';
   end if;
