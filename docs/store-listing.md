@@ -148,6 +148,46 @@ Tus recuerdos son tuyos. Puedes borrarlo todo cuando quieras desde Ajustes y ped
 
 Screenshot: `scripts/store-screenshots/specs.es.json` → `docs/store-assets/screenshots/phone-es/`.
 
+## Note di rilascio (Test chiuso → traccia Alpha)
+
+Play chiede le note in ogni lingua della scheda. Quelle di `vc14` (build 3, 2026-09-04) dicono le tre novità
+che l'utente vede davvero: notifiche, foto sui ricordi, tema chiaro/scuro. Terminologia allineata alle
+descrizioni sopra — *ricordi / memories / souvenirs / recuerdos*.
+
+**it-IT**
+```
+Memika ora ti avvisa quando è il momento di ripassare.
+Puoi allegare una foto ai tuoi ricordi.
+Tema chiaro e scuro che segue le impostazioni del telefono.
+```
+
+**en-US**
+```
+Memika now reminds you when it is time to review.
+You can attach a photo to your memories.
+Light and dark theme that follows your phone settings.
+```
+
+**fr-FR**
+```
+Memika te prévient maintenant quand c'est le moment de réviser.
+Tu peux joindre une photo à tes souvenirs.
+Thème clair et sombre qui suit les réglages de ton téléphone.
+```
+
+**es-ES**
+```
+Memika ahora te avisa cuando toca repasar.
+Puedes adjuntar una foto a tus recuerdos.
+Tema claro y oscuro que sigue los ajustes de tu teléfono.
+```
+
+> `vc13` e `vc14` sono state compilate lo stesso giorno: caricare **solo la vc14**. La vc13 dichiarava
+> `FOREGROUND_SERVICE` e `FOREGROUND_SERVICE_MEDIA_PLAYBACK` (arrivati dal merge dei manifest di `expo-audio`,
+> invisibili a `expo config --type introspect`), che Play ha contestato; la vc14 li blocca via
+> `android.blockedPermissions` in `app.json`. Verifica rapida dei permessi di un AAB, senza toolchain Android:
+> `python -c "import zipfile,re; print(sorted(set(re.findall(rb'android\.permission\.[A-Z_]+', zipfile.ZipFile('X.aab').read('base/manifest/AndroidManifest.xml')))))"`
+
 ## Contenuti dell'app (Monitoraggio norme → Contenuti dell'app)
 
 **Norme sulla privacy** → https://ioterra360.github.io/memika-legal/privacy/

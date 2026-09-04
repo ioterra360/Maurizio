@@ -6,6 +6,7 @@
 //   node scripts/ios-credentials/asc-ops.mjs invite-user <email> <firstName> <lastName> [ADMIN]  # invite an App Store Connect user
 //   node scripts/ios-credentials/asc-ops.mjs review-details "<phone +39...>" "<demo password>"
 //   node scripts/ios-credentials/asc-ops.mjs set-free             # price Free (base ITA) + available in all territories
+//   node scripts/ios-credentials/asc-ops.mjs attach-build [version]  # links a processed build to version 1.0 (default: latest VALID)
 //   node scripts/ios-credentials/asc-ops.mjs submit-review        # sends version 1.0 to App Review
 import { call } from "./asc.mjs";
 
@@ -80,6 +81,15 @@ if (cmd === "status") {
     } },
     included: ids.map((id) => ({ type: "territoryAvailabilities", id: "${t-" + id + "}", attributes: { available: true }, relationships: { territory: { data: { type: "territories", id } } } })),
   }));
+} else if (cmd === "attach-build") {
+  // Links a processed build to version 1.0 (App Review refuses a version without one).
+  const [wanted] = args;
+  const list = await call("GET", `/v1/builds?filter[app]=${APP_ID}&sort=-version&limit=10&fields[builds]=version,processingState,expired`);
+  const usable = (list.json.data ?? []).filter((b) => b.attributes.processingState === "VALID" && !b.attributes.expired);
+  const build = wanted ? usable.find((b) => b.attributes.version === wanted) : usable[0];
+  if (!build) { console.log(`no VALID build ${wanted ?? ""}:`, JSON.stringify((list.json.data ?? []).map((b) => b.attributes))); process.exit(1); }
+  console.log(`build ${build.attributes.version} (${build.id})`);
+  out("appStoreVersion build PATCH", await call("PATCH", `/v1/appStoreVersions/${VERSION_ID}/relationships/build`, { data: { type: "builds", id: build.id } }));
 } else if (cmd === "submit-review") {
   const sub = await call("POST", "/v1/reviewSubmissions", { data: { type: "reviewSubmissions", attributes: { platform: "IOS" }, relationships: { app: { data: { type: "apps", id: APP_ID } } } } });
   out("reviewSubmission POST", sub);
@@ -89,5 +99,5 @@ if (cmd === "status") {
   const go = await call("PATCH", `/v1/reviewSubmissions/${sub.json.data.id}`, { data: { type: "reviewSubmissions", id: sub.json.data.id, attributes: { submitted: true } } });
   out("reviewSubmission submitted", go);
 } else {
-  console.log("commands: status | add-tester <email> <first> <last> | invite-user <email> <first> <last> [ROLE] | review-details <phone> <password> | set-free | submit-review");
+  console.log("commands: status | add-tester <email> <first> <last> | invite-user <email> <first> <last> [ROLE] | review-details <phone> <password> | set-free | attach-build [version] | submit-review");
 }
