@@ -15,6 +15,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Redirect, router, useFocusEffect, useLocalSearchParams } from "expo-router";
 
 import { MascotLoader } from "@/components/MascotLoader";
+import { MemoryPhoto } from "@/components/MemoryPhoto";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { SectionLabel } from "@/components/SectionLabel";
 import { Tappable } from "@/components/Tappable";
@@ -359,6 +360,7 @@ export default function MemoryDetailScreen() {
                   {memory.example}
                 </Text>
               ) : null}
+              {memory.photoPath ? <MemoryPhoto path={memory.photoPath} style={{ marginTop: 12 }} /> : null}
             </View>
 
             {/* Dates */}

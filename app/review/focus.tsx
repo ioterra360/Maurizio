@@ -5,6 +5,7 @@ import { router, useFocusEffect } from "expo-router";
 
 import { DeckErrorScreen } from "@/components/DeckErrorScreen";
 import { MascotLoader } from "@/components/MascotLoader";
+import { MemoryPhoto } from "@/components/MemoryPhoto";
 import { ReviewHeader } from "@/components/ReviewHeader";
 import { FolderPill } from "@/components/FolderPill";
 import { TermText } from "@/components/TermText";
@@ -168,6 +169,7 @@ export default function FocusScreen() {
                 {card.example}
               </Text>
             ) : null}
+            {card.photoPath ? <MemoryPhoto path={card.photoPath} style={{ marginTop: 14 }} /> : null}
           </View>
         ) : null}
       </View>
