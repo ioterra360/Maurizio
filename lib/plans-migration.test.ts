@@ -62,7 +62,27 @@ describe("20260903100000_plans.sql — ripristino cartelle e grandfathering", ()
     );
   });
 
-  it("il seed pro dei due tester sta sopra il primo create trigger", () => {
+  it("la colonna plan nasce sulla fascia ALTA finche' gli store non vendono", () => {
+    // ATTIVAZIONE 2026-09-04. Con le chiavi RevenueCat vuote purchasesAvailable
+    // e' falso: chi incontra un tetto non ha via d'uscita dal client, nemmeno
+    // il paywall (bottoni spenti). Il default 'pro' vale per TUTTI, compresi i
+    // >=12 tester del test chiuso di Play che si iscriveranno DOPO il push —
+    // che il seed di due email non puo' raggiungere. Va invertito con una
+    // migrazione NUOVA, non riscrivendo questa riga.
+    expect(flat).toContain(
+      "add column plan text not null default 'pro' check (plan in ('free','plus','pro'))",
+    );
+    expect(flat).not.toContain("add column plan text not null default 'free'");
+  });
+
+  it("il default resta spiegato e datato nel file", () => {
+    // Un default 'pro' senza il perche' accanto e' una riga che il prossimo
+    // lettore prende per un errore di battitura e "corregge".
+    expect(SQL).toContain("Il default e' 'pro', non 'free' — ATTIVAZIONE 2026-09-04");
+    expect(SQL).toContain("alter table public.profiles alter column plan set default 'free';");
+  });
+
+  it("il seed pro dei due tester resta, e sta sopra il primo create trigger", () => {
     // Punto 6 della lista "Prima di lanciare" di docs/DEPLOY.md: la colonna
     // `plan` nasce in questa migration, quindi il seed non può stare in una
     // query a mano prima del push, e dopo lascerebbe Maurizio (vc11, senza
@@ -74,5 +94,10 @@ describe("20260903100000_plans.sql — ripristino cartelle e grandfathering", ()
     expect(seed).toBeGreaterThan(-1);
     expect(firstTrigger).toBeGreaterThan(-1);
     expect(seed).toBeLessThan(firstTrigger);
+    // Ridondante dal 2026-09-04 (il default e' gia' 'pro') ma NON rimuovibile:
+    // un default vale per gli INSERT futuri e non riscrive le righe di
+    // profiles che esistono gia', cioe' proprio i due account di prova. Ed e'
+    // l'unica riga che sopravvive all'inversione del default.
+    expect(SQL).toContain("RIDONDANTE dal 2026-09-04, e RESTA");
   });
 });

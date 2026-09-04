@@ -17,12 +17,19 @@ mostra le tre schede con i bottoni spenti.
 Quando la migrazione dei limiti va in produzione lo decide **una sola pagina**,
 la "Sequenza" di `docs/DEPLOY.md` § "Build 3" (è quella che esegue il Task 6 del
 piano `2026-09-03-build3-config-nativa.md`): dopo che le build sono `FINISHED`,
-prima del submit. Il vincolo che conta non è "quando la build è sugli store" ma
-il **bivio del punto 4** di quella stessa pagina: con le chiavi RevenueCat vuote
-il paywall ha i bottoni spenti, e spingere i trigger senza allargare la cortesia
-pro agli account esistenti chiuderebbe ogni tester in Free senza una via
-d'uscita dal client. I due rami ammessi (tenere indietro `20260903100000_plans.sql`,
-oppure spingere e concedere subito la cortesia) sono scritti lì.
+prima del submit.
+
+**Attivazione 2026-09-04 — il bivio non c'è più.** La colonna `plan` nasce
+`not null default 'pro'`, cioè sulla fascia ALTA, non su `free`. Il ragionamento
+sta per esteso in testa a `20260903100000_plans.sql`; in breve: senza chiavi
+RevenueCat `purchasesAvailable` è falso, quindi chi incontra un tetto non ha
+via d'uscita dal client — nemmeno il paywall, che mostrerebbe le schede con
+tutti i bottoni spenti. Il default vale per **tutti**, compresi i ≥12 tester del
+test chiuso di Play che si iscriveranno DOPO il push: è il buco che il seed di
+due email non poteva chiudere. Quindi la migrazione si spinge insieme all'altra,
+senza `update` a mano e senza tenerla indietro. Da invertire con una
+**migrazione nuova** (non riscrivendo quella riga: a quel punto sarà già
+applicata) quando le chiavi arrivano.
 
 ## I piani
 
@@ -113,7 +120,7 @@ I due tetti contano il cestino in modo **opposto**, e la differenza è voluta.
 
 ```sql
 alter table public.profiles
-  add column plan text not null default 'free' check (plan in ('free','plus','pro')),
+  add column plan text not null default 'pro' check (plan in ('free','plus','pro')),
   add column plan_until timestamptz,
   add column rc_app_user_id text;
 ```

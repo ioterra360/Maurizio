@@ -45,7 +45,7 @@ is in the `admin_emails` allowlist (currently `memikaapp@gmail.com`).
 | `weekly_digest` | boolean | Saved preference only — no digest is sent yet; default `false` |
 | `morning_review_at` | time | Daily reminder slot (HH:MM, the client floors to a 30-minute slot); default 08:00 |
 | `evening_review_at` | time | UNUSED since 2026-09-03 (single reminder); kept for pre-OTA clients, drop in a later migration |
-| `plan` | text | `free` / `plus` / `pro`, default `free`. **Not** in the UPDATE grant: only the `revenuecat-sync` edge function writes it (migration 20260903100000) |
+| `plan` | text | `free` / `plus` / `pro`. Default **`pro`**, not `free` (activation 2026-09-04): neither store can sell a subscription yet, so a user who hit a cap would have no way out — the header of migration 20260903100000 has the reasoning. To be flipped back to `free` by a NEW migration once the RevenueCat keys exist. **Not** in the UPDATE grant: only the `revenuecat-sync` edge function writes it |
 | `plan_until` | timestamptz | Entitlement expiry; in the past = the plan is worth `free` (`current_plan()`). null = never expires (lifetime, promo, or a courtesy grant) |
 | `rc_app_user_id` | text | RevenueCat App User ID (= `profiles.id`). null on a row RevenueCat has never synced |
 | `created_at` / `updated_at` | timestamptz | |

@@ -30,6 +30,16 @@ quattro trigger Postgres (`20260903100000_plans.sql`), non dal client.
 Pagamenti: abbonamenti in-app via RevenueCat, paywall `app/paywall.tsx`. Vedi
 `docs/PAYMENTS.md`.
 
+**`profiles.plan` nasce `default 'pro'`, non `'free'`** (attivazione
+2026-09-04, migrazione `20260903100000_plans.sql`). Google non ha approvato il
+profilo pagamenti e Apple non ha il contratto per le app a pagamento: le
+`EXPO_PUBLIC_REVENUECAT_*_KEY` sono vuote, `purchasesAvailable` è falso e chi
+incontrasse un tetto non avrebbe via d'uscita dal client. Un tetto senza via
+d'uscita è peggio di nessun tetto. Vale per tutti — anche per i tester che si
+iscrivono DOPO il push, che il seed di due email non può raggiungere. I quattro
+trigger restano accesi: cambia solo da quale fascia si parte. Da invertire con
+una migrazione NUOVA quando le chiavi arrivano.
+
 ## 2. Read these before touching code
 
 Order matters — each step assumes the previous.

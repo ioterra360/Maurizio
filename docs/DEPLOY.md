@@ -411,22 +411,31 @@ Una build fallita consuma il numero: l'etichetta va scritta DOPO, da
    `eas.json` (DSN, `SENTRY_DISABLE_AUTO_UPLOAD` tolto da preview/production,
    token via `eas env:create`), oppure gli slot restano vuoti e Sentry resta
    spento in questa build (aggiungerlo dopo = ancora una build nativa).
-4. RevenueCat: stesso bivio per `EXPO_PUBLIC_REVENUECAT_*_KEY` — ma questo bivio
-   **decide anche il punto 6**, cioè se la migrazione dei piani si può spingere
-   in produzione con questa build.
+4. RevenueCat: stesso bivio per `EXPO_PUBLIC_REVENUECAT_*_KEY` — ma **solo per
+   le chiavi**. Il bivio sulla migrazione dei piani (punto 6) è chiuso
+   dall'attivazione del 2026-09-04: `20260903100000_plans.sql` fa nascere la
+   colonna `plan` con `default 'pro'`, cioè sulla fascia ALTA, quindi si spinge
+   insieme all'altra, senza `update` a mano e senza tenerla indietro. I due
+   rami (a) e (b) qui sotto **non servono più**: restano solo come storia della
+   decisione.
    - **Chiavi presenti** (progetto RevenueCat, prodotti approvati dagli store,
      entitlement `plus` e `pro`): niente di speciale, la "Sequenza" qui sotto
      vale così com'è. Chi finisce contro un tetto vede il paywall e può uscirne.
-   - **Chiavi vuote**: `purchasesAvailable` è falso (`lib/purchases.ts`), l'SDK
-     non viene mai chiamato e il paywall mostra le tre schede con **tutti i
-     bottoni spenti** e la riga "Gli acquisti non sono disponibili su questo
-     dispositivo". Se in quello stato si spinge `20260903100000_plans.sql`, i
-     quattro trigger si accendono per tutti: il seed copre DUE email
-     (`angelo.casula@`, `memikaapp@`) e chiunque altro — in particolare i ≥12
-     tester del test chiuso, che devono restare iscritti 14 giorni di fila —
-     diventa Free tappato a 10 ricordi / 1 cartella / 0 sezioni **senza alcuna
-     via d'uscita dal client**: l'unico rimedio sarebbe SQL a mano. Scegliere
-     una delle due:
+     Da fare in quel momento, e non prima: la **migrazione nuova** che riporta
+     il default a `free` e revoca la cortesia (`where plan_until is null and
+     rc_app_user_id is null`, salvi i due account di prova) — il modello è in
+     testa a `20260903100000_plans.sql`. La sezione Abbonamento delle
+     Impostazioni non va riaccesa a mano: si monta da sola con le chiavi.
+   - **Chiavi vuote** (lo stato di oggi: Google non ha approvato il profilo
+     pagamenti, Apple non ha il contratto per le app a pagamento):
+     `purchasesAvailable` è falso (`lib/purchases.ts`), l'SDK non viene mai
+     chiamato, **la sezione Abbonamento delle Impostazioni non esiste** e
+     nessun ingresso al paywall è raggiungibile senza prima incontrare un
+     tetto — che nessuno incontra, perché tutti nascono `pro`, compresi i ≥12
+     tester del test chiuso che si iscrivono DOPO il push e che il seed di due
+     email (`angelo.casula@`, `memikaapp@`) non poteva raggiungere. I quattro
+     trigger restano accesi e applicati: cambia solo da quale fascia si parte.
+     Le due strade che si prendevano prima dell'attivazione, ormai superate:
      - **(a) tenere indietro la migrazione dei piani.** Prima del `db push`
        spostare `supabase/migrations/20260903100000_plans.sql` fuori dalla
        cartella (`git stash push` del solo file, o un mv temporaneo), spingere
@@ -446,8 +455,9 @@ Una build fallita consuma il numero: l'etichetta va scritta DOPO, da
        la guardia `courtesyGrant` di `revenuecat-sync` (punto 3b) impedisce che
        la prima apertura dell'app li riporti a `free`. Da revocare a mano
        (`set plan = 'free' where email = '…'`) quando le chiavi arrivano.
-   Qualunque ramo si scelga, **scriverlo qui** prima di procedere: è l'unico
-   passo della sequenza che il client non può disfare da solo.
+   Se un giorno si tornasse a un default `free` con le chiavi ancora vuote,
+   uno dei due rami tornerebbe obbligatorio: è l'unico passo della sequenza
+   che il client non può disfare da solo.
 5. Nel worktree: `npm prune --legacy-peer-deps`, `npx expo-doctor`,
    introspezione + `node scripts/native-config/check-introspect.cjs`,
    `npm run lint`, `npm test`, pre-check Hermes, `git status` pulito.
@@ -491,11 +501,10 @@ eas build:view <id-android> --json      # runtimeVersion = hash android di sopra
 eas build:view <id-ios> --json          # runtimeVersion = hash ios di sopra
 
 # 3. Migrazioni in produzione — DOPO che le build sono FINISHED, PRIMA del submit
-#    STOP: rileggi il punto 4 di "Prima di lanciare". Con le chiavi RevenueCat
-#    VUOTE questo push chiude ogni tester non seed in Free senza paywall
-#    funzionante — o si tiene indietro 20260903100000_plans.sql (ramo a), o
-#    subito dopo il push si concede la cortesia pro agli account esistenti
-#    (ramo b). Con le chiavi presenti, si prosegue come scritto.
+#    Si spingono entrambe, sempre: dall'attivazione 2026-09-04 la colonna plan
+#    nasce con default 'pro', quindi ogni account creato dopo questo push —
+#    tester del test chiuso compresi — nasce sulla fascia alta e nessuno resta
+#    chiuso da un tetto senza paywall funzionante.
 npx supabase db push --dry-run          # elenca SOLO le migrazioni B4/B5
 npx supabase db push
 npx supabase db query --linked "select u.email, p.plan, p.plan_until from public.profiles p join auth.users u on u.id = p.id order by u.created_at"

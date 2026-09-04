@@ -23,14 +23,51 @@
 -- per non lasciare a bocca asciutta chi cestina la sua unica cartella e
 -- vuole ricominciare. Tutto spiegato nella sezione "Cartelle" piu' sotto.
 
+-- ---------------------------------------------------------------------------
+-- Il default e' 'pro', non 'free' — ATTIVAZIONE 2026-09-04
+-- ---------------------------------------------------------------------------
+-- Perche': oggi NESSUNO dei due store puo' vendere un abbonamento. Google non
+-- ha ancora approvato il profilo pagamenti e Apple non ha il contratto per le
+-- app a pagamento, quindi non esistono prodotti, non esiste un progetto
+-- RevenueCat e le EXPO_PUBLIC_REVENUECAT_*_KEY di eas.json sono stringhe
+-- vuote: purchasesAvailable e' falso e l'SDK non viene mai chiamato. In quello
+-- stato un utente che sbatte contro un tetto non ha NESSUNA via d'uscita dal
+-- client — nemmeno il paywall, che con le chiavi vuote mostra le schede con
+-- tutti i bottoni spenti. Un tetto senza via d'uscita e' peggio di nessun
+-- tetto: e' un vicolo cieco, e su iOS e' anche la funzionalita' segnaposto
+-- che la linea guida 2.1 di Apple fa rifiutare.
+--
+-- Vale per TUTTI, non per una lista di email. E' la differenza che conta: il
+-- seed di cortesia qui sotto copre due indirizzi, mentre il test chiuso di
+-- Play vuole almeno dodici tester per quattordici giorni di fila e quei conti
+-- vengono creati DOPO il push della migrazione. Un default 'free' li farebbe
+-- nascere tutti tappati a 10 ricordi / 1 cartella / 0 sezioni, e nessuna query
+-- scritta prima puo' raggiungerli: e' esattamente il buco che questa riga
+-- chiude. Il grandfathering non c'entra — questi conti non esistono ancora.
+--
+-- I quattro trigger restano accesi e applicati: cambia solo da quale fascia
+-- si parte. Chi arriva davvero al piano free (perche' un giorno lo sceglie, o
+-- perche' un abbonamento scade) trova i tetti dove li ha lasciati.
+--
+-- DA INVERTIRE quando le chiavi arrivano: NON si modifica questa riga (a quel
+-- punto la migrazione sara' gia' applicata), si scrive una migrazione NUOVA
+-- che riporta il default a 'free' e declassa chi non ha un entitlement vero:
+--
+--   alter table public.profiles alter column plan set default 'free';
+--   update public.profiles set plan = 'free'
+--    where plan_until is null and rc_app_user_id is null
+--      and email not in ('angelo.casula@gmail.com', 'memikaapp@gmail.com');
+--
+-- (la seconda istruzione e' la revoca in blocco della cortesia: le righe con
+-- rc_app_user_id valorizzato sono abbonati veri e non vanno toccate.)
 alter table public.profiles
-  add column plan text not null default 'free'
+  add column plan text not null default 'pro'
     check (plan in ('free','plus','pro')),
   add column plan_until timestamptz,
   add column rc_app_user_id text;
 
 comment on column public.profiles.plan is
-  'Piano acquistato: free/plus/pro. Scritto SOLO dalla edge function revenuecat-sync (service_role). Non e'' nella grant di UPDATE per authenticated: leggilo con current_plan(), non da solo.';
+  'Piano acquistato: free/plus/pro. Scritto SOLO dalla edge function revenuecat-sync (service_role). Non e'' nella grant di UPDATE per authenticated: leggilo con current_plan(), non da solo. DEFAULT ''pro'' finche'' gli store non possono vendere abbonamenti (2026-09-04): da riportare a ''free'' con una migrazione nuova quando arrivano le chiavi RevenueCat.';
 comment on column public.profiles.plan_until is
   'Scadenza dell''entitlement RevenueCat. null = non scade (a vita o promozionale). Nel passato = il piano vale free, senza bisogno di alcun job di downgrade.';
 comment on column public.profiles.rc_app_user_id is
@@ -39,6 +76,17 @@ comment on column public.profiles.rc_app_user_id is
 -- ---------------------------------------------------------------------------
 -- I due tester passano a pro PRIMA che i trigger esistano
 -- ---------------------------------------------------------------------------
+-- RIDONDANTE dal 2026-09-04, e RESTA. Con il default 'pro' qui sopra le righe
+-- di profiles che esistono gia' NON vengono toccate: un default vale per gli
+-- INSERT futuri, non riscrive le righe presenti, quindi senza questo update
+-- Maurizio e Angelo — i due account che esistono da prima della migrazione —
+-- resterebbero a 'free'. L'update copre esattamente loro. Ma anche il giorno
+-- in cui non coprisse piu' nessuno andrebbe tenuto: e' l'unica riga che
+-- sopravvive all'inversione del default (la migrazione futura che rimette
+-- 'free' revoca la cortesia di tutti gli altri e lascia in piedi questi due),
+-- ed e' la sola cosa che tiene i due account di prova fuori dai tetti quando
+-- i tetti torneranno a valere davvero.
+--
 -- Deve stare QUI dentro, e sopra i `create trigger`, non in una query a mano
 -- prima del push: la colonna `plan` nasce tre istruzioni fa, quindi un
 -- `update public.profiles set plan = 'pro'` eseguito PRIMA del db push
