@@ -334,16 +334,22 @@ describe("eas.json — profili di build", () => {
     expect(easJson.cli.appVersionSource).toBe("remote");
   });
 
-  it.each(STORE_PROFILES)("%s porta Supabase e gli slot di Sentry e RevenueCat", (profile) => {
+  it.each(STORE_PROFILES)("%s porta Supabase, senza cui il build parte in demo", (profile) => {
     const env = easJson.build[profile].env ?? {};
-    for (const key of [
-      "EXPO_PUBLIC_SUPABASE_URL",
-      "EXPO_PUBLIC_SUPABASE_ANON_KEY",
-      "EXPO_PUBLIC_SENTRY_DSN",
-      "EXPO_PUBLIC_REVENUECAT_IOS_KEY",
-      "EXPO_PUBLIC_REVENUECAT_ANDROID_KEY",
-    ]) {
-      expect(Object.keys(env), `${profile}.env.${key}`).toContain(key);
+    for (const key of ["EXPO_PUBLIC_SUPABASE_URL", "EXPO_PUBLIC_SUPABASE_ANON_KEY"]) {
+      expect(env[key], `${profile}.env.${key}`).toBeTruthy();
+    }
+  });
+
+  // eas-cli RIFIUTA una env vuota ("is not allowed to be empty") e non compila
+  // affatto: gli "slot vuoti" pensati come segnaposto per Sentry e RevenueCat
+  // hanno bloccato la prima build 3 il 2026-09-04. Per l'app non cambia nulla,
+  // perche' ogni lettura e' `process.env.X ?? ""`: assente e vuota si
+  // comportano identiche. Quindi la regola e' "o assente, o con un valore".
+  it.each(STORE_PROFILES)("%s: nessuna env vuota, che farebbe fallire eas-cli", (profile) => {
+    const env = easJson.build[profile].env ?? {};
+    for (const [key, value] of Object.entries(env)) {
+      expect(value, `${profile}.env.${key} e' vuota: toglila invece di lasciarla vuota`).not.toBe("");
     }
   });
 
