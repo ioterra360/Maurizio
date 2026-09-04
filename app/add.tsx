@@ -140,7 +140,7 @@ export default function AddScreen() {
   const plan = usePlan();
   // Totale dei ricordi dell'account, CESTINO COMPRESO (stesso predicato del
   // trigger): e' il contatore del piano free (10 in tutto), diverso dal
-  // contatore giornaliero, che resta l'autoregolazione di Pro/Premium.
+  // contatore giornaliero, che resta l'autoregolazione di Plus/Pro.
   const [totalCount, setTotalCount] = useState<number | null>(null);
   const [planBlock, setPlanBlock] = useState<PlanLimitKind | null>(null);
   // Profilo intero, non solo il tetto: serve per riallineare il promemoria
@@ -165,7 +165,7 @@ export default function AddScreen() {
   const promptBusy = useRef(false);
   const showToast = useUIStore((s) => s.showToast);
   const { t } = useT();
-  // Foto sul retro (Premium). Fino al salvataggio è solo un file locale, già
+  // Foto sul retro (Pro). Fino al salvataggio è solo un file locale, già
   // ridimensionato alla scelta: il CARICAMENTO parte dopo che la riga esiste,
   // perché il path contiene memory_id — e chi abbandona la schermata non
   // lascia file orfani nel bucket.
@@ -174,7 +174,7 @@ export default function AddScreen() {
   // iOS: la sorgente scelta resta in attesa finché il foglio non ha FINITO di
   // chiudersi (vedi requestPick). Su Android è sempre null.
   const [pendingSource, setPendingSource] = useState<PhotoSource | null>(null);
-  const [premiumAsk, setPremiumAsk] = useState(false);
+  const [proAsk, setProAsk] = useState(false);
   // Stessa attesa del picker, per la stessa ragione: su iOS /paywall e' una
   // rotta `presentation: "modal"` e non puo' essere presentata finche' il
   // Modal della mascotte e' ancora vivo (lib/modal-nav.ts).
@@ -394,9 +394,9 @@ export default function AddScreen() {
 
   const openPhotoSheet = () => {
     if (!canUsePhotos(plan)) {
-      // Free/Pro: la mascotte spiega e propone l'upgrade (spec: "disabilita,
+      // Free/Plus: la mascotte spiega e propone l'upgrade (spec: "disabilita,
       // spiega, propone l'upgrade"), il bottone resta visibile.
-      setPremiumAsk(true);
+      setProAsk(true);
       return;
     }
     setPhotoSheetOpen(true);
@@ -934,22 +934,22 @@ export default function AddScreen() {
         }}
         onClose={() => setPhotoSheetOpen(false)}
       />
-      {/* Free/Pro: la mascotte spiega e manda al paywall (B4). Il Modal si
+      {/* Free/Plus: la mascotte spiega e manda al paywall (B4). Il Modal si
           chiude PRIMA del push e su iOS il push ASPETTA che sia chiuso:
           /add è già un modale e /paywall pure, quindi con il dialogo ancora
           vivo UIKit rifiuterebbe la presentazione (lib/modal-nav.ts). */}
       <MascotDialog
-        visible={premiumAsk}
-        title={t("add.photoPremiumTitle")}
-        body={t("add.photoPremiumBody")}
-        confirmLabel={t("add.photoPremiumConfirm")}
-        cancelLabel={t("add.photoPremiumCancel")}
+        visible={proAsk}
+        title={t("add.photoProTitle")}
+        body={t("add.photoProBody")}
+        confirmLabel={t("add.photoProConfirm")}
+        cancelLabel={t("add.photoProCancel")}
         onConfirm={() => {
-          setPremiumAsk(false);
+          setProAsk(false);
           if (deferUntilModalDismissed()) setPendingPaywall(true);
           else router.push("/paywall" as never);
         }}
-        onCancel={() => setPremiumAsk(false)}
+        onCancel={() => setProAsk(false)}
         onDismissed={() => {
           // onDismiss scatta anche su "Non ora": naviga solo se richiesto.
           if (!pendingPaywall) return;

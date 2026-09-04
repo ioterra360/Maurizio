@@ -156,10 +156,10 @@ export async function cancelAccountDeletion(): Promise<void> {
  * profiles.plan. Il client non puo' scriverlo (le colonne non sono nella
  * grant) e non deve: l'entitlement dell'SDK e' una lettura locale, la
  * edge function lo verifica con l'API REST prima di fidarsi.
- * Demo: premium, senza rete.
+ * Demo: pro, senza rete.
  */
 export async function syncPlan(): Promise<{ plan: Plan; planUntil: string | null }> {
-  if (isDemoMode) return { plan: "premium", planUntil: null };
+  if (isDemoMode) return { plan: "pro", planUntil: null };
   const { data, error } = await supabase.functions.invoke<{
     plan: Plan;
     planUntil: string | null;
@@ -590,7 +590,7 @@ export async function countMemoriesInFolder(folderId: string): Promise<number> {
  * (che e' una UPDATE) aggirerebbe il tetto.
  * NON riusare countFolders / countMemoriesInFolder: quelli contano le sole
  * righe vive, predicato diverso.
- * Demo: zero, tanto la demo e' premium.
+ * Demo: zero, tanto la demo e' pro.
  */
 export async function countMemories(userId: string): Promise<number> {
   if (isDemoMode) return 0;

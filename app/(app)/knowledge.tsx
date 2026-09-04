@@ -105,7 +105,7 @@ export default function KnowledgeScreen() {
   // Il "+" resta VISIBILE anche al tetto, e dirama al tocco. Farlo sparire
   // sarebbe la scelta peggiore: un utente free ha esattamente una cartella
   // per costruzione, quindi in tutta la schermata Cartelle non incontrerebbe
-  // mai un motivo per passare a Pro. La spec chiede l'opposto — "il client
+  // mai un motivo per passare a Plus. La spec chiede l'opposto — "il client
   // rispecchia i limiti per l'UX (disabilita, spiega, propone l'upgrade)" —
   // ed e' lo stesso comportamento di Add e delle sezioni.
   const plan = usePlan();

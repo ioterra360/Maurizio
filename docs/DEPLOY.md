@@ -415,7 +415,7 @@ Una build fallita consuma il numero: l'etichetta va scritta DOPO, da
    **decide anche il punto 6**, cioè se la migrazione dei piani si può spingere
    in produzione con questa build.
    - **Chiavi presenti** (progetto RevenueCat, prodotti approvati dagli store,
-     entitlement `pro` e `premium`): niente di speciale, la "Sequenza" qui sotto
+     entitlement `plus` e `pro`): niente di speciale, la "Sequenza" qui sotto
      vale così com'è. Chi finisce contro un tetto vede il paywall e può uscirne.
    - **Chiavi vuote**: `purchasesAvailable` è falso (`lib/purchases.ts`), l'SDK
      non viene mai chiamato e il paywall mostra le tre schede con **tutti i
@@ -439,7 +439,7 @@ Una build fallita consuma il numero: l'etichetta va scritta DOPO, da
      - **(b) spingere e concedere subito la cortesia ai tester.** Nella stessa
        sessione del `db push`, prima di dare il link ai tester:
        ```bash
-       npx supabase db query --linked "update public.profiles set plan = 'premium', plan_until = null where id in (select id from auth.users)"
+       npx supabase db query --linked "update public.profiles set plan = 'pro', plan_until = null where id in (select id from auth.users)"
        npx supabase db query --linked "select u.email, p.plan from public.profiles p join auth.users u on u.id = p.id order by u.created_at"
        ```
        È la stessa concessione del seed, allargata agli account già esistenti;
@@ -453,9 +453,9 @@ Una build fallita consuma il numero: l'etichetta va scritta DOPO, da
    `npm run lint`, `npm test`, pre-check Hermes, `git status` pulito.
 6. Le migrazioni di B4 (`20260903100000_plans.sql`) e B5
    (`20260903110000_memory_photos.sql`) sono in `supabase/migrations/` del
-   branch, in quest'ordine, e quella di B4 contiene il seed `plan = 'premium'`
+   branch, in quest'ordine, e quella di B4 contiene il seed `plan = 'pro'`
    dei due tester PRIMA dei `create trigger`. Verifica:
-   `grep -n "premium\|create trigger" supabase/migrations/20260903100000_plans.sql`
+   `grep -n "set plan = 'pro'\|create trigger" supabase/migrations/20260903100000_plans.sql`
    deve mostrare l'`update public.profiles` **sopra** la prima riga
    `create trigger`. (Il seed sta lì e non in una query a mano prima del push
    perché la colonna `plan` nasce nella stessa migrazione: eseguirlo prima
@@ -494,13 +494,13 @@ eas build:view <id-ios> --json          # runtimeVersion = hash ios di sopra
 #    STOP: rileggi il punto 4 di "Prima di lanciare". Con le chiavi RevenueCat
 #    VUOTE questo push chiude ogni tester non seed in Free senza paywall
 #    funzionante — o si tiene indietro 20260903100000_plans.sql (ramo a), o
-#    subito dopo il push si concede la cortesia premium agli account esistenti
+#    subito dopo il push si concede la cortesia pro agli account esistenti
 #    (ramo b). Con le chiavi presenti, si prosegue come scritto.
 npx supabase db push --dry-run          # elenca SOLO le migrazioni B4/B5
 npx supabase db push
 npx supabase db query --linked "select u.email, p.plan, p.plan_until from public.profiles p join auth.users u on u.id = p.id order by u.created_at"
-#    → Angelo e Maurizio a 'premium'. Se NON lo sono, subito:
-#    npx supabase db query --linked "update public.profiles set plan = 'premium' where id in (select id from auth.users where email in ('<email Angelo dalla select>', '<email Maurizio dalla select>'))"
+#    → Angelo e Maurizio a 'pro'. Se NON lo sono, subito:
+#    npx supabase db query --linked "update public.profiles set plan = 'pro' where id in (select id from auth.users where email in ('<email Angelo dalla select>', '<email Maurizio dalla select>'))"
 
 # 3b. Edge function di B4 — revenuecat-sync (verifica l'entitlement con l'API
 #     REST di RevenueCat prima di scrivere profiles.plan). Senza questo, ogni
@@ -509,7 +509,7 @@ npx supabase db query --linked "select u.email, p.plan, p.plan_until from public
 ls supabase/functions                   # deve elencare revenuecat-sync
 grep -n "courtesyGrant" supabase/functions/revenuecat-sync/index.ts
 #    → due righe, SOPRA la riga `.update({ plan,`. È la guardia che impedisce
-#    alla funzione di riscrivere a 'free' i due tester messi a 'premium' dal
+#    alla funzione di riscrivere a 'free' i due tester messi a 'pro' dal
 #    seed della migrazione: RevenueCat non ha entitlement per loro, quindi
 #    senza guardia la cortesia durerebbe un solo avvio dell'app. Se manca,
 #    NON deployare. (Per toglierla a mano, un domani:
@@ -541,7 +541,7 @@ eas build:list --platform android --limit 1 --json  # artifacts.applicationArchi
 Perché le migrazioni vanno fra build e submit: il codice B4 della build 3
 legge `profiles.plan`, quindi le colonne devono esistere prima che un tester
 installi vc13; e il trigger dei 10 ricordi non deve toccare Maurizio (vc11,
-senza paywall) — per questo i tester sono `premium` dentro la migration
+senza paywall) — per questo i tester sono `pro` dentro la migration
 stessa, non dopo.
 
 ### Runtime della build 3
@@ -587,7 +587,7 @@ Da qui in poi gli OTA partono da un HEAD pulito di `main` il cui
 ### RevenueCat — checklist di Angelo
 
 1. Progetto RevenueCat sotto memikaapp@gmail.com, un'app per piattaforma
-   (bundle `studio.tailor.memika`), entitlement `pro` e `premium` (spec B4).
+   (bundle `studio.tailor.memika`), entitlement `plus` e `pro` (spec B4).
 2. Chiavi pubbliche `appl_…` / `goog_…` in `eas.json` →
    `EXPO_PUBLIC_REVENUECAT_IOS_KEY` / `EXPO_PUBLIC_REVENUECAT_ANDROID_KEY`
    (preview e production) e in `.env` locale. La chiave segreta `sk_` SOLO
@@ -687,7 +687,7 @@ Android build into testers' hands first.
 - [ ] TestFlight internal group (Angelo + Maurizio); external group optional
 - [ ] App Review notes: a test account (email + password), where account
       deletion lives (Impostazioni → Elimina account), how password reset
-      works, no IAP yet (Premium row hidden)
+      works, no IAP yet (Pro row hidden)
 - [ ] `ITSAppUsesNonExemptEncryption=false` already in `app.json` — no
       compliance hold
 
@@ -699,7 +699,7 @@ Android build into testers' hands first.
       legal pages, Settings and both store listings)
 - [ ] Create the Sentry org in the **EU** region + project → real slugs in
       `app.json`, DSN in `eas.json`, `SENTRY_AUTH_TOKEN` via `eas env:create`
-- [ ] (Premium, later) Paid Apps Agreement + W-8BEN + banking on Apple; Play
+- [ ] (Pro, later) Paid Apps Agreement + W-8BEN + banking on Apple; Play
       payments profile; RevenueCat project — `docs/PAYMENTS.md`
 
 **Supabase — manual / open**
@@ -715,7 +715,7 @@ Android build into testers' hands first.
 - [ ] Forgot password → email → link opens the app → new password → login
 - [ ] Settings → Elimina account → account gone, login refused
 - [ ] Sentry receives a deliberate test error with a symbolicated stack
-- [ ] (Premium, later) a sandbox purchase on both stores unlocks a second
+- [ ] (Pro, later) a sandbox purchase on both stores unlocks a second
       folder end-to-end
 - [ ] Notifications: first-review alert (T0+20h) and the daily reminder fire
       on a real device; check the status-bar icon on a light AND a dark shade

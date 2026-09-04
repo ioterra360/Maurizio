@@ -55,10 +55,10 @@ union all
 select 'nessun profilo con un piano fuori dai tre ammessi',
        count(*) = 0
   from public.profiles
- where plan not in ('free', 'pro', 'premium')
+ where plan not in ('free', 'plus', 'pro')
 
 union all
-select 'nessun piano scaduto continua a valere pro o premium',
+select 'nessun piano scaduto continua a valere plus o pro',
        count(*) = 0
   from public.profiles
  where plan <> 'free'
@@ -71,7 +71,7 @@ select 'nessun piano scaduto continua a valere pro o premium',
 -- email in (...)`). Quell'update e' idempotente e silenzioso — aggiorna zero
 -- righe se il profilo non c'e' o se l'email registrata e' un'altra — e il
 -- gate "prima di lanciare" di 2026-09-03-build3-config-nativa.md lo verifica
--- con un `grep -n "premium"`, che passa sul testo dell'istruzione anche
+-- con un `grep -n "set plan = 'pro'"`, che passa sul testo dell'istruzione anche
 -- quando non ha toccato nessuna riga. Se resta free, Maurizio (vc11: niente
 -- paywall, niente schermata dei piani) si ritrova bloccato a 10 ricordi e 1
 -- cartella senza uscita: e' esattamente la finestra che il seed esiste per
@@ -82,4 +82,4 @@ select 'nessun tester e'' rimasto free',
        count(*) = 0
   from public.profiles
  where email in ('angelo.casula@gmail.com', 'memikaapp@gmail.com')
-   and plan <> 'premium';
+   and plan <> 'pro';

@@ -45,7 +45,7 @@ is in the `admin_emails` allowlist (currently `memikaapp@gmail.com`).
 | `weekly_digest` | boolean | Saved preference only — no digest is sent yet; default `false` |
 | `morning_review_at` | time | Daily reminder slot (HH:MM, the client floors to a 30-minute slot); default 08:00 |
 | `evening_review_at` | time | UNUSED since 2026-09-03 (single reminder); kept for pre-OTA clients, drop in a later migration |
-| `plan` | text | `free` / `pro` / `premium`, default `free`. **Not** in the UPDATE grant: only the `revenuecat-sync` edge function writes it (migration 20260903100000) |
+| `plan` | text | `free` / `plus` / `pro`, default `free`. **Not** in the UPDATE grant: only the `revenuecat-sync` edge function writes it (migration 20260903100000) |
 | `plan_until` | timestamptz | Entitlement expiry; in the past = the plan is worth `free` (`current_plan()`). null = never expires (lifetime, promo, or a courtesy grant) |
 | `rc_app_user_id` | text | RevenueCat App User ID (= `profiles.id`). null on a row RevenueCat has never synced |
 | `created_at` / `updated_at` | timestamptz | |
@@ -59,7 +59,7 @@ or names a custom folder (1–40 chars client-side). **Identity is `id`**
 (migration 20260902130000): `unique(user_id, kind)` is gone, duplicates are
 legal, the route is `/folder/[id]`. Insert is allowed by
 `folders_all_own_or_admin` (user_id = auth.uid()). Free accounts own one
-folder, pro accounts five, premium unlimited — enforced by
+folder, plus accounts five, pro unlimited — enforced by
 `folders_enforce_plan_limit` (`P0005`, migration 20260903100000), counting
 **live** folders only; a restore from the trash is refused by
 `folders_enforce_plan_limit_on_restore` with the same code **only when the
@@ -98,7 +98,7 @@ when it's `<= now()`, the memory is due.
 | `reading` | text | Pronunciation / romaji, optional |
 | `definition` | text | Body — what to remember |
 | `notes` | text | Free-text user notes ("appunti"), optional; edited in the memory detail sheet (migration 20260827160000). |
-| `photo_path` | text | Chiave dell'oggetto nel bucket privato `memory-photos` (`<user_id>/<memory_id>.jpg`, migration 20260903110000). null = nessuna foto. Mai un URL: si legge con URL firmati (`lib/photos.ts`). Premium **solo lato client** (`canUsePhotos`): nessun trigger controlla questa colonna: i trigger di `20260903100000_plans.sql` guardano ricordi, cartelle e sezioni, non `photo_path`. Un gate server è una decisione aperta. |
+| `photo_path` | text | Chiave dell'oggetto nel bucket privato `memory-photos` (`<user_id>/<memory_id>.jpg`, migration 20260903110000). null = nessuna foto. Mai un URL: si legge con URL firmati (`lib/photos.ts`). Pro **solo lato client** (`canUsePhotos`): nessun trigger controlla questa colonna: i trigger di `20260903100000_plans.sql` guardano ricordi, cartelle e sezioni, non `photo_path`. Un gate server è una decisione aperta. |
 | `example` | text | Example sentence, optional |
 | `item_type` | text | Folder-specific subtype (word/kanji/concept/drug/…) |
 | `state` | enum `memory_state` | `active` / `fading` / `archived` |
@@ -184,9 +184,9 @@ sidesteps the recursive-RLS-on-profiles problem.
 | `folders_set_updated_at` | `folders` | BEFORE UPDATE | Touch `updated_at` |
 | `memories_set_updated_at` | `memories` | BEFORE UPDATE | Touch `updated_at` |
 | `memories_enforce_plan_limit` | `memories` | BEFORE INSERT | 10 memories on the free plan, **trash included** (`where user_id`, no `deleted_at` filter) → `P0004` |
-| `folders_enforce_plan_limit` | `folders` | BEFORE INSERT | 1 folder (free) / 5 (pro), **live rows only** (`deleted_at is null`) → `P0005` |
+| `folders_enforce_plan_limit` | `folders` | BEFORE INSERT | 1 folder (free) / 5 (plus), **live rows only** (`deleted_at is null`) → `P0005` |
 | `folders_enforce_plan_limit_on_restore` | `folders` | BEFORE UPDATE, only on `deleted_at` non-null → null | Restore from the trash while the live folders are at the cap **and** one of them was created after this row was trashed → `P0005` (hint `plan-limit:folders-restore`). Grandfathered accounts (live > cap, nothing created since) are not blocked |
-| `subfolders_enforce_rules` | `subfolders` | BEFORE INSERT OR UPDATE | 0 sections (free) / 3 (pro) → `P0003`, plus the integrity guards (`P0001`) |
+| `subfolders_enforce_rules` | `subfolders` | BEFORE INSERT OR UPDATE | 0 sections (free) / 3 (plus) → `P0003`, plus the integrity guards (`P0001`) |
 
 The two caps count the trash the opposite way on purpose: a memory restore can
 never fail (the total only goes down), while a folder cap of ONE must not lock
@@ -203,8 +203,8 @@ them.
 | Errcode | Limit | i18n |
 |---|---|---|
 | `P0004` | memories (10 in total, trash included, free) | `planLimit.memories*` |
-| `P0005` | folders (1 free, 5 pro, live rows only) — both on create and on restore | `planLimit.folders*`, `planLimit.foldersRestore*` |
-| `P0003` | sections (0 free, 3 pro) | `planLimit.sections*` |
+| `P0005` | folders (1 free, 5 plus, live rows only) — both on create and on restore | `planLimit.folders*`, `planLimit.foldersRestore*` |
+| `P0003` | sections (0 free, 3 plus) | `planLimit.sections*` |
 | `P0001` | integrity guards, **not** a plan limit | generic message |
 
 PostgREST serves `P0003`/`P0004`/`P0005` as **HTTP 500** — its SQLSTATE→HTTP
@@ -364,6 +364,6 @@ These are conscious omissions, not oversights:
 - **Content templates / "marketplace" folders** — admin shipping pre-built
   decks. Deferred until after launch.
 - **Sharing / social** — out of scope per `docs/PRODUCT.md`.
-- **Audio on memories** — photos landed with 20260903110000 (one per memory, Premium); audio is still deferred.
+- **Audio on memories** — photos landed with 20260903110000 (one per memory, Pro); audio is still deferred.
 - **Custom item types** — `item_type` is a text column without a foreign-key
   enforced taxonomy. Loose on purpose for Phase 2.

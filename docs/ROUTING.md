@@ -12,7 +12,7 @@ app/
 ├── auth-callback.tsx            Landing dei link email NON di recovery (conferma signup) — root-level
 ├── choose-topic.tsx             Scegli il tuo argomento — crea l'UNICA cartella (root-level, vedi sotto)
 ├── folder-settings.tsx          Impostazioni cartella (`?kind=`) — push root-level sopra i tab
-├── paywall.tsx                  Piani Free/Pro/Premium — root-level (foglio dal basso), fuori dai tab
+├── paywall.tsx                  Piani Free/Plus/Pro — root-level (foglio dal basso), fuori dai tab
 │
 ├── (auth)/
 │   ├── _layout.tsx              Redirects out if user already signed in
@@ -66,7 +66,7 @@ redirects any signed-in user to Today, but the same screen must also be
 reachable from `(app)` surfaces. Add redirects there when the user owns zero
 folders; Knowledge's empty state links there; a user who already has ≥1
 folder is bounced to Today on mount. No other route creates folders
-(freemium = one folder; the Premium sheet comes with RevenueCat).
+(freemium = one folder; the Pro sheet comes with RevenueCat).
 
 ## Why three route groups
 

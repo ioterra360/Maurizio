@@ -128,7 +128,7 @@ describe("startPlanSync — l'idratazione e' la condizione, non il primo render"
 /**
  * Il difetto che questi test fermano: `refreshPlan()` inghiottiva OGNI
  * fallimento in `reportError` e ritornava `void`, cosi' il paywall diceva
- * "Ora sei Premium" anche quando `syncPlan()` non aveva risposto e lo store
+ * "Ora sei Pro" anche quando `syncPlan()` non aveva risposto e lo store
  * era rimasto a `free`. L'utente pagava, leggeva la conferma e trovava ogni
  * gate dell'app ancora chiuso, senza un solo messaggio che dicesse perche'.
  */
@@ -143,9 +143,9 @@ describe("refreshPlan — l'esito della sincronizzazione e' un valore, non un si
   });
 
   it("lettura riuscita: ritorna true e scrive il piano nello store", async () => {
-    syncPlan.mockResolvedValue({ plan: "premium", planUntil: null });
+    syncPlan.mockResolvedValue({ plan: "pro", planUntil: null });
     await expect(refreshPlan()).resolves.toBe(true);
-    expect(useAuthStore.getState().user?.plan).toBe("premium");
+    expect(useAuthStore.getState().user?.plan).toBe("pro");
   });
 
   it("lettura fallita: ritorna false, non lancia e NON tocca il piano", async () => {

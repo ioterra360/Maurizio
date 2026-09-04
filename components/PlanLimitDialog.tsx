@@ -26,7 +26,7 @@ type Props = {
  *
  * Un solo componente per cinque schermate (Add, Nuova cartella, Sezioni in
  * due punti, Cestino): la copy cambia col limite, col piano E con il
- * contesto — a un utente Pro non si dice "passa a Pro".
+ * contesto — a un utente Plus non si dice "passa a Plus".
  *
  * Il dialogo si chiude PRIMA della navigazione: un Modal ancora montato
  * mentre il router spinge una rotta lascia il backdrop sopra la schermata
@@ -60,11 +60,11 @@ export function PlanLimitDialog({ limit, plan, onClose, context = "add" }: Props
     if (limit === "folders") {
       return plan === "free"
         ? { title: t("planLimit.foldersTitleFree"), body: t("planLimit.foldersBodyFree") }
-        : { title: t("planLimit.foldersTitlePro"), body: t("planLimit.foldersBodyPro") };
+        : { title: t("planLimit.foldersTitlePlus"), body: t("planLimit.foldersBodyPlus") };
     }
     return plan === "free"
       ? { title: t("planLimit.sectionsTitleFree"), body: t("planLimit.sectionsBodyFree") }
-      : { title: t("planLimit.sectionsTitlePro"), body: t("planLimit.sectionsBodyPro") };
+      : { title: t("planLimit.sectionsTitlePlus"), body: t("planLimit.sectionsBodyPlus") };
   };
   const { title, body } = limit ? copy() : { title: "", body: "" };
   return (

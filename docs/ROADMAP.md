@@ -97,14 +97,14 @@ review layer at the right time, and recall outcomes update the schedule.
   Health screen
 - The Mascot coach on the Complete screen congratulates appropriately
 
-**Out of scope:** push notifications (Phase 4), Premium gating (Phase 4),
+**Out of scope:** push notifications (Phase 4), Pro gating (Phase 4),
 admin tools (Phase 4).
 
 **Estimate:** 1-2 weeks part-time.
 
 ---
 
-## Phase 4 — Store readiness, Premium, store builds (IN PROGRESS)
+## Phase 4 — Store readiness, Pro, store builds (IN PROGRESS)
 
 > **Status 2026-08-25.** Maurizio opened the Apple Developer (Individual) and
 > Google Play (Personal) accounts today. The app will be published
@@ -116,7 +116,8 @@ admin tools (Phase 4).
 > legacy-peer-deps for `npm ci` on EAS; `d014aff` supabase-js 2.106.2 (2.106.0
 > broke the Hermes release bundle); `lib/demo-mode.ts` (release builds never run
 > demo); migration `20260825121500` column grants on `profiles`;
-> `PREMIUM_ENABLED=false` kill-switch (constant removed on 2026-09-03).
+> `PREMIUM_ENABLED=false` kill-switch (constant removed on 2026-09-03; the
+> tier it was named after is called `pro` since the 2026-09-04 tier rename).
 >
 > **Batch 2** — `1a8cecb` Italian legal drafts (`docs/legal/` privacy, terms,
 > account-deletion, md + html); `a7394bd` + `862d017` real icon / adaptive icon
@@ -131,7 +132,7 @@ admin tools (Phase 4).
 > 15 s network timeout + honest error states; this docs sync.
 
 **Goal:** the app passes App Review and Play review as a real product, then
-gets Premium.
+gets Pro.
 
 **Scope (done):**
 - [x] Store developer accounts (Apple Individual, Play Personal — Maurizio)
@@ -152,7 +153,7 @@ gets Premium.
       in the earlier admin pass, unchanged today
 
 **Scope (left):**
-- [x] **RevenueCat plans** — three plans Free/Pro/Premium built 2026-09-03
+- [x] **RevenueCat plans** — three plans Free/Plus/Pro built 2026-09-03
       (`lib/plan.ts`, `app/paywall.tsx`, `lib/purchases.ts`, edge function
       `revenuecat-sync`, migration `20260903100000_plans.sql`). INERT until
       the owner prerequisites are done (Paid Apps Agreement, W-8BEN, banking;
@@ -190,7 +191,7 @@ gets Premium.
 - A new user can sign up, pick a topic, add memories, review them, reset a
   forgotten password and delete the account — all from a store build, no
   demo data
-- A free user cannot obtain a second folder; a Premium sandbox purchase on
+- A free user cannot obtain a second folder; a Pro sandbox purchase on
   both stores unlocks it end-to-end
 - An admin (`memikaapp@gmail.com`) sees the admin shell on login and
   can open the app as a user
@@ -224,7 +225,7 @@ phases above. The product engineering work and the legal/business work run
 in parallel.
 
 What does gate phases:
-- **Premium needs the store payment prerequisites** under Maurizio: Apple
+- **Pro needs the store payment prerequisites** under Maurizio: Apple
   Paid Apps Agreement + W-8BEN + banking, Play payments (merchant) profile,
   then a RevenueCat project. Without them there is nothing to sandbox-test.
 - ~~Apple Developer + Google Play developer accounts~~ — opened 2026-08-25

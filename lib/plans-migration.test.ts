@@ -62,12 +62,12 @@ describe("20260903100000_plans.sql — ripristino cartelle e grandfathering", ()
     );
   });
 
-  it("il seed premium dei due tester sta sopra il primo create trigger", () => {
+  it("il seed pro dei due tester sta sopra il primo create trigger", () => {
     // Punto 6 della lista "Prima di lanciare" di docs/DEPLOY.md: la colonna
     // `plan` nasce in questa migration, quindi il seed non può stare in una
     // query a mano prima del push, e dopo lascerebbe Maurizio (vc11, senza
     // paywall) bloccato a 10 ricordi.
-    const seed = SQL.indexOf("update public.profiles\n   set plan = 'premium'");
+    const seed = SQL.indexOf("update public.profiles\n   set plan = 'pro'");
     // Ancorato a inizio riga: la parola "create trigger" compare prima nei
     // commenti, e un indexOf secco misurerebbe quelli.
     const firstTrigger = SQL.search(/^create trigger /m);

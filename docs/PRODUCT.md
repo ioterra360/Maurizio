@@ -55,8 +55,8 @@ Templates live in `lib/constants.ts` (`FOLDER_TEMPLATES`); the pick/validate
 helpers in `lib/folder-templates.ts`. We do not edit user folders.
 
 **Freemium:** three plans (2026-09-02). Free = 10 memories in total, ONE
-folder, no sections; Pro = unlimited memories, 5 folders, 3 sections;
-Premium = everything unlimited plus photos on memories. The caps are enforced
+folder, no sections; Plus = unlimited memories, 5 folders, 3 sections;
+Pro = everything unlimited plus photos on memories. The caps are enforced
 by Postgres triggers (`20260903100000_plans.sql`), mirrored client-side by
 `PLAN_LIMITS` in `lib/plan.ts`. Hitting one raises the mascot dialog that
 leads to `/paywall`.
@@ -67,7 +67,7 @@ leads to `/paywall`.
 - ❌ Not a flashcard import tool. We are not Anki. We design our own intake.
 - ❌ Not gamified. No streaks, no XP, no leaderboards. Editorial calm.
 - ❌ Not social. No sharing, follows, comments. Memika is a quiet place.
-- ❌ Not free forever. Freemium (one folder) + Premium via in-app purchase.
+- ❌ Not free forever. Freemium (one folder) + Pro via in-app purchase.
 
 ## Value proposition
 
@@ -91,12 +91,12 @@ slightly Studio-Ghibli-via-Stripe. See `docs/DESIGN-SYSTEM.md` for visual specs.
 
 ## Subscription model
 
-Three plans — Free / Pro / Premium — sold as **in-app purchases via
+Three plans — Free / Plus / Pro — sold as **in-app purchases via
 RevenueCat** (decided 2026-07-25, confirmed 2026-08-25, built 2026-09-03).
 Pricing is RevenueCat configuration, not code. The old external-checkout screen
 was deleted on 2026-08-29 and replaced on 2026-09-03 by the in-app paywall
-`app/paywall.tsx` (entitlements `pro` and `premium`). Free = 10 memories and
-one folder; Pro and Premium as in `docs/PAYMENTS.md`. No web checkout, ever
+`app/paywall.tsx` (entitlements `plus` and `pro`). Free = 10 memories and
+one folder; Plus and Pro as in `docs/PAYMENTS.md`. No web checkout, ever
 (Apple 3.1.1 / Play Payments policy) — model and enforcement in
 `docs/PAYMENTS.md`.
 

@@ -322,7 +322,7 @@ export default function FolderSettingsScreen() {
 
         {/* Sottocartelle — intestazione e "+" sempre presenti: al tetto il "+"
             apre la mascotte invece di sparire, cosi' un utente free scopre che
-            le sezioni esistono e un Pro capisce perche' si e' fermato. Stessa
+            le sezioni esistono e un Plus capisce perche' si e' fermato. Stessa
             scelta di Conoscenza e di Add. */}
         <View style={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 8 }}>
           <SectionLabel>{t("subfolders.section")}</SectionLabel>

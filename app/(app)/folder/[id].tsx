@@ -377,7 +377,7 @@ export default function FolderDetailScreen() {
             La striscia e il "+" restano SEMPRE montati e diramano al tocco.
             Nasconderli al tetto sarebbe la scelta peggiore: un utente free ha
             zero sezioni per costruzione, quindi non incontrerebbe mai un
-            motivo per passare a Pro, e un Pro a tre vedrebbe il "+" sparire
+            motivo per passare a Plus, e un Plus a tre vedrebbe il "+" sparire
             senza spiegazione. Stesso comportamento di Conoscenza e di Add. */}
         <ScrollView
           horizontal

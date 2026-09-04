@@ -1,4 +1,4 @@
--- Piani Free / Pro / Premium (spec 2026-09-02 §B4).
+-- Piani Free / Plus / Pro (spec 2026-09-02 §B4).
 --
 -- Perche' server-side: oggi NESSUNO dei tre limiti e' applicato davvero.
 -- FREE_FOLDER_LIMIT e' codice morto, il tetto giornaliero e' un avviso
@@ -25,23 +25,23 @@
 
 alter table public.profiles
   add column plan text not null default 'free'
-    check (plan in ('free','pro','premium')),
+    check (plan in ('free','plus','pro')),
   add column plan_until timestamptz,
   add column rc_app_user_id text;
 
 comment on column public.profiles.plan is
-  'Piano acquistato: free/pro/premium. Scritto SOLO dalla edge function revenuecat-sync (service_role). Non e'' nella grant di UPDATE per authenticated: leggilo con current_plan(), non da solo.';
+  'Piano acquistato: free/plus/pro. Scritto SOLO dalla edge function revenuecat-sync (service_role). Non e'' nella grant di UPDATE per authenticated: leggilo con current_plan(), non da solo.';
 comment on column public.profiles.plan_until is
   'Scadenza dell''entitlement RevenueCat. null = non scade (a vita o promozionale). Nel passato = il piano vale free, senza bisogno di alcun job di downgrade.';
 comment on column public.profiles.rc_app_user_id is
   'App User ID con cui RevenueCat conosce questo utente. Uguale a profiles.id per costruzione (Purchases.logIn(user.id)); serve a riconoscere una riga gia'' sincronizzata e come chiave di audit.';
 
 -- ---------------------------------------------------------------------------
--- I due tester passano a premium PRIMA che i trigger esistano
+-- I due tester passano a pro PRIMA che i trigger esistano
 -- ---------------------------------------------------------------------------
 -- Deve stare QUI dentro, e sopra i `create trigger`, non in una query a mano
 -- prima del push: la colonna `plan` nasce tre istruzioni fa, quindi un
--- `update public.profiles set plan = 'premium'` eseguito PRIMA del db push
+-- `update public.profiles set plan = 'pro'` eseguito PRIMA del db push
 -- fallirebbe con SQLSTATE 42703 (column "plan" does not exist). E farlo DOPO
 -- il push aprirebbe una finestra in cui i tetti valgono anche per Maurizio,
 -- che ha vc11 e quindi non ha ne' paywall ne' schermata dei piani: si
@@ -50,20 +50,20 @@ comment on column public.profiles.rc_app_user_id is
 -- La stessa istruzione, dentro la stessa transazione della migrazione, chiude
 -- la finestra a zero. E' il punto 6 della lista "Prima di lanciare" del piano
 -- 2026-09-03-build3-config-nativa.md, che lo verifica con
--- `grep -n "premium" supabase/migrations/20260903100000_plans.sql`.
+-- `grep -n "set plan = 'pro'" supabase/migrations/20260903100000_plans.sql`.
 --
 -- plan_until null = non scade: e' un accesso di cortesia, non un abbonamento.
 -- Idempotente e innocua sugli altri progetti: se quelle email non esistono,
 -- aggiorna zero righe.
 update public.profiles
-   set plan = 'premium', plan_until = null
+   set plan = 'pro', plan_until = null
  where email in ('angelo.casula@gmail.com', 'memikaapp@gmail.com');
 
 -- ---------------------------------------------------------------------------
 -- Il piano efficace, valutato pigramente
 -- ---------------------------------------------------------------------------
 -- Niente cron di downgrade: sarebbe una dipendenza in piu' e una finestra
--- di un'ora in cui il trigger direbbe ancora "pro". Il confronto con now()
+-- di un'ora in cui il trigger direbbe ancora "plus". Il confronto con now()
 -- e' sempre corretto per costruzione — stessa scelta gia' fatta per la
 -- finestra di ripasso (20260902100000_review_phases.sql:8-10).
 --
@@ -123,9 +123,9 @@ comment on function public.current_plan(uuid) is
 -- quando vuole.
 --
 -- L'ordine delle istruzioni conta: si legge PRIMA il piano e si esce subito
--- per chi non ha tetto, poi si prende il lock. Cosi' un abbonato Pro o
--- Premium non serializza tutti i suoi inserimenti su un lock esclusivo
--- della propria riga di profiles per un limite che non lo riguarda. Per chi
+-- per chi non ha tetto, poi si prende il lock. Cosi' un abbonato Plus o Pro
+-- non serializza tutti i suoi inserimenti su un lock esclusivo della
+-- propria riga di profiles per un limite che non lo riguarda. Per chi
 -- il tetto ce l'ha la garanzia e' identica: il lock e' comunque preso PRIMA
 -- del conteggio, e in READ COMMITTED chi aspetta il lock rilegge con uno
 -- snapshot nuovo — due dispositivi che vedono entrambi 9 non arrivano a 11.
@@ -178,7 +178,7 @@ create trigger memories_enforce_plan_limit
   for each row execute function public.enforce_memory_plan_limit();
 
 -- ---------------------------------------------------------------------------
--- Cartelle: 1 free / 5 pro / illimitate premium
+-- Cartelle: 1 free / 5 plus / illimitate pro
 -- ---------------------------------------------------------------------------
 -- Tutte le righe di public.folders sono di primo livello: le sezioni vivono
 -- nella tabella separata public.subfolders (20260831010000_subfolders.sql)
@@ -238,7 +238,7 @@ declare
   used int;
 begin
   eff := coalesce(public.current_plan(new.user_id), 'free');
-  cap := case eff when 'free' then 1 when 'pro' then 5 else null end;
+  cap := case eff when 'free' then 1 when 'plus' then 5 else null end;
   if cap is null then
     return new;
   end if;
@@ -318,7 +318,7 @@ declare
   used int;
 begin
   eff := coalesce(public.current_plan(new.user_id), 'free');
-  cap := case eff when 'free' then 1 when 'pro' then 5 else null end;
+  cap := case eff when 'free' then 1 when 'plus' then 5 else null end;
   if cap is null then
     return new;
   end if;
@@ -351,7 +351,7 @@ create trigger folders_enforce_plan_limit_on_restore
   execute function public.enforce_folder_restore_plan_limit();
 
 -- ---------------------------------------------------------------------------
--- Sezioni: 0 free / 3 pro / illimitate premium
+-- Sezioni: 0 free / 3 plus / illimitate pro
 -- ---------------------------------------------------------------------------
 -- Sostituisce la versione di 20260831020000_subfolder_guards.sql: identica
 -- nelle due guardie di integrita' (stesso P0001, stesso testo), diverso solo
@@ -388,7 +388,7 @@ begin
   end if;
   if tg_op = 'INSERT' or new.folder_id is distinct from old.folder_id then
     eff := coalesce(public.current_plan(new.user_id), 'free');
-    cap := case eff when 'free' then 0 when 'pro' then 3 else null end;
+    cap := case eff when 'free' then 0 when 'plus' then 3 else null end;
     if cap is not null
        and (select count(*) from public.subfolders
              where folder_id = new.folder_id and id <> new.id) >= cap then

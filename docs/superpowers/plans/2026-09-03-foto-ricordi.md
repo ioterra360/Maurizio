@@ -1,5 +1,11 @@
 # Foto sui ricordi (Premium) — Implementation Plan
 
+> **Nomi dei piani — nota 2026-09-04.** Questo documento e' STORICO e usa la
+> scala vecchia: `pro` era la fascia intermedia e `premium` quella alta. Dal
+> 2026-09-04 le fasce si chiamano **Free / Plus / Pro** (`plus` = intermedia,
+> `pro` = alta): ogni "pro" e ogni "premium" qui sotto vanno letti con la
+> vecchia scala. La scala viva sta in `lib/plan.ts` e `docs/PAYMENTS.md`.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Un utente Premium può allegare UNA foto a un ricordo dalla schermata Aggiungi (fotocamera o libreria); la foto vive in un bucket Storage privato, compare solo sul **retro** — anteprima in Add, scheda del ricordo e pannello di rivelazione dei tre ripassi — e sparisce con il ricordo.

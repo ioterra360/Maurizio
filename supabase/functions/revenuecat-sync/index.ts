@@ -24,11 +24,11 @@
  */
 import { createClient } from "npm:@supabase/supabase-js@2.106.2";
 
-type Plan = "free" | "pro" | "premium";
+type Plan = "free" | "plus" | "pro";
 
 const RC_SUBSCRIBERS = "https://api.revenuecat.com/v1/subscribers/";
+const ENTITLEMENT_PLUS = "plus";
 const ENTITLEMENT_PRO = "pro";
-const ENTITLEMENT_PREMIUM = "premium";
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 type RcEntitlement = {
@@ -82,13 +82,13 @@ function planFromRcEntitlements(
 ): { plan: Plan; planUntil: string | null } {
   const parsed = Date.parse(requestDate);
   const at = Number.isNaN(parsed) ? Date.now() : parsed;
-  const premium = entitlements[ENTITLEMENT_PREMIUM];
-  if (premium && rcActive(premium, at)) {
-    return { plan: "premium", planUntil: rcDeadline(premium) };
-  }
   const pro = entitlements[ENTITLEMENT_PRO];
   if (pro && rcActive(pro, at)) {
     return { plan: "pro", planUntil: rcDeadline(pro) };
+  }
+  const plus = entitlements[ENTITLEMENT_PLUS];
+  if (plus && rcActive(plus, at)) {
+    return { plan: "plus", planUntil: rcDeadline(plus) };
   }
   return { plan: "free", planUntil: null };
 }
@@ -176,7 +176,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
   // La riga com'e' ADESSO, prima di scriverci sopra.
   //
   // Serve a riconoscere una CONCESSIONE DI CORTESIA. Il seed della migrazione
-  // 20260903100000_plans.sql porta i due tester a plan='premium' con
+  // 20260903100000_plans.sql porta i due tester a plan='pro' con
   // plan_until null perche' Maurizio non si trovi hard-cappato a 10 ricordi
   // su un binario senza paywall (DEPLOY.md § "Build 3"). Ma RevenueCat di
   // quegli account non sa nulla: `subscriber.entitlements` e' vuoto e la
@@ -206,7 +206,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
   // scadenza o un rc_app_user_id — lo scrive questa stessa funzione al primo
   // passaggio — quindi un declassamento legittimo (scadenza, rimborso,
   // disdetta) non passa mai di qui. L'UPGRADE invece passa: se RevenueCat
-  // dice pro o premium si scrive comunque, e da quel momento la riga ha un
+  // dice plus o pro si scrive comunque, e da quel momento la riga ha un
   // rc_app_user_id e smette di essere una cortesia.
   //
   // Per TOGLIERE una cortesia serve una mano umana:

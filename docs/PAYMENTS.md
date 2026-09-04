@@ -1,6 +1,6 @@
 # Payments
 
-> Tre piani — Free / Pro / Premium — venduti come **abbonamenti in-app via
+> Tre piani — Free / Plus / Pro — venduti come **abbonamenti in-app via
 > RevenueCat**. Decisione 2026-07-25, confermata 2026-08-25, parametri fissati
 > 2026-09-02, costruiti 2026-09-03. Nessun checkout web: un binario che rimanda
 > a un pagamento esterno viene rifiutato sotto Apple 3.1.1 e Google Play
@@ -20,13 +20,13 @@ piano `2026-09-03-build3-config-nativa.md`): dopo che le build sono `FINISHED`,
 prima del submit. Il vincolo che conta non è "quando la build è sugli store" ma
 il **bivio del punto 4** di quella stessa pagina: con le chiavi RevenueCat vuote
 il paywall ha i bottoni spenti, e spingere i trigger senza allargare la cortesia
-premium agli account esistenti chiuderebbe ogni tester in Free senza una via
+pro agli account esistenti chiuderebbe ogni tester in Free senza una via
 d'uscita dal client. I due rami ammessi (tenere indietro `20260903100000_plans.sql`,
 oppure spingere e concedere subito la cortesia) sono scritti lì.
 
 ## I piani
 
-| | Free | Pro | Premium |
+| | Free | Plus | Pro |
 |---|---|---|---|
 | Ricordi | **10 totali** sull'account | illimitati | illimitati |
 | Cartelle | 1 | 5 | illimitate |
@@ -41,7 +41,7 @@ La riga "Limite giornaliero" è visibile a tutti e **non va gatata sul piano**.
 Nella build 3 il client legge `plan` da un profilo che può ancora non avere
 quella colonna e in mancanza di risposta degrada a `free`
 (`lib/auth-store.ts:177`): un `plan !== "free"` intorno a quella riga
-nasconderebbe il cursore a tutti, tester premium compresi, e senza chiavi
+nasconderebbe il cursore a tutti, tester pro compresi, e senza chiavi
 RevenueCat non esiste una riparazione dal client. Per un utente free il cursore
 semplicemente non morde mai — in Add il contatore giornaliero è sostituito da
 quello totale (`app/add.tsx:898`) e l'opzione più bassa del selettore (10)
@@ -49,11 +49,21 @@ coincide già col tetto totale del piano.
 
 Prezzi, durata e periodo di prova sono configurazione RevenueCat: non toccano
 una riga di codice. Gli identificativi dei prodotti sì, e sono in
-`lib/plan.ts` (`PRODUCT_IDS`): `memika_pro_monthly`, `memika_pro_yearly`,
-`memika_premium_monthly`, `memika_premium_yearly`. Ogni id che viene creato
+`lib/plan.ts` (`PRODUCT_IDS`): `memika_plus_monthly`, `memika_plus_yearly`,
+`memika_pro_monthly`, `memika_pro_yearly`. Ogni id che viene creato
 deve essere identico in App Store Connect, Play Console e RevenueCat.
 
-Entitlement RevenueCat: **`pro` e `premium`** (due, non uno). Offerta:
+**Rinomina delle fasce (2026-09-04).** Fino al 2026-09-03 la fascia intermedia
+si chiamava `pro` e quella alta `premium`; il listino di Maurizio usa **Plus**
+(intermedia) e **Pro** (alta), e la parola "pro" cambia quindi significato. La
+rinomina e' stata fatta PRIMA di creare qualunque prodotto negli store o in
+RevenueCat, perche' gli identificativi dei prodotti e degli entitlement sono
+permanenti una volta creati. Nel codice non esiste piu' nessuna fascia
+`premium`: `memika_pro_monthly` indica oggi la fascia ALTA (prima indicava
+l'intermedia) e l'entitlement `pro` fa lo stesso. Nessun tetto e nessun prezzo
+e' cambiato con la rinomina.
+
+Entitlement RevenueCat: **`plus` e `pro`** (due, non uno). Offerta:
 `default`, che **in questo ciclo contiene solo i due pacchetti mensili**. Il
 paywall ha un bottone per scheda e nessun selettore di periodicità: un
 pacchetto annuale accanto a un mensile sarebbe configurato, caricato e mai
@@ -103,7 +113,7 @@ I due tetti contano il cestino in modo **opposto**, e la differenza è voluta.
 
 ```sql
 alter table public.profiles
-  add column plan text not null default 'free' check (plan in ('free','pro','premium')),
+  add column plan text not null default 'free' check (plan in ('free','plus','pro')),
   add column plan_until timestamptz,
   add column rc_app_user_id text;
 ```
@@ -122,9 +132,9 @@ Quattro trigger applicano i tetti e sollevano errcode dedicati:
 | Errcode | Trigger | Quando | Limite |
 |---|---|---|---|
 | `P0004` | `memories_enforce_plan_limit` | BEFORE INSERT | 10 ricordi (free), cestino compreso |
-| `P0005` | `folders_enforce_plan_limit` | BEFORE INSERT | 1 cartella (free), 5 (pro) — solo le vive |
+| `P0005` | `folders_enforce_plan_limit` | BEFORE INSERT | 1 cartella (free), 5 (plus) — solo le vive |
 | `P0005` | `folders_enforce_plan_limit_on_restore` | BEFORE UPDATE, cestino → vivo | ripristino con le vive già al tetto (hint `plan-limit:folders-restore`) |
-| `P0003` | `subfolders_enforce_rules` | BEFORE INSERT OR UPDATE | 0 sezioni (free), 3 (pro) |
+| `P0003` | `subfolders_enforce_rules` | BEFORE INSERT OR UPDATE | 0 sezioni (free), 3 (plus) |
 
 Il client li mappa **per codice**, mai per sottostringa del messaggio
 (`planLimitFromCode()` in `lib/plan.ts`).
@@ -158,12 +168,12 @@ webhook non ha un JWT; la verifica del token utente la fa la funzione con
 **Concessioni di cortesia.** La funzione rilegge la riga prima di scriverla e
 NON declassa a `free` un profilo la cui firma è quella di una concessione
 manuale: `plan <> 'free'`, `plan_until is null`, `rc_app_user_id is null`. È il
-caso dei due tester, portati a `premium` dal seed della migrazione: RevenueCat
+caso dei due tester, portati a `pro` dal seed della migrazione: RevenueCat
 non ha alcun entitlement per loro e risponderebbe "free", quindi senza questa
 guardia la cortesia durerebbe fino alla prima apertura dell'app. Un abbonamento
 vero ha sempre una scadenza o un `rc_app_user_id` — lo scrive questa stessa
 funzione al primo passaggio — quindi scadenze, rimborsi e disdette passano come
-prima, e un upgrade a pro/premium si scrive comunque. Per **togliere** una
+prima, e un upgrade a plus/pro si scrive comunque. Per **togliere** una
 cortesia serve una mano umana:
 `update public.profiles set plan = 'free' where email = '…';`
 
@@ -201,7 +211,7 @@ entra mai nel repo (AGENTS.md).
 - `components/PlanLimitDialog.tsx` — la mascotte che spiega il limite e porta
   al paywall. Montata in Add, Conoscenza, `/choose-topic`, `/folder/[id]`,
   Impostazioni cartella e Cestino (dove usa `context="restore"`).
-- Impostazioni → Abbonamento: piano attuale, "Passa a Pro", "Ripristina
+- Impostazioni → Abbonamento: piano attuale, "Passa a Plus", "Ripristina
   acquisti".
 
 ## Prerequisiti lato proprietario (Maurizio)
@@ -209,7 +219,7 @@ entra mai nel repo (AGENTS.md).
 Nulla di tutto questo si fa da questo repo.
 
 **Apple**: Paid Apps Agreement, W-8BEN, IBAN, gruppo di abbonamenti con i due
-prodotti mensili (`memika_pro_monthly`, `memika_premium_monthly`), In-App
+prodotti mensili (`memika_plus_monthly`, `memika_pro_monthly`), In-App
 Purchase Key per RevenueCat, tester sandbox.
 
 **Google Play**: profilo pagamenti, i due abbonamenti con il solo piano base
@@ -217,7 +227,7 @@ mensile, service account con permesso sui dati finanziari collegato a
 RevenueCat, license tester.
 
 **RevenueCat**: progetto "Memika", un'app per piattaforma
-(`studio.tailor.memika`), entitlement `pro` e `premium`, offerta `default`
+(`studio.tailor.memika`), entitlement `plus` e `pro`, offerta `default`
 con i due pacchetti mensili, chiavi pubbliche in `eas.json`, chiave segreta e
 header del webhook nei secrets Supabase, URL del webhook =
 `https://taekvxxljtgzsjrlmumo.supabase.co/functions/v1/revenuecat-sync`.
@@ -238,9 +248,9 @@ iOS 3)". Per la parte piani, in breve:
    accenderebbero per tutti mentre il paywall ha i bottoni spenti, e un tester
    non seed resterebbe Free e tappato senza rimedio dal client. Il bivio con i
    due rami ammessi — tenere indietro `20260903100000_plans.sql`, oppure
-   spingere e concedere subito la cortesia premium agli account esistenti — è
+   spingere e concedere subito la cortesia pro agli account esistenti — è
    il punto 4 di `docs/DEPLOY.md` § "Prima di lanciare".
-3. I due tester passano a `plan = 'premium'` **dentro la migrazione stessa**,
+3. I due tester passano a `plan = 'pro'` **dentro la migrazione stessa**,
    sopra i `create trigger` — non con una query prima del push, che
    fallirebbe con `42703` perché la colonna non esiste ancora, né dopo, che
    lascerebbe una finestra in cui chi ha già più di 10 ricordi si trova

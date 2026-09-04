@@ -20,9 +20,12 @@ Apple Individual + Play Personal developer accounts; support
 memikaapp@gmail.com). Developer: Angelo Casula / Tailor App Studio
 (implementation). See `docs/PRODUCT.md` for full domain context.
 
-Freemium: tre piani **Free / Pro / Premium** (2026-09-02). Free = 10 ricordi
-TOTALI, 1 cartella, 0 sezioni; Pro = ricordi illimitati, 5 cartelle, 3 sezioni;
-Premium = tutto illimitato più le foto sui ricordi. I limiti sono applicati da
+Freemium: tre piani **Free / Plus / Pro** (fasce fissate 2026-09-02,
+RINOMINATE il 2026-09-04 sul listino di Maurizio: la fascia intermedia si
+chiamava `pro` e l'alta `premium`, quindi in un documento precedente a quella
+data "pro" significa l'INTERMEDIA). Free = 10 ricordi TOTALI, 1 cartella,
+0 sezioni; Plus = ricordi illimitati, 5 cartelle, 3 sezioni;
+Pro = tutto illimitato più le foto sui ricordi. I limiti sono applicati da
 quattro trigger Postgres (`20260903100000_plans.sql`), non dal client.
 Pagamenti: abbonamenti in-app via RevenueCat, paywall `app/paywall.tsx`. Vedi
 `docs/PAYMENTS.md`.
@@ -72,8 +75,8 @@ These exist because of past decisions documented elsewhere in `docs/`.
   old 4-template constants (`FOLDER_TEMPLATES` in `lib/constants.ts`) now
   serve DEMO MODE ONLY. Nothing is auto-seeded: a user starts with ONE
   folder chosen at onboarding. Freemium gating is now server-side: three
-  plans Free/Pro/Premium enforced by the triggers of
-  `20260903100000_plans.sql` (free = 1 folder, pro = 5, premium unlimited),
+  plans Free/Plus/Pro enforced by the triggers of
+  `20260903100000_plans.sql` (free = 1 folder, plus = 5, pro unlimited),
   counting the user's **live** folders — the trash does not count, and the
   "trash → create → restore" loop is closed on the restore instead
   (`folders_enforce_plan_limit_on_restore`). The client mirrors the caps with
@@ -119,7 +122,7 @@ These exist because of past decisions documented elsewhere in `docs/`.
   piattaforma. Un piano scrivibile dal client è un piano regalato. La stessa
   funzione non declassa a `free` una concessione di cortesia (`plan <> 'free'`
   + `plan_until is null` + `rc_app_user_id is null`): è così che il seed
-  `premium` dei due tester sopravvive alla prima apertura dell'app.
+  `pro` dei due tester sopravvive alla prima apertura dell'app.
 - **I limiti si mappano per errcode, mai per il testo dell'errore.**
   `P0004` ricordi, `P0005` cartelle (creazione **e** ripristino dal cestino),
   `P0003` sezioni; `P0001` sono le guardie di integrità e NON è un limite di

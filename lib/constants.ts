@@ -132,7 +132,9 @@ export const FOLDER_NAME_MAX_LENGTH = 40;
  * (PLAN_LIMITS), che e' l'unico specchio della verita' server-side dei
  * trigger di 20260903100000_plans.sql. FREE_FOLDER_LIMIT (codice morto),
  * FOLDER_LIMIT_ENFORCED, SUBFOLDERS_MAX e PREMIUM_ENABLED (orfano, importato
- * da zero file) sono stati rimossi il 2026-09-03.
+ * da zero file) sono stati rimossi il 2026-09-03. `PREMIUM_ENABLED` e' un
+ * NOME STORICO: la fascia che allora si chiamava "premium" si chiama `pro`
+ * dalla rinomina delle fasce del 2026-09-04 (Free / Plus / Pro).
  */
 
 export const MEMORY_STATES = ["active", "fading", "archived"] as const;

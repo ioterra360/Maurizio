@@ -21,12 +21,12 @@ describe("mapProfile — le colonne di piano", () => {
   it("porta piano, scadenza e app user id sul modello camelCase", () => {
     const p = mapProfile(
       row({
-        plan: "pro",
+        plan: "plus",
         plan_until: "2026-12-01T00:00:00.000Z",
         rc_app_user_id: "u1",
       }),
     );
-    expect(p.plan).toBe("pro");
+    expect(p.plan).toBe("plus");
     expect(p.planUntil).toBe("2026-12-01T00:00:00.000Z");
     expect(p.rcAppUserId).toBe("u1");
   });

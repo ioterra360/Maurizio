@@ -27,7 +27,7 @@ import Purchases, {
 import { isDemoMode } from "./supabase";
 import { reportError } from "./report-error";
 import {
-  ENTITLEMENT_PREMIUM,
+  ENTITLEMENT_PLUS,
   ENTITLEMENT_PRO,
   planForProductId,
   planFromEntitlements,
@@ -88,7 +88,7 @@ export async function signOutPurchases(): Promise<void> {
 }
 
 export type PlanPackage = {
-  plan: "pro" | "premium";
+  plan: "plus" | "pro";
   period: "monthly" | "yearly" | "other";
   /** Prezzo gia' formattato nella valuta dello store. */
   priceString: string;
@@ -115,7 +115,7 @@ export async function loadPlanPackages(): Promise<PlanPackage[]> {
   const out: PlanPackage[] = [];
   for (const pkg of packages) {
     const plan = planForProductId(pkg.product.identifier);
-    if (plan === "pro" || plan === "premium") {
+    if (plan === "plus" || plan === "pro") {
       out.push({ plan, period: periodOf(pkg), priceString: pkg.product.priceString, pkg });
     }
   }
@@ -174,4 +174,4 @@ export function addCustomerPlanListener(cb: (plan: Plan) => void): () => void {
 }
 
 /** Esportati per la copy del paywall: gli id degli entitlement RevenueCat. */
-export const ENTITLEMENTS = { pro: ENTITLEMENT_PRO, premium: ENTITLEMENT_PREMIUM } as const;
+export const ENTITLEMENTS = { plus: ENTITLEMENT_PLUS, pro: ENTITLEMENT_PRO } as const;

@@ -145,7 +145,7 @@ export default function SettingsScreen() {
     restorePlan()
       .then(async (restored) => {
         // Stessa regola del paywall: se la rilettura dal server fallisce lo
-        // store e' rimasto com'era, e dirgli "sei Premium" sarebbe falso.
+        // store e' rimasto com'era, e dirgli "sei Pro" sarebbe falso.
         const synced = await refreshPlan();
         showToast(
           restored === "free"
@@ -433,14 +433,14 @@ export default function SettingsScreen() {
             value={tr(PLAN_NAME_KEY[plan])}
           />
           {/* Tre casi, non due: `settings.upgrade` e' la stringa fissa
-              "Passa a Pro", e un abbonato Pro se la leggerebbe due righe
-              sotto "Piano: Pro". */}
+              "Passa a Plus", e un abbonato Plus se la leggerebbe due righe
+              sotto "Piano: Plus". */}
           <SettingsRow
             label={
               plan === "free"
                 ? tr("settings.upgrade")
-                : plan === "pro"
-                  ? tr("settings.upgradePremium")
+                : plan === "plus"
+                  ? tr("settings.upgradePro")
                   : tr("settings.seePlans")
             }
             value={tr("settings.open")}
@@ -517,7 +517,7 @@ export default function SettingsScreen() {
           />
         </View>
 
-        {/* Danger zone — premium: warning header + two icon-led cards */}
+        {/* Danger zone: warning header + two icon-led cards */}
         <View style={{ paddingHorizontal: 24, paddingTop: 32, paddingBottom: 10 }}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
             <AlertTriangle size={14} color={colors.danger} strokeWidth={2} />

@@ -29,8 +29,8 @@ import { reportError } from "./report-error";
  */
 export const PLAN_NAME_KEY: Record<Plan, TKey> = {
   free: "plan.free",
+  plus: "plan.plus",
   pro: "plan.pro",
-  premium: "plan.premium",
 };
 
 /** Il piano che vale ADESSO per l'utente in sessione. */
@@ -51,7 +51,7 @@ export function usePlan(): Plan {
  * caso `profiles.plan` non e' stato riletto, `usePlan()` dice ancora "free" e
  * ogni gate dell'app — il `+` della foto, il badge "Piano attuale", i trigger
  * P0003/P0004/P0005 — si comporta di conseguenza. Annunciare "Ora sei
- * Premium" li' significa promettere un piano che l'app non sta applicando.
+ * Pro" li' significa promettere un piano che l'app non sta applicando.
  */
 export async function refreshPlan(): Promise<boolean> {
   try {

@@ -1,5 +1,5 @@
 /**
- * I piani di Memika — Free / Pro / Premium (spec 2026-09-02 §B4).
+ * I piani di Memika — Free / Plus / Pro (spec 2026-09-02 §B4).
  *
  * Modulo PURO: niente React, niente React Native, niente Supabase. Serve a
  * due cose e a nessun'altra:
@@ -12,7 +12,7 @@
  * database, e questo file è il bug.
  */
 
-export const PLANS = ["free", "pro", "premium"] as const;
+export const PLANS = ["free", "plus", "pro"] as const;
 export type Plan = (typeof PLANS)[number];
 
 export type PlanLimits = {
@@ -47,8 +47,8 @@ export type PlanLimits = {
 
 export const PLAN_LIMITS: Record<Plan, PlanLimits> = {
   free: { memories: 10, folders: 1, sections: 0, photos: false },
-  pro: { memories: null, folders: 5, sections: 3, photos: false },
-  premium: { memories: null, folders: null, sections: null, photos: true },
+  plus: { memories: null, folders: 5, sections: 3, photos: false },
+  pro: { memories: null, folders: null, sections: null, photos: true },
 };
 
 function isPlan(value: string | null | undefined): value is Plan {
@@ -105,7 +105,7 @@ export function memoriesLeft(count: number, plan: Plan): number | null {
   return Math.max(0, cap - count);
 }
 
-/** Le foto sui ricordi sono Premium (spec :640). Interfaccia del piano B5. */
+/** Le foto sui ricordi sono Pro (spec :640). Interfaccia del piano B5. */
 export function canUsePhotos(plan: Plan): boolean {
   return PLAN_LIMITS[plan].photos;
 }
@@ -143,13 +143,13 @@ export function planLimitFromCode(code: string | null | undefined): PlanLimitKin
 // RevenueCat
 // ---------------------------------------------------------------------------
 
+export const ENTITLEMENT_PLUS = "plus";
 export const ENTITLEMENT_PRO = "pro";
-export const ENTITLEMENT_PREMIUM = "premium";
 
 /** Dagli entitlement ATTIVI dell'SDK (customerInfo.entitlements.active). */
 export function planFromEntitlements(activeIds: readonly string[]): Plan {
-  if (activeIds.includes(ENTITLEMENT_PREMIUM)) return "premium";
   if (activeIds.includes(ENTITLEMENT_PRO)) return "pro";
+  if (activeIds.includes(ENTITLEMENT_PLUS)) return "plus";
   return "free";
 }
 
@@ -213,13 +213,13 @@ export function planFromRcEntitlements(
 ): { plan: Plan; planUntil: string | null } {
   const parsed = Date.parse(requestDate);
   const at = Number.isNaN(parsed) ? Date.now() : parsed;
-  const premium = entitlements[ENTITLEMENT_PREMIUM];
-  if (premium && rcActive(premium, at)) {
-    return { plan: "premium", planUntil: rcDeadline(premium) };
-  }
   const pro = entitlements[ENTITLEMENT_PRO];
   if (pro && rcActive(pro, at)) {
     return { plan: "pro", planUntil: rcDeadline(pro) };
+  }
+  const plus = entitlements[ENTITLEMENT_PLUS];
+  if (plus && rcActive(plus, at)) {
+    return { plan: "plus", planUntil: rcDeadline(plus) };
   }
   return { plan: "free", planUntil: null };
 }
@@ -236,8 +236,8 @@ export function planFromRcEntitlements(
  * piano annuale in futuro sara' un lavoro di interfaccia, non di mappa.
  */
 export const PRODUCT_IDS = {
+  plus: { monthly: "memika_plus_monthly", yearly: "memika_plus_yearly" },
   pro: { monthly: "memika_pro_monthly", yearly: "memika_pro_yearly" },
-  premium: { monthly: "memika_premium_monthly", yearly: "memika_premium_yearly" },
 } as const;
 
 /**
@@ -246,7 +246,7 @@ export const PRODUCT_IDS = {
  */
 export function planForProductId(productIdentifier: string): Plan | null {
   const base = productIdentifier.split(":")[0] ?? "";
-  if (base === PRODUCT_IDS.premium.monthly || base === PRODUCT_IDS.premium.yearly) return "premium";
   if (base === PRODUCT_IDS.pro.monthly || base === PRODUCT_IDS.pro.yearly) return "pro";
+  if (base === PRODUCT_IDS.plus.monthly || base === PRODUCT_IDS.plus.yearly) return "plus";
   return null;
 }

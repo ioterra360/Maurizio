@@ -133,9 +133,9 @@ select 'aaaaaaaa-0000-4000-8000-000000000001', f.id, 'parola ' || g, 'significat
   from public.folders f, generate_series(1, 10) g
  where f.user_id = 'aaaaaaaa-0000-4000-8000-000000000001';
 
--- 4) Con Pro il tetto dei ricordi sparisce e le sezioni si aprono.
+-- 4) Con Plus il tetto dei ricordi sparisce e le sezioni si aprono.
 update public.profiles
-   set plan = 'pro', plan_until = now() + interval '30 days'
+   set plan = 'plus', plan_until = now() + interval '30 days'
  where id = 'aaaaaaaa-0000-4000-8000-000000000001';
 
 insert into public.memories (user_id, folder_id, term, definition)
@@ -155,7 +155,7 @@ begin
    where user_id = 'aaaaaaaa-0000-4000-8000-000000000001' limit 1;
   insert into public.subfolders (user_id, folder_id, name)
   values ('aaaaaaaa-0000-4000-8000-000000000001', fid, 'Quarta sezione');
-  raise exception 'ATTESO FALLIMENTO: la quarta sezione su pro e'' passata';
+  raise exception 'ATTESO FALLIMENTO: la quarta sezione su plus e'' passata';
 exception when sqlstate 'P0003' then
   raise notice 'ok: quarta sezione bloccata (P0003)';
 end $$;
@@ -178,7 +178,7 @@ end $$;
 -- questo comportamento resterebbe con zero cartelle e nessun modo di crearne
 -- una fino alla purga (fino a 24 ore, e l'app non ha "elimina
 -- definitivamente"). Il piano qui vale free: il blocco 5 ha appena fatto
--- scadere il pro.
+-- scadere il plus.
 update public.memories
    set deleted_at = now()
  where user_id = 'aaaaaaaa-0000-4000-8000-000000000001';

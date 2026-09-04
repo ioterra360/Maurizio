@@ -1,5 +1,11 @@
 # Piani, limiti e paywall RevenueCat — Implementation Plan
 
+> **Nomi dei piani — nota 2026-09-04.** Questo documento e' STORICO e usa la
+> scala vecchia: `pro` era la fascia intermedia e `premium` quella alta. Dal
+> 2026-09-04 le fasce si chiamano **Free / Plus / Pro** (`plus` = intermedia,
+> `pro` = alta): ogni "pro" e ogni "premium" qui sotto vanno letti con la
+> vecchia scala. La scala viva sta in `lib/plan.ts` e `docs/PAYMENTS.md`.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Tre piani — Free / Pro / Premium — con i limiti applicati **dal database** (10 ricordi totali, 1/5/∞ cartelle, 0/3/∞ sezioni), un paywall a schede alimentato dalle offerte RevenueCat, e una edge function che verifica l'abbonamento con l'API REST di RevenueCat prima di scrivere `profiles.plan`.

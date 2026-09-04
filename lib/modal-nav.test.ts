@@ -2,7 +2,7 @@
  * La regola "aspetta la chiusura del Modal prima di presentare" vive in un
  * posto solo perche' e' gia' stata dimenticata una volta: PhotoSheet la
  * applicava (app/add.tsx, `requestPick`) e il paywall no, quindi su iPhone
- * "Scopri Premium" chiudeva il dialogo e non apriva niente.
+ * "Scopri Pro" chiudeva il dialogo e non apriva niente.
  */
 import { describe, expect, it } from "vitest";
 

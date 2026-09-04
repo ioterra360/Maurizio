@@ -394,7 +394,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           // La modalita' demo non ha backend ne' store: nessun limite di
           // piano ha senso li' dentro. Il paywall resta visitabile da
           // Impostazioni, con i bottoni disattivati.
-          plan: "premium",
+          plan: "pro",
           planUntil: null,
         };
         await AsyncStorage.setItem(DEMO_STORAGE_KEY, JSON.stringify(user));

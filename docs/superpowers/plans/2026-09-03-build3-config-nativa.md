@@ -1,5 +1,11 @@
 # Build 3 — configurazione nativa — Implementation Plan
 
+> **Nomi dei piani — nota 2026-09-04.** Questo documento e' STORICO e usa la
+> scala vecchia: `pro` era la fascia intermedia e `premium` quella alta. Dal
+> 2026-09-04 le fasce si chiamano **Free / Plus / Pro** (`plus` = intermedia,
+> `pro` = alta): ogni "pro" e ogni "premium" qui sotto vanno letti con la
+> vecchia scala. La scala viva sta in `lib/plan.ts` e `docs/PAYMENTS.md`.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Portare in `app.json` / `eas.json` / asset tutto ciò che SOLO una build nativa può spedire — plugin `expo-notifications` con icona bianca, plugin `expo-image-picker` con le frasi italiane, `userInterfaceStyle: "automatic"`, icona v2, permesso `BILLING` per RevenueCat, slot per DSN Sentry e chiavi RevenueCat — e scrivere la sequenza umana con cui la build 3 (vc13 / iOS 3) esce insieme alle migrazioni di B4/B5.

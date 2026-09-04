@@ -29,12 +29,12 @@ describe("PLAN_LIMITS — la tabella della spec, alla lettera", () => {
     expect(PLAN_LIMITS.free).toEqual({ memories: 10, folders: 1, sections: 0, photos: false });
   });
 
-  it("pro: ricordi illimitati, 5 cartelle, 3 sezioni, niente foto", () => {
-    expect(PLAN_LIMITS.pro).toEqual({ memories: null, folders: 5, sections: 3, photos: false });
+  it("plus: ricordi illimitati, 5 cartelle, 3 sezioni, niente foto", () => {
+    expect(PLAN_LIMITS.plus).toEqual({ memories: null, folders: 5, sections: 3, photos: false });
   });
 
-  it("premium: tutto illimitato, foto incluse", () => {
-    expect(PLAN_LIMITS.premium).toEqual({
+  it("pro: tutto illimitato, foto incluse", () => {
+    expect(PLAN_LIMITS.pro).toEqual({
       memories: null,
       folders: null,
       sections: null,
@@ -50,19 +50,19 @@ describe("PLAN_LIMITS — la tabella della spec, alla lettera", () => {
 describe("effectivePlan — specchio esatto di public.current_plan(uid)", () => {
   it("tiene il piano quando la scadenza è nel futuro", () => {
     const until = new Date(NOW.getTime() + 30 * DAY).toISOString();
+    expect(effectivePlan("plus", until, NOW)).toBe("plus");
     expect(effectivePlan("pro", until, NOW)).toBe("pro");
-    expect(effectivePlan("premium", until, NOW)).toBe("premium");
   });
 
   it("degrada a free un piano scaduto", () => {
     const until = new Date(NOW.getTime() - 1).toISOString();
+    expect(effectivePlan("plus", until, NOW)).toBe("free");
     expect(effectivePlan("pro", until, NOW)).toBe("free");
-    expect(effectivePlan("premium", until, NOW)).toBe("free");
   });
 
   it("plan_until null significa 'non scade', non 'scaduto'", () => {
-    expect(effectivePlan("pro", null, NOW)).toBe("pro");
-    expect(effectivePlan("premium", undefined, NOW)).toBe("premium");
+    expect(effectivePlan("plus", null, NOW)).toBe("plus");
+    expect(effectivePlan("pro", undefined, NOW)).toBe("pro");
   });
 
   it("free resta free comunque", () => {
@@ -74,7 +74,7 @@ describe("effectivePlan — specchio esatto di public.current_plan(uid)", () => 
     expect(effectivePlan(null, null, NOW)).toBe("free");
     expect(effectivePlan(undefined, undefined, NOW)).toBe("free");
     expect(effectivePlan("platinum", null, NOW)).toBe("free");
-    expect(effectivePlan("pro", "non-una-data", NOW)).toBe("free");
+    expect(effectivePlan("plus", "non-una-data", NOW)).toBe("free");
   });
 });
 
@@ -89,9 +89,9 @@ describe("canAddMemory — 10 TOTALI sul free, illimitati sopra", () => {
     expect(canAddMemory(11, "free")).toBe(false);
   });
 
-  it("non blocca mai pro e premium", () => {
+  it("non blocca mai plus e pro", () => {
+    expect(canAddMemory(4000, "plus")).toBe(true);
     expect(canAddMemory(4000, "pro")).toBe(true);
-    expect(canAddMemory(4000, "premium")).toBe(true);
   });
 
   it("un utente grandfathered oltre quota non può aggiungerne", () => {
@@ -101,19 +101,19 @@ describe("canAddMemory — 10 TOTALI sul free, illimitati sopra", () => {
 });
 
 describe("canAddFolder / canAddSection", () => {
-  it("cartelle: 1 free, 5 pro, illimitate premium", () => {
+  it("cartelle: 1 free, 5 plus, illimitate pro", () => {
     expect(canAddFolder(0, "free")).toBe(true);
     expect(canAddFolder(1, "free")).toBe(false);
-    expect(canAddFolder(4, "pro")).toBe(true);
-    expect(canAddFolder(5, "pro")).toBe(false);
-    expect(canAddFolder(99, "premium")).toBe(true);
+    expect(canAddFolder(4, "plus")).toBe(true);
+    expect(canAddFolder(5, "plus")).toBe(false);
+    expect(canAddFolder(99, "pro")).toBe(true);
   });
 
-  it("sezioni: nessuna sul free, 3 su pro, illimitate premium", () => {
+  it("sezioni: nessuna sul free, 3 su plus, illimitate pro", () => {
     expect(canAddSection(0, "free")).toBe(false);
-    expect(canAddSection(2, "pro")).toBe(true);
-    expect(canAddSection(3, "pro")).toBe(false);
-    expect(canAddSection(9, "premium")).toBe(true);
+    expect(canAddSection(2, "plus")).toBe(true);
+    expect(canAddSection(3, "plus")).toBe(false);
+    expect(canAddSection(9, "pro")).toBe(true);
   });
 });
 
@@ -128,16 +128,16 @@ describe("memoriesLeft", () => {
   });
 
   it("null = illimitati", () => {
+    expect(memoriesLeft(3, "plus")).toBeNull();
     expect(memoriesLeft(3, "pro")).toBeNull();
-    expect(memoriesLeft(3, "premium")).toBeNull();
   });
 });
 
 describe("canUsePhotos — l'interfaccia che consuma il piano B5", () => {
-  it("solo premium", () => {
+  it("solo pro", () => {
     expect(canUsePhotos("free")).toBe(false);
-    expect(canUsePhotos("pro")).toBe(false);
-    expect(canUsePhotos("premium")).toBe(true);
+    expect(canUsePhotos("plus")).toBe(false);
+    expect(canUsePhotos("pro")).toBe(true);
   });
 });
 
@@ -160,13 +160,13 @@ describe("planLimitFromCode — si mappa il codice, mai il messaggio", () => {
   });
 });
 
-describe("planFromEntitlements — premium batte pro, pro batte free", () => {
-  it("premium vince anche se ci sono entrambi", () => {
-    expect(planFromEntitlements(["pro", "premium"])).toBe("premium");
+describe("planFromEntitlements — pro batte plus, plus batte free", () => {
+  it("pro vince anche se ci sono entrambi", () => {
+    expect(planFromEntitlements(["plus", "pro"])).toBe("pro");
   });
 
-  it("pro da solo vale pro", () => {
-    expect(planFromEntitlements(["pro"])).toBe("pro");
+  it("plus da solo vale plus", () => {
+    expect(planFromEntitlements(["plus"])).toBe("plus");
   });
 
   it("nessun entitlement attivo = free", () => {
@@ -178,28 +178,28 @@ describe("planFromEntitlements — premium batte pro, pro batte free", () => {
 describe("planFromRcEntitlements — la risposta REST di RevenueCat", () => {
   const REQ = "2026-09-03T10:00:00Z";
 
-  it("premium attivo vince e porta la sua scadenza", () => {
+  it("pro attivo vince e porta la sua scadenza", () => {
     const out = planFromRcEntitlements(
       {
-        pro: { expires_date: "2026-10-03T10:00:00Z" },
-        premium: { expires_date: "2026-12-03T10:00:00Z" },
+        plus: { expires_date: "2026-10-03T10:00:00Z" },
+        pro: { expires_date: "2026-12-03T10:00:00Z" },
       },
       REQ,
     );
-    expect(out).toEqual({ plan: "premium", planUntil: "2026-12-03T10:00:00Z" });
+    expect(out).toEqual({ plan: "pro", planUntil: "2026-12-03T10:00:00Z" });
   });
 
   it("un entitlement scaduto non conta", () => {
     const out = planFromRcEntitlements(
-      { premium: { expires_date: "2026-09-01T10:00:00Z" }, pro: { expires_date: "2026-10-03T10:00:00Z" } },
+      { pro: { expires_date: "2026-09-01T10:00:00Z" }, plus: { expires_date: "2026-10-03T10:00:00Z" } },
       REQ,
     );
-    expect(out).toEqual({ plan: "pro", planUntil: "2026-10-03T10:00:00Z" });
+    expect(out).toEqual({ plan: "plus", planUntil: "2026-10-03T10:00:00Z" });
   });
 
   it("expires_date null = accesso a vita", () => {
-    const out = planFromRcEntitlements({ premium: { expires_date: null } }, REQ);
-    expect(out).toEqual({ plan: "premium", planUntil: null });
+    const out = planFromRcEntitlements({ pro: { expires_date: null } }, REQ);
+    expect(out).toEqual({ plan: "pro", planUntil: null });
   });
 
   it("il periodo di grazia tiene vivo l'abbonamento FINO alla fine della grazia", () => {
@@ -208,14 +208,14 @@ describe("planFromRcEntitlements — la risposta REST di RevenueCat", () => {
     // degraderebbero subito a free e la grazia non varrebbe niente.
     const out = planFromRcEntitlements(
       {
-        pro: {
+        plus: {
           expires_date: "2026-09-02T10:00:00Z",
           grace_period_expires_date: "2026-09-10T10:00:00Z",
         },
       },
       REQ,
     );
-    expect(out).toEqual({ plan: "pro", planUntil: "2026-09-10T10:00:00Z" });
+    expect(out).toEqual({ plan: "plus", planUntil: "2026-09-10T10:00:00Z" });
   });
 
   it("una grazia gia' passata NON accorcia un abbonamento ancora valido", () => {
@@ -226,27 +226,27 @@ describe("planFromRcEntitlements — la risposta REST di RevenueCat", () => {
     // scriverebbe quel verdetto in profiles.plan.
     const out = planFromRcEntitlements(
       {
-        pro: {
+        plus: {
           expires_date: "2026-10-03T10:00:00Z",
           grace_period_expires_date: "2026-08-20T10:00:00Z",
         },
       },
       REQ,
     );
-    expect(out).toEqual({ plan: "pro", planUntil: "2026-10-03T10:00:00Z" });
+    expect(out).toEqual({ plan: "plus", planUntil: "2026-10-03T10:00:00Z" });
   });
 
   it("la grazia non accorcia l'accesso a vita (expires_date null)", () => {
     const out = planFromRcEntitlements(
       {
-        premium: {
+        pro: {
           expires_date: null,
           grace_period_expires_date: "2026-08-20T10:00:00Z",
         },
       },
       REQ,
     );
-    expect(out).toEqual({ plan: "premium", planUntil: null });
+    expect(out).toEqual({ plan: "pro", planUntil: null });
   });
 
   it("nessun entitlement = free senza scadenza", () => {
@@ -259,14 +259,14 @@ describe("planForProductId", () => {
   // gli id annuali sono riservati e la mappa li riconosce gia', cosi'
   // aggiungerli all'offerta non richiedera' una modifica di codice.
   it("riconosce i quattro identificativi, mensili e annuali", () => {
+    expect(planForProductId(PRODUCT_IDS.plus.monthly)).toBe("plus");
+    expect(planForProductId(PRODUCT_IDS.plus.yearly)).toBe("plus");
     expect(planForProductId(PRODUCT_IDS.pro.monthly)).toBe("pro");
     expect(planForProductId(PRODUCT_IDS.pro.yearly)).toBe("pro");
-    expect(planForProductId(PRODUCT_IDS.premium.monthly)).toBe("premium");
-    expect(planForProductId(PRODUCT_IDS.premium.yearly)).toBe("premium");
   });
 
   it("regge la forma 'prodotto:baseplan' di Google Play", () => {
-    expect(planForProductId("memika_pro_monthly:monthly")).toBe("pro");
+    expect(planForProductId("memika_plus_monthly:monthly")).toBe("plus");
   });
 
   it("non inventa piani per prodotti sconosciuti", () => {
@@ -361,7 +361,7 @@ describe("il gemello Deno della derivazione RevenueCat", () => {
   const mine = readFileSync(resolve(root, "lib/plan.ts"), "utf8");
   const twinCode = stripComments(twin);
 
-  // Un marcatore nei commenti e l'ordine premium/pro si possono lasciare
+  // Un marcatore nei commenti e l'ordine pro/plus si possono lasciare
   // intatti riscrivendo l'aritmetica sotto: qui si confronta il CORPO delle
   // tre funzioni, che e' la cosa che deve restare identica.
   it.each(["rcDeadline", "rcActive", "planFromRcEntitlements"])(
@@ -383,7 +383,7 @@ describe("il gemello Deno della derivazione RevenueCat", () => {
 
   it("non declassa a free una concessione di cortesia", () => {
     // Il seed di 20260903100000_plans.sql porta i due tester a
-    // plan='premium', plan_until null, rc_app_user_id null. RevenueCat non
+    // plan='pro', plan_until null, rc_app_user_id null. RevenueCat non
     // ha alcun entitlement per quegli account, quindi la derivazione dice
     // 'free': senza questa guardia la cortesia durerebbe fino al primo
     // avvio della build 3 (startPlanSync → refreshPlan → edge function),
@@ -401,14 +401,14 @@ describe("il gemello Deno della derivazione RevenueCat", () => {
     expect(guard).toBeLessThan(write);
   });
 
-  it("si dichiara gemello e valuta premium prima di pro", () => {
+  it("si dichiara gemello e valuta pro prima di plus", () => {
     expect(twin).toContain("gemello di lib/plan.ts planFromRcEntitlements");
-    const premium = twinCode.indexOf("ENTITLEMENT_PREMIUM]");
     const pro = twinCode.indexOf("ENTITLEMENT_PRO]");
+    const plus = twinCode.indexOf("ENTITLEMENT_PLUS]");
     // indexOf torna -1 su un nome rinominato: senza queste due righe
     // l'ordine passerebbe a vuoto, perche' -1 e' minore di qualunque indice.
-    expect(premium).toBeGreaterThanOrEqual(0);
     expect(pro).toBeGreaterThanOrEqual(0);
-    expect(premium).toBeLessThan(pro);
+    expect(plus).toBeGreaterThanOrEqual(0);
+    expect(pro).toBeLessThan(plus);
   });
 });

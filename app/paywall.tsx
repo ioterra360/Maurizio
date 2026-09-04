@@ -55,7 +55,7 @@ export default function PaywallScreen() {
   // con le chiavi RevenueCat i bottoni sarebbero VIVI — l'SDK non ha bisogno
   // della sessione Supabase — cosi' l'acquisto finirebbe sull'app-user-id
   // anonimo, `refreshPlan()` non avrebbe nessuno da sincronizzare e il toast
-  // direbbe comunque "Ora sei Pro". Stessa coppia di app/add.tsx:188-189 e
+  // direbbe comunque "Ora sei Plus". Stessa coppia di app/add.tsx:188-189 e
   // app/memory/[id].tsx:202-203.
   const user = useAuthStore((s) => s.user);
   const hydrated = useAuthStore((s) => s.hydrated);
@@ -210,12 +210,32 @@ export default function PaywallScreen() {
             cta={null}
           />
           <PlanCard
+            name={t("plan.plus")}
+            price={priceFor("plus")}
+            features={[
+              t("paywall.plusMemories"),
+              t("paywall.plusFolders"),
+              t("paywall.plusSections"),
+            ]}
+            current={plan === "plus"}
+            cta={
+              plan === "plus"
+                ? null
+                : {
+                    label: t("paywall.chooseCta", { plan: t("plan.plus") }),
+                    disabled: busy || !packages?.some((p) => p.plan === "plus"),
+                    onPress: () => void buy("plus"),
+                  }
+            }
+          />
+          <PlanCard
             name={t("plan.pro")}
             price={priceFor("pro")}
             features={[
               t("paywall.proMemories"),
               t("paywall.proFolders"),
               t("paywall.proSections"),
+              t("paywall.proPhotos"),
             ]}
             current={plan === "pro"}
             cta={
@@ -225,26 +245,6 @@ export default function PaywallScreen() {
                     label: t("paywall.chooseCta", { plan: t("plan.pro") }),
                     disabled: busy || !packages?.some((p) => p.plan === "pro"),
                     onPress: () => void buy("pro"),
-                  }
-            }
-          />
-          <PlanCard
-            name={t("plan.premium")}
-            price={priceFor("premium")}
-            features={[
-              t("paywall.premiumMemories"),
-              t("paywall.premiumFolders"),
-              t("paywall.premiumSections"),
-              t("paywall.premiumPhotos"),
-            ]}
-            current={plan === "premium"}
-            cta={
-              plan === "premium"
-                ? null
-                : {
-                    label: t("paywall.chooseCta", { plan: t("plan.premium") }),
-                    disabled: busy || !packages?.some((p) => p.plan === "premium"),
-                    onPress: () => void buy("premium"),
                   }
             }
           />
