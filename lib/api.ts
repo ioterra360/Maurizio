@@ -438,6 +438,51 @@ export async function updateMemoryNotes(id: string, notes: string | null): Promi
 }
 
 /**
+ * Scrive (o azzera con null) la chiave della foto sul ricordo. La chiamano
+ * uploadMemoryPhoto e removeMemoryPhoto in lib/photos.ts, DOPO che il bucket
+ * ha risposto: la riga dice la verità su ciò che esiste. Demo: no-op.
+ */
+export async function updateMemoryPhoto(id: string, photoPath: string | null): Promise<void> {
+  if (isDemoMode) return;
+  const { error } = await supabase
+    .from("memories")
+    .update({ photo_path: photoPath, updated_at: new Date().toISOString() })
+    .eq("id", id);
+  if (error) throw error;
+}
+
+/**
+ * Tutte le chiavi foto dell'utente, CESTINO INCLUSO: un ricordo nel cestino
+ * si può ripristinare, quindi la sua foto non è orfana. Serve alla
+ * riconciliazione degli oggetti (lib/photos.ts reconcilePhotos). Demo: [].
+ *
+ * PAGINATA di proposito, e con un `order` stabile. PostgREST tronca ogni
+ * select a max_rows (1000 su questo progetto, supabase/config.toml:18) SENZA
+ * errore: una lista referenziata parziale farebbe classificare come orfane —
+ * e quindi CANCELLARE — foto ancora vive. Senza `order` le pagine si
+ * sovrappongono e il buco resta.
+ */
+export async function fetchPhotoPaths(userId: string): Promise<string[]> {
+  if (isDemoMode) return [];
+  const PAGE = 1000;
+  const out: string[] = [];
+  for (let from = 0; ; from += PAGE) {
+    const { data, error } = await supabase
+      .from("memories")
+      .select("photo_path")
+      .eq("user_id", userId)
+      .not("photo_path", "is", null)
+      .order("id", { ascending: true })
+      .range(from, from + PAGE - 1);
+    if (error) throw error;
+    // Cast al confine: il client non è tipizzato sullo schema (lib/supabase.ts:103).
+    const rows = (data ?? []) as { photo_path: string | null }[];
+    for (const r of rows) if (r.photo_path) out.push(r.photo_path);
+    if (rows.length < PAGE) return out; // ultima pagina
+  }
+}
+
+/**
  * Crea un ricordo e lo programma sulla scala di Maurizio: il primo ripasso
  * cade a T0 + 20 ore, dove T0 è QUESTO istante. Prima entrava subito in coda
  * e il toast "primo ripasso domani" era una bugia gentile; ora la copy e il
@@ -688,6 +733,7 @@ export async function fetchFolderDetail(
       reviewWindowEnd: null,
       recoveryFrom: null,
       deletedAt: null,
+      photoPath: null,
       createdAt: now.toISOString(),
       updatedAt: now.toISOString(),
     }));

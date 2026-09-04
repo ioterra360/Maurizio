@@ -220,6 +220,8 @@ export type MemoryRow = {
   example: string | null;
   /** Free-text user notes ("appunti"); column added 2026-08-27. */
   notes?: string | null;
+  /** Chiave nel bucket memory-photos (migration 20260903110000). Opzionale: le righe lette da un client vecchio non ce l'hanno. */
+  photo_path?: string | null;
   item_type: string | null;
   state: MemoryState;
   srs_interval_days: number;
@@ -250,6 +252,8 @@ export type Memory = {
   example: string | null;
   /** Free-text user notes ("appunti"), edited in the memory detail sheet. */
   notes?: string | null;
+  /** Chiave nel bucket privato memory-photos; null = nessuna foto. Mai un URL. */
+  photoPath: string | null;
   itemType: string | null;
   state: MemoryState;
   srs: {
@@ -282,6 +286,7 @@ export function mapMemory(row: MemoryRow): Memory {
     definition: row.definition,
     example: row.example,
     notes: row.notes ?? null,
+    photoPath: row.photo_path ?? null,
     itemType: row.item_type,
     state: row.state,
     srs: {

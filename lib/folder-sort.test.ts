@@ -16,6 +16,7 @@ const mem = (over: Partial<Memory>): Memory => ({
   srs: { intervalDays: 1, easeFactor: 2.5, repetitions: 0 },
   subfolderId: null,
   deletedAt: null,
+  photoPath: null,
   lastReviewedAt: null,
   nextReviewAt: "2026-08-29T08:00:00.000Z",
   phase: "p20h",
