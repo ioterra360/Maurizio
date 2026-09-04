@@ -1,6 +1,160 @@
-<h2>Conferma il nuovo indirizzo email</h2>
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="color-scheme" content="light" />
+<meta name="supported-color-schemes" content="light" />
+<title>Conferma il nuovo indirizzo email di Memika</title>
+<!-- Questa e' la RICHIESTA di conferma che parte PRIMA del cambio: senza il
+     clic l'indirizzo non cambia. Non e' la notifica "email modificata" (la
+     bozza #7 di Maurizio), che sarebbe un'altra email e oggi non esiste.
+     double_confirm_changes = true: la stessa email arriva al vecchio E al
+     nuovo indirizzo, quindi il testo deve reggere letto da entrambi. -->
+<style type="text/css">
+/* Non essenziale: tutto cio' che conta e' scritto in linea. Qui vive solo
+   cio' che in linea non si puo' scrivere. Se un client rimuove questo
+   blocco l'email resta identica, solo con i margini pieni sul telefono. */
+body { margin: 0 !important; padding: 0 !important; width: 100% !important; }
+table { border-collapse: collapse; }
+img { -ms-interpolation-mode: bicubic; }
+a[x-apple-data-detectors] { color: inherit !important; text-decoration: none !important; }
+@media only screen and (max-width: 620px) {
+  .m-pad { padding-left: 20px !important; padding-right: 20px !important; }
+  .m-h1 { font-size: 25px !important; line-height: 32px !important; }
+}
+</style>
+</head>
+<body style="margin:0; padding:0; width:100%; background-color:#F5F3EF;">
 
-<p>Apri il link qui sotto per confermare {{ .NewEmail }} come nuovo indirizzo email del tuo account Memika.</p>
-<p><a href="{{ .ConfirmationURL }}">Conferma il nuovo indirizzo</a></p>
+<div style="display:none; max-height:0; overflow:hidden; mso-hide:all; font-size:1px; line-height:1px; color:#F5F3EF; opacity:0;">Il cambio non &egrave; ancora attivo: diventa effettivo solo quando lo confermi tu.</div>
 
-<p>Se non hai richiesto tu questa modifica, puoi ignorare questa email.</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%; background-color:#F5F3EF;">
+  <tr>
+    <td align="center" valign="top" style="padding:24px 12px 40px 12px;">
+
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" align="center" style="width:100%; max-width:600px; background-color:#FFFFFF; border:1px solid #EFEDE7;">
+
+        <tr>
+          <td class="m-pad" style="padding:28px 32px 20px 32px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;">
+              <tr>
+                <td align="left" valign="middle" style="font-family:Inter,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica Neue,Arial,sans-serif; font-size:19px; line-height:24px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:#1A2C4F;">Memika</td>
+                <td align="right" valign="middle" width="56" style="width:56px;">
+                  <img src="https://ioterra360.github.io/memika-legal/assets/mascot.png" width="56" height="56" alt="La mascotte di Memika" style="display:block; width:56px; height:56px; border:0; outline:none; text-decoration:none; font-family:Inter,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Arial,sans-serif; font-size:10px; line-height:13px; color:#8A8A88;" />
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <tr>
+          <td style="height:1px; line-height:1px; font-size:0; background-color:#EFEDE7;">&nbsp;</td>
+        </tr>
+
+        <tr>
+          <td class="m-pad" style="padding:36px 32px 0 32px;">
+            <h1 class="m-h1" style="margin:0 0 20px 0; font-family:Inter,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica Neue,Arial,sans-serif; font-size:28px; line-height:36px; font-weight:700; letter-spacing:-0.3px; color:#1A2C4F;">Conferma il nuovo indirizzo</h1>
+
+            <p style="margin:0 0 18px 0; font-family:Inter,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica Neue,Arial,sans-serif; font-size:16px; line-height:26px; color:#1A2C4F;">{{ if .Data.name }}Ciao {{ .Data.name }}, hai{{ else }}Ciao, hai{{ end }} chiesto di cambiare l&rsquo;indirizzo email del tuo account Memika. Il cambio <strong style="font-weight:600;">non &egrave; ancora attivo</strong>: diventa effettivo solo quando lo confermi tu.</p>
+          </td>
+        </tr>
+
+        <tr>
+          <td class="m-pad" style="padding:6px 32px 24px 32px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%; border:1px solid #EFEDE7;">
+              <tr>
+                <td style="padding:14px 18px 12px 18px; font-family:Inter,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica Neue,Arial,sans-serif; font-size:12px; line-height:18px; letter-spacing:1px; text-transform:uppercase; color:#8A8A88;">Indirizzo attuale</td>
+              </tr>
+              <tr>
+                <td style="padding:0 18px 16px 18px; font-family:Inter,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica Neue,Arial,sans-serif; font-size:16px; line-height:24px; font-weight:600; color:#1A2C4F; word-break:break-all;">{{ .Email }}</td>
+              </tr>
+              <tr>
+                <td style="height:1px; line-height:1px; font-size:0; background-color:#EFEDE7;">&nbsp;</td>
+              </tr>
+              <tr>
+                <td style="padding:14px 18px 12px 18px; font-family:Inter,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica Neue,Arial,sans-serif; font-size:12px; line-height:18px; letter-spacing:1px; text-transform:uppercase; color:#8A8A88;">Nuovo indirizzo</td>
+              </tr>
+              <tr>
+                <td style="padding:0 18px 16px 18px; font-family:Inter,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica Neue,Arial,sans-serif; font-size:16px; line-height:24px; font-weight:600; color:#1A2C4F; word-break:break-all;">{{ .NewEmail }}</td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <tr>
+          <td class="m-pad" style="padding:0 32px 24px 32px;">
+            <p style="margin:0; font-family:Inter,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica Neue,Arial,sans-serif; font-size:15px; line-height:24px; color:#8A8A88;">Per sicurezza la conferma viene chiesta a tutti e due gli indirizzi: se ricevi questa email due volte &egrave; normale, tocca il bottone in entrambe.</p>
+          </td>
+        </tr>
+
+        <tr>
+          <td class="m-pad" style="padding:0 32px 28px 32px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;">
+              <tr>
+                <td bgcolor="#F5F3EF" style="background-color:#F5F3EF; border-left:3px solid #1A2C4F; padding:16px 18px; font-family:Inter,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica Neue,Arial,sans-serif; font-size:15px; line-height:24px; color:#1A2C4F;"><strong style="font-weight:600;">Apri questa email dal telefono su cui usi Memika.</strong> Il link apre l&rsquo;app: da un computer non si apre, e il tentativo va perso lo stesso.</td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <tr>
+          <td class="m-pad" align="left" style="padding:0 32px 20px 32px;">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="left">
+              <tr>
+                <td bgcolor="#1A2C4F" align="center" style="background-color:#1A2C4F; border:1px solid #1A2C4F; border-radius:10px;">
+                  <!--[if mso]><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td style="padding:15px 30px;"><![endif]-->
+                  <a href="{{ .ConfirmationURL }}" target="_blank" style="display:inline-block; padding:15px 30px; font-family:Inter,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica Neue,Arial,sans-serif; font-size:16px; line-height:20px; font-weight:600; color:#FAF8F4; text-decoration:none; white-space:nowrap;">Conferma il cambio</a>
+                  <!--[if mso]></td></tr></table><![endif]-->
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <tr>
+          <td class="m-pad" style="padding:0 32px 26px 32px;">
+            <p style="margin:0 0 20px 0; font-family:Inter,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica Neue,Arial,sans-serif; font-size:14px; line-height:22px; color:#8A8A88;">Se il bottone non si vede, <a href="{{ .ConfirmationURL }}" target="_blank" style="color:#1A2C4F; text-decoration:underline; font-weight:600;">apri il link da qui</a>.</p>
+
+            <p style="margin:0; font-family:Inter,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica Neue,Arial,sans-serif; font-size:15px; line-height:24px; color:#1A2C4F;">Il link &egrave; valido per un&rsquo;ora e funziona una sola volta.</p>
+          </td>
+        </tr>
+
+        <tr>
+          <td class="m-pad" style="padding:0 32px 28px 32px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;">
+              <tr>
+                <td bgcolor="#FAF8F4" style="background-color:#FAF8F4; border-left:3px solid #B04A38; padding:16px 18px; font-family:Inter,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica Neue,Arial,sans-serif; font-size:15px; line-height:24px; color:#1A2C4F;"><strong style="font-weight:600; color:#B04A38;">Non hai chiesto tu questo cambio?</strong> Allora non toccare il bottone e scrivici a <a href="mailto:memikaapp@gmail.com" style="color:#1A2C4F; text-decoration:underline; font-weight:600;">memikaapp@gmail.com</a>. Senza la tua conferma l&rsquo;indirizzo del tuo account resta {{ .Email }}.</td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <tr>
+          <td class="m-pad" style="padding:0 32px 36px 32px;">
+            <p style="margin:0; font-family:Inter,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica Neue,Arial,sans-serif; font-size:16px; line-height:26px; color:#1A2C4F;">A presto,<br />Memika</p>
+          </td>
+        </tr>
+
+        <tr>
+          <td style="height:1px; line-height:1px; font-size:0; background-color:#EFEDE7;">&nbsp;</td>
+        </tr>
+
+        <tr>
+          <td class="m-pad" bgcolor="#FAF8F4" style="background-color:#FAF8F4; padding:24px 32px 28px 32px;">
+            <p style="margin:0 0 14px 0; font-family:Inter,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica Neue,Arial,sans-serif; font-size:13px; line-height:20px; font-weight:600; color:#1A2C4F;">Memika &mdash; Save your memory for what matters.</p>
+            <p style="margin:0 0 10px 0; font-family:Inter,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica Neue,Arial,sans-serif; font-size:12px; line-height:19px; color:#8A8A88;">Questa email arriva da un indirizzo che non riceve risposte. Per assistenza scrivi a <a href="mailto:memikaapp@gmail.com" style="color:#1A2C4F; text-decoration:underline;">memikaapp@gmail.com</a>.</p>
+            <p style="margin:0 0 10px 0; font-family:Inter,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica Neue,Arial,sans-serif; font-size:12px; line-height:19px; color:#8A8A88;">Titolare del trattamento: Maurizio Cocco.</p>
+            <p style="margin:0; font-family:Inter,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica Neue,Arial,sans-serif; font-size:12px; line-height:19px; color:#8A8A88;"><a href="https://ioterra360.github.io/memika-legal/privacy/" style="color:#8A8A88; text-decoration:underline;">Informativa privacy</a> &nbsp;&middot;&nbsp; <a href="https://ioterra360.github.io/memika-legal/terms/" style="color:#8A8A88; text-decoration:underline;">Termini</a></p>
+          </td>
+        </tr>
+
+      </table>
+
+    </td>
+  </tr>
+</table>
+
+</body>
+</html>
