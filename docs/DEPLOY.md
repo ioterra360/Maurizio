@@ -703,7 +703,13 @@ Android build into testers' hands first.
 **Publisher / owner (Maurizio)**
 - [ ] Publish `docs/legal/privacy.html`, `terms.html`, `account-deletion.html`
       at `https://ioterra360.github.io/memika-legal/privacy/`, `/terms`, `/account-deletion` — the
-      account-deletion page is mandatory for the Play Data safety form
+      account-deletion page is mandatory for the Play Data safety form.
+      **Blocking for build 3, not optional**: the three pages were rewritten on
+      2026-09-04 (no more "Premium" — the app sells **Plus** and **Pro**, photos
+      belong to both, the free tier is 10 memories + 1 folder). The paywall
+      footer links to `/terms` and `/privacy` (Apple 3.1.2), so republishing has
+      to happen **before** `eas submit`: an Apple reviewer who opens "Termini"
+      from the paywall must not read about a plan the screen above does not sell
 - [ ] Support inbox memikaapp@gmail.com monitored (it is the address in the
       legal pages, Settings and both store listings)
 - [ ] Create the Sentry org in the **EU** region + project → real slugs in

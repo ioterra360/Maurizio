@@ -3,7 +3,7 @@
 
 # Termini e condizioni di servizio — Memika
 
-**Ultimo aggiornamento:** 25 agosto 2026
+**Ultimo aggiornamento:** 4 settembre 2026
 
 I presenti Termini regolano l'uso dell'applicazione mobile **Memika** (di seguito "l'App") fornita da **Maurizio Cocco**, ditta individuale, Viale Mons. Peri 2, 09079 Tresnuraghes (OR), Italia, email memikaapp@gmail.com (di seguito "il Fornitore" o "noi"). Installando o utilizzando l'App l'utente accetta i presenti Termini. Se non li accetta, non deve utilizzare l'App.
 
@@ -17,11 +17,11 @@ Per usare l'App è necessario creare un account con un indirizzo email valido. L
 
 L'App è riservata a persone che abbiano compiuto **16 anni**. Registrandosi l'utente dichiara di avere almeno 16 anni.
 
-## 3. Piano gratuito e abbonamento Premium
+## 3. Piano gratuito e abbonamenti Plus e Pro
 
-**Piano gratuito.** L'App può essere utilizzata gratuitamente con alcune limitazioni: in particolare l'utente gratuito dispone di **una sola cartella** (argomento). Potremmo introdurre in futuro ulteriori limiti d'uso per il piano gratuito (ad esempio un numero massimo di memorie inseribili in un dato periodo); tali limiti saranno indicati nell'App.
+**Piano gratuito.** L'App può essere utilizzata gratuitamente con alcune limitazioni: l'utente gratuito dispone di **10 memorie in tutto** sull'account e di **una sola cartella** (argomento), senza sezioni al suo interno e senza la possibilità di allegare foto alle memorie. I limiti in vigore sono sempre indicati nell'App nel momento in cui si incontrano e possono essere modificati in futuro.
 
-**Premium.** L'abbonamento Premium rimuove le limitazioni del piano gratuito. Viene acquistato **esclusivamente tramite acquisto in-app** sull'App Store (Apple) o su Google Play (Google), è **a rinnovo automatico** e viene addebitato sull'account dello store dell'utente al prezzo indicato nell'App al momento dell'acquisto. Il rinnovo avviene automaticamente al termine di ciascun periodo, salvo disdetta almeno 24 ore prima della scadenza.
+**Plus e Pro.** Gli abbonamenti **Plus** e **Pro** rimuovono le limitazioni del piano gratuito, ciascuno nella misura descritta nell'App al momento dell'acquisto. Vengono acquistati **esclusivamente tramite acquisto in-app** sull'App Store (Apple) o su Google Play (Google), sono **a rinnovo automatico** e vengono addebitati sull'account dello store dell'utente al prezzo indicato nell'App al momento dell'acquisto. Il rinnovo avviene automaticamente al termine di ciascun periodo, salvo disdetta almeno 24 ore prima della scadenza.
 
 **Gestione e disdetta.** L'abbonamento si gestisce e si disdice dalle impostazioni dell'account Apple o Google del proprio dispositivo (iOS: *Impostazioni → [nome] → Abbonamenti*; Android: *Google Play → Pagamenti e abbonamenti → Abbonamenti*). La disdetta ha effetto alla fine del periodo già pagato; non sono previsti rimborsi parziali per il periodo residuo, salvo quanto previsto dalle regole di Apple / Google o dalla legge.
 
@@ -31,7 +31,7 @@ L'App è riservata a persone che abbiano compiuto **16 anni**. Registrandosi l'u
 
 **Prezzi.** I prezzi possono variare nel tempo. Le variazioni di prezzo di un abbonamento in corso saranno comunicate secondo le regole dello store e non avranno effetto prima del rinnovo successivo alla comunicazione.
 
-Al momento della pubblicazione di questi Termini l'abbonamento Premium potrebbe non essere ancora disponibile; in tal caso l'App lo indicherà chiaramente.
+Al momento della pubblicazione di questi Termini gli abbonamenti Plus e Pro potrebbero non essere ancora disponibili; in tal caso l'App lo indicherà chiaramente.
 
 ## 4. Contenuti dell'utente
 
