@@ -2,8 +2,10 @@ import { describe, expect, it } from "vitest";
 import {
   DAILY_REMINDER_ID,
   DEFAULT_REMINDER_SLOT,
+  MAX_PENDING_FIRST_REVIEWS,
   canScheduleAt,
   dailyPayload,
+  firstReviewCapReached,
   firstReviewIdentifier,
   firstReviewPayload,
   isFirstReviewInFolder,
@@ -148,5 +150,38 @@ describe("identificatori, payload e rotte", () => {
     expect(isFirstReviewInFolder(firstReviewPayload("m1", "f1"), "f1")).toBe(true);
     expect(isFirstReviewInFolder(firstReviewPayload("m1", "f1"), "f2")).toBe(false);
     expect(isFirstReviewInFolder(dailyPayload(), "f1")).toBe(false);
+  });
+});
+
+describe("firstReviewCapReached", () => {
+  const ids = (n: number) => Array.from({ length: n }, (_, i) => firstReviewIdentifier(`m${i}`));
+
+  it("resta sotto il limite iOS di 64 richieste in attesa", () => {
+    // Il margine ospita il giornaliero: se sparisce, la raffica dei primi
+    // ripassi può sfrattarlo senza che nessuno se ne accorga.
+    expect(MAX_PENDING_FIRST_REVIEWS).toBeLessThan(64);
+  });
+
+  it("con la coda vuota non blocca niente", () => {
+    expect(firstReviewCapReached([], firstReviewIdentifier("nuovo"))).toBe(false);
+  });
+
+  it("blocca il ricordo NUOVO quando la coda è piena", () => {
+    const full = ids(MAX_PENDING_FIRST_REVIEWS);
+    expect(firstReviewCapReached(full, firstReviewIdentifier("nuovo"))).toBe(true);
+    // Anche oltre: una coda già sforata non riapre.
+    expect(firstReviewCapReached(ids(MAX_PENDING_FIRST_REVIEWS + 10), firstReviewIdentifier("nuovo"))).toBe(true);
+  });
+
+  it("lascia passare un id GIÀ in coda anche a coda piena", () => {
+    // Ri-programmarlo sostituisce la richiesta esistente: il totale non
+    // cresce, e bloccarlo lascerebbe in attesa l'orario vecchio.
+    const full = ids(MAX_PENDING_FIRST_REVIEWS);
+    expect(firstReviewCapReached(full, full[0])).toBe(false);
+    expect(firstReviewCapReached(full, full[MAX_PENDING_FIRST_REVIEWS - 1])).toBe(false);
+  });
+
+  it("l'ultimo slot libero è ancora libero", () => {
+    expect(firstReviewCapReached(ids(MAX_PENDING_FIRST_REVIEWS - 1), firstReviewIdentifier("nuovo"))).toBe(false);
   });
 });

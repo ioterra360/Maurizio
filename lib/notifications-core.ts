@@ -85,6 +85,34 @@ export function firstReviewIdentifier(memoryId: string): string {
   return `${FIRST_REVIEW_ID_PREFIX}${memoryId}`;
 }
 
+/**
+ * Tetto delle richieste di primo ripasso che possono stare IN ATTESA
+ * nell'OS. iOS ne tiene al massimo 64 per app e scarta le altre IN
+ * SILENZIO, conservando le più imminenti: `scheduleNotificationAsync` non
+ * segnala nulla, quindi nessuno qui può accorgersene. Oltre il tetto lo
+ * sfrattato naturale è il promemoria GIORNALIERO, che scatta più tardi
+ * della raffica dei primi ripassi — l'utente perderebbe l'avviso del
+ * mattino senza un segnale da nessuna parte.
+ *
+ * 50 e non 64: il margine ospita il giornaliero e qualunque secondo tipo di
+ * notifica che verrà dopo.
+ */
+export const MAX_PENDING_FIRST_REVIEWS = 50;
+
+/**
+ * Vero se questo primo ripasso NON va programmato perché la coda è piena.
+ * `pending` sono gli identificatori dei primi ripassi già in attesa.
+ *
+ * Un id GIÀ in coda non è mai bloccato: ri-programmarlo SOSTITUISCE la
+ * richiesta esistente invece di aggiungerne una (è quello che fa
+ * app/memory/[id].tsx a ogni modifica del ricordo), quindi il totale non
+ * cresce e rifiutarlo lascerebbe in attesa l'orario vecchio.
+ */
+export function firstReviewCapReached(pending: readonly string[], identifier: string): boolean {
+  if (pending.includes(identifier)) return false;
+  return pending.length >= MAX_PENDING_FIRST_REVIEWS;
+}
+
 /** Cosa viaggia dentro `content.data`. Solo stringhe: deve essere serializzabile. */
 export type NotificationPayload =
   | { kind: "first-review"; memoryId: string; folderId: string }

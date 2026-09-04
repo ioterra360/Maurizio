@@ -34,6 +34,7 @@ import {
   REMINDER_CHANNEL_ID,
   canScheduleAt,
   dailyPayload,
+  firstReviewCapReached,
   firstReviewIdentifier,
   firstReviewPayload,
   isFirstReviewInFolder,
@@ -148,6 +149,9 @@ export function openSystemNotificationSettings(): void {
  * "Primo ripasso pronto" per UN ricordo, all'istante esatto di
  * nextReviewAt (T0+20h). Solo per la fase p20h: le fasi successive non
  * avvisano. Identificatore stabile → ri-programmare sostituisce.
+ *
+ * È l'UNICO punto che crea una richiesta di primo ripasso, quindi è qui che
+ * sta il tetto della coda (MAX_PENDING_FIRST_REVIEWS, lib/notifications-core.ts).
  */
 export async function scheduleFirstReview(
   memory: Pick<Memory, "id" | "folderId" | "term" | "nextReviewAt" | "phase">,
@@ -161,9 +165,19 @@ export async function scheduleFirstReview(
     if (!shouldScheduleFirstReview({ enabled: prefs.enabled, firstReview: prefs.firstReview, allowed: perm.allowed })) {
       return;
     }
+    // Tetto della coda (MAX_PENDING_FIRST_REVIEWS): oltre 64 richieste in
+    // attesa iOS scarta in silenzio, e la prima a cadere sarebbe il
+    // promemoria giornaliero. Il controllo sta QUI e non solo nel riarmo
+    // perché il percorso di Add arriva allo stesso totale un salvataggio
+    // alla volta ("Salva e aggiungi un altro"). Costa un round trip nativo
+    // per salvataggio, sulla stessa scia dell'await di getPermission().
+    const identifier = firstReviewIdentifier(memory.id);
+    const pending = await Notifications.getAllScheduledNotificationsAsync();
+    const mine = pending.filter((r) => isFirstReviewPayload(r.content.data)).map((r) => r.identifier);
+    if (firstReviewCapReached(mine, identifier)) return;
     await ensureChannel();
     await Notifications.scheduleNotificationAsync({
-      identifier: firstReviewIdentifier(memory.id),
+      identifier,
       content: {
         title: t("notifications.firstReviewTitle"),
         body: t("notifications.firstReviewBody", { term: memory.term }),

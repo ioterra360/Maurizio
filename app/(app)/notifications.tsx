@@ -39,6 +39,13 @@ const SLOTS = reminderSlots();
 const NO_PERMISSION: PermissionState = { allowed: false, canAskAgain: false, undetermined: false };
 /** Orizzonte del primo ripasso: T0+20h. Oltre non c'è niente da riarmare. */
 const FIRST_REVIEW_HORIZON_MS = 20 * 60 * 60 * 1000;
+// L'orizzonte NON è un tetto: dentro 20 ore possono starci centinaia di
+// ricordi. Il tetto della coda è MAX_PENDING_FIRST_REVIEWS (50) e vive in
+// lib/notifications-core.ts, applicato da scheduleFirstReview — iOS tiene al
+// massimo 64 richieste in attesa e scarta le altre in silenzio. Il riarmo qui
+// sotto non ne ha uno proprio: fetchMemoriesInRange ordina per
+// next_review_at crescente (lib/api.ts), quindi il ciclo incontra i più
+// imminenti per primi e il tetto conserva quelli.
 
 /**
  * Notifiche (spec 2026-09-02 §F3): tab nascosto, raggiunto da Impostazioni.
