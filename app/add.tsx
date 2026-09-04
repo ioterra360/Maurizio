@@ -646,8 +646,14 @@ export default function AddScreen() {
                   letterSpacing: -0.07,
                 }}
               />
+              {/* Bloccato durante il salvataggio come i due bottoni in fondo
+                  (:900-905): doSave legge `photoUri` dalla closure prima
+                  dell'upload e poi clearFields() lo azzera — una foto scelta
+                  mentre l'attesa è in corso (fino a 15 s di timeout) andrebbe
+                  persa senza caricare niente e senza avviso. */}
               <Tappable
                 onPress={openPhotoSheet}
+                disabled={saving}
                 accessibilityRole="button"
                 accessibilityLabel={photoUri ? t("add.photoChange") : t("add.photoAdd")}
                 pressedOpacity={0.6}
