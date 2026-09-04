@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Image, View, type ImageErrorEvent, type StyleProp, type ViewStyle } from "react-native";
+import { Image, View, type StyleProp, type ViewStyle } from "react-native";
 
 import { useT } from "@/lib/i18n";
 import { getPhotoUrl } from "@/lib/photos";
@@ -75,10 +75,18 @@ export function MemoryPhoto({ path, localUri, style }: Props) {
         // solo quando `alt` è definito: con la sola label l'immagine non è un
         // elemento accessibile su iOS e VoiceOver non annuncia nulla.
         alt={t("memory.photoA11y")}
-        onError={(e: ImageErrorEvent) => {
-          // `error` è tipato `any` da RN: lo confino subito in `unknown`.
-          const cause: unknown = e.nativeEvent?.error;
-          reportError("photo/image-load", cause ?? e);
+        onError={() => {
+          // L'errore nativo NON si inoltra. Su entrambe le piattaforme il suo
+          // messaggio incorpora l'URI che ha fallito (Fresco/OkHttp su
+          // Android, "Response code N for url …" su iOS) e qui quell'URI è un
+          // URL FIRMATO: una credenziale al portatore che apre la foto
+          // privata dell'utente per un'ora (PHOTO_URL_TTL_S). reportError lo
+          // mette nel messaggio dell'eccezione, cioè nel TITOLO dell'issue
+          // Sentry, dove resta e lo vede chiunque abbia accesso al progetto.
+          // Del guasto serve il fatto, non l'indirizzo.
+          reportError("photo/image-load", new Error("image load failed"), {
+            remote: !localUri,
+          });
           setUri(null);
         }}
       />
