@@ -373,57 +373,64 @@ export default function FolderDetailScreen() {
           />
         </ScrollView>
 
-        {/* Sezioni (sottocartelle) — il tetto per cartella dipende dal piano. */}
-        {subfolders.length > 0 || canAddSection(subfolders.length, plan) ? (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingHorizontal: 16, gap: 6, paddingBottom: 12 }}
+        {/* Sezioni (sottocartelle) — il tetto per cartella dipende dal piano.
+            La striscia e il "+" restano SEMPRE montati e diramano al tocco.
+            Nasconderli al tetto sarebbe la scelta peggiore: un utente free ha
+            zero sezioni per costruzione, quindi non incontrerebbe mai un
+            motivo per passare a Pro, e un Pro a tre vedrebbe il "+" sparire
+            senza spiegazione. Stesso comportamento di Conoscenza e di Add. */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ paddingHorizontal: 16, gap: 6, paddingBottom: 12 }}
+        >
+          {subfolders.length > 0 ? (
+            <FilterChip
+              label={t("subfolders.chipAll")}
+              count={items.length}
+              active={subFilter === "all"}
+              onPress={() => setSubFilter("all")}
+            />
+          ) : null}
+          {subfolders.map((s) => (
+            <FilterChip
+              key={s.id}
+              label={s.name}
+              count={items.filter((m) => (m.subfolderId ?? null) === s.id).length}
+              active={subFilter === s.id}
+              onPress={() => setSubFilter(s.id)}
+            />
+          ))}
+          <Tappable
+            onPress={() => {
+              if (!canAddSection(subfolders.length, plan)) {
+                setPlanBlock("sections");
+                return;
+              }
+              setSubModalOpen(true);
+            }}
+            accessibilityRole="button"
+            accessibilityLabel={t("subfolders.add")}
+            pressedOpacity={0.7}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 5,
+              height: 32,
+              paddingHorizontal: 12,
+              borderRadius: radii.filter,
+              borderWidth: 1,
+              borderColor: colors.hairlineStrong,
+              borderStyle: "dashed",
+              backgroundColor: colors.warmWhite,
+            }}
           >
-            {subfolders.length > 0 ? (
-              <FilterChip
-                label={t("subfolders.chipAll")}
-                count={items.length}
-                active={subFilter === "all"}
-                onPress={() => setSubFilter("all")}
-              />
-            ) : null}
-            {subfolders.map((s) => (
-              <FilterChip
-                key={s.id}
-                label={s.name}
-                count={items.filter((m) => (m.subfolderId ?? null) === s.id).length}
-                active={subFilter === s.id}
-                onPress={() => setSubFilter(s.id)}
-              />
-            ))}
-            {canAddSection(subfolders.length, plan) ? (
-              <Tappable
-                onPress={() => setSubModalOpen(true)}
-                accessibilityRole="button"
-                accessibilityLabel={t("subfolders.add")}
-                pressedOpacity={0.7}
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  gap: 5,
-                  height: 32,
-                  paddingHorizontal: 12,
-                  borderRadius: radii.filter,
-                  borderWidth: 1,
-                  borderColor: colors.hairlineStrong,
-                  borderStyle: "dashed",
-                  backgroundColor: colors.warmWhite,
-                }}
-              >
-                <Plus size={13} color={colors.navy} strokeWidth={2.2} />
-                <Text style={{ fontFamily: FONT.medium, fontSize: 13, color: colors.navy }}>
-                  {t("subfolders.add")}
-                </Text>
-              </Tappable>
-            ) : null}
-          </ScrollView>
-        ) : null}
+            <Plus size={13} color={colors.navy} strokeWidth={2.2} />
+            <Text style={{ fontFamily: FONT.medium, fontSize: 13, color: colors.navy }}>
+              {t("subfolders.add")}
+            </Text>
+          </Tappable>
+        </ScrollView>
 
         {/* Item list */}
         <View style={{ paddingHorizontal: 16, gap: 6 }}>

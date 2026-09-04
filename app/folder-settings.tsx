@@ -320,12 +320,13 @@ export default function FolderSettingsScreen() {
           />
         </View>
 
-        {/* Sottocartelle */}
-        {subfolders.length > 0 || canAddSection(subfolders.length, plan) ? (
-          <View style={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 8 }}>
-            <SectionLabel>{t("subfolders.section")}</SectionLabel>
-          </View>
-        ) : null}
+        {/* Sottocartelle — intestazione e "+" sempre presenti: al tetto il "+"
+            apre la mascotte invece di sparire, cosi' un utente free scopre che
+            le sezioni esistono e un Pro capisce perche' si e' fermato. Stessa
+            scelta di Conoscenza e di Add. */}
+        <View style={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 8 }}>
+          <SectionLabel>{t("subfolders.section")}</SectionLabel>
+        </View>
         <View style={{ paddingHorizontal: 16, gap: 8 }}>
           {subfolders.map((sub) => (
             <Tappable
@@ -375,31 +376,35 @@ export default function FolderSettingsScreen() {
               </Tappable>
             </Tappable>
           ))}
-          {canAddSection(subfolders.length, plan) ? (
-            <Tappable
-              onPress={() => setSubModal({ mode: "add" })}
-              accessibilityRole="button"
-              accessibilityLabel={t("subfolders.add")}
-              pressedOpacity={0.7}
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 6,
-                paddingVertical: 12,
-                borderRadius: 14,
-                borderWidth: 1.2,
-                borderColor: colors.hairlineStrong,
-                borderStyle: "dashed",
-                backgroundColor: colors.warmWhite,
-              }}
-            >
-              <Plus size={15} color={colors.navy} strokeWidth={2.1} />
-              <Text style={{ fontFamily: FONT.semibold, fontSize: 13.5, color: colors.navy }}>
-                {t("subfolders.add")}
-              </Text>
-            </Tappable>
-          ) : null}
+          <Tappable
+            onPress={() => {
+              if (!canAddSection(subfolders.length, plan)) {
+                setPlanBlock("sections");
+                return;
+              }
+              setSubModal({ mode: "add" });
+            }}
+            accessibilityRole="button"
+            accessibilityLabel={t("subfolders.add")}
+            pressedOpacity={0.7}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 6,
+              paddingVertical: 12,
+              borderRadius: 14,
+              borderWidth: 1.2,
+              borderColor: colors.hairlineStrong,
+              borderStyle: "dashed",
+              backgroundColor: colors.warmWhite,
+            }}
+          >
+            <Plus size={15} color={colors.navy} strokeWidth={2.1} />
+            <Text style={{ fontFamily: FONT.semibold, fontSize: 13.5, color: colors.navy }}>
+              {t("subfolders.add")}
+            </Text>
+          </Tappable>
         </View>
 
         <View style={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 8 }}>
