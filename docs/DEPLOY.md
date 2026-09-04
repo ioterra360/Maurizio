@@ -407,8 +407,43 @@ Una build fallita consuma il numero: l'etichetta va scritta DOPO, da
    `eas.json` (DSN, `SENTRY_DISABLE_AUTO_UPLOAD` tolto da preview/production,
    token via `eas env:create`), oppure gli slot restano vuoti e Sentry resta
    spento in questa build (aggiungerlo dopo = ancora una build nativa).
-4. RevenueCat: stesso bivio per `EXPO_PUBLIC_REVENUECAT_*_KEY`. Vuote = l'app è
-   Free per tutti e non chiama mai l'SDK.
+4. RevenueCat: stesso bivio per `EXPO_PUBLIC_REVENUECAT_*_KEY` — ma questo bivio
+   **decide anche il punto 6**, cioè se la migrazione dei piani si può spingere
+   in produzione con questa build.
+   - **Chiavi presenti** (progetto RevenueCat, prodotti approvati dagli store,
+     entitlement `pro` e `premium`): niente di speciale, la "Sequenza" qui sotto
+     vale così com'è. Chi finisce contro un tetto vede il paywall e può uscirne.
+   - **Chiavi vuote**: `purchasesAvailable` è falso (`lib/purchases.ts`), l'SDK
+     non viene mai chiamato e il paywall mostra le tre schede con **tutti i
+     bottoni spenti** e la riga "Gli acquisti non sono disponibili su questo
+     dispositivo". Se in quello stato si spinge `20260903100000_plans.sql`, i
+     quattro trigger si accendono per tutti: il seed copre DUE email
+     (`angelo.casula@`, `memikaapp@`) e chiunque altro — in particolare i ≥12
+     tester del test chiuso, che devono restare iscritti 14 giorni di fila —
+     diventa Free tappato a 10 ricordi / 1 cartella / 0 sezioni **senza alcuna
+     via d'uscita dal client**: l'unico rimedio sarebbe SQL a mano. Scegliere
+     una delle due:
+     - **(a) tenere indietro la migrazione dei piani.** Prima del `db push`
+       spostare `supabase/migrations/20260903100000_plans.sql` fuori dalla
+       cartella (`git stash push` del solo file, o un mv temporaneo), spingere
+       la sola `20260903110000_memory_photos.sql` — che serve al bucket delle
+       foto — e rimettere la migrazione dei piani nel push della build che
+       porterà le chiavi. Quel push arriverà "fuori ordine" rispetto al
+       timestamp remoto: serve `npx supabase db push --include-all`. Costo: i
+       tetti non esistono in produzione, cioè per una fase di test chiuso è
+       esattamente lo stato di oggi.
+     - **(b) spingere e concedere subito la cortesia ai tester.** Nella stessa
+       sessione del `db push`, prima di dare il link ai tester:
+       ```bash
+       npx supabase db query --linked "update public.profiles set plan = 'premium', plan_until = null where id in (select id from auth.users)"
+       npx supabase db query --linked "select u.email, p.plan from public.profiles p join auth.users u on u.id = p.id order by u.created_at"
+       ```
+       È la stessa concessione del seed, allargata agli account già esistenti;
+       la guardia `courtesyGrant` di `revenuecat-sync` (punto 3b) impedisce che
+       la prima apertura dell'app li riporti a `free`. Da revocare a mano
+       (`set plan = 'free' where email = '…'`) quando le chiavi arrivano.
+   Qualunque ramo si scelga, **scriverlo qui** prima di procedere: è l'unico
+   passo della sequenza che il client non può disfare da solo.
 5. Nel worktree: `npm prune --legacy-peer-deps`, `npx expo-doctor`,
    introspezione + `node scripts/native-config/check-introspect.cjs`,
    `npm run lint`, `npm test`, pre-check Hermes, `git status` pulito.
@@ -453,6 +488,11 @@ eas build:view <id-android> --json      # runtimeVersion = hash android di sopra
 eas build:view <id-ios> --json          # runtimeVersion = hash ios di sopra
 
 # 3. Migrazioni in produzione — DOPO che le build sono FINISHED, PRIMA del submit
+#    STOP: rileggi il punto 4 di "Prima di lanciare". Con le chiavi RevenueCat
+#    VUOTE questo push chiude ogni tester non seed in Free senza paywall
+#    funzionante — o si tiene indietro 20260903100000_plans.sql (ramo a), o
+#    subito dopo il push si concede la cortesia premium agli account esistenti
+#    (ramo b). Con le chiavi presenti, si prosegue come scritto.
 npx supabase db push --dry-run          # elenca SOLO le migrazioni B4/B5
 npx supabase db push
 npx supabase db query --linked "select u.email, p.plan, p.plan_until from public.profiles p join auth.users u on u.id = p.id order by u.created_at"

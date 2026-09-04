@@ -12,9 +12,17 @@ Implementato in codice, **non ancora attivo**: mancano il progetto RevenueCat,
 i prodotti negli store e le chiavi. Fino ad allora
 `EXPO_PUBLIC_REVENUECAT_IOS_KEY` / `_ANDROID_KEY` sono stringhe vuote in
 `eas.json`, `purchasesAvailable` è falso, nessuna riga tocca l'SDK e il paywall
-mostra le tre schede con i bottoni spenti. La migrazione dei limiti **non va
-applicata a produzione** finché la build 3 non è sugli store (vedi "Ordine di
-attivazione").
+mostra le tre schede con i bottoni spenti.
+
+Quando la migrazione dei limiti va in produzione lo decide **una sola pagina**,
+la "Sequenza" di `docs/DEPLOY.md` § "Build 3" (è quella che esegue il Task 6 del
+piano `2026-09-03-build3-config-nativa.md`): dopo che le build sono `FINISHED`,
+prima del submit. Il vincolo che conta non è "quando la build è sugli store" ma
+il **bivio del punto 4** di quella stessa pagina: con le chiavi RevenueCat vuote
+il paywall ha i bottoni spenti, e spingere i trigger senza allargare la cortesia
+premium agli account esistenti chiuderebbe ogni tester in Free senza una via
+d'uscita dal client. I due rami ammessi (tenere indietro `20260903100000_plans.sql`,
+oppure spingere e concedere subito la cortesia) sono scritti lì.
 
 ## I piani
 
@@ -217,6 +225,12 @@ iOS 3)". Per la parte piani, in breve:
    `eas submit` / upload Play: le colonne devono esistere prima che un tester
    installi vc13, perché il client legge `profiles.plan` e la edge function la
    scrive.
+   **Con le chiavi RevenueCat vuote questo passo non si fa così:** i trigger si
+   accenderebbero per tutti mentre il paywall ha i bottoni spenti, e un tester
+   non seed resterebbe Free e tappato senza rimedio dal client. Il bivio con i
+   due rami ammessi — tenere indietro `20260903100000_plans.sql`, oppure
+   spingere e concedere subito la cortesia premium agli account esistenti — è
+   il punto 4 di `docs/DEPLOY.md` § "Prima di lanciare".
 3. I due tester passano a `plan = 'premium'` **dentro la migrazione stessa**,
    sopra i `create trigger` — non con una query prima del push, che
    fallirebbe con `42703` perché la colonna non esiste ancora, né dopo, che
