@@ -38,10 +38,32 @@
 --     non esiste un job con service_role (Edge Function). Decisione aperta,
 --     vedi docs/DATA-MODEL.md § Storage.
 
--- (1) colonna
+-- (1) colonna — il length check NON viaggia sull'`add column if not exists`: se
+--     la colonna esiste già (riesecuzione della migration, o colonna creata a
+--     mano dalla dashboard) Postgres salta l'INTERO sotto-comando, vincolo
+--     compreso, e riporta successo lasciando `memories` senza check. Quindi
+--     constraint SEPARATA e nominata, come ogni altro length check di questa
+--     tabella (20260519224817_security_hardening.sql:128-131). `add constraint`
+--     non ha un `if not exists`: la guardia è un do-block su pg_constraint. Il
+--     nome è quello che Postgres genererebbe da sé per un vincolo di colonna
+--     (<tabella>_<colonna>_check), così anche su un database dove fosse già
+--     passata la forma vecchia il blocco è un no-op.
 alter table public.memories
-  add column if not exists photo_path text
-    check (photo_path is null or char_length(photo_path) between 1 and 512);
+  add column if not exists photo_path text;
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint
+    where conrelid = 'public.memories'::regclass
+      and conname = 'memories_photo_path_check'
+  ) then
+    alter table public.memories
+      add constraint memories_photo_path_check
+      check (photo_path is null or char_length(photo_path) between 1 and 512);
+  end if;
+end;
+$$;
 
 comment on column public.memories.photo_path is
   'Chiave dell''oggetto nel bucket privato memory-photos (<user_id>/<memory_id>.jpg). null = nessuna foto. Mai un URL: si legge con URL firmati (lib/photos.ts).';
