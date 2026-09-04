@@ -1159,4 +1159,20 @@ export const it = {
   "notifications.promptConfirm": "Sì, avvisami",
   "notifications.promptCancel": "Non ora",
 
+  // ---- foto sui ricordi (B5, 2026-09-03) ----
+  "add.photoAdd": "Aggiungi una foto",
+  "add.photoChange": "Cambia foto",
+  "add.photoSheetTitle": "Foto sul retro",
+  "add.photoCamera": "Scatta una foto",
+  "add.photoLibrary": "Scegli dalla libreria",
+  "add.photoRemove": "Rimuovi foto",
+  "add.photoPermissionDenied": "Senza il permesso per la fotocamera non posso scattare. Puoi concederlo nelle impostazioni del telefono.",
+  "add.photoPickFailed": "Non sono riuscito a prendere la foto. Riprova.",
+  "add.photoUploadFailed": "Salvato in {name}, ma la foto non è stata caricata. Il ricordo è al sicuro.",
+  "add.photoPremiumTitle": "Le foto sono di Premium",
+  "add.photoPremiumBody": "Una foto sul retro aiuta la memoria visiva: la vedi solo dopo aver provato a ricordare. Con Memika Premium puoi allegarne una a ogni ricordo.",
+  "add.photoPremiumConfirm": "Scopri Premium",
+  "add.photoPremiumCancel": "Non ora",
+  "memory.photoA11y": "Foto del ricordo",
+
 } as const;

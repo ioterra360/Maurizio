@@ -1159,4 +1159,20 @@ export const en: Record<keyof typeof it, string> = {
   "notifications.promptConfirm": "Yes, remind me",
   "notifications.promptCancel": "Not now",
 
+  // ---- memory photos (B5, 2026-09-03) ----
+  "add.photoAdd": "Add a photo",
+  "add.photoChange": "Change photo",
+  "add.photoSheetTitle": "Photo on the back",
+  "add.photoCamera": "Take a photo",
+  "add.photoLibrary": "Choose from library",
+  "add.photoRemove": "Remove photo",
+  "add.photoPermissionDenied": "Without camera permission I can't take a photo. You can grant it in your phone settings.",
+  "add.photoPickFailed": "I couldn't get the photo. Try again.",
+  "add.photoUploadFailed": "Saved to {name}, but the photo was not uploaded. Your memory is safe.",
+  "add.photoPremiumTitle": "Photos are a Premium feature",
+  "add.photoPremiumBody": "A photo on the back helps visual memory: you see it only after trying to recall. With Memika Premium you can attach one to every memory.",
+  "add.photoPremiumConfirm": "Discover Premium",
+  "add.photoPremiumCancel": "Not now",
+  "memory.photoA11y": "Memory photo",
+
 };

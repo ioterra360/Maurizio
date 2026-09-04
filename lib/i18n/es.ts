@@ -1159,4 +1159,20 @@ export const es: Record<keyof typeof it, string> = {
   "notifications.promptConfirm": "Sí, avísame",
   "notifications.promptCancel": "Ahora no",
 
+  // ---- fotos de los recuerdos (B5, 2026-09-03) ----
+  "add.photoAdd": "Añadir una foto",
+  "add.photoChange": "Cambiar foto",
+  "add.photoSheetTitle": "Foto en el reverso",
+  "add.photoCamera": "Hacer una foto",
+  "add.photoLibrary": "Elegir de la galería",
+  "add.photoRemove": "Quitar foto",
+  "add.photoPermissionDenied": "Sin permiso para la cámara no puedo hacer la foto. Puedes concederlo en los ajustes del teléfono.",
+  "add.photoPickFailed": "No he podido obtener la foto. Inténtalo de nuevo.",
+  "add.photoUploadFailed": "Guardado en {name}, pero la foto no se ha subido. Tu recuerdo está a salvo.",
+  "add.photoPremiumTitle": "Las fotos son de Premium",
+  "add.photoPremiumBody": "Una foto en el reverso ayuda a la memoria visual: la ves solo después de intentar recordar. Con Memika Premium puedes adjuntar una a cada recuerdo.",
+  "add.photoPremiumConfirm": "Descubrir Premium",
+  "add.photoPremiumCancel": "Ahora no",
+  "memory.photoA11y": "Foto del recuerdo",
+
 };
