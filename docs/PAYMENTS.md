@@ -290,12 +290,19 @@ iOS 3)". Per la parte piani, in breve:
    `eas submit` / upload Play: le colonne devono esistere prima che un tester
    installi vc13, perché il client legge `profiles.plan` e la edge function la
    scrive.
-   **Con le chiavi RevenueCat vuote questo passo non si fa così:** i trigger si
-   accenderebbero per tutti mentre il paywall ha i bottoni spenti, e un tester
-   non seed resterebbe Free e tappato senza rimedio dal client. Il bivio con i
-   due rami ammessi — tenere indietro `20260903100000_plans.sql`, oppure
-   spingere e concedere subito la cortesia pro agli account esistenti — è
-   il punto 4 di `docs/DEPLOY.md` § "Prima di lanciare".
+   **Si spingono entrambe le migrazioni, sempre**, anche con le chiavi
+   RevenueCat vuote: il default `'pro'` di `20260903100000_plans.sql` chiude il
+   bivio, perché nessuno nasce tappato e quindi nessuno incontra un tetto da
+   cui il client non lo farebbe uscire. Tenere indietro la migrazione dei piani
+   spegnerebbe per di più le **foto**: senza la colonna `plan`,
+   `buildAuthUserFromSession` degrada tutti a `free` (`lib/auth-store.ts`, il
+   `select("*")` riesce ma `profile.plan` non c'è) e `canUsePhotos("free")` è
+   falso — il bucket sarebbe in produzione e nessun tester potrebbe allegare
+   un'immagine, l'opposto di ciò che l'attivazione vuole ottenere. I due rami
+   che si prendevano prima dell'attivazione del 2026-09-04 — tenere indietro
+   `20260903100000_plans.sql`, oppure spingere e concedere subito la cortesia
+   pro agli account esistenti — **non servono più**: restano solo come storia
+   della decisione al punto 4 di `docs/DEPLOY.md` § "Prima di lanciare".
 3. I due tester passano a `plan = 'pro'` **dentro la migrazione stessa**,
    sopra i `create trigger` — non con una query prima del push, che
    fallirebbe con `42703` perché la colonna non esiste ancora, né dopo, che
