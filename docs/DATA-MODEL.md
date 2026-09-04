@@ -92,8 +92,8 @@ when it's `<= now()`, the memory is due.
 | `term` | text | Primary surface (e.g. "中心", "Tachycardia") |
 | `reading` | text | Pronunciation / romaji, optional |
 | `definition` | text | Body — what to remember |
-| `notes` | text | null | Free-text user notes ("appunti"), edited in the memory detail sheet (migration 20260827160000). |
-| `photo_path` | text | null | Chiave dell'oggetto nel bucket privato `memory-photos` (`<user_id>/<memory_id>.jpg`, migration 20260903110000). null = nessuna foto. Mai un URL: si legge con URL firmati (`lib/photos.ts`). Premium **solo lato client** (`canUsePhotos`): nessun trigger controlla questa colonna: i trigger di `20260903100000_plans.sql` guardano ricordi, cartelle e sezioni, non `photo_path`. Un gate server è una decisione aperta. |
+| `notes` | text | Free-text user notes ("appunti"), optional; edited in the memory detail sheet (migration 20260827160000). |
+| `photo_path` | text | Chiave dell'oggetto nel bucket privato `memory-photos` (`<user_id>/<memory_id>.jpg`, migration 20260903110000). null = nessuna foto. Mai un URL: si legge con URL firmati (`lib/photos.ts`). Premium **solo lato client** (`canUsePhotos`): nessun trigger controlla questa colonna: i trigger di `20260903100000_plans.sql` guardano ricordi, cartelle e sezioni, non `photo_path`. Un gate server è una decisione aperta. |
 | `example` | text | Example sentence, optional |
 | `item_type` | text | Folder-specific subtype (word/kanji/concept/drug/…) |
 | `state` | enum `memory_state` | `active` / `fading` / `archived` |
