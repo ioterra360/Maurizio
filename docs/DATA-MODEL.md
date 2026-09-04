@@ -93,6 +93,7 @@ when it's `<= now()`, the memory is due.
 | `reading` | text | Pronunciation / romaji, optional |
 | `definition` | text | Body — what to remember |
 | `notes` | text | null | Free-text user notes ("appunti"), edited in the memory detail sheet (migration 20260827160000). |
+| `photo_path` | text | null | Chiave dell'oggetto nel bucket privato `memory-photos` (`<user_id>/<memory_id>.jpg`, migration 20260903110000). null = nessuna foto. Mai un URL: si legge con URL firmati (`lib/photos.ts`). Premium **solo lato client** (`canUsePhotos`): nessun trigger controlla questa colonna: i trigger di `20260903100000_plans.sql` guardano ricordi, cartelle e sezioni, non `photo_path`. Un gate server è una decisione aperta. |
 | `example` | text | Example sentence, optional |
 | `item_type` | text | Folder-specific subtype (word/kanji/concept/drug/…) |
 | `state` | enum `memory_state` | `active` / `fading` / `archived` |
@@ -164,6 +165,7 @@ Policy summary (full SQL in the migration):
 | `memories` | self or admin | self for own; admin for any |
 | `review_sessions` | self or admin | self for own; admin for any |
 | `review_items` | self via session join, or admin | same |
+| `storage.objects` (bucket `memory-photos`) | own folder `<auth.uid()>/…` | own folder: insert / update (upsert) / delete — `authenticated` only, no admin bypass |
 
 Admin bypass uses `public.is_admin()`, a `SECURITY DEFINER` function that
 sidesteps the recursive-RLS-on-profiles problem.
@@ -256,9 +258,44 @@ if (!error) await supabase.auth.signOut();
 Migration `20260825153500` additionally revokes execute from `anon`: the
 hosted project's default privileges grant execute on new `public` functions to
 `anon`/`authenticated`/`service_role`, and `revoke … from public` does not undo
-that explicit grant. No Storage bucket exists yet; when the photo bucket lands,
-`storage.objects` cleanup for `owner = auth.uid()` must be added to this
-function in a new migration.
+that explicit grant. The photo bucket exists since 20260903110000, and this
+function deliberately does NOT touch `storage.objects`: see § Storage below for
+why SQL cannot delete files.
+
+## Storage
+
+### `memory-photos` (migration 20260903110000)
+
+Private bucket (`public = false`), 5 MiB per object, `allowed_mime_types =
+{image/jpeg}`. One object per memory at `<user_id>/<memory_id>.jpg`; the key
+lives in `memories.photo_path`. Four policies on `storage.objects` for
+`authenticated`, all bound to `(storage.foldername(name))[1] =
+(select auth.uid()::text)`: `memory_photos_select_own`, `_insert_own`,
+`_update_own` (the client uploads with `upsert: true`), `_delete_own`. No
+admin bypass, no policy on `storage.buckets` (no SDK call needs one).
+
+Reads use `createSignedUrl(path, 3600)` with an in-memory cache
+(`lib/photo-utils.ts makeSignedUrlCache`), never `getPublicUrl`. All Storage
+access goes through `lib/photos.ts`.
+
+**Deleting files.** `delete from storage.objects` in SQL removes the metadata
+row only — the S3 object stays (billed, unreachable), newer hosted projects
+block the statement outright (`storage.protect_delete`, migration 0055), and
+a missing row hides the file from `list()`/`remove()` forever. Therefore
+`purge_trash()`, `purge_expired_accounts()` and `delete_own_account()` do
+NOT touch `storage.objects`. Cleanup happens through the Storage API:
+
+- **Memories purged from the trash** — the client reconciles its own folder
+  on every `(app)` mount (`reconcilePhotos` in `lib/photos.ts`): `list(<uid>)`
+  vs `select photo_path from memories where user_id = <uid>` (trash INCLUDED,
+  a trashed memory can be restored), `remove()` of what has no row. Objects
+  younger than 10 minutes are skipped (an upload may be in flight).
+- **Purged accounts (72 h)** — no client is left to reconcile. Their files
+  stay orphaned until a `service_role` job exists (an Edge Function on a
+  schedule listing the bucket's top-level folders and removing those with no
+  `profiles` row). **Open decision** — GDPR-relevant, owner's call (AGENTS.md
+  §7). Photos are NOT removed at deletion-request time: a user who recovers
+  the account within 72 h would lose them.
 
 ## Common queries
 
@@ -322,6 +359,6 @@ These are conscious omissions, not oversights:
 - **Content templates / "marketplace" folders** — admin shipping pre-built
   decks. Deferred until after launch.
 - **Sharing / social** — out of scope per `docs/PRODUCT.md`.
-- **Multimedia memories** — photos, audio. Defer until we know we want them.
+- **Audio on memories** — photos landed with 20260903110000 (one per memory, Premium); audio is still deferred.
 - **Custom item types** — `item_type` is a text column without a foreign-key
   enforced taxonomy. Loose on purpose for Phase 2.

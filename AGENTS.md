@@ -91,6 +91,12 @@ These exist because of past decisions documented elsewhere in `docs/`.
   and call it from the client. Account deletion is the one privileged op that
   exists today and it is a `security definer` RPC (`delete_own_account()`),
   not a client-side delete.
+- **The `memory-photos` bucket is private and stays private.** Never set
+  `public = true`, never call `getPublicUrl`: photos are read through signed
+  URLs only. `lib/photos.ts` is the single Storage access point (tables stay
+  in `lib/api.ts`). Never `delete from storage.objects` in SQL — it orphans
+  the file and hides it from the API; file cleanup is `remove()` via the
+  Storage API (`docs/DATA-MODEL.md` § Storage).
 - **Release builds never run demo mode; store profiles carry the Supabase
   env.** `lib/demo-mode.ts` returns `demo: false` whenever `__DEV__` is false,
   so a `preview`/`production` build without `EXPO_PUBLIC_SUPABASE_URL` /
