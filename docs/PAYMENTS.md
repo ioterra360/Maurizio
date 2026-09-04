@@ -35,8 +35,17 @@ oppure spingere e concedere subito la cortesia) sono scritti lì.
 
 I 10 ricordi sono un tetto **totale**, non giornaliero. Il cursore in
 Impostazioni (`profiles.daily_input_cap`) è un'altra cosa: autoregolazione del
-carico per chi ha Pro o Premium, con gli avvisi della mascotte a 20/25/30. Un
-utente free non lo incontra mai.
+carico, con gli avvisi della mascotte a 20/25/30.
+
+La riga "Limite giornaliero" è visibile a tutti e **non va gatata sul piano**.
+Nella build 3 il client legge `plan` da un profilo che può ancora non avere
+quella colonna e in mancanza di risposta degrada a `free`
+(`lib/auth-store.ts:177`): un `plan !== "free"` intorno a quella riga
+nasconderebbe il cursore a tutti, tester premium compresi, e senza chiavi
+RevenueCat non esiste una riparazione dal client. Per un utente free il cursore
+semplicemente non morde mai — in Add il contatore giornaliero è sostituito da
+quello totale (`app/add.tsx:898`) e l'opzione più bassa del selettore (10)
+coincide già col tetto totale del piano.
 
 Prezzi, durata e periodo di prova sono configurazione RevenueCat: non toccano
 una riga di codice. Gli identificativi dei prodotti sì, e sono in
