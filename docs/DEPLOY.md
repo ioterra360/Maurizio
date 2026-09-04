@@ -674,7 +674,7 @@ Android build into testers' hands first.
 - [ ] Sentry receives a deliberate test error with a symbolicated stack
 - [ ] (Premium, later) a sandbox purchase on both stores unlocks a second
       folder end-to-end
-- [ ] (Notifications, later) morning / evening local reminders fire on a
-      real device
+- [ ] Notifications: first-review alert (T0+20h) and the daily reminder fire
+      on a real device; check the status-bar icon on a light AND a dark shade
 
 After all checked, submit the `production` build to the stores.

@@ -220,7 +220,9 @@ costruiscono entrambe le piattaforme dallo stesso commit.
    scheda mostra le quattro lingue.
 3. `NSAppTransportSecurity`: `NSAllowsArbitraryLoads` false, eccezione solo `localhost`.
 4. Sezioni "Orari" e "Notifiche" delle Impostazioni nascoste dietro
-   `NOTIFICATIONS_ENABLED = false` finché non fanno nulla (Linee guida 2.1).
+   `NOTIFICATIONS_ENABLED = false` finché non fanno nulla (Linee guida 2.1);
+   dalla build 3 il flag è `true` e la riga apre `/notifications`: le sezioni
+   inline non esistono più.
 5. Nome visualizzato facoltativo alla registrazione (5.1.1, minimizzazione).
 6. Vecchia schermata checkout web (`subscribe.tsx`) rimossa dal binario con le sue
    chiavi di catalogo; dalla build 3 il paywall in-app e' `app/paywall.tsx` (RevenueCat).
