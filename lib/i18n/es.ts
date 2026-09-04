@@ -747,6 +747,7 @@ export const es: Record<keyof typeof it, string> = {
   "paywall.plusMemories": "Recuerdos ilimitados",
   "paywall.plusFolders": "5 carpetas",
   "paywall.plusSections": "3 secciones por carpeta",
+  "paywall.plusPhotos": "Fotos en los recuerdos",
   "paywall.proMemories": "Recuerdos ilimitados",
   "paywall.proFolders": "Carpetas ilimitadas",
   "paywall.proSections": "Secciones ilimitadas",
@@ -1171,10 +1172,10 @@ export const es: Record<keyof typeof it, string> = {
   "add.photoPermissionDenied": "Sin permiso para la cámara no puedo hacer la foto. Puedes concederlo en los ajustes del teléfono.",
   "add.photoPickFailed": "No he podido obtener la foto. Inténtalo de nuevo.",
   "add.photoUploadFailed": "Guardado en {name}, pero la foto no se ha subido. Tu recuerdo está a salvo.",
-  "add.photoProTitle": "Las fotos son de Pro",
-  "add.photoProBody": "Una foto en el reverso ayuda a la memoria visual: la ves solo después de intentar recordar. Con Memika Pro puedes adjuntar una a cada recuerdo.",
-  "add.photoProConfirm": "Descubrir Pro",
-  "add.photoProCancel": "Ahora no",
+  "add.photoPlusTitle": "Las fotos llegan con Plus",
+  "add.photoPlusBody": "Una foto en el reverso ayuda a la memoria visual: la ves solo después de intentar recordar. Con Memika Plus puedes adjuntar una a cada recuerdo.",
+  "add.photoPlusConfirm": "Descubrir Plus",
+  "add.photoPlusCancel": "Ahora no",
   "memory.photoA11y": "Foto del recuerdo",
 
 };

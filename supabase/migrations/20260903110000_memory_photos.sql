@@ -1,4 +1,4 @@
--- Foto sui ricordi (Premium) — spec 2026-09-02 §B5 + design approvato ad
+-- Foto sui ricordi (Plus e Pro) — spec 2026-09-02 §B5 + design approvato ad
 -- agosto (memoria photo_upload_feature): bucket PRIVATO, una foto per
 -- ricordo, path <user_id>/<memory_id>.jpg, foto solo sul retro.
 --

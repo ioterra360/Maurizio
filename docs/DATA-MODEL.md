@@ -98,7 +98,7 @@ when it's `<= now()`, the memory is due.
 | `reading` | text | Pronunciation / romaji, optional |
 | `definition` | text | Body — what to remember |
 | `notes` | text | Free-text user notes ("appunti"), optional; edited in the memory detail sheet (migration 20260827160000). |
-| `photo_path` | text | Chiave dell'oggetto nel bucket privato `memory-photos` (`<user_id>/<memory_id>.jpg`, migration 20260903110000). null = nessuna foto. Mai un URL: si legge con URL firmati (`lib/photos.ts`). Pro **solo lato client** (`canUsePhotos`): nessun trigger controlla questa colonna: i trigger di `20260903100000_plans.sql` guardano ricordi, cartelle e sezioni, non `photo_path`. Un gate server è una decisione aperta. |
+| `photo_path` | text | Chiave dell'oggetto nel bucket privato `memory-photos` (`<user_id>/<memory_id>.jpg`, migration 20260903110000). null = nessuna foto. Mai un URL: si legge con URL firmati (`lib/photos.ts`). Plus and Pro, **client-side only** (`canUsePhotos`, since 2026-09-04): no trigger looks at this column: i trigger di `20260903100000_plans.sql` guardano ricordi, cartelle e sezioni, non `photo_path`. Un gate server è una decisione aperta. |
 | `example` | text | Example sentence, optional |
 | `item_type` | text | Folder-specific subtype (word/kanji/concept/drug/…) |
 | `state` | enum `memory_state` | `active` / `fading` / `archived` |
@@ -364,6 +364,6 @@ These are conscious omissions, not oversights:
 - **Content templates / "marketplace" folders** — admin shipping pre-built
   decks. Deferred until after launch.
 - **Sharing / social** — out of scope per `docs/PRODUCT.md`.
-- **Audio on memories** — photos landed with 20260903110000 (one per memory, Pro); audio is still deferred.
+- **Audio on memories** — photos landed with 20260903110000 (one per memory, Plus and Pro); audio is still deferred.
 - **Custom item types** — `item_type` is a text column without a foreign-key
   enforced taxonomy. Loose on purpose for Phase 2.

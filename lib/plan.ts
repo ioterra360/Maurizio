@@ -41,13 +41,23 @@ export type PlanLimits = {
   folders: number | null;
   /** Sezioni (sottocartelle) per cartella. null = illimitate. */
   sections: number | null;
-  /** Foto sui ricordi — consumato dal piano B5. */
+  /**
+   * Foto sui ricordi (sezione Meaning). Il listino di Maurizio le da' sia a
+   * Plus sia a Pro: solo il Free ne resta senza (2026-09-04).
+   *
+   * Il listino prevede per il Free un tetto di DUE FOTO AL GIORNO invece del
+   * niente, e qui non c'e': implementarlo vuol dire contare le foto allegate
+   * oggi, cosa che `photo_path` da solo non sa dire (`updated_at` cambia per
+   * qualunque modifica). La colonna `memories.photo_added_at` esiste apposta
+   * ed e' gia' scritta; il tetto e' lavoro separato, e finche' non c'e' il
+   * Free resta a false — mai un tetto finto che si aggira ricaricando.
+   */
   photos: boolean;
 };
 
 export const PLAN_LIMITS: Record<Plan, PlanLimits> = {
   free: { memories: 10, folders: 1, sections: 0, photos: false },
-  plus: { memories: null, folders: 5, sections: 3, photos: false },
+  plus: { memories: null, folders: 5, sections: 3, photos: true },
   pro: { memories: null, folders: null, sections: null, photos: true },
 };
 
@@ -105,7 +115,16 @@ export function memoriesLeft(count: number, plan: Plan): number | null {
   return Math.max(0, cap - count);
 }
 
-/** Le foto sui ricordi sono Pro (spec :640). Interfaccia del piano B5. */
+/**
+ * Le foto sui ricordi sono di Plus E Pro (listino Maurizio 2026-09-04; prima
+ * erano della sola fascia alta). Il Free ne resta senza in questo ciclo: il
+ * suo tetto di due al giorno e' lavoro separato.
+ *
+ * Nessun trigger controlla `memories.photo_path`: questo e' l'unico gate, ed
+ * e' lato client. Un utente Free che parlasse direttamente con PostgREST
+ * potrebbe allegare una foto — e' una decisione aperta, scritta in
+ * docs/DATA-MODEL.md § memories.
+ */
 export function canUsePhotos(plan: Plan): boolean {
   return PLAN_LIMITS[plan].photos;
 }

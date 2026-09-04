@@ -29,8 +29,9 @@ describe("PLAN_LIMITS — la tabella della spec, alla lettera", () => {
     expect(PLAN_LIMITS.free).toEqual({ memories: 10, folders: 1, sections: 0, photos: false });
   });
 
-  it("plus: ricordi illimitati, 5 cartelle, 3 sezioni, niente foto", () => {
-    expect(PLAN_LIMITS.plus).toEqual({ memories: null, folders: 5, sections: 3, photos: false });
+  it("plus: ricordi illimitati, 5 cartelle, 3 sezioni, FOTO incluse", () => {
+    // 2026-09-04: il listino di Maurizio da' le foto sia a Plus sia a Pro.
+    expect(PLAN_LIMITS.plus).toEqual({ memories: null, folders: 5, sections: 3, photos: true });
   });
 
   it("pro: tutto illimitato, foto incluse", () => {
@@ -134,9 +135,12 @@ describe("memoriesLeft", () => {
 });
 
 describe("canUsePhotos — l'interfaccia che consuma il piano B5", () => {
-  it("solo pro", () => {
+  it("Plus e Pro si', Free no", () => {
+    // Il listino da' "foto illimitate nella sezione Meaning" a Plus e a Pro;
+    // il Free ha un tetto di due al giorno che NON e' implementato, quindi
+    // qui e' false. Un false onesto batte un tetto finto.
     expect(canUsePhotos("free")).toBe(false);
-    expect(canUsePhotos("plus")).toBe(false);
+    expect(canUsePhotos("plus")).toBe(true);
     expect(canUsePhotos("pro")).toBe(true);
   });
 });

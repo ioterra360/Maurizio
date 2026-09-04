@@ -92,8 +92,8 @@ describe("ingressi al paywall", () => {
     // piano non ha le foto; con le foto si apre il picker e il paywall non
     // entra mai in scena.
     expect(flat).toContain("if (!canUsePhotos(plan))");
-    expect(flat).toContain("setProAsk(true); return; } setPhotoSheetOpen(true);");
-    expect(src).toContain("visible={proAsk}");
+    expect(flat).toContain("setPhotoAsk(true); return; } setPhotoSheetOpen(true);");
+    expect(src).toContain("visible={photoAsk}");
   });
 
   it("PlanLimitDialog: si apre solo con un limite, e il limite viene da un errcode", () => {

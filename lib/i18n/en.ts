@@ -747,6 +747,7 @@ export const en: Record<keyof typeof it, string> = {
   "paywall.plusMemories": "Unlimited memories",
   "paywall.plusFolders": "5 folders",
   "paywall.plusSections": "3 sections per folder",
+  "paywall.plusPhotos": "Photos on memories",
   "paywall.proMemories": "Unlimited memories",
   "paywall.proFolders": "Unlimited folders",
   "paywall.proSections": "Unlimited sections",
@@ -1171,10 +1172,10 @@ export const en: Record<keyof typeof it, string> = {
   "add.photoPermissionDenied": "Without camera permission I can't take a photo. You can grant it in your phone settings.",
   "add.photoPickFailed": "I couldn't get the photo. Try again.",
   "add.photoUploadFailed": "Saved to {name}, but the photo was not uploaded. Your memory is safe.",
-  "add.photoProTitle": "Photos are a Pro feature",
-  "add.photoProBody": "A photo on the back helps visual memory: you see it only after trying to recall. With Memika Pro you can attach one to every memory.",
-  "add.photoProConfirm": "Discover Pro",
-  "add.photoProCancel": "Not now",
+  "add.photoPlusTitle": "Photos come with Plus",
+  "add.photoPlusBody": "A photo on the back helps visual memory: you see it only after trying to recall. With Memika Plus you can attach one to every memory.",
+  "add.photoPlusConfirm": "Discover Plus",
+  "add.photoPlusCancel": "Not now",
   "memory.photoA11y": "Memory photo",
 
 };

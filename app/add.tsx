@@ -174,7 +174,8 @@ export default function AddScreen() {
   // iOS: la sorgente scelta resta in attesa finché il foglio non ha FINITO di
   // chiudersi (vedi requestPick). Su Android è sempre null.
   const [pendingSource, setPendingSource] = useState<PhotoSource | null>(null);
-  const [proAsk, setProAsk] = useState(false);
+  /** Il dialogo "le foto arrivano con Plus": lo vede solo chi e' Free. */
+  const [photoAsk, setPhotoAsk] = useState(false);
   // Stessa attesa del picker, per la stessa ragione: su iOS /paywall e' una
   // rotta `presentation: "modal"` e non puo' essere presentata finche' il
   // Modal della mascotte e' ancora vivo (lib/modal-nav.ts).
@@ -394,9 +395,12 @@ export default function AddScreen() {
 
   const openPhotoSheet = () => {
     if (!canUsePhotos(plan)) {
-      // Free/Plus: la mascotte spiega e propone l'upgrade (spec: "disabilita,
-      // spiega, propone l'upgrade"), il bottone resta visibile.
-      setProAsk(true);
+      // Free: la mascotte spiega e propone l'upgrade (spec: "disabilita,
+      // spiega, propone l'upgrade"), il bottone resta visibile. Dal
+      // 2026-09-04 le foto sono di Plus E Pro, quindi qui ci arriva solo il
+      // Free — e il suo tetto di due al giorno non e' implementato: o si
+      // passa a Plus, o non si allega niente.
+      setPhotoAsk(true);
       return;
     }
     setPhotoSheetOpen(true);
@@ -934,22 +938,22 @@ export default function AddScreen() {
         }}
         onClose={() => setPhotoSheetOpen(false)}
       />
-      {/* Free/Plus: la mascotte spiega e manda al paywall (B4). Il Modal si
+      {/* Free: la mascotte spiega e manda al paywall (B4). Il Modal si
           chiude PRIMA del push e su iOS il push ASPETTA che sia chiuso:
           /add è già un modale e /paywall pure, quindi con il dialogo ancora
           vivo UIKit rifiuterebbe la presentazione (lib/modal-nav.ts). */}
       <MascotDialog
-        visible={proAsk}
-        title={t("add.photoProTitle")}
-        body={t("add.photoProBody")}
-        confirmLabel={t("add.photoProConfirm")}
-        cancelLabel={t("add.photoProCancel")}
+        visible={photoAsk}
+        title={t("add.photoPlusTitle")}
+        body={t("add.photoPlusBody")}
+        confirmLabel={t("add.photoPlusConfirm")}
+        cancelLabel={t("add.photoPlusCancel")}
         onConfirm={() => {
-          setProAsk(false);
+          setPhotoAsk(false);
           if (deferUntilModalDismissed()) setPendingPaywall(true);
           else router.push("/paywall" as never);
         }}
-        onCancel={() => setProAsk(false)}
+        onCancel={() => setPhotoAsk(false)}
         onDismissed={() => {
           // onDismiss scatta anche su "Non ora": naviga solo se richiesto.
           if (!pendingPaywall) return;

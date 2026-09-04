@@ -59,7 +59,17 @@ applicata) quando le chiavi arrivano.
 | Ricordi | **10 totali** sull'account | illimitati | illimitati |
 | Cartelle | 1 | 5 | illimitate |
 | Sezioni per cartella | 0 | 3 | illimitate |
-| Foto sui ricordi | — | — | ✓ |
+| Foto sui ricordi | — | ✓ | ✓ |
+
+Le **foto** sono di Plus e Pro dal 2026-09-04 (prima erano della sola fascia
+alta): il listino di Maurizio le dà a entrambe come "foto illimitate nella
+sezione Meaning". Al Free il listino assegna un tetto di **due foto al giorno**
+che **non è implementato**, e finché non lo è il Free resta senza foto —
+`PLAN_LIMITS.free.photos` è `false`. Un tetto finto, che si aggira ricaricando,
+sarebbe peggio dell'assenza. Il pezzo che mancava per costruirlo è ora in
+piedi: `memories.photo_added_at` (migration 20260903110000) registra QUANDO una
+foto è stata allegata, cosa che `photo_path` da solo non sa dire perché
+`updated_at` cambia a ogni modifica del ricordo.
 
 I 10 ricordi sono un tetto **totale**, non giornaliero. Il cursore in
 Impostazioni (`profiles.daily_input_cap`) è un'altra cosa: autoregolazione del

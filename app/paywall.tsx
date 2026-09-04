@@ -216,6 +216,7 @@ export default function PaywallScreen() {
               t("paywall.plusMemories"),
               t("paywall.plusFolders"),
               t("paywall.plusSections"),
+              t("paywall.plusPhotos"),
             ]}
             current={plan === "plus"}
             cta={

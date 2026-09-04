@@ -25,7 +25,9 @@ RINOMINATE il 2026-09-04 sul listino di Maurizio: la fascia intermedia si
 chiamava `pro` e l'alta `premium`, quindi in un documento precedente a quella
 data "pro" significa l'INTERMEDIA). Free = 10 ricordi TOTALI, 1 cartella,
 0 sezioni; Plus = ricordi illimitati, 5 cartelle, 3 sezioni;
-Pro = tutto illimitato più le foto sui ricordi. I limiti sono applicati da
+Pro = tutto illimitato. Le FOTO sui ricordi sono di Plus **e** Pro
+(2026-09-04, listino Maurizio); il tetto di due al giorno che il listino dà al
+Free non è implementato, quindi il Free resta senza foto. I limiti sono applicati da
 quattro trigger Postgres (`20260903100000_plans.sql`), non dal client.
 Pagamenti: abbonamenti in-app via RevenueCat, paywall `app/paywall.tsx`. Vedi
 `docs/PAYMENTS.md`.
