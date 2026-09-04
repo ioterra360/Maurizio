@@ -422,42 +422,65 @@ export default function SettingsScreen() {
 
         {/* Abbonamento — ricreata dopo la cancellazione del vecchio
             checkout esterno (3cd141e). Il paywall e' in-app: nessun link
-            fuori dall'app (Apple 3.1.1 / Play Payments). */}
-        <View style={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 8 }}>
-          <SectionLabel>{tr("settings.subscriptionSection")}</SectionLabel>
-        </View>
-        <View style={{ paddingHorizontal: 16, gap: 10 }}>
-          <SettingsRow
-            label={tr("settings.planLabel")}
-            hint={tr("settings.planHint")}
-            value={tr(PLAN_NAME_KEY[plan])}
-          />
-          {/* Tre casi, non due: `settings.upgrade` e' la stringa fissa
-              "Passa a Plus", e un abbonato Plus se la leggerebbe due righe
-              sotto "Piano: Plus". */}
-          <SettingsRow
-            label={
-              plan === "free"
-                ? tr("settings.upgrade")
-                : plan === "plus"
-                  ? tr("settings.upgradePro")
-                  : tr("settings.seePlans")
-            }
-            value={tr("settings.open")}
-            onPress={() => {
-              tap();
-              router.push("/paywall" as never);
-            }}
-          />
-          {purchasesAvailable ? (
-            <SettingsRow
-              label={tr("settings.restorePurchases")}
-              hint={tr("settings.restorePurchasesHint")}
-              value={tr("settings.open")}
-              onPress={restorePurchases}
-            />
-          ) : null}
-        </View>
+            fuori dall'app (Apple 3.1.1 / Play Payments).
+
+            L'INTERA sezione sta dietro `purchasesAvailable`, non la sola riga
+            "Ripristina acquisti" (attivazione 2026-09-04). Senza chiavi
+            RevenueCat l'SDK non viene mai chiamato e /paywall mostra le tre
+            schede con TUTTI i bottoni spenti: un ingresso dalle Impostazioni
+            porterebbe a un vicolo cieco — su iOS e' la funzionalita'
+            segnaposto che la linea guida 2.1 fa rifiutare, su Android e'
+            comunque un tester che non puo' fare niente di quello che l'app
+            gli ha appena proposto. Sparisce anche l'intestazione: un titolo
+            sopra un blocco vuoto e' peggio del blocco vuoto.
+
+            Sparisce con lei anche la riga "Piano", ed e' voluto: dirti su
+            quale piano sei mentre non esiste alcun modo di cambiarlo apre una
+            domanda a cui l'app non sa rispondere.
+
+            La rotta /paywall resta e non e' irraggiungibile: ci si arriva solo
+            DOPO aver incontrato un limite (PlanLimitDialog e il gate foto di
+            Add), che e' l'unico momento in cui vederla ha un senso. Con il
+            default 'pro' di 20260903100000_plans.sql quei limiti oggi non li
+            incontra nessuno. Tutto si riaccende da solo quando le chiavi
+            entrano in eas.json: qui non c'e' niente da disfare. */}
+        {purchasesAvailable ? (
+          <>
+            <View style={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 8 }}>
+              <SectionLabel>{tr("settings.subscriptionSection")}</SectionLabel>
+            </View>
+            <View style={{ paddingHorizontal: 16, gap: 10 }}>
+              <SettingsRow
+                label={tr("settings.planLabel")}
+                hint={tr("settings.planHint")}
+                value={tr(PLAN_NAME_KEY[plan])}
+              />
+              {/* Tre casi, non due: `settings.upgrade` e' la stringa fissa
+                  "Passa a Plus", e un abbonato Plus se la leggerebbe due righe
+                  sotto "Piano: Plus". */}
+              <SettingsRow
+                label={
+                  plan === "free"
+                    ? tr("settings.upgrade")
+                    : plan === "plus"
+                      ? tr("settings.upgradePro")
+                      : tr("settings.seePlans")
+                }
+                value={tr("settings.open")}
+                onPress={() => {
+                  tap();
+                  router.push("/paywall" as never);
+                }}
+              />
+              <SettingsRow
+                label={tr("settings.restorePurchases")}
+                hint={tr("settings.restorePurchasesHint")}
+                value={tr("settings.open")}
+                onPress={restorePurchases}
+              />
+            </View>
+          </>
+        ) : null}
 
         {/* About */}
         <View style={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 8 }}>

@@ -14,6 +14,27 @@ i prodotti negli store e le chiavi. Fino ad allora
 `eas.json`, `purchasesAvailable` è falso, nessuna riga tocca l'SDK e il paywall
 mostra le tre schede con i bottoni spenti.
 
+Proprio per questo la **sezione Abbonamento delle Impostazioni non esiste**
+finché `purchasesAvailable` è falso (attivazione 2026-09-04): l'intera sezione
+è condizionata come lo era già la sola riga "Ripristina acquisti" —
+intestazione, riga "Piano" e ingresso al paywall compresi. Un paywall
+raggiungibile con tutti i bottoni spenti è la funzionalità segnaposto che
+Apple 2.1 fa rifiutare, ed è un vicolo cieco anche per un tester Android.
+La rotta `/paywall` resta e non è stata toccata: ci si arriva **solo dietro un
+limite**, e gli ingressi sono tre —
+
+| Da dove | Dietro cosa |
+|---|---|
+| `app/(app)/settings.tsx` | `purchasesAvailable` (l'unico ingresso "libero", e oggi non è montato) |
+| `components/PlanLimitDialog.tsx` | un rifiuto del database, mappato per errcode (`planLimitFromCode`), o lo specchio client dello stesso tetto (`canAddFolder` in Conoscenza) |
+| `app/add.tsx` | `!canUsePhotos(plan)` — il gate delle foto |
+
+La lista è chiusa e la tiene `lib/paywall-entrypoints.test.ts`: un quarto
+ingresso fa fallire i test invece di finire in una build da sottomettere.
+Con il default `pro` della migrazione dei piani, oggi quei limiti non li
+incontra nessuno. Tutto si riaccende da solo quando le chiavi entrano in
+`eas.json`: non c'è niente da disfare a mano.
+
 Quando la migrazione dei limiti va in produzione lo decide **una sola pagina**,
 la "Sequenza" di `docs/DEPLOY.md` § "Build 3" (è quella che esegue il Task 6 del
 piano `2026-09-03-build3-config-nativa.md`): dopo che le build sono `FINISHED`,

@@ -40,6 +40,17 @@ iscrivono DOPO il push, che il seed di due email non può raggiungere. I quattro
 trigger restano accesi: cambia solo da quale fascia si parte. Da invertire con
 una migrazione NUOVA quando le chiavi arrivano.
 
+**La sezione Abbonamento delle Impostazioni sta INTERA dietro
+`purchasesAvailable`** (stessa attivazione), non la sola riga "Ripristina
+acquisti": intestazione, riga "Piano" e ingresso al paywall compresi. Senza
+chiavi il paywall mostra le tre schede con tutti i bottoni spenti, e un
+ingresso sempre montato e' un vicolo cieco — su iOS la funzionalita' segnaposto
+che la linea guida 2.1 fa rifiutare. La rotta `/paywall` resta e non cambia: ci
+si arriva SOLO dietro un limite (`PlanLimitDialog`, e il gate foto di Add su
+`canUsePhotos`). Gli ingressi sono tre e sono una lista chiusa, tenuta da
+`lib/paywall-entrypoints.test.ts`: aggiungerne un quarto rompe quel test
+apposta.
+
 ## 2. Read these before touching code
 
 Order matters — each step assumes the previous.
