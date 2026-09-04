@@ -1,5 +1,11 @@
 # Feedback Maurizio — design (2026-09-02)
 
+> **Nomi dei piani — nota 2026-09-04.** Questo documento e' STORICO e usa la
+> scala vecchia: `pro` era la fascia intermedia e `premium` quella alta. Dal
+> 2026-09-04 le fasce si chiamano **Free / Plus / Pro** (`plus` = intermedia,
+> `pro` = alta): ogni "pro" e ogni "premium" qui sotto vanno letti con la
+> vecchia scala. La scala viva sta in `lib/plan.ts` e `docs/PAYMENTS.md`.
+
 Fonte: lista Angelo del 2026-09-01/02 (20 punti) + `materiale_maurizio/feedback_2026-09-01/home-mockup.jpg`
 + `materiale_maurizio/feedback_2026-08-28/` (10 screenshot timing) + `Memora Timing System UPDATED.pdf`.
 

@@ -13,6 +13,7 @@
 import type { FolderKind, MemoryState, ReviewResponse } from "./constants";
 import type { PhaseState, ReviewPhase } from "@/features/srs/phases";
 import { LEGACY_KIND_TO_TEMPLATE, type FolderCategory } from "./folder-taxonomy";
+import { PLANS, type Plan } from "./plan";
 
 // ============================================================================
 // Profile
@@ -28,6 +29,10 @@ export type ProfileRow = {
   weekly_digest: boolean;
   morning_review_at: string;
   evening_review_at: string;
+  /** Piano acquistato (migration 20260903100000). Assente sulle righe lette da client vecchi. */
+  plan?: string | null;
+  plan_until?: string | null;
+  rc_app_user_id?: string | null;
   /** Eliminazione account richiesta (migration 20260830121000); null = attivo. */
   deletion_requested_at?: string | null;
   created_at: string;
@@ -44,6 +49,10 @@ export type Profile = {
   weeklyDigest: boolean;
   morningReviewAt: string;
   eveningReviewAt: string;
+  /** Piano SCRITTO a DB. Per sapere cosa vale adesso passa da effectivePlan(). */
+  plan: Plan;
+  planUntil: string | null;
+  rcAppUserId: string | null;
   /** Eliminazione account richiesta; null = attivo. */
   deletionRequestedAt: string | null;
   createdAt: string;
@@ -61,6 +70,9 @@ export function mapProfile(row: ProfileRow): Profile {
     weeklyDigest: row.weekly_digest,
     morningReviewAt: row.morning_review_at,
     eveningReviewAt: row.evening_review_at,
+    plan: (PLANS as readonly string[]).includes(row.plan ?? "") ? (row.plan as Plan) : "free",
+    planUntil: row.plan_until ?? null,
+    rcAppUserId: row.rc_app_user_id ?? null,
     deletionRequestedAt: row.deletion_requested_at ?? null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -208,6 +220,8 @@ export type MemoryRow = {
   example: string | null;
   /** Free-text user notes ("appunti"); column added 2026-08-27. */
   notes?: string | null;
+  /** Chiave nel bucket memory-photos (migration 20260903110000). Opzionale: le righe lette da un client vecchio non ce l'hanno. */
+  photo_path?: string | null;
   item_type: string | null;
   state: MemoryState;
   srs_interval_days: number;
@@ -238,6 +252,8 @@ export type Memory = {
   example: string | null;
   /** Free-text user notes ("appunti"), edited in the memory detail sheet. */
   notes?: string | null;
+  /** Chiave nel bucket privato memory-photos; null = nessuna foto. Mai un URL. */
+  photoPath: string | null;
   itemType: string | null;
   state: MemoryState;
   srs: {
@@ -270,6 +286,7 @@ export function mapMemory(row: MemoryRow): Memory {
     definition: row.definition,
     example: row.example,
     notes: row.notes ?? null,
+    photoPath: row.photo_path ?? null,
     itemType: row.item_type,
     state: row.state,
     srs: {

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Switch, Text, View } from "react-native";
+import { ChevronRight } from "lucide-react-native";
 import { Tappable } from "@/components/Tappable";
 import { FONT, radii, useColors } from "@/theme/tokens";
 
@@ -8,6 +9,8 @@ type RowProps = {
   hint?: string;
   value?: string;
   onPress?: () => void;
+  /** Freccia a destra: la riga apre un'altra schermata (push). */
+  chevron?: boolean;
 };
 
 /**
@@ -15,7 +18,7 @@ type RowProps = {
  * value on the right. Tappable when an onPress is given; otherwise
  * renders a non-interactive View (no pressed feedback).
  */
-export function SettingsRow({ label, hint, value, onPress }: RowProps) {
+export function SettingsRow({ label, hint, value, onPress, chevron }: RowProps) {
   const colors = useColors();
 
   if (onPress) {
@@ -37,7 +40,7 @@ export function SettingsRow({ label, hint, value, onPress }: RowProps) {
           borderColor: colors.hairline,
         }}
       >
-        <RowBody label={label} hint={hint} value={value} />
+        <RowBody label={label} hint={hint} value={value} chevron={chevron} />
       </Tappable>
     );
   }
@@ -52,12 +55,12 @@ export function SettingsRow({ label, hint, value, onPress }: RowProps) {
         borderColor: colors.hairline,
       }}
     >
-      <RowBody label={label} hint={hint} value={value} />
+      <RowBody label={label} hint={hint} value={value} chevron={chevron} />
     </View>
   );
 }
 
-function RowBody({ label, hint, value }: Omit<RowProps, "onPress">) {
+function RowBody({ label, hint, value, chevron }: Omit<RowProps, "onPress">) {
   const colors = useColors();
   return (
     <>
@@ -89,6 +92,7 @@ function RowBody({ label, hint, value }: Omit<RowProps, "onPress">) {
           {value}
         </Text>
       ) : null}
+      {chevron ? <ChevronRight size={18} color={colors.midGrey} strokeWidth={2} /> : null}
     </>
   );
 }

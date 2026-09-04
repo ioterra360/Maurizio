@@ -32,6 +32,8 @@ export type ReviewCard = {
   example?: string;
   /** Authored mnemonic cue for the Reinforcement hint stage — a memory hook, never an answer fragment. */
   hint?: string;
+  /** Chiave nel bucket memory-photos. Si mostra SOLO nel pannello rivelato. Le carte demo la omettono. */
+  photoPath?: string;
   folder: string;
   /** Folder kind slug — lets a folder-scoped session filter the deck. */
   folderKind?: FolderKind;

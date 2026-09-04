@@ -15,6 +15,16 @@ type Props = {
   cancelLabel?: string;
   onConfirm: () => void;
   onCancel: () => void;
+  /**
+   * iOS: il Modal ha FINITO di chiudersi (`Modal.onDismiss`, iOS-only,
+   * react-native/Libraries/Modal/Modal.d.ts). Serve a chi, dopo il tocco su
+   * "conferma", deve presentare qualcos'altro di NATIVO — una rotta
+   * `presentation: "modal"` come `/paywall` — perche' finche' questo Modal
+   * e' vivo il suo view controller e' gia' occupato e UIKit rifiuta la
+   * seconda presentazione (vedi `lib/modal-nav.ts`). Stessa prop, stesso
+   * motivo, di `components/BottomSheetShell.tsx`.
+   */
+  onDismissed?: () => void;
 };
 
 /**
@@ -35,12 +45,19 @@ export function MascotDialog({
   cancelLabel,
   onConfirm,
   onCancel,
+  onDismissed,
 }: Props) {
   const colors = useColors();
   const { t } = useT();
   const insets = useSafeAreaInsets();
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onCancel}>
+    <Modal
+      visible={visible}
+      transparent
+      animationType="slide"
+      onRequestClose={onCancel}
+      onDismiss={onDismissed}
+    >
       <Pressable
         accessibilityLabel={t("common.close")}
         onPress={onCancel}

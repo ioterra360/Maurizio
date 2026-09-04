@@ -46,6 +46,7 @@ import { getAllFolderSeeds, getFolderSeed, type FolderSeed } from "./folder-data
 import { nextFolderPriority, type NewFolderInput } from "./folder-templates";
 import { LEGACY_KIND_TO_TEMPLATE, legacyKindFor } from "./folder-taxonomy";
 import { isoFromRelativeLabel } from "./format";
+import type { Plan } from "./plan";
 import { DEMO_DUE_COUNTS, PHASES_BY_LAYER, type LayerCounts } from "./queue";
 import { groupByLocalDay } from "./upcoming";
 import type { LayerKey } from "@/theme/tokens";
@@ -148,6 +149,23 @@ export async function cancelAccountDeletion(): Promise<void> {
   if (isDemoMode) return;
   const { error } = await supabase.rpc("cancel_account_deletion");
   if (error) throw error;
+}
+
+/**
+ * Chiede al server di rileggere l'abbonamento da RevenueCat e di riscrivere
+ * profiles.plan. Il client non puo' scriverlo (le colonne non sono nella
+ * grant) e non deve: l'entitlement dell'SDK e' una lettura locale, la
+ * edge function lo verifica con l'API REST prima di fidarsi.
+ * Demo: pro, senza rete.
+ */
+export async function syncPlan(): Promise<{ plan: Plan; planUntil: string | null }> {
+  if (isDemoMode) return { plan: "pro", planUntil: null };
+  const { data, error } = await supabase.functions.invoke<{
+    plan: Plan;
+    planUntil: string | null;
+  }>("revenuecat-sync", { method: "POST", body: {} });
+  if (error) throw error;
+  return { plan: data?.plan ?? "free", planUntil: data?.planUntil ?? null };
 }
 
 /**
@@ -420,6 +438,92 @@ export async function updateMemoryNotes(id: string, notes: string | null): Promi
 }
 
 /**
+ * Scrive (o azzera con null) la chiave della foto sul ricordo. La chiamano
+ * uploadMemoryPhoto e removeMemoryPhoto in lib/photos.ts, DOPO che il bucket
+ * ha risposto: la riga dice la verità su ciò che esiste. Demo: no-op.
+ *
+ * Scrive anche `photo_added_at`, ma **solo quando si allega**: da
+ * `photo_path` non si può derivare "quante foto ha allegato oggi", perché
+ * `updated_at` si muove per qualunque modifica del ricordo. Nessuno legge
+ * ancora quella colonna (migration 20260903110000); è il dato su cui si
+ * costruirà il tetto "due foto al giorno" del piano free, che in questo ciclo
+ * non esiste.
+ *
+ * Alla RIMOZIONE la si lascia com'è, e non è una svista: il tetto conterà
+ * quanti ricordi hanno ricevuto una foto oggi, non quante foto ci sono adesso.
+ * Azzerandola, "allega → rimuovi → allega altrove" restituirebbe quota
+ * all'infinito — lo stesso buco che il contatore giornaliero dei ricordi
+ * (:468-471) e il tetto ricordi, che conta anche il cestino, chiudono già
+ * nello stesso modo. Sostituire la foto dello STESSO ricordo riscrive la sua
+ * riga e non consuma un secondo slot.
+ */
+export async function updateMemoryPhoto(id: string, photoPath: string | null): Promise<void> {
+  if (isDemoMode) return;
+  const now = new Date().toISOString();
+  const patch: { photo_path: string | null; updated_at: string; photo_added_at?: string } = {
+    photo_path: photoPath,
+    updated_at: now,
+  };
+  if (photoPath !== null) patch.photo_added_at = now;
+  const { error } = await supabase.from("memories").update(patch).eq("id", id);
+  if (error) throw error;
+}
+
+/**
+ * Tutte le chiavi foto dell'utente, CESTINO INCLUSO: un ricordo nel cestino
+ * si può ripristinare, quindi la sua foto non è orfana. Serve alla
+ * riconciliazione degli oggetti (lib/photos.ts reconcilePhotos). Demo: [].
+ *
+ * PAGINATA di proposito, con un CURSORE (keyset) e non con un offset.
+ * Questa lista è la proprietà di sicurezza dell'unica operazione
+ * irreversibile del piano foto: una lista referenziata parziale fa
+ * classificare come orfane — e quindi CANCELLARE — foto ancora vive, e con
+ * la modifica della foto dopo il salvataggio fuori perimetro non c'è modo di
+ * riattaccarle. Due modi di bucarla, e il cursore li chiude entrambi:
+ *
+ *  1. TRONCAMENTO. PostgREST tronca ogni select al `max_rows` del progetto
+ *     SENZA errore. Il ciclo non assume di conoscere quel tetto: il cursore
+ *     è l'ultimo id RICEVUTO, quindi una pagina corta riparte esattamente da
+ *     dove è arrivata e ci si ferma solo su una pagina VUOTA. Fermarsi su
+ *     `rows.length < PAGE` sarebbe corretto solo finché `max_rows >= PAGE`, e
+ *     quel valore è un'impostazione remota: il `max_rows = 1000` di
+ *     supabase/config.toml è il Supabase LOCALE e `db push` non lo pubblica.
+ *  2. INSIEME CHE SI RESTRINGE SOTTO LA SCANSIONE. Qui l'offset non bastava:
+ *     se fra una pagina e l'altra sparisce una riga (removeMemoryPhoto da un
+ *     altro dispositivo, o `purge_trash()` che elimina un ricordo con foto)
+ *     tutte le righe successive scalano di una posizione e `range(1000, 1999)`
+ *     SALTA una chiave ancora viva. Un cursore su `id` non ha posizioni da
+ *     far scalare: si riparte dal valore, non dall'indice.
+ *
+ * Costa un round trip in più in fondo alla lista, e in cambio è corretto con
+ * QUALSIASI tetto e sotto scrittura concorrente.
+ */
+export async function fetchPhotoPaths(userId: string): Promise<string[]> {
+  if (isDemoMode) return [];
+  const PAGE = 1000;
+  const out: string[] = [];
+  let cursor: string | null = null;
+  for (;;) {
+    // `id` entra nella select perché è il cursore, non perché serva a valle.
+    let q = supabase
+      .from("memories")
+      .select("id, photo_path")
+      .eq("user_id", userId)
+      .not("photo_path", "is", null)
+      .order("id", { ascending: true })
+      .limit(PAGE);
+    if (cursor) q = q.gt("id", cursor);
+    const { data, error } = await q;
+    if (error) throw error;
+    // Cast al confine: il client non è tipizzato sullo schema (lib/supabase.ts:103).
+    const rows = (data ?? []) as { id: string; photo_path: string | null }[];
+    if (rows.length === 0) return out; // fine: oltre il cursore non c'è più niente
+    for (const r of rows) if (r.photo_path) out.push(r.photo_path);
+    cursor = rows[rows.length - 1]!.id; // l'ultimo id RICEVUTO, non il 1000esimo chiesto
+  }
+}
+
+/**
  * Crea un ricordo e lo programma sulla scala di Maurizio: il primo ripasso
  * cade a T0 + 20 ore, dove T0 è QUESTO istante. Prima entrava subito in coda
  * e il toast "primo ripasso domani" era una bugia gentile; ora la copy e il
@@ -491,6 +595,27 @@ export async function countMemoriesInFolder(folderId: string): Promise<number> {
     .select("id", { count: "exact", head: true })
     .eq("folder_id", folderId)
     .is("deleted_at", null);
+  if (error) throw error;
+  return count ?? 0;
+}
+
+/**
+ * Quanti ricordi possiede l'utente, in tutto — CESTINO COMPRESO. E' lo
+ * specchio esatto del trigger memories_enforce_plan_limit: stesso predicato
+ * (solo user_id), nessun filtro su deleted_at e nessuno sulle cartelle in
+ * pausa. La pausa e' carico, non proprieta'; il cestino occupa lo slot
+ * finche' la purga a 24 ore non se lo porta via, altrimenti il ripristino
+ * (che e' una UPDATE) aggirerebbe il tetto.
+ * NON riusare countFolders / countMemoriesInFolder: quelli contano le sole
+ * righe vive, predicato diverso.
+ * Demo: zero, tanto la demo e' pro.
+ */
+export async function countMemories(userId: string): Promise<number> {
+  if (isDemoMode) return 0;
+  const { count, error } = await supabase
+    .from("memories")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", userId);
   if (error) throw error;
   return count ?? 0;
 }
@@ -649,6 +774,7 @@ export async function fetchFolderDetail(
       reviewWindowEnd: null,
       recoveryFrom: null,
       deletedAt: null,
+      photoPath: null,
       createdAt: now.toISOString(),
       updatedAt: now.toISOString(),
     }));
@@ -1096,7 +1222,9 @@ export async function restoreMemory(id: string): Promise<void> {
 
 // ---------------------------------------------------------------------------
 // Sottocartelle (sezioni dentro una cartella — migration 20260831010000) e
-// spostamento dei ricordi. Max SUBFOLDERS_MAX per cartella (anche a DB).
+// spostamento dei ricordi. Il tetto per cartella dipende dal piano
+// (PLAN_LIMITS in lib/plan.ts) ed e' applicato dal trigger
+// enforce_subfolder_rules.
 // ---------------------------------------------------------------------------
 
 export async function fetchSubfolders(folderId: string): Promise<Subfolder[]> {

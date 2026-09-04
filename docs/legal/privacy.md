@@ -3,7 +3,7 @@
 
 # Informativa sulla privacy — Memika
 
-**Ultimo aggiornamento:** 25 agosto 2026
+**Ultimo aggiornamento:** 4 settembre 2026
 
 La presente informativa descrive come vengono trattati i dati personali degli utenti dell'applicazione mobile **Memika** (di seguito "l'App"), ai sensi del Regolamento (UE) 2016/679 ("GDPR") e del D.Lgs. 196/2003 come modificato dal D.Lgs. 101/2018 ("Codice Privacy").
 
@@ -25,11 +25,12 @@ Memika è un'app di ripetizione spaziata (*spaced repetition*): l'utente scrive 
 |---|---|---|
 | Dati di account | indirizzo email, nome visualizzato, identificativo utente | forniti dall'utente alla registrazione |
 | Contenuti dell'utente | le memorie scritte dall'utente (termine, lettura, definizione, esempio), le cartelle e le relative impostazioni | creati dall'utente nell'App |
+| Contenuti dell'utente — foto | le foto che l'utente sceglie di allegare a una memoria (facoltative, funzione dei piani Plus e Pro), conservate in uno spazio di archiviazione **privato** nell'Unione Europea e leggibili solo tramite collegamenti temporanei firmati | scelte dall'utente dalla fotocamera o dalla galleria del dispositivo |
 | Dati di utilizzo dello studio | esiti dei ripassi, statistiche di apprendimento, pianificazione dei ripassi, preferenze (orari di ripasso, modalità calma, riepilogo settimanale) | generati dall'uso dell'App |
 | Dati tecnici e diagnostici | modello di dispositivo, sistema operativo, versione dell'App, rapporti di errore (crash) | raccolti automaticamente, **solo quando il servizio di crash reporting sarà attivo** (vedi §5) |
-| Stato dell'abbonamento | stato dell'abbonamento Premium, identificativo anonimo dell'acquirente, identificativi delle transazioni | forniti da Apple / Google tramite RevenueCat, **solo quando gli acquisti in-app saranno attivi** (vedi §5) |
+| Stato dell'abbonamento | stato dell'abbonamento (Plus o Pro), identificativo anonimo dell'acquirente, identificativi delle transazioni | forniti da Apple / Google tramite RevenueCat, **solo quando gli acquisti in-app saranno attivi** (vedi §5) |
 
-L'App **non** raccoglie dati di posizione, contatti, foto o altri dati del dispositivo non elencati sopra.
+L'App accede alla fotocamera e alla galleria **solo** quando l'utente sceglie di allegare una foto a una memoria, e carica esclusivamente l'immagine selezionata. L'App **non** raccoglie dati di posizione, contatti, rubrica, l'archivio fotografico nel suo complesso o altri dati del dispositivo non elencati sopra.
 
 **Non utilizziamo SDK pubblicitari né strumenti di tracciamento a fini di marketing e non vendiamo dati personali a terzi.**
 
@@ -38,7 +39,7 @@ L'App **non** raccoglie dati di posizione, contatti, foto o altri dati del dispo
 | Finalità | Base giuridica (art. 6 GDPR) |
 |---|---|
 | Creare e gestire l'account, autenticare l'utente, sincronizzare le memorie e le statistiche tra i dispositivi, fornire le funzioni di ripasso | esecuzione del contratto (art. 6.1.b) |
-| Gestire l'abbonamento Premium e verificarne la validità | esecuzione del contratto (art. 6.1.b) |
+| Gestire gli abbonamenti Plus e Pro e verificarne la validità | esecuzione del contratto (art. 6.1.b) |
 | Garantire la sicurezza del servizio, prevenire abusi, diagnosticare e correggere errori tecnici | legittimo interesse del Titolare (art. 6.1.f) al corretto funzionamento e alla sicurezza dell'App |
 | Rispondere alle richieste di assistenza inviate via email | esecuzione del contratto / legittimo interesse (art. 6.1.b e 6.1.f) |
 | Adempiere a obblighi di legge (es. fiscali, contabili) | obbligo legale (art. 6.1.c) |
@@ -66,6 +67,7 @@ I dati di account e i contenuti dell'utente sono conservati nell'Unione Europea.
 
 ## 7. Conservazione dei dati
 
+- **Foto allegate alle memorie:** finché la memoria esiste. L'eliminazione definitiva della memoria (dopo le 24 ore di Cestino) rimuove anche il file.
 - **Dati di account, contenuti e statistiche di studio:** per tutta la durata dell'account. Alla cancellazione dell'account vengono eliminati definitivamente entro 30 giorni (salvo copie di backup tecniche, eliminate entro il ciclo di rotazione dei backup, di norma non superiore a 30 giorni).
 - **Rapporti di errore:** al massimo 90 giorni dalla raccolta.
 - **Dati relativi agli acquisti:** per il tempo necessario a gestire l'abbonamento e per i termini previsti dalla normativa fiscale (10 anni per i documenti contabili). Le ricevute di acquisto sono conservate da Apple / Google secondo le loro regole.

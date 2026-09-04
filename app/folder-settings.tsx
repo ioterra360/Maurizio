@@ -26,16 +26,19 @@ import {
 } from "@/lib/api";
 import { NamePromptModal } from "@/components/NamePromptModal";
 import { useAuthStore } from "@/lib/auth-store";
-import { SUBFOLDERS_MAX } from "@/lib/constants";
 import type { Subfolder } from "@/lib/mappers";
 import { useFolderDetail } from "@/lib/use-folders";
 import { useUIStore } from "@/lib/ui-store";
-import { reportError } from "@/lib/report-error";
+import { errorCode, reportError } from "@/lib/report-error";
+import { canAddSection, planLimitFromCode, type PlanLimitKind } from "@/lib/plan";
+import { usePlan } from "@/lib/use-plan";
+import { PlanLimitDialog } from "@/components/PlanLimitDialog";
 import { safeBack } from "@/lib/safe-back";
 import { relativeReviewed } from "@/lib/format";
 import { FOLDER_KINDS, type FolderKind } from "@/lib/constants";
 import { useT } from "@/lib/i18n";
 import { FONT, useColors } from "@/theme/tokens";
+import { cancelFirstReviewsInFolder } from "@/lib/notifications";
 
 /**
  * Folder settings — reached from the cog in FolderTopBar. Lives in the ROOT
@@ -57,6 +60,8 @@ export default function FolderSettingsScreen() {
     { mode: "add" } | { mode: "rename"; target: Subfolder } | null
   >(null);
   const [subSaving, setSubSaving] = useState(false);
+  const plan = usePlan();
+  const [planBlock, setPlanBlock] = useState<PlanLimitKind | null>(null);
   const settingsFolderId = folder?.id ?? null;
   const loadSubfolders = useCallback(async () => {
     if (!settingsFolderId) return;
@@ -135,6 +140,9 @@ export default function FolderSettingsScreen() {
     setDeleting(true);
     try {
       await deleteFolder(folder.id);
+      // deleteFolder non restituisce gli id: il filtro passa dal payload
+      // (folderId) delle notifiche in attesa.
+      void cancelFirstReviewsInFolder(folder.id);
       showToast(t("folderSettings.toastDeleted", { name: folder.name }));
       router.replace("/(app)/knowledge");
     } catch (err) {
@@ -312,7 +320,10 @@ export default function FolderSettingsScreen() {
           />
         </View>
 
-        {/* Sottocartelle */}
+        {/* Sottocartelle — intestazione e "+" sempre presenti: al tetto il "+"
+            apre la mascotte invece di sparire, cosi' un utente free scopre che
+            le sezioni esistono e un Plus capisce perche' si e' fermato. Stessa
+            scelta di Conoscenza e di Add. */}
         <View style={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 8 }}>
           <SectionLabel>{t("subfolders.section")}</SectionLabel>
         </View>
@@ -365,35 +376,35 @@ export default function FolderSettingsScreen() {
               </Tappable>
             </Tappable>
           ))}
-          {subfolders.length < SUBFOLDERS_MAX ? (
-            <Tappable
-              onPress={() => setSubModal({ mode: "add" })}
-              accessibilityRole="button"
-              accessibilityLabel={t("subfolders.add")}
-              pressedOpacity={0.7}
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 6,
-                paddingVertical: 12,
-                borderRadius: 14,
-                borderWidth: 1.2,
-                borderColor: colors.hairlineStrong,
-                borderStyle: "dashed",
-                backgroundColor: colors.warmWhite,
-              }}
-            >
-              <Plus size={15} color={colors.navy} strokeWidth={2.1} />
-              <Text style={{ fontFamily: FONT.semibold, fontSize: 13.5, color: colors.navy }}>
-                {t("subfolders.add")}
-              </Text>
-            </Tappable>
-          ) : (
-            <Text style={{ paddingHorizontal: 8, fontFamily: FONT.regular, fontSize: 12, color: colors.midGrey }}>
-              {t("subfolders.limit")}
+          <Tappable
+            onPress={() => {
+              if (!canAddSection(subfolders.length, plan)) {
+                setPlanBlock("sections");
+                return;
+              }
+              setSubModal({ mode: "add" });
+            }}
+            accessibilityRole="button"
+            accessibilityLabel={t("subfolders.add")}
+            pressedOpacity={0.7}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 6,
+              paddingVertical: 12,
+              borderRadius: 14,
+              borderWidth: 1.2,
+              borderColor: colors.hairlineStrong,
+              borderStyle: "dashed",
+              backgroundColor: colors.warmWhite,
+            }}
+          >
+            <Plus size={15} color={colors.navy} strokeWidth={2.1} />
+            <Text style={{ fontFamily: FONT.semibold, fontSize: 13.5, color: colors.navy }}>
+              {t("subfolders.add")}
             </Text>
-          )}
+          </Tappable>
         </View>
 
         <View style={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 8 }}>
@@ -473,15 +484,21 @@ export default function FolderSettingsScreen() {
               void loadSubfolders();
             })
             .catch((err) => {
+              const limit = planLimitFromCode(errorCode(err));
+              if (limit) {
+                // Come in folder/[id].tsx: prima si chiude il prompt del
+                // nome, poi si apre il dialogo del piano. Due Modal insieme
+                // su iOS rischiano di non presentare il secondo, e "Vedi i
+                // piani" lascerebbe il backdrop del prompt sopra il paywall.
+                setSubModal(null);
+                setPlanBlock(limit);
+                return;
+              }
               reportError("folder-settings/subfolder-save", err);
-              const code = (err as { code?: string })?.code ?? "";
-              const msg = err instanceof Error ? err.message : String(err);
               showToast(
-                code === "23505" || msg.includes("duplicate")
+                errorCode(err) === "23505"
                   ? t("subfolders.duplicate")
-                  : msg.includes("limit")
-                    ? t("subfolders.limit")
-                    : t("subfolders.failed"),
+                  : t("subfolders.failed"),
               );
             })
             .finally(() => setSubSaving(false));
@@ -555,6 +572,7 @@ export default function FolderSettingsScreen() {
           </View>
         </View>
       </Modal>
+      <PlanLimitDialog limit={planBlock} plan={plan} onClose={() => setPlanBlock(null)} />
     </SafeAreaView>
   );
 }

@@ -18,6 +18,7 @@ import { SectionLabel } from "@/components/SectionLabel";
 import { InitialsAvatar } from "@/components/FolderTile";
 import { useAuthStore } from "@/lib/auth-store";
 import { useT } from "@/lib/i18n";
+import { cancelAllReminders } from "@/lib/notifications";
 import { Tappable } from "@/components/Tappable";
 import { FONT, radii, useColors } from "@/theme/tokens";
 
@@ -38,6 +39,9 @@ export default function AdminMoreScreen() {
   const setViewAsUser = useAuthStore((s) => s.setViewAsUser);
 
   const handleSignOut = async () => {
+    // Senza sessione le notifiche locali non hanno più niente da promettere:
+    // si svuota la coda dell'OS prima di chiudere. No-op a flag spento e in demo.
+    await cancelAllReminders();
     await signOut();
     router.replace("/(auth)/login");
   };

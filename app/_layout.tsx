@@ -29,12 +29,15 @@ import {
 } from "@expo-google-fonts/inter";
 
 import { useAuthStore } from "@/lib/auth-store";
+import { usePlanSync } from "@/lib/use-plan";
 import { useLocaleStore, useT } from "@/lib/i18n";
 import { useThemeStore, useColors } from "@/theme/theme-store";
+import { useNotificationPrefsStore } from "@/lib/notification-prefs-store";
 import { parseDevSignOutToken } from "@/lib/auth-links";
 import { SUPPORT_EMAIL } from "@/lib/constants";
 import { reportError } from "@/lib/report-error";
 import { useUIStore } from "@/lib/ui-store";
+import { installNotificationHandler, subscribeToNotificationTaps } from "@/lib/notifications";
 import { Mascot } from "@/components/Mascot";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { Toast } from "@/components/Toast";
@@ -68,6 +71,11 @@ Sentry.init({
   integrations: [navigationIntegration],
   enableNativeFramesTracking: !isRunningInExpoGo(),
 });
+
+// Come mostrare una notifica locale che arriva con l'app aperta: senza
+// questo l'OS non la mostra. Una volta sola, a livello di modulo, come
+// Sentry.init. No-op finché NOTIFICATIONS_ENABLED è spento o in demo.
+installNotificationHandler();
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 SplashScreen.setOptions({ fade: true, duration: 220 });
@@ -249,10 +257,12 @@ function RootLayout() {
         reportError("root/initial-url", err);
       }
       // Locale + tema per primi (pochi ms da AsyncStorage) così il primo
-      // frame è già nella lingua E nel tema scelti, poi auth.
+      // frame è già nella lingua E nel tema scelti, poi auth. Le prefs
+      // notifiche viaggiano insieme: servono prima del primo salvataggio.
       await Promise.all([
         useLocaleStore.getState().hydrate(),
         useThemeStore.getState().hydrate(),
+        useNotificationPrefsStore.getState().hydrate(),
       ]);
       hydrate();
     })();
@@ -287,11 +297,45 @@ function RootLayout() {
     router.replace("/(auth)/reset-password" as never);
   }, [pendingPasswordReset, hydrated, navReady, pathname]);
 
+  // Tocco su una notifica locale → rotta (spec F3): il primo ripasso apre
+  // la scheda del ricordo, il giornaliero apre Oggi. Dopo navigator e auth,
+  // come l'effetto sopra. Senza utente la destinazione si perde: il gate
+  // manda al login e dopo il login si atterra su Oggi — accettato.
+  //
+  // Oggi NON si può spingere. `(app)` è la radice di questo stack, quindi
+  // quando il tocco arriva con un modale davanti (Aggiungi, scheda ricordo,
+  // ripasso, cestino, impostazioni cartella…) la divergenza cade sullo
+  // stack di root e push/navigate/replace montano un SECONDO tab navigator
+  // sopra il modale: stato dei tab doppio e un back in più su Android.
+  // `navigate` non basta — lo StackRouter riusa una rotta esistente solo se
+  // è quella a fuoco (@react-navigation/routers 7.5.5 StackRouter.tsx:377-388,
+  // e expo-router non passa mai `pop`). Quindi prima si chiudono i modali
+  // (POP_TO_TOP riporta a fuoco la `(app)` che c'è già) e poi si cambia
+  // scheda. La scheda del ricordo invece è una rotta sorella: lì il push è
+  // quello giusto, anche sopra un altro modale.
+  useEffect(() => {
+    if (!hydrated || !navReady) return;
+    return subscribeToNotificationTaps((route) => {
+      if (!useAuthStore.getState().user) return;
+      if (route.pathname === "/(app)/today") {
+        if (router.canDismiss()) router.dismissAll();
+        router.navigate(route as never);
+        return;
+      }
+      router.push(route as never);
+    });
+  }, [hydrated, navReady]);
+
   // Listen to Supabase auth state changes (token refresh / global sign-out)
   // for the lifetime of the app.
   useEffect(() => {
     return subscribeAuthChanges();
   }, [subscribeAuthChanges]);
+
+  // RevenueCat: configura l'SDK, lega l'identita' all'utente in sessione e
+  // rilegge il piano dal server a ogni cambio di abbonamento. Inerte in
+  // Expo Go, in demo e con le chiavi vuote (lib/purchases.ts).
+  usePlanSync();
 
   // Bootstrap timeout — force-hydrate after the deadline so a dead network
   // can't lock us on the splash.
@@ -350,6 +394,20 @@ function RootLayout() {
               name="memory/[id]"
               options={{
                 // Same sheet treatment as Add (see above for the Android note).
+                presentation: Platform.OS === "ios" ? "modal" : "card",
+                animation: "slide_from_bottom",
+                contentStyle: { backgroundColor: themeColors.warmWhite },
+              }}
+            />
+            {/* Paywall: raggiunto da Impostazioni, da /folder/[id] e dai
+                dialoghi di limite di /add, /choose-topic e
+                /folder-settings — cioe' sia da dentro che da fuori i tab.
+                Nello stack ROOT come /add e /trash: una rotta di (app)
+                spinta da una schermata root monterebbe un SECONDO
+                navigatore a tab (choose-topic.tsx:52-60). */}
+            <Stack.Screen
+              name="paywall"
+              options={{
                 presentation: Platform.OS === "ios" ? "modal" : "card",
                 animation: "slide_from_bottom",
                 contentStyle: { backgroundColor: themeColors.warmWhite },

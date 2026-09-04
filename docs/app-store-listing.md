@@ -46,8 +46,13 @@ TestFlight interno per Angelo + Maurizio.
 
 ## Privacy dell'app (etichetta "nutrition label")
 
-Il binario raccoglie solo dati account e contenuti tramite Supabase. Sentry è
+Il binario raccoglie dati account, contenuti e — dalla build 3 — le foto che
+l'utente sceglie di allegare a un ricordo, tutto tramite Supabase. Sentry è
 disattivato (DSN vuoto), nessuna pubblicità, nessuna analytics, nessun tracking.
+La riga "Foto o video" va compilata **prima di sottomettere la build 3**:
+un'etichetta privacy che non dichiara una raccolta che avviene ricade sotto le
+Linee guida 5.1.1(i) / 5.1.2, e la stessa raccolta è dichiarata nell'informativa
+pubblicata (`docs/legal/privacy.html` §3) — le due devono coincidere (2.3.1).
 
 **Raccogli dati?** Sì.
 
@@ -58,6 +63,7 @@ Dati **collegati all'utente**, finalità **Funzionalità dell'app**, non usati p
 | Informazioni di contatto | Indirizzo email | account |
 | Informazioni di contatto | Nome | nome visualizzato (facoltativo) |
 | Contenuti dell'utente | Altri contenuti dell'utente | ricordi, cartelle, appunti |
+| Contenuti dell'utente | Foto o video | foto allegate a un ricordo (facoltative, piani Plus e Pro; bucket privato, URL firmati) |
 | Dati di utilizzo | Altri dati di utilizzo | esiti dei ripassi (pianificazione) |
 | Identificatori | ID utente | uid Supabase |
 
@@ -71,8 +77,13 @@ sarà attivo aggiungere: Diagnostica → Dati sugli arresti anomali (non collega
   usare mai l'account admin per i revisori.
 - **Note**: "Memika è un'app di ripetizione spaziata. Accedi con l'account demo, apri
   Oggi e tocca Inizia il ripasso: le tre fasi Scan, Reinforcement e Focus. La
-  cancellazione dell'account è in Impostazioni → Elimina account. Nessun acquisto
-  in-app in questa versione."
+  cancellazione dell'account è in Impostazioni → Elimina account."
+  Da vc13 / iOS 3 aggiungere: "Il piano Free tiene 10 ricordi in tutto e una
+  cartella; Impostazioni → Piano apre il paywall con Plus e Pro. L'account
+  demo è Pro, quindi non incontra i limiti." (Con le chiavi RevenueCat
+  vuote i bottoni del paywall sono spenti e il binario NON ha acquisti in-app:
+  in quel caso tenere la vecchia frase "Nessun acquisto in-app in questa
+  versione" e non spuntare la casella IAP.)
 - **Contatto**: Angelo Casula, acasula97@gmail.com, telefono da inserire.
 
 ## Testi scheda
@@ -81,8 +92,19 @@ Limiti Apple: nome 30, sottotitolo 30, testo promozionale 170 (modificabile senz
 nuova build), descrizione 4000, parole chiave 100 (con le virgole, senza spazi
 dopo la virgola, senza ripetere il nome), novità 4000.
 
-Nota: finché Premium (RevenueCat) non esiste, la descrizione dice solo "Memika è
-gratuita", senza promettere abbonamenti (Linee guida 2.3, metadati accurati).
+Nota (aggiornata 2026-09-04, build 3): la vecchia riga "finché Pro non esiste
+la descrizione dice solo «Memika è gratuita»" non vale più. Da vc13 / iOS 3 il
+binario porta `app/paywall.tsx` con due abbonamenti a rinnovo automatico e un
+piano Free tappato dai trigger Postgres a 10 ricordi in tutto, 1 cartella e 0
+sezioni. Le quattro descrizioni dicono ora i tetti del piano Free e i due piani a
+pagamento: una pagina prodotto che promette "Memika è gratuita" mentre Apple le
+appiccica il badge "Acquisti in-app", e un utente fermato al decimo ricordo da un
+limite che la scheda non nomina, sono 2.3.1 (metadati accurati) e 3.1.2
+(informazioni sull'abbonamento). Se per qualsiasi motivo la build uscisse con le
+chiavi RevenueCat vuote (bivio del punto 4 di `docs/DEPLOY.md` § "Prima di
+lanciare"), i tetti Free restano veri e vanno comunque dichiarati: cambia solo
+che i due piani non sono acquistabili, e in quel caso i due paragrafi sugli
+abbonamenti vanno tolti prima di incollare.
 
 ### Italiano (it) — principale
 
@@ -109,7 +131,9 @@ Nella schermata Oggi vedi cosa è in scadenza e quanto tempo serve. Nelle cartel
 
 Niente streak, niente classifiche, niente pubblicità. Solo un posto tranquillo dove tornare per qualche minuto al giorno.
 
-Memika è gratuita.
+Memika è gratuita: 10 ricordi in tutto e una cartella, per sempre e senza pubblicità.
+
+Se ti serve più spazio ci sono due abbonamenti. Plus: ricordi illimitati, 5 cartelle, 3 sezioni per cartella e le foto da allegare ai ricordi. Pro: tutto illimitato, cartelle e sezioni comprese, foto incluse. Si rinnovano automaticamente e si disdicono quando vuoi dalle impostazioni del tuo account App Store.
 
 I ricordi sono tuoi. Puoi cancellare tutto quando vuoi dalle Impostazioni e chiederci una copia dei tuoi dati in qualsiasi momento. Informativa sulla privacy: https://ioterra360.github.io/memika-legal/privacy/
 
@@ -140,7 +164,9 @@ The Today screen shows what is due and how long it takes. Folders keep your memo
 
 No streaks, no leaderboards, no ads. Just a quiet place to come back to for a few minutes a day.
 
-Memika is free.
+Memika is free: 10 memories in total and one folder, forever, with no ads.
+
+If you need more room there are two subscriptions. Plus: unlimited memories, 5 folders, 3 sections per folder, and photos to attach to your memories. Pro: everything unlimited, folders and sections included, photos included. They renew automatically and you can cancel any time from your App Store account settings.
 
 Your memories are yours. You can delete everything at any time from Settings and ask us for a copy of your data whenever you want. Privacy policy: https://ioterra360.github.io/memika-legal/privacy/
 
@@ -171,7 +197,9 @@ Sur l'écran Aujourd'hui, tu vois ce qui est à réviser et le temps qu'il faut.
 
 Pas de séries à tenir, pas de classements, pas de publicité. Juste un endroit tranquille où revenir quelques minutes par jour.
 
-Memika est gratuite.
+Memika est gratuite : 10 souvenirs au total et un dossier, pour toujours, sans publicité.
+
+S'il te faut plus de place, il y a deux abonnements. Plus : souvenirs illimités, 5 dossiers, 3 sections par dossier et les photos à joindre aux souvenirs. Pro : tout en illimité, dossiers et sections compris, photos incluses. Ils se renouvellent automatiquement et se résilient quand tu veux depuis les réglages de ton compte App Store.
 
 Tes souvenirs t'appartiennent. Tu peux tout supprimer quand tu veux depuis les Réglages et nous demander une copie de tes données à tout moment. Politique de confidentialité : https://ioterra360.github.io/memika-legal/privacy/
 
@@ -202,7 +230,9 @@ En la pantalla Hoy ves qué toca repasar y cuánto tiempo hace falta. En las car
 
 Sin rachas, sin clasificaciones, sin publicidad. Solo un lugar tranquilo al que volver unos minutos al día.
 
-Memika es gratuita.
+Memika es gratuita: 10 recuerdos en total y una carpeta, para siempre y sin publicidad.
+
+Si necesitas más sitio hay dos suscripciones. Plus: recuerdos ilimitados, 5 carpetas, 3 secciones por carpeta y las fotos para adjuntar a los recuerdos. Pro: todo ilimitado, carpetas y secciones incluidas, fotos incluidas. Se renuevan automáticamente y puedes cancelarlas cuando quieras desde los ajustes de tu cuenta de App Store.
 
 Tus recuerdos son tuyos. Puedes borrarlo todo cuando quieras desde Ajustes y pedirnos una copia de tus datos en cualquier momento. Política de privacidad: https://ioterra360.github.io/memika-legal/privacy/
 
@@ -220,10 +250,12 @@ costruiscono entrambe le piattaforme dallo stesso commit.
    scheda mostra le quattro lingue.
 3. `NSAppTransportSecurity`: `NSAllowsArbitraryLoads` false, eccezione solo `localhost`.
 4. Sezioni "Orari" e "Notifiche" delle Impostazioni nascoste dietro
-   `NOTIFICATIONS_ENABLED = false` finché non fanno nulla (Linee guida 2.1).
+   `NOTIFICATIONS_ENABLED = false` finché non fanno nulla (Linee guida 2.1);
+   dalla build 3 il flag è `true` e la riga apre `/notifications`: le sezioni
+   inline non esistono più.
 5. Nome visualizzato facoltativo alla registrazione (5.1.1, minimizzazione).
 6. Vecchia schermata checkout web (`subscribe.tsx`) rimossa dal binario con le sue
-   chiavi di catalogo; `PREMIUM_ENABLED` resta per il paywall RevenueCat.
+   chiavi di catalogo; dalla build 3 il paywall in-app e' `app/paywall.tsx` (RevenueCat).
 7. Se il DSN di Sentry arriva in tempo: slug reali in app.json, DSN in `eas.json`,
    `SENTRY_AUTH_TOKEN` come segreto EAS, via `SENTRY_DISABLE_AUTO_UPLOAD`.
 

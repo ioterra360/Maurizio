@@ -6,3 +6,6 @@
 .env.keys
 .env.local
 .env.*.local
+
+# Secrets locali delle edge function (supabase functions serve --env-file)
+functions/.env

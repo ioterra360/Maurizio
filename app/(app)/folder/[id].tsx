@@ -6,9 +6,11 @@ import { ArrowUpDown, Plus, Repeat } from "lucide-react-native";
 import { NamePromptModal } from "@/components/NamePromptModal";
 import { createSubfolder, fetchSubfolders } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
-import { reportError } from "@/lib/report-error";
+import { errorCode, reportError } from "@/lib/report-error";
+import { canAddSection, planLimitFromCode, type PlanLimitKind } from "@/lib/plan";
+import { usePlan } from "@/lib/use-plan";
+import { PlanLimitDialog } from "@/components/PlanLimitDialog";
 import { useUIStore } from "@/lib/ui-store";
-import { SUBFOLDERS_MAX } from "@/lib/constants";
 import type { Subfolder } from "@/lib/mappers";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 
@@ -52,6 +54,8 @@ export default function FolderDetailScreen() {
   const [subFilter, setSubFilter] = useState<"all" | string>("all");
   const [subModalOpen, setSubModalOpen] = useState(false);
   const [subSaving, setSubSaving] = useState(false);
+  const plan = usePlan();
+  const [planBlock, setPlanBlock] = useState<PlanLimitKind | null>(null);
   const folderId = folder?.id ?? null;
   const loadSubfolders = useCallback(async () => {
     if (!folderId) return;
@@ -369,57 +373,64 @@ export default function FolderDetailScreen() {
           />
         </ScrollView>
 
-        {/* Sezioni (sottocartelle) — max SUBFOLDERS_MAX per cartella. */}
-        {subfolders.length > 0 || subfolders.length < SUBFOLDERS_MAX ? (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingHorizontal: 16, gap: 6, paddingBottom: 12 }}
+        {/* Sezioni (sottocartelle) — il tetto per cartella dipende dal piano.
+            La striscia e il "+" restano SEMPRE montati e diramano al tocco.
+            Nasconderli al tetto sarebbe la scelta peggiore: un utente free ha
+            zero sezioni per costruzione, quindi non incontrerebbe mai un
+            motivo per passare a Plus, e un Plus a tre vedrebbe il "+" sparire
+            senza spiegazione. Stesso comportamento di Conoscenza e di Add. */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ paddingHorizontal: 16, gap: 6, paddingBottom: 12 }}
+        >
+          {subfolders.length > 0 ? (
+            <FilterChip
+              label={t("subfolders.chipAll")}
+              count={items.length}
+              active={subFilter === "all"}
+              onPress={() => setSubFilter("all")}
+            />
+          ) : null}
+          {subfolders.map((s) => (
+            <FilterChip
+              key={s.id}
+              label={s.name}
+              count={items.filter((m) => (m.subfolderId ?? null) === s.id).length}
+              active={subFilter === s.id}
+              onPress={() => setSubFilter(s.id)}
+            />
+          ))}
+          <Tappable
+            onPress={() => {
+              if (!canAddSection(subfolders.length, plan)) {
+                setPlanBlock("sections");
+                return;
+              }
+              setSubModalOpen(true);
+            }}
+            accessibilityRole="button"
+            accessibilityLabel={t("subfolders.add")}
+            pressedOpacity={0.7}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 5,
+              height: 32,
+              paddingHorizontal: 12,
+              borderRadius: radii.filter,
+              borderWidth: 1,
+              borderColor: colors.hairlineStrong,
+              borderStyle: "dashed",
+              backgroundColor: colors.warmWhite,
+            }}
           >
-            {subfolders.length > 0 ? (
-              <FilterChip
-                label={t("subfolders.chipAll")}
-                count={items.length}
-                active={subFilter === "all"}
-                onPress={() => setSubFilter("all")}
-              />
-            ) : null}
-            {subfolders.map((s) => (
-              <FilterChip
-                key={s.id}
-                label={s.name}
-                count={items.filter((m) => (m.subfolderId ?? null) === s.id).length}
-                active={subFilter === s.id}
-                onPress={() => setSubFilter(s.id)}
-              />
-            ))}
-            {subfolders.length < SUBFOLDERS_MAX ? (
-              <Tappable
-                onPress={() => setSubModalOpen(true)}
-                accessibilityRole="button"
-                accessibilityLabel={t("subfolders.add")}
-                pressedOpacity={0.7}
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  gap: 5,
-                  height: 32,
-                  paddingHorizontal: 12,
-                  borderRadius: radii.filter,
-                  borderWidth: 1,
-                  borderColor: colors.hairlineStrong,
-                  borderStyle: "dashed",
-                  backgroundColor: colors.warmWhite,
-                }}
-              >
-                <Plus size={13} color={colors.navy} strokeWidth={2.2} />
-                <Text style={{ fontFamily: FONT.medium, fontSize: 13, color: colors.navy }}>
-                  {t("subfolders.add")}
-                </Text>
-              </Tappable>
-            ) : null}
-          </ScrollView>
-        ) : null}
+            <Plus size={13} color={colors.navy} strokeWidth={2.2} />
+            <Text style={{ fontFamily: FONT.medium, fontSize: 13, color: colors.navy }}>
+              {t("subfolders.add")}
+            </Text>
+          </Tappable>
+        </ScrollView>
 
         {/* Item list */}
         <View style={{ paddingHorizontal: 16, gap: 6 }}>
@@ -509,20 +520,29 @@ export default function FolderDetailScreen() {
               void loadSubfolders();
             })
             .catch((e) => {
+              const limit = planLimitFromCode(errorCode(e));
+              if (limit) {
+                // Il prompt del nome si chiude PRIMA del dialogo: due Modal
+                // presentati insieme su iOS possono far sparire il secondo
+                // ("Attempt to present ... which is already presenting"), e
+                // un limite di piano senza spiegazione e' un silenzio. Se
+                // invece appare, "Vedi i piani" navigherebbe lasciando il
+                // backdrop del prompt sopra il paywall.
+                setSubModalOpen(false);
+                setPlanBlock(limit);
+                return;
+              }
               reportError("folder/subfolder-create", e);
-              const code = (e as { code?: string })?.code ?? "";
-              const msg = e instanceof Error ? e.message : String(e);
               showToast(
-                code === "23505" || msg.includes("duplicate")
+                errorCode(e) === "23505"
                   ? t("subfolders.duplicate")
-                  : msg.includes("limit")
-                    ? t("subfolders.limit")
-                    : t("subfolders.failed"),
+                  : t("subfolders.failed"),
               );
             })
             .finally(() => setSubSaving(false));
         }}
       />
+      <PlanLimitDialog limit={planBlock} plan={plan} onClose={() => setPlanBlock(null)} />
     </SafeAreaView>
   );
 }

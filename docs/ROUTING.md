@@ -12,6 +12,7 @@ app/
 ├── auth-callback.tsx            Landing dei link email NON di recovery (conferma signup) — root-level
 ├── choose-topic.tsx             Scegli il tuo argomento — crea l'UNICA cartella (root-level, vedi sotto)
 ├── folder-settings.tsx          Impostazioni cartella (`?kind=`) — push root-level sopra i tab
+├── paywall.tsx                  Piani Free/Plus/Pro — root-level (foglio dal basso), fuori dai tab
 │
 ├── (auth)/
 │   ├── _layout.tsx              Redirects out if user already signed in
@@ -21,7 +22,8 @@ app/
 ├── (app)/
 │   ├── _layout.tsx              Tabs nav (backBehavior "history"). Auth gate.
 │   ├── today.tsx · knowledge.tsx · health.tsx · settings.tsx
-│   ├── folder/[kind].tsx        Dettaglio cartella — tab nascosto (href: null)
+│   ├── folder/[id].tsx          Dettaglio cartella — tab nascosto (href: null)
+│   ├── notifications.tsx        Notifiche (spec F3) — tab nascosto (href: null), push da Impostazioni
 │
 ├── review/
 │   ├── _layout.tsx              Stack, auth-gated
@@ -42,6 +44,7 @@ app/
 | `/add` | `app/add.tsx` | Signed-in users (gated da add-gate; 0 cartelle → redirect a `/choose-topic`) |
 | `/choose-topic` | `app/choose-topic.tsx` | Signed-in users con 0 cartelle (≥1 → redirect a Today) |
 | `/folder-settings?kind=` | `app/folder-settings.tsx` | Signed-in users |
+| `/paywall` | `app/paywall.tsx` | Signed-in users — da Impostazioni, da `/folder/[id]` o da un limite di piano |
 | `/(auth)/login` | `app/(auth)/login.tsx` | Only when signed out |
 | `/(auth)/reset-password` | `app/(auth)/reset-password.tsx` | Chi apre il link di recovery (gate: `pendingPasswordReset`) |
 | `/auth-callback` | `app/auth-callback.tsx` | Chi apre un link email di conferma (root-level, con o senza sessione) |
@@ -49,7 +52,9 @@ app/
 | `/(app)/knowledge` | `app/(app)/knowledge.tsx` | Signed-in users |
 | `/(app)/health` | `app/(app)/health.tsx` | Signed-in users |
 | `/(app)/settings` | `app/(app)/settings.tsx` | Signed-in users |
-| `/(app)/folder/[kind]` | `app/(app)/folder/[kind].tsx` | Signed-in users |
+| `/(app)/notifications` | `app/(app)/notifications.tsx` | Signed-in users (riga visibile solo con `NOTIFICATIONS_ENABLED`) |
+| `/(app)/folder/[id]` | `app/(app)/folder/[id].tsx` | Signed-in users |
+| `/memory/[id]` | `app/memory/[id].tsx` | Signed-in users (destinazione del tocco su una notifica di primo ripasso; guardia auth propria, Task 7) |
 | `/review/scan · reinforcement · focus · handoff · complete` | `app/review/*` | Signed-in users |
 | `/(admin)/home` | `app/(admin)/home.tsx` | Signed-in admins |
 
@@ -61,7 +66,7 @@ redirects any signed-in user to Today, but the same screen must also be
 reachable from `(app)` surfaces. Add redirects there when the user owns zero
 folders; Knowledge's empty state links there; a user who already has ≥1
 folder is bounced to Today on mount. No other route creates folders
-(freemium = one folder; the Premium sheet comes with RevenueCat).
+(freemium = one folder; the Pro sheet comes with RevenueCat).
 
 ## Why three route groups
 

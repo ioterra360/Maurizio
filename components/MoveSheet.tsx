@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
-import { Modal, Pressable, ScrollView, Text, View } from "react-native";
+import { ScrollView, Text, View } from "react-native";
 import { router } from "expo-router";
 import { CornerUpLeft, FolderPlus, Layers } from "lucide-react-native";
 
+import { BottomSheetShell } from "@/components/BottomSheetShell";
 import { FolderTile } from "@/components/FolderTile";
 import { MascotLoader } from "@/components/MascotLoader";
 import { Tappable } from "@/components/Tappable";
@@ -91,122 +92,89 @@ export function MoveSheet({
   const showRoot = memory.subfolderId !== null && memory.subfolderId !== undefined;
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <View style={{ flex: 1, justifyContent: "flex-end" }}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={t("common.close")}
-          onPress={() => {
-            if (!busy) onClose();
-          }}
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: "rgba(15,27,51,0.32)",
-          }}
-        />
-        <View
-          style={{
-            backgroundColor: colors.warmWhite,
-            borderTopLeftRadius: 22,
-            borderTopRightRadius: 22,
-            paddingHorizontal: 18,
-            paddingTop: 16,
-            paddingBottom: 30,
-            maxHeight: "78%",
-          }}
-        >
-          <View
-            style={{
-              alignSelf: "center",
-              width: 36,
-              height: 4,
-              borderRadius: 2,
-              backgroundColor: colors.switchTrackOff,
-              marginBottom: 14,
+    <BottomSheetShell
+      visible={visible}
+      onClose={onClose}
+      // Con uno spostamento in corso il backdrop non chiude (il tasto indietro
+      // sì, come prima). Il titolo lo disegna questo foglio: è più piccolo di
+      // quello standard del guscio.
+      closeOnBackdrop={!busy}
+      sheetStyle={{ paddingHorizontal: 18, paddingBottom: 30, maxHeight: "78%" }}
+    >
+      <Text
+        style={{
+          fontFamily: FONT.bold,
+          fontSize: 20,
+          color: colors.navy,
+          letterSpacing: -0.35,
+          marginBottom: 4,
+        }}
+      >
+        {t("move.title", { term: memory.term })}
+      </Text>
+
+      {folders === null ? (
+        <View style={{ paddingVertical: 36, alignItems: "center" }}>
+          <MascotLoader label={t("common.oneMoment")} />
+        </View>
+      ) : (
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 8 }}>
+          {(sectionTargets.length > 0 || showRoot) && currentFolder ? (
+            <>
+              <SheetLabel text={t("move.sectionsHere", { name: currentFolder.name })} />
+              {showRoot ? (
+                <SheetRow
+                  icon={<CornerUpLeft size={18} color={colors.navy} strokeWidth={1.9} />}
+                  label={t("move.rootOfFolder")}
+                  disabled={busy}
+                  onPress={() =>
+                    void move({ folderId: memory.folderId, subfolderId: null }, currentFolder.name)
+                  }
+                />
+              ) : null}
+              {sectionTargets.map((s) => (
+                <SheetRow
+                  key={s.id}
+                  icon={<Layers size={18} color={colors.navy} strokeWidth={1.9} />}
+                  label={s.name}
+                  disabled={busy}
+                  onPress={() => void move({ folderId: memory.folderId, subfolderId: s.id }, s.name)}
+                />
+              ))}
+            </>
+          ) : null}
+
+          {otherFolders.length > 0 ? (
+            <>
+              <SheetLabel text={t("move.otherFolders")} />
+              {otherFolders.map((f) => (
+                <SheetRow
+                  key={f.id}
+                  icon={<FolderTile emoji={f.emoji} size={28} />}
+                  label={f.name}
+                  disabled={busy}
+                  onPress={() => void move({ folderId: f.id }, f.name)}
+                />
+              ))}
+            </>
+          ) : null}
+
+          <SheetLabel text={t("move.orNew")} />
+          <SheetRow
+            icon={<FolderPlus size={18} color={colors.navy} strokeWidth={1.9} />}
+            label={t("move.newFolder")}
+            disabled={busy}
+            onPress={() => {
+              onClose();
+              router.push({
+                pathname: "/choose-topic",
+                params: { mode: "new", moveMemoryId: memory.id },
+              } as never);
             }}
           />
-          <Text
-            style={{
-              fontFamily: FONT.bold,
-              fontSize: 20,
-              color: colors.navy,
-              letterSpacing: -0.35,
-              marginBottom: 4,
-            }}
-          >
-            {t("move.title", { term: memory.term })}
-          </Text>
-
-          {folders === null ? (
-            <View style={{ paddingVertical: 36, alignItems: "center" }}>
-              <MascotLoader label={t("common.oneMoment")} />
-            </View>
-          ) : (
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 8 }}>
-              {(sectionTargets.length > 0 || showRoot) && currentFolder ? (
-                <>
-                  <SheetLabel text={t("move.sectionsHere", { name: currentFolder.name })} />
-                  {showRoot ? (
-                    <SheetRow
-                      icon={<CornerUpLeft size={18} color={colors.navy} strokeWidth={1.9} />}
-                      label={t("move.rootOfFolder")}
-                      disabled={busy}
-                      onPress={() =>
-                        void move({ folderId: memory.folderId, subfolderId: null }, currentFolder.name)
-                      }
-                    />
-                  ) : null}
-                  {sectionTargets.map((s) => (
-                    <SheetRow
-                      key={s.id}
-                      icon={<Layers size={18} color={colors.navy} strokeWidth={1.9} />}
-                      label={s.name}
-                      disabled={busy}
-                      onPress={() =>
-                        void move({ folderId: memory.folderId, subfolderId: s.id }, s.name)
-                      }
-                    />
-                  ))}
-                </>
-              ) : null}
-
-              {otherFolders.length > 0 ? (
-                <>
-                  <SheetLabel text={t("move.otherFolders")} />
-                  {otherFolders.map((f) => (
-                    <SheetRow
-                      key={f.id}
-                      icon={<FolderTile emoji={f.emoji} size={28} />}
-                      label={f.name}
-                      disabled={busy}
-                      onPress={() => void move({ folderId: f.id }, f.name)}
-                    />
-                  ))}
-                </>
-              ) : null}
-
-              <SheetLabel text={t("move.orNew")} />
-              <SheetRow
-                icon={<FolderPlus size={18} color={colors.navy} strokeWidth={1.9} />}
-                label={t("move.newFolder")}
-                disabled={busy}
-                onPress={() => {
-                  onClose();
-                  router.push({
-                    pathname: "/choose-topic",
-                    params: { mode: "new", moveMemoryId: memory.id },
-                  } as never);
-                }}
-              />
-            </ScrollView>
-          )}
-        </View>
-      </View>
-    </Modal>
+        </ScrollView>
+      )}
+    </BottomSheetShell>
   );
 }
 

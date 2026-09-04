@@ -41,10 +41,13 @@ is in the `admin_emails` allowlist (currently `memikaapp@gmail.com`).
 | `name` | text | Display name (derived from email if not provided) |
 | `role` | enum `user_role` | `user` or `admin` |
 | `daily_input_cap` | int | Max new memories per day (default 20, 1–200) |
-| `calm_mode` | boolean | Suppress notification badges, default `true` |
-| `weekly_digest` | boolean | Sunday-evening summary, default `false` |
-| `morning_review_at` | time | When the morning nudge fires (default 08:00) |
-| `evening_review_at` | time | When the evening nudge fires (default 21:30) |
+| `calm_mode` | boolean | Suppresses the daily reminder (the first-review alert stays), default `true` — so the daily reminder is opt-out. Spec 2026-09-02 §F3 |
+| `weekly_digest` | boolean | Saved preference only — no digest is sent yet; default `false` |
+| `morning_review_at` | time | Daily reminder slot (HH:MM, the client floors to a 30-minute slot); default 08:00 |
+| `evening_review_at` | time | UNUSED since 2026-09-03 (single reminder); kept for pre-OTA clients, drop in a later migration |
+| `plan` | text | `free` / `plus` / `pro`. Default **`pro`**, not `free` (activation 2026-09-04): neither store can sell a subscription yet, so a user who hit a cap would have no way out — the header of migration 20260903100000 has the reasoning. To be flipped back to `free` by a NEW migration once the RevenueCat keys exist. **Not** in the UPDATE grant: only the `revenuecat-sync` edge function writes it |
+| `plan_until` | timestamptz | Entitlement expiry; in the past = the plan is worth `free` (`current_plan()`). null = never expires (lifetime, promo, or a courtesy grant) |
+| `rc_app_user_id` | text | RevenueCat App User ID (= `profiles.id`). null on a row RevenueCat has never synced |
 | `created_at` / `updated_at` | timestamptz | |
 
 ### `folders`
@@ -55,8 +58,16 @@ taxonomy — 4 macrocategories, ~44 subcategories (`lib/folder-taxonomy.ts`) —
 or names a custom folder (1–40 chars client-side). **Identity is `id`**
 (migration 20260902130000): `unique(user_id, kind)` is gone, duplicates are
 legal, the route is `/folder/[id]`. Insert is allowed by
-`folders_all_own_or_admin` (user_id = auth.uid()). Free accounts
-own one folder (`FREE_FOLDER_LIMIT`, enforced in the UI for now).
+`folders_all_own_or_admin` (user_id = auth.uid()). Free accounts own one
+folder, plus accounts five, pro unlimited — enforced by
+`folders_enforce_plan_limit` (`P0005`, migration 20260903100000), counting
+**live** folders only; a restore from the trash is refused by
+`folders_enforce_plan_limit_on_restore` with the same code **only when the
+account also owns a live folder created after this one was trashed** — that is
+the "trash the only folder → create a new one → restore the old one" loop.
+An account that is simply above the cap by grandfathering (folder creation was
+never enforced before this migration) restores freely: it cannot have created
+anything, the BEFORE INSERT refuses it.
 
 | Column | Type | Notes |
 |---|---|---|
@@ -86,7 +97,9 @@ when it's `<= now()`, the memory is due.
 | `term` | text | Primary surface (e.g. "中心", "Tachycardia") |
 | `reading` | text | Pronunciation / romaji, optional |
 | `definition` | text | Body — what to remember |
-| `notes` | text | null | Free-text user notes ("appunti"), edited in the memory detail sheet (migration 20260827160000). |
+| `notes` | text | Free-text user notes ("appunti"), optional; edited in the memory detail sheet (migration 20260827160000). |
+| `photo_path` | text | Chiave dell'oggetto nel bucket privato `memory-photos` (`<user_id>/<memory_id>.jpg`, migration 20260903110000). null = nessuna foto. Mai un URL: si legge con URL firmati (`lib/photos.ts`). Plus and Pro, **client-side only** (`canUsePhotos`, since 2026-09-04): no trigger looks at this column: i trigger di `20260903100000_plans.sql` guardano ricordi, cartelle e sezioni, non `photo_path`. Un gate server è una decisione aperta. |
+| `photo_added_at` | timestamptz | Quando è stata allegata l'ultima foto (migration 20260903110000). Scritta da `updateMemoryPhoto` **solo quando `photo_path` passa a un valore**, e mai azzerata alla rimozione. Nullable, senza default: **nessuno la legge ancora**. Esiste perché da `photo_path` non si può derivare "quante foto ha allegato oggi" — `updated_at` si muove per qualunque modifica — ed è il dato su cui si costruirà il tetto "due foto al giorno" del piano free. Il conteggio sarà quindi "quanti ricordi hanno RICEVUTO una foto oggi": togliere una foto non restituisce quota, come già per il contatore giornaliero dei ricordi. |
 | `example` | text | Example sentence, optional |
 | `item_type` | text | Folder-specific subtype (word/kanji/concept/drug/…) |
 | `state` | enum `memory_state` | `active` / `fading` / `archived` |
@@ -158,6 +171,7 @@ Policy summary (full SQL in the migration):
 | `memories` | self or admin | self for own; admin for any |
 | `review_sessions` | self or admin | self for own; admin for any |
 | `review_items` | self via session join, or admin | same |
+| `storage.objects` (bucket `memory-photos`) | own folder `<auth.uid()>/…` | own folder: insert / update (upsert) / delete — `authenticated` only, no admin bypass |
 
 Admin bypass uses `public.is_admin()`, a `SECURITY DEFINER` function that
 sidesteps the recursive-RLS-on-profiles problem.
@@ -170,6 +184,35 @@ sidesteps the recursive-RLS-on-profiles problem.
 | `profiles_set_updated_at` | `profiles` | BEFORE UPDATE | Touch `updated_at` |
 | `folders_set_updated_at` | `folders` | BEFORE UPDATE | Touch `updated_at` |
 | `memories_set_updated_at` | `memories` | BEFORE UPDATE | Touch `updated_at` |
+| `memories_enforce_plan_limit` | `memories` | BEFORE INSERT | 10 memories on the free plan, **trash included** (`where user_id`, no `deleted_at` filter) → `P0004` |
+| `folders_enforce_plan_limit` | `folders` | BEFORE INSERT | 1 folder (free) / 5 (plus), **live rows only** (`deleted_at is null`) → `P0005` |
+| `folders_enforce_plan_limit_on_restore` | `folders` | BEFORE UPDATE, only on `deleted_at` non-null → null | Restore from the trash while the live folders are at the cap **and** one of them was created after this row was trashed → `P0005` (hint `plan-limit:folders-restore`). Grandfathered accounts (live > cap, nothing created since) are not blocked |
+| `subfolders_enforce_rules` | `subfolders` | BEFORE INSERT OR UPDATE | 0 sections (free) / 3 (plus) → `P0003`, plus the integrity guards (`P0001`) |
+
+The two caps count the trash the opposite way on purpose: a memory restore can
+never fail (the total only goes down), while a folder cap of ONE must not lock
+out a user who trashed their only folder and owns none — the loop is closed on
+the restore instead. The reasoning is in `docs/PAYMENTS.md` § "Grandfathering,
+e come contano i tetti" and, at length, in the migration's comments.
+
+### Errcode dei limiti
+
+Clients map the **code**, never a substring of the message (a translation would
+break it). `lib/plan.ts` `planLimitFromCode()` is the only place that knows
+them.
+
+| Errcode | Limit | i18n |
+|---|---|---|
+| `P0004` | memories (10 in total, trash included, free) | `planLimit.memories*` |
+| `P0005` | folders (1 free, 5 plus, live rows only) — both on create and on restore | `planLimit.folders*`, `planLimit.foldersRestore*` |
+| `P0003` | sections (0 free, 3 plus) | `planLimit.sections*` |
+| `P0001` | integrity guards, **not** a plan limit | generic message |
+
+PostgREST serves `P0003`/`P0004`/`P0005` as **HTTP 500** — its SQLSTATE→HTTP
+table promotes only `P0001` to 400 — but the body with `code` still reaches the
+client, which is what `planLimitFromCode()` works on. So plan refusals, a
+normal outcome for a free user, show up as 500 in the project logs: not a fault
+to chase.
 
 ## Functions
 
@@ -180,6 +223,7 @@ sidesteps the recursive-RLS-on-profiles problem.
 | `set_updated_at()` | trigger | nobody (trigger-only) | Touches `updated_at` |
 | `review_items_consistency()` | trigger | nobody (trigger-only) | Session, memory and item must share `user_id` |
 | `delete_own_account()` | DEFINER | `authenticated` only (revoked from `public` and `anon`) | In-app account deletion (Apple 5.1.1(v) / Google Play): `delete from auth.users where id = auth.uid()`; raises `42501` when there is no authenticated caller |
+| `current_plan(uid)` | DEFINER, execute revoked from `public`/`anon`/`authenticated` | the plan triggers only | The plan that is worth something now: `plan`, degraded to `free` when `plan_until` is past. Mirrored client-side by `effectivePlan()` in `lib/plan.ts` |
 
 ### Account deletion
 
@@ -220,9 +264,47 @@ if (!error) await supabase.auth.signOut();
 Migration `20260825153500` additionally revokes execute from `anon`: the
 hosted project's default privileges grant execute on new `public` functions to
 `anon`/`authenticated`/`service_role`, and `revoke … from public` does not undo
-that explicit grant. No Storage bucket exists yet; when the photo bucket lands,
-`storage.objects` cleanup for `owner = auth.uid()` must be added to this
-function in a new migration.
+that explicit grant. The photo bucket exists since 20260903110000, and this
+function deliberately does NOT touch `storage.objects`: see § Storage below for
+why SQL cannot delete files.
+
+## Storage
+
+### `memory-photos` (migration 20260903110000)
+
+The same migration also adds `memories.photo_added_at` — see the column table
+above. It is inert: nothing reads it yet.
+
+Private bucket (`public = false`), 5 MiB per object, `allowed_mime_types =
+{image/jpeg}`. One object per memory at `<user_id>/<memory_id>.jpg`; the key
+lives in `memories.photo_path`. Four policies on `storage.objects` for
+`authenticated`, all bound to `(storage.foldername(name))[1] =
+(select auth.uid()::text)`: `memory_photos_select_own`, `_insert_own`,
+`_update_own` (the client uploads with `upsert: true`), `_delete_own`. No
+admin bypass, no policy on `storage.buckets` (no SDK call needs one).
+
+Reads use `createSignedUrl(path, 3600)` with an in-memory cache
+(`lib/photo-utils.ts makeSignedUrlCache`), never `getPublicUrl`. All Storage
+access goes through `lib/photos.ts`.
+
+**Deleting files.** `delete from storage.objects` in SQL removes the metadata
+row only — the S3 object stays (billed, unreachable), newer hosted projects
+block the statement outright (`storage.protect_delete`, migration 0055), and
+a missing row hides the file from `list()`/`remove()` forever. Therefore
+`purge_trash()`, `purge_expired_accounts()` and `delete_own_account()` do
+NOT touch `storage.objects`. Cleanup happens through the Storage API:
+
+- **Memories purged from the trash** — the client reconciles its own folder
+  on every `(app)` mount (`reconcilePhotos` in `lib/photos.ts`): `list(<uid>)`
+  vs `select photo_path from memories where user_id = <uid>` (trash INCLUDED,
+  a trashed memory can be restored), `remove()` of what has no row. Objects
+  younger than 10 minutes are skipped (an upload may be in flight).
+- **Purged accounts (72 h)** — no client is left to reconcile. Their files
+  stay orphaned until a `service_role` job exists (an Edge Function on a
+  schedule listing the bucket's top-level folders and removing those with no
+  `profiles` row). **Open decision** — GDPR-relevant, owner's call (AGENTS.md
+  §7). Photos are NOT removed at deletion-request time: a user who recovers
+  the account within 72 h would lose them.
 
 ## Common queries
 
@@ -279,13 +361,13 @@ order by completed_at desc;
 
 These are conscious omissions, not oversights:
 
-- **Subscription state** — a future `profiles.premium_until` column written
-  by the RevenueCat webhook Edge Function (`docs/PAYMENTS.md`). Not created
-  until the paywall is built.
+- **Subscription history** — `profiles.plan` + `plan_until` are enough for a
+  permission with an expiry; the full history lives in RevenueCat. If we ever
+  need it locally, then a table.
 - **Push notification tokens** — Phase 4.
 - **Content templates / "marketplace" folders** — admin shipping pre-built
   decks. Deferred until after launch.
 - **Sharing / social** — out of scope per `docs/PRODUCT.md`.
-- **Multimedia memories** — photos, audio. Defer until we know we want them.
+- **Audio on memories** — photos landed with 20260903110000 (one per memory, Plus and Pro); audio is still deferred.
 - **Custom item types** — `item_type` is a text column without a foreign-key
   enforced taxonomy. Loose on purpose for Phase 2.

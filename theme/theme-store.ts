@@ -3,12 +3,10 @@
  * lib/i18n (preferenza + risoluzione + persistenza + idratazione prima del
  * primo frame), che risolve lo stesso identico problema per la lingua.
  *
- * "Default" segue il telefono. NOTA transizione: finché app.json porta
- * userInterfaceStyle "light" (input del fingerprint — si cambia in
- * "automatic" solo con la build nativa 3, MAI via OTA), l'OS consegna
- * sempre "light", quindi Default = chiaro; lo switch manuale funziona da
- * subito. Con la build 3 Default inizia a seguire davvero il sistema senza
- * altri cambi di codice.
+ * "Default" segue il telefono: dalla build 3 app.json porta
+ * userInterfaceStyle "automatic", l'OS consegna il tratto reale e lo store
+ * lo risolve qui sotto senza altro codice. (Fino alla build 2 era "light"
+ * di proposito — input del fingerprint — e Default valeva sempre chiaro.)
  *
  * Il resolved scheme alimenta DUE consumatori che devono restare d'accordo:
  *   1. useColors()/useThemeTokens() — gli stili inline;

@@ -4,6 +4,7 @@ import { clearPersistedSession, supabase, isSupabaseConfigured } from "./supabas
 import { t } from "@/lib/i18n";
 import { reportError } from "./report-error";
 import { decideAuthEvent } from "./auth-events";
+import { PLANS, type Plan } from "./plan";
 import {
   authLinkErrorMessage,
   authLinkFingerprint,
@@ -19,6 +20,13 @@ export type AuthUser = {
   email: string;
   name: string;
   role: UserRole;
+  /**
+   * Piano scritto a DB. NON e' il piano che vale adesso: passa sempre da
+   * effectivePlan(plan, planUntil) (lib/plan.ts) o da usePlan().
+   * Come `role`, arriva SOLO dal database — mai dedotto dal client.
+   */
+  plan: Plan;
+  planUntil: string | null;
 };
 
 type AuthState = {
@@ -77,6 +85,8 @@ type AuthState = {
   setViewAsUser: (on: boolean) => void;
   /** Updates the cached user name after a successful profile save. */
   setUserName: (name: string) => void;
+  /** Aggiorna il piano dopo una sincronizzazione con RevenueCat. */
+  setPlan: (plan: Plan, planUntil: string | null) => void;
   signIn: (email: string, password: string) => Promise<void>;
   /**
    * Ends the session. `scope: "global"` (default) revokes every session of
@@ -148,19 +158,31 @@ async function buildAuthUserFromSession(
   // the only authorities on who is admin.
   const { data: profile, error } = await supabase
     .from("profiles")
-    .select("role, name")
+    // select("*") e non l'elenco delle colonne: la build 3 arriva sugli
+    // store PRIMA che la migrazione dei piani sia applicata (e' l'ordine
+    // imposto dalla checklist, Task 10 Step 3), e un select che nomina
+    // `plan` fallirebbe con SQLSTATE 42703 portandosi via anche role e
+    // name — l'admin perderebbe la shell di amministrazione e il nome
+    // tornerebbe a quello derivato dall'email. Stessa scelta di
+    // fetchProfile (lib/api.ts:62-71).
+    .select("*")
     .eq("id", u.id)
     .maybeSingle();
 
   if (error) reportError("auth/profile-lookup", error);
 
   const role: UserRole = profile?.role === "admin" ? "admin" : "user";
+  // Stesso principio del ruolo: il piano viene dal database e in mancanza
+  // di risposta si degrada, mai si concede.
+  const rawPlan = typeof profile?.plan === "string" ? profile.plan : "free";
+  const plan: Plan = (PLANS as readonly string[]).includes(rawPlan) ? (rawPlan as Plan) : "free";
+  const planUntil = typeof profile?.plan_until === "string" ? profile.plan_until : null;
   const name =
     (typeof profile?.name === "string" && profile.name) ||
     safeMetaName(u.user_metadata) ||
     deriveName(email);
 
-  return { id: u.id, email, name, role };
+  return { id: u.id, email, name, role, plan, planUntil };
 }
 
 /**
@@ -256,6 +278,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ user: next });
     // Demo sessions live in AsyncStorage — keep the cached copy in sync so
     // the rename survives a reload.
+    if (!isSupabaseConfigured) {
+      void AsyncStorage.setItem(DEMO_STORAGE_KEY, JSON.stringify(next)).catch(() => {});
+    }
+  },
+
+  setPlan: (plan, planUntil) => {
+    const user = get().user;
+    if (!user) return;
+    const next = { ...user, plan, planUntil };
+    set({ user: next });
     if (!isSupabaseConfigured) {
       void AsyncStorage.setItem(DEMO_STORAGE_KEY, JSON.stringify(next)).catch(() => {});
     }
@@ -359,6 +391,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           email: match.email,
           name: match.name,
           role: match.role,
+          // La modalita' demo non ha backend ne' store: nessun limite di
+          // piano ha senso li' dentro. Il paywall resta visitabile da
+          // Impostazioni, con i bottoni disattivati.
+          plan: "pro",
+          planUntil: null,
         };
         await AsyncStorage.setItem(DEMO_STORAGE_KEY, JSON.stringify(user));
         set({ user });

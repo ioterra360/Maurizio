@@ -6,7 +6,8 @@ import { BlurView } from "expo-blur";
 import { Home, Folder, BarChart3, Settings as SettingsIcon } from "lucide-react-native";
 
 import { useAuthGate } from "@/lib/auth-gate";
-import { fetchDeletionRequestedAt } from "@/lib/api";
+import { fetchDeletionRequestedAt, fetchProfile } from "@/lib/api";
+import { reconcilePhotos } from "@/lib/photos";
 import { useAuthStore } from "@/lib/auth-store";
 import { reportError } from "@/lib/report-error";
 import { useFolderOrderStore } from "@/lib/folder-order-store";
@@ -14,6 +15,7 @@ import { useFolderSortStore } from "@/lib/folder-sort-store";
 import { useT } from "@/lib/i18n";
 import { useColors } from "@/theme/tokens";
 import { useThemeStore } from "@/theme/theme-store";
+import { notificationsAvailable, syncDailyReminder } from "@/lib/notifications";
 
 export default function AppLayout() {
   const gate = useAuthGate("app");
@@ -51,6 +53,35 @@ export default function AppLayout() {
     return () => {
       cancelled = true;
     };
+  }, [userId]);
+
+  // Promemoria giornaliero: riallineato al profilo a ogni avvio/login
+  // (spec F3). Le notifiche per singolo ricordo NON si toccano qui: si
+  // programmano solo al salvataggio. Senza flag niente query in più.
+  useEffect(() => {
+    if (!userId || !notificationsAvailable()) return;
+    let cancelled = false;
+    fetchProfile(userId)
+      .then((p) => {
+        if (!cancelled) return syncDailyReminder(p);
+      })
+      .catch((err) => {
+        reportError("app-layout/daily-reminder-sync", err);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]);
+
+  // Le purghe SQL (cestino 24h) non possono cancellare i FILE del bucket foto
+  // (migration 20260903110000, commento in testa): il client riconcilia la
+  // propria cartella una volta per utente a ogni mount del gruppo. Best
+  // effort e in background: un errore di rete non blocca nulla.
+  useEffect(() => {
+    if (!userId) return;
+    reconcilePhotos(userId).catch((err) => {
+      reportError("app-layout/photo-reconcile", err);
+    });
   }, [userId]);
   if (gate) return gate;
 
@@ -128,6 +159,7 @@ export default function AppLayout() {
           Expo Router would auto-mount it as a 5th, empty-titled tab. */}
       <Tabs.Screen name="folder/[id]" options={{ href: null }} />
       <Tabs.Screen name="upcoming" options={{ href: null }} />
+      <Tabs.Screen name="notifications" options={{ href: null }} />
     </Tabs>
   );
 }

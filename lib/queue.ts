@@ -157,6 +157,7 @@ export function toReviewCard(
     back: m.definition,
     example: m.example ?? undefined,
     hint: m.example ?? undefined,
+    photoPath: m.photoPath ?? undefined,
     folder: folderName,
     folderKind,
     srs: { ...m.srs, nextReviewAt: m.nextReviewAt, lastReviewedAt: m.lastReviewedAt },

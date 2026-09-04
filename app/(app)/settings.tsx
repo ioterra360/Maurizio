@@ -21,7 +21,7 @@ import { SectionLabel } from "@/components/SectionLabel";
 import { useLocaleStore, useT, type LocalePreference, type TKey } from "@/lib/i18n";
 import { useThemeStore } from "@/theme/theme-store";
 import type { ThemePreference } from "@/theme/theme-store";
-import { SettingsRow, SettingsToggle } from "@/components/SettingsRow";
+import { SettingsRow } from "@/components/SettingsRow";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { GhostButton } from "@/components/GhostButton";
 import { Mascot } from "@/components/Mascot";
@@ -32,6 +32,7 @@ import { useReviewStore } from "@/lib/review-store";
 import { useUIStore } from "@/lib/ui-store";
 import { reportError } from "@/lib/report-error";
 import { fetchDeletionPreview, fetchProfile, requestAccountDeletion, updateProfile } from "@/lib/api";
+import { cancelAllReminders } from "@/lib/notifications";
 import {
   ACCOUNT_DELETION_URL,
   NOTIFICATIONS_ENABLED,
@@ -47,6 +48,8 @@ import {
 } from "@/lib/account-deletion";
 import type { Profile } from "@/lib/mappers";
 import { tap, error as errorFeedback } from "@/lib/feedback";
+import { purchasesAvailable, restorePlan } from "@/lib/purchases";
+import { PLAN_NAME_KEY, refreshPlan, usePlan } from "@/lib/use-plan";
 import { FONT, radii, useColors } from "@/theme/tokens";
 
 /**
@@ -133,6 +136,31 @@ export default function SettingsScreen() {
   // strumento di autoregolazione, il confine commerciale arriva coi piani.
   const [limitPickerOpen, setLimitPickerOpen] = useState(false);
   const [pendingCap, setPendingCap] = useState<number | null>(null);
+  const plan = usePlan();
+  const [restoring, setRestoring] = useState(false);
+  const restorePurchases = () => {
+    if (restoring) return;
+    tap();
+    setRestoring(true);
+    restorePlan()
+      .then(async (restored) => {
+        // Stessa regola del paywall: se la rilettura dal server fallisce lo
+        // store e' rimasto com'era, e dirgli "sei Pro" sarebbe falso.
+        const synced = await refreshPlan();
+        showToast(
+          restored === "free"
+            ? tr("paywall.restoreNone")
+            : synced
+              ? tr("paywall.restored", { plan: tr(PLAN_NAME_KEY[restored]) })
+              : tr("paywall.restoredSyncing"),
+        );
+      })
+      .catch((err) => {
+        reportError("settings/restore-purchases", err);
+        showToast(tr("paywall.restoreFailed"));
+      })
+      .finally(() => setRestoring(false));
+  };
 
   useEffect(() => {
     if (!user) return;
@@ -190,6 +218,9 @@ export default function SettingsScreen() {
     // Drop any in-progress review first: its fire-and-forget writes are
     // already .catch()-guarded, but a live deck must not outlive the user.
     useReviewStore.getState().reset();
+    // Le notifiche locali vivono nell'OS: senza sessione non hanno più
+    // niente da promettere. No-op a flag spento e in demo.
+    await cancelAllReminders();
     await signOut();
     router.replace("/(auth)/login");
   };
@@ -231,6 +262,7 @@ export default function SettingsScreen() {
     // locale — mazzo, sign out, login. I dati restano fino alla purga.
     useReviewStore.getState().reset();
     setConfirmDelete(false);
+    await cancelAllReminders();
     await signOut();
     setDeleting(false);
     router.replace("/(auth)/login");
@@ -336,22 +368,6 @@ export default function SettingsScreen() {
           </View>
         </View>
 
-        {/* Schedule — hidden until notifications exist (NOTIFICATIONS_ENABLED). */}
-        {NOTIFICATIONS_ENABLED && (
-          <>
-        {/* Schedule */}
-        <View style={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 8 }}>
-          <SectionLabel>{tr("settings.scheduleSection")}</SectionLabel>
-        </View>
-        <View style={{ paddingHorizontal: 16, gap: 10 }}>
-          {/* Time values are HH:MM:SS from Postgres — show HH:MM. Rows stay
-              non-interactive until real time pickers exist. */}
-          <SettingsRow label={tr("settings.morningReview")} value={(profile?.morningReviewAt ?? "08:00").slice(0, 5)} />
-          <SettingsRow label={tr("settings.eveningReview")} value={(profile?.eveningReviewAt ?? "21:30").slice(0, 5)} />
-        </View>
-          </>
-        )}
-
         {/* Limits */}
         <View style={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 8 }}>
           <SectionLabel>{tr("settings.limitsSection")}</SectionLabel>
@@ -370,38 +386,21 @@ export default function SettingsScreen() {
 
         {NOTIFICATIONS_ENABLED && (
           <>
-        {/* Notifications */}
-        <View style={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 8 }}>
-          <SectionLabel>{tr("settings.notificationsSection")}</SectionLabel>
-        </View>
-        <View style={{ paddingHorizontal: 16, gap: 10 }}>
-          {/* Toggles are uncontrolled — the key remounts them once the real
-              profile loads so defaultOn reflects the stored value. */}
-          <SettingsToggle
-            key={profile ? `calm-${profile.calmMode}` : "calm"}
-            label={tr("settings.calmMode")}
-            hint={tr("settings.calmModeHint")}
-            defaultOn={profile ? profile.calmMode : true}
-            onChange={(v) => {
-              if (!user) return;
-              updateProfile(user.id, { calmMode: v }).catch((err) => {
-                reportError("settings/calm-mode-save", err);
-              });
-            }}
-          />
-          <SettingsToggle
-            key={profile ? `digest-${profile.weeklyDigest}` : "digest"}
-            label={tr("settings.weeklyDigest")}
-            hint={tr("settings.weeklyDigestHint")}
-            defaultOn={profile ? profile.weeklyDigest : false}
-            onChange={(v) => {
-              if (!user) return;
-              updateProfile(user.id, { weeklyDigest: v }).catch((err) => {
-                reportError("settings/weekly-digest-save", err);
-              });
-            }}
-          />
-        </View>
+            {/* Notifiche: una riga che apre la schermata (spec F3), non un blocco inline. */}
+            <View style={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 8 }}>
+              <SectionLabel>{tr("settings.notificationsSection")}</SectionLabel>
+            </View>
+            <View style={{ paddingHorizontal: 16, gap: 10 }}>
+              <SettingsRow
+                label={tr("notifications.settingsRow")}
+                hint={tr("notifications.settingsRowHint")}
+                chevron
+                onPress={() => {
+                  tap();
+                  router.push("/(app)/notifications" as never);
+                }}
+              />
+            </View>
           </>
         )}
 
@@ -420,6 +419,68 @@ export default function SettingsScreen() {
         <View style={{ paddingHorizontal: 16 }}>
           <LanguagePicker />
         </View>
+
+        {/* Abbonamento — ricreata dopo la cancellazione del vecchio
+            checkout esterno (3cd141e). Il paywall e' in-app: nessun link
+            fuori dall'app (Apple 3.1.1 / Play Payments).
+
+            L'INTERA sezione sta dietro `purchasesAvailable`, non la sola riga
+            "Ripristina acquisti" (attivazione 2026-09-04). Senza chiavi
+            RevenueCat l'SDK non viene mai chiamato e /paywall mostra le tre
+            schede con TUTTI i bottoni spenti: un ingresso dalle Impostazioni
+            porterebbe a un vicolo cieco — su iOS e' la funzionalita'
+            segnaposto che la linea guida 2.1 fa rifiutare, su Android e'
+            comunque un tester che non puo' fare niente di quello che l'app
+            gli ha appena proposto. Sparisce anche l'intestazione: un titolo
+            sopra un blocco vuoto e' peggio del blocco vuoto.
+
+            Sparisce con lei anche la riga "Piano", ed e' voluto: dirti su
+            quale piano sei mentre non esiste alcun modo di cambiarlo apre una
+            domanda a cui l'app non sa rispondere.
+
+            La rotta /paywall resta e non e' irraggiungibile: ci si arriva solo
+            DOPO aver incontrato un limite (PlanLimitDialog e il gate foto di
+            Add), che e' l'unico momento in cui vederla ha un senso. Con il
+            default 'pro' di 20260903100000_plans.sql quei limiti oggi non li
+            incontra nessuno. Tutto si riaccende da solo quando le chiavi
+            entrano in eas.json: qui non c'e' niente da disfare. */}
+        {purchasesAvailable ? (
+          <>
+            <View style={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 8 }}>
+              <SectionLabel>{tr("settings.subscriptionSection")}</SectionLabel>
+            </View>
+            <View style={{ paddingHorizontal: 16, gap: 10 }}>
+              <SettingsRow
+                label={tr("settings.planLabel")}
+                hint={tr("settings.planHint")}
+                value={tr(PLAN_NAME_KEY[plan])}
+              />
+              {/* Tre casi, non due: `settings.upgrade` e' la stringa fissa
+                  "Passa a Plus", e un abbonato Plus se la leggerebbe due righe
+                  sotto "Piano: Plus". */}
+              <SettingsRow
+                label={
+                  plan === "free"
+                    ? tr("settings.upgrade")
+                    : plan === "plus"
+                      ? tr("settings.upgradePro")
+                      : tr("settings.seePlans")
+                }
+                value={tr("settings.open")}
+                onPress={() => {
+                  tap();
+                  router.push("/paywall" as never);
+                }}
+              />
+              <SettingsRow
+                label={tr("settings.restorePurchases")}
+                hint={tr("settings.restorePurchasesHint")}
+                value={tr("settings.open")}
+                onPress={restorePurchases}
+              />
+            </View>
+          </>
+        ) : null}
 
         {/* About */}
         <View style={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 8 }}>
@@ -479,7 +540,7 @@ export default function SettingsScreen() {
           />
         </View>
 
-        {/* Danger zone — premium: warning header + two icon-led cards */}
+        {/* Danger zone: warning header + two icon-led cards */}
         <View style={{ paddingHorizontal: 24, paddingTop: 32, paddingBottom: 10 }}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
             <AlertTriangle size={14} color={colors.danger} strokeWidth={2} />

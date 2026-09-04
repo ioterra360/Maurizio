@@ -6,10 +6,12 @@ import { Clock3, RotateCcw, Trash2 } from "lucide-react-native";
 import { FolderTile } from "@/components/FolderTile";
 import { Mascot } from "@/components/Mascot";
 import { MascotLoader } from "@/components/MascotLoader";
+import { PlanLimitDialog } from "@/components/PlanLimitDialog";
 import { SectionLabel } from "@/components/SectionLabel";
 import { Tappable } from "@/components/Tappable";
 import { TopBar } from "@/components/TopBar";
 import {
+  fetchMemoriesForFolder,
   fetchTrash,
   restoreFolder,
   restoreMemory,
@@ -17,12 +19,15 @@ import {
 } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
 import { useT } from "@/lib/i18n";
-import { reportError } from "@/lib/report-error";
+import { planLimitFromCode, type PlanLimitKind } from "@/lib/plan";
+import { errorCode, reportError } from "@/lib/report-error";
 import { trashHoursLeft } from "@/lib/trash";
+import { usePlan } from "@/lib/use-plan";
 import { useUIStore } from "@/lib/ui-store";
 import type { FolderKind } from "@/lib/constants";
 import { FOLDER_KINDS } from "@/lib/constants";
 import { FONT, radii, useColors } from "@/theme/tokens";
+import { scheduleFirstReview } from "@/lib/notifications";
 
 /**
  * Cestino — cartelle e ricordi eliminati nelle ultime 24 ore (Maurizio,
@@ -36,12 +41,17 @@ export default function TrashScreen() {
   const { t, tp } = useT();
   const user = useAuthStore((s) => s.user);
   const showToast = useUIStore((s) => s.showToast);
+  const plan = usePlan();
 
   const [trash, setTrash] = useState<TrashContent | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   // Id (cartella o ricordo) del ripristino in corso — disabilita quel tasto.
   const [restoring, setRestoring] = useState<string | null>(null);
+  // Il ripristino di una cartella e' l'unica UPDATE che passa da un tetto di
+  // piano (folders_enforce_plan_limit_on_restore, P0005): senza questo ramo
+  // l'utente si vedrebbe "Riprova" sull'unica azione che fallira' sempre.
+  const [planBlock, setPlanBlock] = useState<PlanLimitKind | null>(null);
 
   const load = useCallback(async () => {
     if (!user) return;
@@ -66,9 +76,24 @@ export default function TrashScreen() {
     setRestoring(id);
     try {
       await restoreFolder(id);
+      // I ricordi tornati vivi con nextReviewAt ancora nel futuro riavranno
+      // il loro avviso; gli altri sono già in coda e non serve nulla.
+      fetchMemoriesForFolder(id)
+        .then(async (items) => {
+          // Sequenziale, non `void`: il tetto di lib/notifications.ts conta la
+          // coda prima di ogni richiesta, e N chiamate concorrenti leggerebbero
+          // tutte lo stesso conteggio pre-raffica scavalcandolo.
+          for (const m of items) await scheduleFirstReview(m);
+        })
+        .catch((e) => reportError("trash/reschedule-folder", e));
       showToast(t("trash.restoredFolder", { name }));
       await load();
     } catch (e) {
+      const limit = planLimitFromCode(errorCode(e));
+      if (limit) {
+        setPlanBlock(limit);
+        return;
+      }
       reportError("trash/restore-folder", e);
       showToast(t("trash.restoreFailed"));
     } finally {
@@ -81,9 +106,18 @@ export default function TrashScreen() {
     setRestoring(id);
     try {
       await restoreMemory(id);
+      const restored = trash?.memories.find((m) => m.id === id);
+      if (restored) void scheduleFirstReview(restored);
       showToast(t("trash.restoredMemory"));
       await load();
     } catch (e) {
+      // restoreMemory ripristina PRIMA la cartella madre (lib/api.ts): il
+      // rifiuto che arriva qui e' quello del tetto cartelle, non dei ricordi.
+      const limit = planLimitFromCode(errorCode(e));
+      if (limit) {
+        setPlanBlock(limit);
+        return;
+      }
       reportError("trash/restore-memory", e);
       showToast(t("trash.restoreFailed"));
     } finally {
@@ -238,6 +272,12 @@ export default function TrashScreen() {
           ) : null}
         </ScrollView>
       )}
+      <PlanLimitDialog
+        limit={planBlock}
+        plan={plan}
+        context="restore"
+        onClose={() => setPlanBlock(null)}
+      />
     </SafeAreaView>
   );
 }

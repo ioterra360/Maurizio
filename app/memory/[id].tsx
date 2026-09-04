@@ -12,14 +12,16 @@ import {
 } from "react-native";
 import { FolderInput, Trash2 } from "lucide-react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
+import { Redirect, router, useFocusEffect, useLocalSearchParams } from "expo-router";
 
 import { MascotLoader } from "@/components/MascotLoader";
+import { MemoryPhoto } from "@/components/MemoryPhoto";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { SectionLabel } from "@/components/SectionLabel";
 import { Tappable } from "@/components/Tappable";
 import { TopBar } from "@/components/TopBar";
 import { deleteMemory, fetchMemoryById, fetchReviewCount, fetchSubfolders, updateMemoryNotes } from "@/lib/api";
+import { cancelFirstReview, scheduleFirstReview } from "@/lib/notifications";
 import { MoveSheet } from "@/components/MoveSheet";
 import { longDate, relativeReviewed } from "@/lib/format";
 import { termFontSize, termLineHeight } from "@/lib/term-typography";
@@ -27,6 +29,7 @@ import { useT } from "@/lib/i18n";
 import type { TKey } from "@/lib/i18n";
 import type { Memory } from "@/lib/mappers";
 import { reportError } from "@/lib/report-error";
+import { useAuthStore } from "@/lib/auth-store";
 import { useUIStore } from "@/lib/ui-store";
 import { FONT, radii, useColors, useThemeTokens } from "@/theme/tokens";
 
@@ -45,6 +48,10 @@ export default function MemoryDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const showToast = useUIStore((s) => s.showToast);
   const { colors, statusTint } = useThemeTokens();
+  // Fuori dal gate di (app) e raggiungibile da un deep link (notifica):
+  // guardia esplicita, come Add.
+  const user = useAuthStore((s) => s.user);
+  const hydrated = useAuthStore((s) => s.hydrated);
 
   // Labels are catalog keys, resolved with t() at render so the language
   // switch applies. Built inside the component: statusTint follows the theme.
@@ -69,6 +76,10 @@ export default function MemoryDetailScreen() {
   const [sectionName, setSectionName] = useState<string | null>(null);
 
   const load = useCallback(async () => {
+    // Il render qui sotto redirige, ma gli effetti di QUESTO render sono già
+    // registrati e girano lo stesso al commit: la query si ferma qui, non
+    // nel JSX. Niente PostgREST da disconnessi.
+    if (!useAuthStore.getState().user) return;
     if (!id) return;
     setLoading(true);
     setError(false);
@@ -118,6 +129,20 @@ export default function MemoryDetailScreen() {
     }, [load]),
   );
 
+  // Il payload della notifica porta il folderId CONGELATO al salvataggio,
+  // ma un ricordo può cambiare cartella (`moveMemory`, lib/api.ts:1165,
+  // raggiungibile dal MoveSheet montato qui sotto e dal giro
+  // /choose-topic). Senza riallineamento: cestinare la cartella NUOVA non
+  // cancella l'avviso (il filtro cerca la vecchia) e cestinare la VECCHIA
+  // cancella l'avviso di un ricordo vivo. L'identificatore è stabile, quindi
+  // riprogrammare RISCRIVE il payload; scheduleFirstReview scarta da sé fase
+  // ≠ p20h, date passate e cancelli chiusi. `load()` gira dopo ogni
+  // spostamento (`onMoved`, riga 460) e al rientro da /choose-topic
+  // (`useFocusEffect`), quindi entrambi i percorsi passano di qui.
+  useEffect(() => {
+    if (memory) void scheduleFirstReview(memory);
+  }, [memory]);
+
   const dirty = memory !== null && notes.trim() !== (memory.notes ?? "").trim();
 
   const save = async () => {
@@ -163,6 +188,9 @@ export default function MemoryDetailScreen() {
     setDeleting(true);
     try {
       await deleteMemory(memory.id);
+      // Un "primo ripasso pronto" per un ricordo nel cestino prometterebbe
+      // una coda che non lo contiene: via. Idempotente se non c'era.
+      void cancelFirstReview(memory.id);
       showToast(t("memory.deleted"));
       back(); // the folder list refetches on focus
     } catch (e) {
@@ -171,6 +199,9 @@ export default function MemoryDetailScreen() {
       setDeleting(false);
     }
   };
+
+  if (!hydrated) return null;
+  if (!user) return <Redirect href="/(auth)/login" />;
 
   const meta = memory ? STATE_META[memory.state] : null;
 
@@ -329,6 +360,7 @@ export default function MemoryDetailScreen() {
                   {memory.example}
                 </Text>
               ) : null}
+              {memory.photoPath ? <MemoryPhoto path={memory.photoPath} style={{ marginTop: 12 }} /> : null}
             </View>
 
             {/* Dates */}

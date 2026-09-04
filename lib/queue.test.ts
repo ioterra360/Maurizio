@@ -24,6 +24,7 @@ const mem = (over: Partial<Memory> = {}): Memory => ({
   srs: { intervalDays: 1, easeFactor: 2.5, repetitions: 0 },
   subfolderId: null,
   deletedAt: null,
+  photoPath: null,
   lastReviewedAt: null,
   nextReviewAt: "2026-07-25T08:00:00.000Z",
   phase: "p20h",
@@ -104,6 +105,11 @@ describe("toReviewCard", () => {
     expect(c.hint).toBe("¡Voy a la biblioteca!");
     expect(toReviewCard(mem(), "Spanish").hint).toBeUndefined();
     expect(toReviewCard(mem(), "Spanish").reading).toBeUndefined();
+  });
+
+  it("porta photoPath sulla carta, undefined quando il ricordo non ha foto", () => {
+    expect(toReviewCard(mem({ photoPath: "u1/m1.jpg" }), "Spanish").photoPath).toBe("u1/m1.jpg");
+    expect(toReviewCard(mem(), "Spanish").photoPath).toBeUndefined();
   });
 });
 

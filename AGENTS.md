@@ -10,8 +10,9 @@
 **Memika** (final brand name) is a calm, editorial spaced-repetition
 mobile app. Three review rhythms in a fixed order: **Scan → Reinforcement →
 Focus**. It runs on Expo SDK 54 + React Native 0.81 + TypeScript with Supabase
-as the backend. Payments will be **in-app purchases via RevenueCat** (not built yet — decided
-2026-07-25, confirmed 2026-08-25). There is no marketing site and no web
+as the backend. Payments are **in-app purchases via RevenueCat** (decided
+2026-07-25, confirmed 2026-08-25, built 2026-09-03; inert until the store
+products and the keys exist). There is no marketing site and no web
 checkout for Memika.
 
 Owner and publisher: Maurizio Cocco (product; ditta individuale, Tresnuraghes;
@@ -19,10 +20,38 @@ Apple Individual + Play Personal developer accounts; support
 memikaapp@gmail.com). Developer: Angelo Casula / Tailor App Studio
 (implementation). See `docs/PRODUCT.md` for full domain context.
 
-Freemium: a free account owns exactly ONE folder; Premium (RevenueCat, not
-built) unlocks unlimited folders. `PREMIUM_ENABLED=false` in
-`lib/constants.ts` keeps the Premium row hidden (the old external-checkout screen was deleted on 2026-08-29). See
+Freemium: tre piani **Free / Plus / Pro** (fasce fissate 2026-09-02,
+RINOMINATE il 2026-09-04 sul listino di Maurizio: la fascia intermedia si
+chiamava `pro` e l'alta `premium`, quindi in un documento precedente a quella
+data "pro" significa l'INTERMEDIA). Free = 10 ricordi TOTALI, 1 cartella,
+0 sezioni; Plus = ricordi illimitati, 5 cartelle, 3 sezioni;
+Pro = tutto illimitato. Le FOTO sui ricordi sono di Plus **e** Pro
+(2026-09-04, listino Maurizio); il tetto di due al giorno che il listino dà al
+Free non è implementato, quindi il Free resta senza foto. I limiti sono applicati da
+quattro trigger Postgres (`20260903100000_plans.sql`), non dal client.
+Pagamenti: abbonamenti in-app via RevenueCat, paywall `app/paywall.tsx`. Vedi
 `docs/PAYMENTS.md`.
+
+**`profiles.plan` nasce `default 'pro'`, non `'free'`** (attivazione
+2026-09-04, migrazione `20260903100000_plans.sql`). Google non ha approvato il
+profilo pagamenti e Apple non ha il contratto per le app a pagamento: le
+`EXPO_PUBLIC_REVENUECAT_*_KEY` sono vuote, `purchasesAvailable` è falso e chi
+incontrasse un tetto non avrebbe via d'uscita dal client. Un tetto senza via
+d'uscita è peggio di nessun tetto. Vale per tutti — anche per i tester che si
+iscrivono DOPO il push, che il seed di due email non può raggiungere. I quattro
+trigger restano accesi: cambia solo da quale fascia si parte. Da invertire con
+una migrazione NUOVA quando le chiavi arrivano.
+
+**La sezione Abbonamento delle Impostazioni sta INTERA dietro
+`purchasesAvailable`** (stessa attivazione), non la sola riga "Ripristina
+acquisti": intestazione, riga "Piano" e ingresso al paywall compresi. Senza
+chiavi il paywall mostra le tre schede con tutti i bottoni spenti, e un
+ingresso sempre montato e' un vicolo cieco — su iOS la funzionalita' segnaposto
+che la linea guida 2.1 fa rifiutare. La rotta `/paywall` resta e non cambia: ci
+si arriva SOLO dietro un limite (`PlanLimitDialog`, e il gate foto di Add su
+`canUsePhotos`). Gli ingressi sono tre e sono una lista chiusa, tenuta da
+`lib/paywall-entrypoints.test.ts`: aggiungerne un quarto rompe quel test
+apposta.
 
 ## 2. Read these before touching code
 
@@ -68,8 +97,14 @@ These exist because of past decisions documented elsewhere in `docs/`.
   do not build new logic on it; it goes away with a future migration. The
   old 4-template constants (`FOLDER_TEMPLATES` in `lib/constants.ts`) now
   serve DEMO MODE ONLY. Nothing is auto-seeded: a user starts with ONE
-  folder chosen at onboarding. Freemium gating (`FOLDER_LIMIT_ENFORCED`,
-  still `false` in the test phase) returns with the Free/Pro/Premium plans.
+  folder chosen at onboarding. Freemium gating is now server-side: three
+  plans Free/Plus/Pro enforced by the triggers of
+  `20260903100000_plans.sql` (free = 1 folder, plus = 5, pro unlimited),
+  counting the user's **live** folders — the trash does not count, and the
+  "trash → create → restore" loop is closed on the restore instead
+  (`folders_enforce_plan_limit_on_restore`). The client mirrors the caps with
+  `PLAN_LIMITS` in `lib/plan.ts`; `FOLDER_LIMIT_ENFORCED` and
+  `FREE_FOLDER_LIMIT` were removed on 2026-09-03.
 - **Demo accounts are: `angelo.casula@gmail.com` (user) and
   `memikaapp@gmail.com` (admin).** Admin role is granted ONLY by the
   `public.admin_emails` allowlist (seeded with `memikaapp@gmail.com`, migration
@@ -82,6 +117,12 @@ These exist because of past decisions documented elsewhere in `docs/`.
   and call it from the client. Account deletion is the one privileged op that
   exists today and it is a `security definer` RPC (`delete_own_account()`),
   not a client-side delete.
+- **The `memory-photos` bucket is private and stays private.** Never set
+  `public = true`, never call `getPublicUrl`: photos are read through signed
+  URLs only. `lib/photos.ts` is the single Storage access point (tables stay
+  in `lib/api.ts`). Never `delete from storage.objects` in SQL — it orphans
+  the file and hides it from the API; file cleanup is `remove()` via the
+  Storage API (`docs/DATA-MODEL.md` § Storage).
 - **Release builds never run demo mode; store profiles carry the Supabase
   env.** `lib/demo-mode.ts` returns `demo: false` whenever `__DEV__` is false,
   so a `preview`/`production` build without `EXPO_PUBLIC_SUPABASE_URL` /
@@ -97,6 +138,26 @@ These exist because of past decisions documented elsewhere in `docs/`.
 - **Every caught error goes through `reportError(tag, err)`**
   (`lib/report-error.ts`); no bare `console.warn` in a `catch`. Never put
   personal data in the `extra` payload.
+- **`profiles.plan`, `plan_until` e `rc_app_user_id` non entrano MAI nella
+  grant di UPDATE per `authenticated`**
+  (`20260825121500_lock_profiles_columns.sql`). L'unico scrittore è la Edge
+  Function `revenuecat-sync`, che gira con il `service_role` iniettato dalla
+  piattaforma. Un piano scrivibile dal client è un piano regalato. La stessa
+  funzione non declassa a `free` una concessione di cortesia (`plan <> 'free'`
+  + `plan_until is null` + `rc_app_user_id is null`): è così che il seed
+  `pro` dei due tester sopravvive alla prima apertura dell'app.
+- **I limiti si mappano per errcode, mai per il testo dell'errore.**
+  `P0004` ricordi, `P0005` cartelle (creazione **e** ripristino dal cestino),
+  `P0003` sezioni; `P0001` sono le guardie di integrità e NON è un limite di
+  piano. Il solo posto che li conosce è `planLimitFromCode()` in
+  `lib/plan.ts`. Un `msg.includes("limit")` si rompe alla prima traduzione —
+  è già successo.
+- **Il client rispecchia i limiti, non li decide.** `lib/plan.ts` esiste per
+  disabilitare e spiegare prima del rifiuto; se diverge dai trigger, il bug è
+  nel client. Ogni superficie che può ricevere un errcode di piano monta
+  `PlanLimitDialog` — Add, Conoscenza, `/choose-topic`, `/folder/[id]`,
+  Impostazioni cartella, Cestino: un toast "riprova" su un limite di piano è
+  un bug, perché riprovare non può funzionare.
 
 ## 4. Conventions you must follow
 
@@ -145,8 +206,11 @@ lib/
   auth-links.ts     Pure parser for memika://reset-password#… / auth-callback#… deep links.
   report-error.ts   reportError(tag, err, extra) — console.warn in dev, Sentry.captureException in release. Use it in every catch.
   network.ts        withRequestTimeout(fetch, ms) — the 15 s Supabase request timeout (no AbortSignal.timeout on Hermes).
+  plan.ts           PURE: plan limits, effectivePlan, canAdd*, errcode → limit. No React, no Supabase. Mirrors the DB triggers.
+  purchases.ts      RevenueCat SDK behind `purchasesAvailable` (false in Expo Go, demo mode, or without keys).
+  use-plan.ts       usePlan() + startPlanSync() — the glue between the auth store, the SDK and the edge function.
 theme/              Design tokens mirroring tailwind.config.js for non-NW consumers.
-supabase/           Versioned database (config.toml + migrations/).
+supabase/           Versioned database (config.toml + migrations/) + functions/ (Deno edge functions, outside the app's tsconfig) + verify/ (read-only smoke SQL).
 docs/               Architectural docs.
 assets/brand/       Mascot, icon, logo — never inline base64 these.
 _design_drop/       Source-of-truth visual mockup (HTML) — outside the app, do not import from it.
@@ -233,9 +297,10 @@ The `--legacy-peer-deps` flag is required because `lucide-react-native` over-dec
 - **A monorepo / Nx setup.** Memika is one app. Premature.
 - **Web checkout / external payment links.** Payments are in-app purchases via
   RevenueCat. A store build that links out to a web checkout is rejected under
-  Apple 3.1.1 / Play Payments policy — the old external-checkout screen was deleted on
-  2026-08-29; the IAP paywall is not built yet. `docs/PAYMENTS.md`
-  describes the RevenueCat model and the enforcement plan.
+  Apple 3.1.1 / Play Payments policy — the old external-checkout screen was
+  deleted on 2026-08-29 and replaced on 2026-09-03 by the in-app paywall
+  `app/paywall.tsx` (RevenueCat). `docs/PAYMENTS.md` describes the model and
+  the enforcement.
 - **Auto-seeding folders at signup.** Replaced (2026-08-25) by the one-folder
   pick in `/choose-topic`. Do not reintroduce `seedDefaultFolders`.
 - **Fake numbers in loading / error states.** Health, Today and the review
@@ -243,8 +308,10 @@ The `--legacy-peer-deps` flag is required because `lucide-react-native` over-dec
   No placeholder statistics, no "planning…" spinner that never resolves.
 - **Server-side auth roles set from the client.** Roles come from the
   `handle_new_user` trigger, period.
-- **Light/dark mode toggle now.** The editorial design assumes light. Dark
-  comes in a later phase if at all.
+- **Static light-only styling.** Light AND dark ship since 2026-09-02
+  (`theme/theme-store.ts`, `theme/palettes.ts`; `userInterfaceStyle` is
+  `automatic` from build 3). Never read `colors` from `@/theme/tokens` at
+  module scope — call `useColors()` / `useThemeTokens()` inside the render.
 
 ## 7. When to ask a human
 
@@ -264,8 +331,8 @@ Don't ask if you can grep or read the docs. Do ask when:
 | GitHub | `gh ...` | Already logged in as `ioterra360`. |
 | Supabase | `npx supabase ...` | Reads `SUPABASE_ACCESS_TOKEN` from `.env`. |
 | Expo / EAS | `npm start` / `eas build --profile <p> -p <platform>` | Logged in as `ioterra`; project `@ioterra/memika` (`extra.eas.projectId` in `app.json`). Store profiles carry the Supabase env in `eas.json`. Agents do not run `eas build` / `eas submit` unless the task says so. |
-| Sentry | `EXPO_PUBLIC_SENTRY_DSN` (env) + `@sentry/react-native/expo` plugin in `app.json` | No org yet — placeholders `memika` / `memika-app` on `https://de.sentry.io/`. Source-map upload needs `SENTRY_AUTH_TOKEN` as an EAS secret, or `SENTRY_DISABLE_AUTO_UPLOAD=true` in the profile env, otherwise the build fails. `docs/DEPLOY.md` § Sentry. |
-| Pre-build sanity | `npx expo export --platform android --no-bytecode` then `hermesc -emit-binary` (recipe in `docs/TROUBLESHOOTING.md` § Hermes compile check); `npx expo config --type introspect --json`; `npx expo-doctor` (18/18) | Run before any EAS build after touching deps, `metro.config.js` or `app.json` plugins. ~1 min locally vs 20 min of failed native build. |
+| Sentry | `EXPO_PUBLIC_SENTRY_DSN` (env) + `@sentry/react-native/expo` plugin in `app.json` | No org yet — placeholders `memika` / `memika-app` on `https://de.sentry.io/`; `eas.json` preview/production carry an EMPTY `EXPO_PUBLIC_SENTRY_DSN` slot (Sentry stays off). Source-map upload needs `SENTRY_AUTH_TOKEN` as an EAS secret, or `SENTRY_DISABLE_AUTO_UPLOAD=true` in the profile env, otherwise the build fails. Order of operations: `docs/DEPLOY.md` § "Build 3" → Sentry checklist. |
+| Pre-build sanity | `npx expo export --platform android --no-bytecode` then `hermesc -emit-binary` (recipe in `docs/TROUBLESHOOTING.md` § Hermes compile check); `npx expo config --type introspect --json` → `node scripts/native-config/check-introspect.cjs <file.json>`; `npx expo-doctor` (18/18) | Run before any EAS build after touching deps, `metro.config.js` or `app.json` plugins. ~1 min locally vs 20 min of failed native build. |
 | Supabase Management API | `curl -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" https://api.supabase.com/v1/projects/taekvxxljtgzsjrlmumo/...` | PAT from `.env`. Read config (`/config/auth`), run SQL (`/database/query`). PATCH only what the task asks; hosted Auth values are recorded in `docs/DEPLOY.md`. |
 
 End of AGENTS.md. Skipping any of section 2 is a fail — read the linked docs.
