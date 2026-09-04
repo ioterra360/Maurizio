@@ -1,6 +1,7 @@
-import { Modal, Text, View } from "react-native";
+import { Text, View } from "react-native";
 import { Camera, Images, Trash2 } from "lucide-react-native";
 
+import { BottomSheetShell } from "@/components/BottomSheetShell";
 import { GhostButton } from "@/components/GhostButton";
 import { Tappable } from "@/components/Tappable";
 import { tap } from "@/lib/feedback";
@@ -38,88 +39,37 @@ export function PhotoSheet({
   const { t } = useT();
   const colors = useColors();
   return (
-    <Modal
+    <BottomSheetShell
       visible={visible}
-      transparent
-      animationType="slide"
-      onRequestClose={onClose}
-      onDismiss={onDismissed}
+      onClose={onClose}
+      onDismissed={onDismissed}
+      title={t("add.photoSheetTitle")}
     >
-      <View style={{ flex: 1, justifyContent: "flex-end" }}>
-        <Tappable
-          accessibilityRole="button"
-          accessibilityLabel={t("common.close")}
-          onPress={onClose}
-          pressedOpacity={1}
-          containerStyle={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}
-          style={{ flex: 1, backgroundColor: "rgba(15,27,51,0.32)" }}
-        >
-          <View />
-        </Tappable>
-        <View
-          style={{
-            backgroundColor: colors.warmWhite,
-            borderTopLeftRadius: 22,
-            borderTopRightRadius: 22,
-            paddingHorizontal: 22,
-            paddingTop: 16,
-            paddingBottom: 32,
-            shadowColor: "#0F1B33",
-            shadowOpacity: 0.18,
-            shadowOffset: { width: 0, height: -8 },
-            shadowRadius: 30,
-            elevation: 24,
-          }}
-        >
-          <View
-            style={{
-              alignSelf: "center",
-              width: 36,
-              height: 4,
-              borderRadius: 2,
-              backgroundColor: colors.switchTrackOff,
-              marginBottom: 16,
-            }}
+      <View style={{ marginTop: 14 }}>
+        <Row
+          icon={<Camera size={20} color={colors.navy} strokeWidth={1.9} />}
+          label={t("add.photoCamera")}
+          onPress={() => onPick("camera")}
+        />
+        <Row
+          icon={<Images size={20} color={colors.navy} strokeWidth={1.9} />}
+          label={t("add.photoLibrary")}
+          onPress={() => onPick("library")}
+        />
+        {hasPhoto ? (
+          <Row
+            icon={<Trash2 size={20} color={colors.danger} strokeWidth={1.9} />}
+            label={t("add.photoRemove")}
+            danger
+            onPress={onRemove}
           />
-          <Text
-            style={{
-              fontFamily: FONT.bold,
-              fontSize: 22,
-              color: colors.navy,
-              lineHeight: 26,
-              letterSpacing: -0.4,
-            }}
-          >
-            {t("add.photoSheetTitle")}
-          </Text>
-
-          <View style={{ marginTop: 14 }}>
-            <Row
-              icon={<Camera size={20} color={colors.navy} strokeWidth={1.9} />}
-              label={t("add.photoCamera")}
-              onPress={() => onPick("camera")}
-            />
-            <Row
-              icon={<Images size={20} color={colors.navy} strokeWidth={1.9} />}
-              label={t("add.photoLibrary")}
-              onPress={() => onPick("library")}
-            />
-            {hasPhoto ? (
-              <Row
-                icon={<Trash2 size={20} color={colors.danger} strokeWidth={1.9} />}
-                label={t("add.photoRemove")}
-                danger
-                onPress={onRemove}
-              />
-            ) : null}
-          </View>
-
-          <View style={{ marginTop: 16 }}>
-            <GhostButton label={t("common.cancel")} onPress={onClose} variant="link" />
-          </View>
-        </View>
+        ) : null}
       </View>
-    </Modal>
+
+      <View style={{ marginTop: 16 }}>
+        <GhostButton label={t("common.cancel")} onPress={onClose} variant="link" />
+      </View>
+    </BottomSheetShell>
   );
 }
 
