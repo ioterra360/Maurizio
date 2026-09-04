@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { Text, View } from "react-native";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ScrollView, Text, View } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { router, useFocusEffect } from "expo-router";
 import { Sparkles } from "lucide-react-native";
@@ -39,6 +39,10 @@ export default function ReinforcementScreen() {
   const index = useReviewStore((s) => s.index);
   const recordAndAdvance = useReviewStore((s) => s.recordAndAdvance);
   const [stage, setStage] = useState<Stage>("pre");
+  // La colonna della carta scorre (vedi lo ScrollView sotto): il ref serve a
+  // rimetterla in cima a ogni carta nuova e a portare in vista l'indizio o la
+  // risposta appena rivelati.
+  const scrollRef = useRef<ScrollView>(null);
   const { t } = useT();
 
   useFocusEffect(
@@ -52,6 +56,7 @@ export default function ReinforcementScreen() {
 
   useEffect(() => {
     setStage("pre");
+    scrollRef.current?.scrollTo({ y: 0, animated: false });
   }, [index]);
 
   // Livello vuoto dentro un flusso: salta avanti (handoff decide se andare
@@ -130,6 +135,13 @@ export default function ReinforcementScreen() {
     setStage(next);
   };
 
+  // Indizio, risposta e foto (quando l'URL firmato arriva) allungano la
+  // colonna in fondo: se esce dallo schermo va portata in vista, altrimenti
+  // il tap sembra non aver fatto nulla.
+  const keepRevealedInView = () => {
+    if (stage !== "pre") scrollRef.current?.scrollToEnd({ animated: true });
+  };
+
   // Authored mnemonic hint when the card has one; otherwise derive the
   // first sense of a multi-sense back (ellipsis baked in — only a prefix is
   // a truncation). A single-sense back yields no hint at all, so the hint
@@ -142,7 +154,23 @@ export default function ReinforcementScreen() {
     <SafeAreaView className="flex-1 bg-warm-white" edges={["top"]}>
       <ReviewHeader layerKey="reinforcement" index={index} total={cards.length} />
 
-      <View style={{ flex: 1, paddingHorizontal: 24, alignItems: "center", paddingTop: 40 }}>
+      {/* La colonna scorre: il pannello della risposta puo' superare l'altezza
+          libera (termine lungo + lettura + foto 4:3) e in RN i figli non si
+          stringono, quindi senza ScrollView finirebbe tagliato o sotto i
+          bottoni. flexGrow 1 lascia il layout identico quando ci sta. */}
+      <ScrollView
+        ref={scrollRef}
+        style={{ flex: 1 }}
+        contentContainerStyle={{
+          flexGrow: 1,
+          paddingHorizontal: 24,
+          alignItems: "center",
+          paddingTop: 40,
+          paddingBottom: 16,
+        }}
+        showsVerticalScrollIndicator={false}
+        onContentSizeChange={keepRevealedInView}
+      >
         <FolderPill folder={card.folder} layerKey="reinforcement" />
 
         <TermText text={card.front} max={72} screenPadding={24} style={{ marginTop: 24 }} />
@@ -217,7 +245,7 @@ export default function ReinforcementScreen() {
             {card.photoPath ? <MemoryPhoto path={card.photoPath} style={{ marginTop: 14 }} /> : null}
           </View>
         ) : null}
-      </View>
+      </ScrollView>
 
       <View style={{ paddingHorizontal: 22, paddingBottom: Math.max(insets.bottom, 32), gap: 10 }}>
         {stage === "pre" ? (

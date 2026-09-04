@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { Text, View } from "react-native";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ScrollView, Text, View } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { router, useFocusEffect } from "expo-router";
 
@@ -38,6 +38,10 @@ export default function FocusScreen() {
   const index = useReviewStore((s) => s.index);
   const recordAndAdvance = useReviewStore((s) => s.recordAndAdvance);
   const [revealed, setRevealed] = useState(false);
+  // La colonna della carta scorre (vedi lo ScrollView sotto): il ref serve a
+  // rimetterla in cima a ogni carta nuova e a portare in vista la risposta
+  // appena rivelata.
+  const scrollRef = useRef<ScrollView>(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -51,6 +55,7 @@ export default function FocusScreen() {
   // Hide the answer again whenever the deck advances to the next card.
   useEffect(() => {
     setRevealed(false);
+    scrollRef.current?.scrollTo({ y: 0, animated: false });
   }, [index]);
 
   // Livello vuoto dentro un flusso: chiudi direttamente sul recap.
@@ -109,11 +114,33 @@ export default function FocusScreen() {
     if (result === "done") router.replace("/review/complete");
   };
 
+  // La risposta (e la foto, quando l'URL firmato arriva) allunga la colonna
+  // in fondo: se esce dallo schermo va portata in vista, altrimenti il tap su
+  // "Mostra risposta" sembra non aver fatto nulla.
+  const keepRevealedInView = () => {
+    if (revealed) scrollRef.current?.scrollToEnd({ animated: true });
+  };
+
   return (
     <SafeAreaView className="flex-1 bg-warm-white" edges={["top"]}>
       <ReviewHeader layerKey="focus" index={index} total={cards.length} />
 
-      <View style={{ flex: 1, paddingHorizontal: 22, paddingTop: 28 }}>
+      {/* La colonna scorre: il pannello rivelato puo' superare l'altezza
+          libera (termine lungo + lettura + esempio + foto 4:3) e in RN i figli
+          non si stringono, quindi senza ScrollView finirebbe tagliato o sotto
+          i bottoni. flexGrow 1 lascia il layout identico quando ci sta. */}
+      <ScrollView
+        ref={scrollRef}
+        style={{ flex: 1 }}
+        contentContainerStyle={{
+          flexGrow: 1,
+          paddingHorizontal: 22,
+          paddingTop: 28,
+          paddingBottom: 16,
+        }}
+        showsVerticalScrollIndicator={false}
+        onContentSizeChange={keepRevealedInView}
+      >
         <View style={{ alignItems: "center" }}>
           <FolderPill folder={card.folder} layerKey="focus" />
         </View>
@@ -172,7 +199,7 @@ export default function FocusScreen() {
             {card.photoPath ? <MemoryPhoto path={card.photoPath} style={{ marginTop: 14 }} /> : null}
           </View>
         ) : null}
-      </View>
+      </ScrollView>
 
       {/* Recall buttons appear only after the answer is revealed — Focus is
           active recall, so the answer stays hidden until the user commits. */}

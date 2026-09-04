@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Pressable, Text, View } from "react-native";
+import { Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { router, useFocusEffect } from "expo-router";
 
@@ -59,6 +59,10 @@ export default function ScanScreen() {
     amended: boolean;
   }>(null);
   const flashTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // La colonna della carta scorre (vedi lo ScrollView sotto): il ref serve a
+  // rimetterla in cima a ogni carta nuova e a portare in vista quello che
+  // l'utente ha appena rivelato.
+  const scrollRef = useRef<ScrollView>(null);
 
   // Today calls start(layer, mode) explicitly before navigating here, so
   // this effect is the defensive fallback for unusual entry paths (deep
@@ -80,6 +84,7 @@ export default function ScanScreen() {
     setRevealed(false);
     setReadingShown(false);
     setExampleShown(false);
+    scrollRef.current?.scrollTo({ y: 0, animated: false });
   }, [index]);
 
   // Il timer del flash non deve sopravvivere allo screen.
@@ -152,6 +157,15 @@ export default function ScanScreen() {
     }
     setRevealed(true);
   };
+  // Ogni rivelazione (lettura, esempio, significato, e la foto quando l'URL
+  // firmato arriva) allunga la colonna in fondo: se esce dallo schermo va
+  // portata in vista, altrimenti il tap sembra non aver fatto nulla.
+  const keepRevealedInView = () => {
+    if (readingShown || exampleShown || revealed) {
+      scrollRef.current?.scrollToEnd({ animated: true });
+    }
+  };
+
   const showMeDisabled = revealed;
   const showMeLabel =
     hasReading && !readingShown
@@ -298,7 +312,23 @@ export default function ScanScreen() {
     <SafeAreaView className="flex-1 bg-warm-white" edges={["top"]}>
       <ReviewHeader layerKey="scan" index={index} total={cards.length} />
 
-      <View style={{ flex: 1, paddingHorizontal: 24, alignItems: "center", paddingTop: 48 }}>
+      {/* La colonna scorre: il pannello rivelato puo' superare l'altezza
+          libera (termine lungo + lettura + esempio + foto 4:3) e in RN i figli
+          non si stringono, quindi senza ScrollView finirebbe tagliato o sotto
+          i bottoni. flexGrow 1 lascia il layout identico quando ci sta. */}
+      <ScrollView
+        ref={scrollRef}
+        style={{ flex: 1 }}
+        contentContainerStyle={{
+          flexGrow: 1,
+          paddingHorizontal: 24,
+          alignItems: "center",
+          paddingTop: 48,
+          paddingBottom: 16,
+        }}
+        showsVerticalScrollIndicator={false}
+        onContentSizeChange={keepRevealedInView}
+      >
         <FolderPill folder={card.folder} layerKey="scan" />
 
         <TermText text={card.front} max={84} screenPadding={24} style={{ marginTop: 24 }} />
@@ -358,7 +388,7 @@ export default function ScanScreen() {
             {card.photoPath ? <MemoryPhoto path={card.photoPath} style={{ marginTop: 14 }} /> : null}
           </View>
         ) : null}
-      </View>
+      </ScrollView>
 
       {/* Actions */}
       <View style={{ paddingHorizontal: 22, paddingBottom: Math.max(insets.bottom, 32), gap: 12 }}>
