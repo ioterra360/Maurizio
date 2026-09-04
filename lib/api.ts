@@ -456,39 +456,52 @@ export async function updateMemoryPhoto(id: string, photoPath: string | null): P
  * si può ripristinare, quindi la sua foto non è orfana. Serve alla
  * riconciliazione degli oggetti (lib/photos.ts reconcilePhotos). Demo: [].
  *
- * PAGINATA di proposito, e con un `order` stabile. PostgREST tronca ogni
- * select al `max_rows` del progetto SENZA errore: una lista referenziata
- * parziale farebbe classificare come orfane — e quindi CANCELLARE — foto
- * ancora vive. Senza `order` le pagine si sovrappongono e il buco resta.
+ * PAGINATA di proposito, con un CURSORE (keyset) e non con un offset.
+ * Questa lista è la proprietà di sicurezza dell'unica operazione
+ * irreversibile del piano foto: una lista referenziata parziale fa
+ * classificare come orfane — e quindi CANCELLARE — foto ancora vive, e con
+ * la modifica della foto dopo il salvataggio fuori perimetro non c'è modo di
+ * riattaccarle. Due modi di bucarla, e il cursore li chiude entrambi:
  *
- * Il ciclo NON assume di conoscere quel tetto: avanza di quante righe sono
- * ARRIVATE e si ferma solo su una pagina VUOTA. Fermarsi su
- * `rows.length < PAGE` sarebbe corretto solo finché `max_rows >= PAGE`, e
- * quel valore è un'impostazione remota del progetto: il `max_rows = 1000` di
- * supabase/config.toml è la configurazione del Supabase LOCALE e
- * `supabase db push` non la pubblica. Costa un round trip in più in fondo
- * alla lista, e in cambio è corretto con QUALSIASI tetto, anche se domani
- * cambia dalla dashboard.
+ *  1. TRONCAMENTO. PostgREST tronca ogni select al `max_rows` del progetto
+ *     SENZA errore. Il ciclo non assume di conoscere quel tetto: il cursore
+ *     è l'ultimo id RICEVUTO, quindi una pagina corta riparte esattamente da
+ *     dove è arrivata e ci si ferma solo su una pagina VUOTA. Fermarsi su
+ *     `rows.length < PAGE` sarebbe corretto solo finché `max_rows >= PAGE`, e
+ *     quel valore è un'impostazione remota: il `max_rows = 1000` di
+ *     supabase/config.toml è il Supabase LOCALE e `db push` non lo pubblica.
+ *  2. INSIEME CHE SI RESTRINGE SOTTO LA SCANSIONE. Qui l'offset non bastava:
+ *     se fra una pagina e l'altra sparisce una riga (removeMemoryPhoto da un
+ *     altro dispositivo, o `purge_trash()` che elimina un ricordo con foto)
+ *     tutte le righe successive scalano di una posizione e `range(1000, 1999)`
+ *     SALTA una chiave ancora viva. Un cursore su `id` non ha posizioni da
+ *     far scalare: si riparte dal valore, non dall'indice.
+ *
+ * Costa un round trip in più in fondo alla lista, e in cambio è corretto con
+ * QUALSIASI tetto e sotto scrittura concorrente.
  */
 export async function fetchPhotoPaths(userId: string): Promise<string[]> {
   if (isDemoMode) return [];
   const PAGE = 1000;
   const out: string[] = [];
-  let from = 0;
+  let cursor: string | null = null;
   for (;;) {
-    const { data, error } = await supabase
+    // `id` entra nella select perché è il cursore, non perché serva a valle.
+    let q = supabase
       .from("memories")
-      .select("photo_path")
+      .select("id, photo_path")
       .eq("user_id", userId)
       .not("photo_path", "is", null)
       .order("id", { ascending: true })
-      .range(from, from + PAGE - 1);
+      .limit(PAGE);
+    if (cursor) q = q.gt("id", cursor);
+    const { data, error } = await q;
     if (error) throw error;
     // Cast al confine: il client non è tipizzato sullo schema (lib/supabase.ts:103).
-    const rows = (data ?? []) as { photo_path: string | null }[];
+    const rows = (data ?? []) as { id: string; photo_path: string | null }[];
+    if (rows.length === 0) return out; // fine: oltre il cursore non c'è più niente
     for (const r of rows) if (r.photo_path) out.push(r.photo_path);
-    if (rows.length === 0) return out; // fine: oltre `from` non c'è più niente
-    from += rows.length; // avanza di quanto è ARRIVATO, non di quanto ho chiesto
+    cursor = rows[rows.length - 1]!.id; // l'ultimo id RICEVUTO, non il 1000esimo chiesto
   }
 }
 
