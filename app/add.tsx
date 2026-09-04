@@ -9,7 +9,8 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Redirect, useLocalSearchParams } from "expo-router";
+import { Redirect, router, useLocalSearchParams } from "expo-router";
+import { Camera, Plus } from "lucide-react-native";
 
 import { TopBar } from "@/components/TopBar";
 import { PrimaryButton } from "@/components/PrimaryButton";
@@ -31,7 +32,13 @@ import type { FolderWithStats, Memory, Profile } from "@/lib/mappers";
 import { useAuthStore } from "@/lib/auth-store";
 import { useUIStore } from "@/lib/ui-store";
 import { errorCode, reportError } from "@/lib/report-error";
-import { PLAN_LIMITS, canAddMemory, planLimitFromCode, type PlanLimitKind } from "@/lib/plan";
+import {
+  PLAN_LIMITS,
+  canAddMemory,
+  canUsePhotos,
+  planLimitFromCode,
+  type PlanLimitKind,
+} from "@/lib/plan";
 import { usePlan } from "@/lib/use-plan";
 import { safeBack } from "@/lib/safe-back";
 import { consumeIntentionalAddOpen } from "@/lib/add-gate";
@@ -49,6 +56,14 @@ import {
   scheduleFirstReview,
   syncDailyReminder,
 } from "@/lib/notifications";
+import { MemoryPhoto } from "@/components/MemoryPhoto";
+import { PhotoSheet } from "@/components/PhotoSheet";
+import {
+  pickPhoto,
+  resizeForUpload,
+  uploadMemoryPhoto,
+  type PhotoSource,
+} from "@/lib/photos";
 
 export default function AddScreen() {
   const colors = useColors();
@@ -149,6 +164,16 @@ export default function AddScreen() {
   const promptBusy = useRef(false);
   const showToast = useUIStore((s) => s.showToast);
   const { t } = useT();
+  // Foto sul retro (Premium). Fino al salvataggio è solo un file locale, già
+  // ridimensionato alla scelta: il CARICAMENTO parte dopo che la riga esiste,
+  // perché il path contiene memory_id — e chi abbandona la schermata non
+  // lascia file orfani nel bucket.
+  const [photoUri, setPhotoUri] = useState<string | null>(null);
+  const [photoSheetOpen, setPhotoSheetOpen] = useState(false);
+  // iOS: la sorgente scelta resta in attesa finché il foglio non ha FINITO di
+  // chiudersi (vedi requestPick). Su Android è sempre null.
+  const [pendingSource, setPendingSource] = useState<PhotoSource | null>(null);
+  const [premiumAsk, setPremiumAsk] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -234,6 +259,9 @@ export default function AddScreen() {
     setReading("");
     setDefinition("");
     setExample("");
+    // La foto è contenuto del ricordo, non contesto di sessione: se restasse,
+    // il salvataggio dopo la caricherebbe sotto un altro memory_id.
+    setPhotoUri(null);
   };
 
   // Dopo il dialogo si riprende da dove il salvataggio si era fermato.
@@ -305,7 +333,25 @@ export default function AddScreen() {
       });
       setDailyCount((c) => (c ?? 0) + 1);
       setTotalCount((c) => (c ?? 0) + 1);
-      showToast(t("add.savedToast", { name: folderRow.name }));
+      // La foto si carica DOPO che la riga esiste. photoUri è già il JPEG
+      // ridimensionato dalla scelta: qui si leggono solo i byte. Se il
+      // caricamento fallisce la riga resta e si avvisa — perdere il testo per
+      // colpa di una foto sarebbe il peggiore dei due esiti. In demo
+      // createMemory è null: niente upload.
+      let photoFailed = false;
+      if (saved && photoUri) {
+        try {
+          await uploadMemoryPhoto(user.id, saved.id, photoUri);
+        } catch (e) {
+          reportError("add/photo-upload", e);
+          photoFailed = true;
+        }
+      }
+      showToast(
+        photoFailed
+          ? t("add.photoUploadFailed", { name: folderRow.name })
+          : t("add.savedToast", { name: folderRow.name }),
+      );
       if (saved && canOfferPrompt) {
         // Il dialogo è un Modal DENTRO questa schermata: la navigazione
         // aspetta la risposta, altrimenti lo smonterebbe.
@@ -339,6 +385,47 @@ export default function AddScreen() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const openPhotoSheet = () => {
+    if (!canUsePhotos(plan)) {
+      // Free/Pro: la mascotte spiega e propone l'upgrade (spec: "disabilita,
+      // spiega, propone l'upgrade"), il bottone resta visibile.
+      setPremiumAsk(true);
+      return;
+    }
+    setPhotoSheetOpen(true);
+  };
+
+  const handlePickPhoto = async (source: PhotoSource) => {
+    try {
+      const outcome = await pickPhoto(source);
+      if (outcome.status === "denied") {
+        showToast(t("add.photoPermissionDenied"));
+        return;
+      }
+      if (outcome.status !== "picked") return;
+      // Ridimensiona SUBITO: l'anteprima mostra il file piccolo (un originale
+      // da 12 MP decodificato costa ~48 MB, e <Image> lo decodifica intero
+      // anche in un box da 240) e il salvataggio non ricodifica più niente.
+      const jpeg = await resizeForUpload(outcome.uri);
+      setPhotoUri(jpeg.uri);
+    } catch (e) {
+      reportError("add/photo-pick", e);
+      showToast(t("add.photoPickFailed"));
+    }
+  };
+
+  const requestPick = (source: PhotoSource) => {
+    // Chiudere il foglio PRIMA di aprire il picker. `setPhotoSheetOpen(false)`
+    // NON chiude il Modal in modo sincrono (l'animazione dura ~300 ms) e /add
+    // è già presentato come modal su iOS (app/_layout.tsx:344): un picker
+    // presentato sopra un Modal ancora vivo viene rifiutato da UIKit e non
+    // compare mai. Su iOS quindi si aspetta onDismiss del Modal; su Android il
+    // Modal è un Dialog e non c'è conflitto di presentazione.
+    setPhotoSheetOpen(false);
+    if (Platform.OS === "ios") setPendingSource(source);
+    else void handlePickPhoto(source);
   };
 
   const handleBack = () => safeBack("/(app)/knowledge");
@@ -527,32 +614,63 @@ export default function AddScreen() {
                 }}
               />
             ) : null}
-            <TextInput
-              ref={definitionRef}
-              value={definition}
-              onChangeText={(t) => {
-                setDefinition(t);
-                if (missing === "definition") setMissing(null);
-              }}
-              placeholder={t("add.definitionPlaceholder")}
-              placeholderTextColor={colors.placeholder}
-              accessibilityLabel={t("add.definitionLabel")}
-              multiline
-              textAlignVertical="top"
-              style={{
-                backgroundColor: colors.surface,
-                borderRadius: 14,
-                borderWidth: 1,
-                borderColor: missing === "definition" ? colors.danger : colors.hairline,
-                padding: 16,
-                minHeight: 90,
-                fontFamily: FONT.regular,
-                fontSize: 16,
-                color: colors.navy,
-                lineHeight: 22,
-                letterSpacing: -0.07,
-              }}
-            />
+            {/* Il "+" per la foto vive DENTRO il box del significato, in basso a
+                destra (spec §B5): quel box È il retro della card, e la foto va
+                sul retro. paddingBottom 44 tiene il testo sopra il bottone
+                anche a tre righe; senza, scorrerebbe sotto. */}
+            <View style={{ position: "relative" }}>
+              <TextInput
+                ref={definitionRef}
+                value={definition}
+                onChangeText={(t) => {
+                  setDefinition(t);
+                  if (missing === "definition") setMissing(null);
+                }}
+                placeholder={t("add.definitionPlaceholder")}
+                placeholderTextColor={colors.placeholder}
+                accessibilityLabel={t("add.definitionLabel")}
+                multiline
+                textAlignVertical="top"
+                style={{
+                  backgroundColor: colors.surface,
+                  borderRadius: 14,
+                  borderWidth: 1,
+                  borderColor: missing === "definition" ? colors.danger : colors.hairline,
+                  padding: 16,
+                  paddingBottom: 44,
+                  minHeight: 90,
+                  fontFamily: FONT.regular,
+                  fontSize: 16,
+                  color: colors.navy,
+                  lineHeight: 22,
+                  letterSpacing: -0.07,
+                }}
+              />
+              <Tappable
+                onPress={openPhotoSheet}
+                accessibilityRole="button"
+                accessibilityLabel={photoUri ? t("add.photoChange") : t("add.photoAdd")}
+                pressedOpacity={0.6}
+                hitSlop={6}
+                containerStyle={{ position: "absolute", right: 8, bottom: 8 }}
+                style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: 18,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  backgroundColor: photoUri ? colors.accent : colors.canvas,
+                  borderWidth: photoUri ? 0 : 1,
+                  borderColor: colors.hairline,
+                }}
+              >
+                {photoUri ? (
+                  <Camera size={18} color={colors.onAccent} strokeWidth={2} />
+                ) : (
+                  <Plus size={20} color={colors.navy} strokeWidth={2} />
+                )}
+              </Tappable>
+            </View>
             {missing === "definition" ? (
               <FieldHint>{t("add.definitionMissingHint")}</FieldHint>
             ) : null}
@@ -707,6 +825,7 @@ export default function AddScreen() {
                     {example.trim().slice(0, 120)}
                   </Text>
                 ) : null}
+                {photoUri ? <MemoryPhoto localUri={photoUri} style={{ marginTop: 10 }} /> : null}
               </View>
               <View
                 style={{
@@ -786,6 +905,37 @@ export default function AddScreen() {
         </View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <PhotoSheet
+        visible={photoSheetOpen}
+        hasPhoto={photoUri !== null}
+        onPick={requestPick}
+        onDismissed={() => {
+          // iOS: il foglio è chiuso davvero, ora il picker può presentarsi.
+          const source = pendingSource;
+          setPendingSource(null);
+          if (source) void handlePickPhoto(source);
+        }}
+        onRemove={() => {
+          setPhotoUri(null);
+          setPhotoSheetOpen(false);
+        }}
+        onClose={() => setPhotoSheetOpen(false)}
+      />
+      {/* Free/Pro: la mascotte spiega e manda al paywall (B4). Il Modal si
+          chiude PRIMA del push, come settings.tsx:164-165 fa con lo stato. */}
+      <MascotDialog
+        visible={premiumAsk}
+        title={t("add.photoPremiumTitle")}
+        body={t("add.photoPremiumBody")}
+        confirmLabel={t("add.photoPremiumConfirm")}
+        cancelLabel={t("add.photoPremiumCancel")}
+        onConfirm={() => {
+          setPremiumAsk(false);
+          router.push("/paywall" as never);
+        }}
+        onCancel={() => setPremiumAsk(false)}
+      />
 
       {/* Pre-prompt del permesso: solo al primo salvataggio su questo telefono. */}
       <MascotDialog
