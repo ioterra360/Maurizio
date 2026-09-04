@@ -144,11 +144,15 @@ export default function SettingsScreen() {
     setRestoring(true);
     restorePlan()
       .then(async (restored) => {
-        await refreshPlan();
+        // Stessa regola del paywall: se la rilettura dal server fallisce lo
+        // store e' rimasto com'era, e dirgli "sei Premium" sarebbe falso.
+        const synced = await refreshPlan();
         showToast(
           restored === "free"
             ? tr("paywall.restoreNone")
-            : tr("paywall.restored", { plan: tr(PLAN_NAME_KEY[restored]) }),
+            : synced
+              ? tr("paywall.restored", { plan: tr(PLAN_NAME_KEY[restored]) })
+              : tr("paywall.restoredSyncing"),
         );
       })
       .catch((err) => {

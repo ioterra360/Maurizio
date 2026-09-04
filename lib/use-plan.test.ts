@@ -10,6 +10,8 @@
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import type { Plan } from "./plan";
+
 const identify = vi.fn(async (_id: string) => "free");
 const signOut = vi.fn(async () => {});
 const configure = vi.fn();
@@ -22,8 +24,13 @@ vi.mock("./purchases", () => ({
   addCustomerPlanListener: () => () => {},
 }));
 
+const syncPlan = vi.fn<() => Promise<{ plan: Plan; planUntil: string | null }>>(async () => ({
+  plan: "free",
+  planUntil: null,
+}));
+
 vi.mock("./api", () => ({
-  syncPlan: async () => ({ plan: "free", planUntil: null }),
+  syncPlan: () => syncPlan(),
 }));
 
 // report-error importa @sentry/react-native, che tira dentro il react-native
@@ -44,7 +51,7 @@ vi.mock("./supabase", () => ({
 }));
 
 import { useAuthStore, type AuthUser } from "./auth-store";
-import { startPlanSync } from "./use-plan";
+import { refreshPlan, startPlanSync } from "./use-plan";
 
 const user = (id: string): AuthUser => ({
   id,
@@ -58,6 +65,7 @@ const user = (id: string): AuthUser => ({
 describe("startPlanSync — l'idratazione e' la condizione, non il primo render", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    syncPlan.mockResolvedValue({ plan: "free", planUntil: null });
     useAuthStore.setState({ user: null, hydrated: false });
   });
 
@@ -114,5 +122,35 @@ describe("startPlanSync — l'idratazione e' la condizione, non il primo render"
     expect(identify).not.toHaveBeenCalled();
     expect(signOut).toHaveBeenCalledTimes(1);
     stop();
+  });
+});
+
+/**
+ * Il difetto che questi test fermano: `refreshPlan()` inghiottiva OGNI
+ * fallimento in `reportError` e ritornava `void`, cosi' il paywall diceva
+ * "Ora sei Premium" anche quando `syncPlan()` non aveva risposto e lo store
+ * era rimasto a `free`. L'utente pagava, leggeva la conferma e trovava ogni
+ * gate dell'app ancora chiuso, senza un solo messaggio che dicesse perche'.
+ */
+describe("refreshPlan — l'esito della sincronizzazione e' un valore, non un silenzio", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    syncPlan.mockResolvedValue({ plan: "free", planUntil: null });
+    useAuthStore.setState({
+      user: user("u9"),
+      hydrated: true,
+    });
+  });
+
+  it("lettura riuscita: ritorna true e scrive il piano nello store", async () => {
+    syncPlan.mockResolvedValue({ plan: "premium", planUntil: null });
+    await expect(refreshPlan()).resolves.toBe(true);
+    expect(useAuthStore.getState().user?.plan).toBe("premium");
+  });
+
+  it("lettura fallita: ritorna false, non lancia e NON tocca il piano", async () => {
+    syncPlan.mockRejectedValue(new Error("edge function unreachable"));
+    await expect(refreshPlan()).resolves.toBe(false);
+    expect(useAuthStore.getState().user?.plan).toBe("free");
   });
 });

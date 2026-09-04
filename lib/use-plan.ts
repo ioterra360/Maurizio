@@ -40,13 +40,27 @@ export function usePlan(): Plan {
   return effectivePlan(plan, planUntil);
 }
 
-/** Rilegge il piano dal server e lo scrive nello store. Non lancia mai. */
-export async function refreshPlan(): Promise<void> {
+/**
+ * Rilegge il piano dal server e lo scrive nello store.
+ *
+ * Non lancia MAI — il chiamante e' quasi sempre un percorso di fondo — ma
+ * ritorna `false` quando la lettura e' fallita e lo store e' rimasto com'era.
+ * Chi mostra un esito all'utente DEVE guardare quel valore: `syncPlan()`
+ * passa dalla edge function `revenuecat-sync`, che puo' non rispondere (rete,
+ * 5xx a freddo, il ramo 500 `not_configured` quando manca un segreto). In quel
+ * caso `profiles.plan` non e' stato riletto, `usePlan()` dice ancora "free" e
+ * ogni gate dell'app — il `+` della foto, il badge "Piano attuale", i trigger
+ * P0003/P0004/P0005 — si comporta di conseguenza. Annunciare "Ora sei
+ * Premium" li' significa promettere un piano che l'app non sta applicando.
+ */
+export async function refreshPlan(): Promise<boolean> {
   try {
     const { plan, planUntil } = await syncPlan();
     useAuthStore.getState().setPlan(plan, planUntil);
+    return true;
   } catch (err) {
     reportError("plan/sync", err);
+    return false;
   }
 }
 

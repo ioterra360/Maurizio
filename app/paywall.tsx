@@ -107,10 +107,18 @@ export default function PaywallScreen() {
     try {
       const outcome = await purchasePlan(pkg);
       // L'entitlement locale e' solo la via rapida: la verita' la riscrive
-      // la edge function dopo aver interrogato RevenueCat.
-      await refreshPlan();
+      // la edge function dopo aver interrogato RevenueCat. Se quella lettura
+      // NON riesce, lo store e' rimasto a "free" e ogni gate dell'app si
+      // comporta di conseguenza: il toast lo dice, invece di annunciare un
+      // piano che nessuno sta applicando. Si risolve da solo al prossimo
+      // avvio (startPlanSync) o con "Ripristina acquisti".
+      const synced = await refreshPlan();
       if (outcome.status === "purchased") {
-        showToast(t("paywall.purchased", { plan: t(PLAN_NAME_KEY[outcome.plan]) }));
+        showToast(
+          synced
+            ? t("paywall.purchased", { plan: t(PLAN_NAME_KEY[outcome.plan]) })
+            : t("paywall.purchasedSyncing"),
+        );
       }
     } catch (err) {
       const outcome = purchaseOutcomeFromError(err);
@@ -131,11 +139,15 @@ export default function PaywallScreen() {
     setBusy(true);
     try {
       const restored = await restorePlan();
-      await refreshPlan();
+      const synced = await refreshPlan();
       showToast(
         restored === "free"
-          ? t("paywall.restoreNone")
-          : t("paywall.restored", { plan: t(PLAN_NAME_KEY[restored]) }),
+          ? // Niente da ripristinare: la sincronizzazione col server non
+            // cambierebbe nulla, quindi il suo esito qui non conta.
+            t("paywall.restoreNone")
+          : synced
+            ? t("paywall.restored", { plan: t(PLAN_NAME_KEY[restored]) })
+            : t("paywall.restoredSyncing"),
       );
     } catch (err) {
       reportError("paywall/restore", err);
