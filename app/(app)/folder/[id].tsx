@@ -515,6 +515,13 @@ export default function FolderDetailScreen() {
             .catch((e) => {
               const limit = planLimitFromCode(errorCode(e));
               if (limit) {
+                // Il prompt del nome si chiude PRIMA del dialogo: due Modal
+                // presentati insieme su iOS possono far sparire il secondo
+                // ("Attempt to present ... which is already presenting"), e
+                // un limite di piano senza spiegazione e' un silenzio. Se
+                // invece appare, "Vedi i piani" navigherebbe lasciando il
+                // backdrop del prompt sopra il paywall.
+                setSubModalOpen(false);
                 setPlanBlock(limit);
                 return;
               }

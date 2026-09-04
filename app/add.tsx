@@ -218,6 +218,15 @@ export default function AddScreen() {
   });
   const dailyLimitReached = (dailyCount ?? 0) >= dailyMax;
   const totalMax = PLAN_LIMITS[plan].memories;
+  // Il tetto totale del piano e' un AVVISO, non un blocco lato client: il
+  // rifiuto lo pronuncia il trigger (P0004) e il catch di doSave lo traduce
+  // nello stesso dialogo. Un `return` preventivo qui sarebbe un blocco vero
+  // appoggiato a un valore che si degrada da solo: se la lettura di
+  // `profiles` fallisce, buildAuthUserFromSession ripiega su `plan: "free"`
+  // (lib/auth-store.ts) e nella build 3 non esiste riparazione — senza
+  // chiavi RevenueCat `startPlanSync` non chiama mai `refreshPlan`, e
+  // `hydrate()` gira una volta sola. Un abbonato che apre l'app offline si
+  // troverebbe murato fuori da Add fino al riavvio.
   const planLimitReached = totalMax !== null && !canAddMemory(totalCount ?? 0, plan);
   // "Salva e aggiungi un altro": campi puliti, si resta qui.
   const clearFields = () => {
@@ -261,13 +270,6 @@ export default function AddScreen() {
   // salvare anche oltre il tetto — domani il carico sarà solo più alto.
   const doSave = async (addAnother: boolean) => {
     if (saving || !user) return;
-    // Il tetto totale del piano free e' un blocco vero, non un avviso: si
-    // spiega e si propone l'upgrade invece di far scrivere una parola che
-    // il server rifiuterebbe.
-    if (planLimitReached) {
-      setPlanBlock("memories");
-      return;
-    }
     if (!term.trim()) {
       setMissing("term");
       termRef.current?.focus();

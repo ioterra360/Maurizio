@@ -481,6 +481,11 @@ export default function FolderSettingsScreen() {
             .catch((err) => {
               const limit = planLimitFromCode(errorCode(err));
               if (limit) {
+                // Come in folder/[id].tsx: prima si chiude il prompt del
+                // nome, poi si apre il dialogo del piano. Due Modal insieme
+                // su iOS rischiano di non presentare il secondo, e "Vedi i
+                // piani" lascerebbe il backdrop del prompt sopra il paywall.
+                setSubModal(null);
                 setPlanBlock(limit);
                 return;
               }
