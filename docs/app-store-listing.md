@@ -63,7 +63,7 @@ Dati **collegati all'utente**, finalità **Funzionalità dell'app**, non usati p
 | Informazioni di contatto | Indirizzo email | account |
 | Informazioni di contatto | Nome | nome visualizzato (facoltativo) |
 | Contenuti dell'utente | Altri contenuti dell'utente | ricordi, cartelle, appunti |
-| Contenuti dell'utente | Foto o video | foto allegate a un ricordo (facoltative, piano Pro; bucket privato, URL firmati) |
+| Contenuti dell'utente | Foto o video | foto allegate a un ricordo (facoltative, piani Plus e Pro; bucket privato, URL firmati) |
 | Dati di utilizzo | Altri dati di utilizzo | esiti dei ripassi (pianificazione) |
 | Identificatori | ID utente | uid Supabase |
 
@@ -133,7 +133,7 @@ Niente streak, niente classifiche, niente pubblicità. Solo un posto tranquillo 
 
 Memika è gratuita: 10 ricordi in tutto e una cartella, per sempre e senza pubblicità.
 
-Se ti serve più spazio ci sono due abbonamenti. Plus: ricordi illimitati, 5 cartelle, 3 sezioni per cartella. Pro: tutto illimitato, più le foto da allegare ai ricordi. Si rinnovano automaticamente e si disdicono quando vuoi dalle impostazioni del tuo account App Store.
+Se ti serve più spazio ci sono due abbonamenti. Plus: ricordi illimitati, 5 cartelle, 3 sezioni per cartella e le foto da allegare ai ricordi. Pro: tutto illimitato, cartelle e sezioni comprese, foto incluse. Si rinnovano automaticamente e si disdicono quando vuoi dalle impostazioni del tuo account App Store.
 
 I ricordi sono tuoi. Puoi cancellare tutto quando vuoi dalle Impostazioni e chiederci una copia dei tuoi dati in qualsiasi momento. Informativa sulla privacy: https://ioterra360.github.io/memika-legal/privacy/
 
@@ -166,7 +166,7 @@ No streaks, no leaderboards, no ads. Just a quiet place to come back to for a fe
 
 Memika is free: 10 memories in total and one folder, forever, with no ads.
 
-If you need more room there are two subscriptions. Plus: unlimited memories, 5 folders, 3 sections per folder. Pro: everything unlimited, plus photos attached to your memories. They renew automatically and you can cancel any time from your App Store account settings.
+If you need more room there are two subscriptions. Plus: unlimited memories, 5 folders, 3 sections per folder, and photos to attach to your memories. Pro: everything unlimited, folders and sections included, photos included. They renew automatically and you can cancel any time from your App Store account settings.
 
 Your memories are yours. You can delete everything at any time from Settings and ask us for a copy of your data whenever you want. Privacy policy: https://ioterra360.github.io/memika-legal/privacy/
 
@@ -199,7 +199,7 @@ Pas de séries à tenir, pas de classements, pas de publicité. Juste un endroit
 
 Memika est gratuite : 10 souvenirs au total et un dossier, pour toujours, sans publicité.
 
-S'il te faut plus de place, il y a deux abonnements. Plus : souvenirs illimités, 5 dossiers, 3 sections par dossier. Pro : tout en illimité, plus les photos à joindre aux souvenirs. Ils se renouvellent automatiquement et se résilient quand tu veux depuis les réglages de ton compte App Store.
+S'il te faut plus de place, il y a deux abonnements. Plus : souvenirs illimités, 5 dossiers, 3 sections par dossier et les photos à joindre aux souvenirs. Pro : tout en illimité, dossiers et sections compris, photos incluses. Ils se renouvellent automatiquement et se résilient quand tu veux depuis les réglages de ton compte App Store.
 
 Tes souvenirs t'appartiennent. Tu peux tout supprimer quand tu veux depuis les Réglages et nous demander une copie de tes données à tout moment. Politique de confidentialité : https://ioterra360.github.io/memika-legal/privacy/
 
@@ -232,7 +232,7 @@ Sin rachas, sin clasificaciones, sin publicidad. Solo un lugar tranquilo al que 
 
 Memika es gratuita: 10 recuerdos en total y una carpeta, para siempre y sin publicidad.
 
-Si necesitas más sitio hay dos suscripciones. Plus: recuerdos ilimitados, 5 carpetas, 3 secciones por carpeta. Pro: todo ilimitado, además de las fotos para adjuntar a los recuerdos. Se renuevan automáticamente y puedes cancelarlas cuando quieras desde los ajustes de tu cuenta de App Store.
+Si necesitas más sitio hay dos suscripciones. Plus: recuerdos ilimitados, 5 carpetas, 3 secciones por carpeta y las fotos para adjuntar a los recuerdos. Pro: todo ilimitado, carpetas y secciones incluidas, fotos incluidas. Se renuevan automáticamente y puedes cancelarlas cuando quieras desde los ajustes de tu cuenta de App Store.
 
 Tus recuerdos son tuyos. Puedes borrarlo todo cuando quieras desde Ajustes y pedirnos una copia de tus datos en cualquier momento. Política de privacidad: https://ioterra360.github.io/memika-legal/privacy/
 
