@@ -7,6 +7,7 @@ import { Home, Folder, BarChart3, Settings as SettingsIcon } from "lucide-react-
 
 import { useAuthGate } from "@/lib/auth-gate";
 import { fetchDeletionRequestedAt, fetchProfile } from "@/lib/api";
+import { reconcilePhotos } from "@/lib/photos";
 import { useAuthStore } from "@/lib/auth-store";
 import { reportError } from "@/lib/report-error";
 import { useFolderOrderStore } from "@/lib/folder-order-store";
@@ -70,6 +71,17 @@ export default function AppLayout() {
     return () => {
       cancelled = true;
     };
+  }, [userId]);
+
+  // Le purghe SQL (cestino 24h) non possono cancellare i FILE del bucket foto
+  // (migration 20260903110000, commento in testa): il client riconcilia la
+  // propria cartella una volta per utente a ogni mount del gruppo. Best
+  // effort e in background: un errore di rete non blocca nulla.
+  useEffect(() => {
+    if (!userId) return;
+    reconcilePhotos(userId).catch((err) => {
+      reportError("app-layout/photo-reconcile", err);
+    });
   }, [userId]);
   if (gate) return gate;
 
