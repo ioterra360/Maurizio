@@ -162,16 +162,24 @@ export async function getPhotoUrl(path: string): Promise<string | null> {
 }
 
 /**
- * Rimuove il FILE (Storage API: l'unico modo che cancelli davvero i byte) e
- * azzera la chiave sulla riga. Per un ricordo vivo: il controllo post-
+ * Azzera la chiave sulla riga e POI rimuove il FILE (Storage API: l'unico modo
+ * che cancelli davvero i byte). Per un ricordo vivo: il controllo post-
  * salvataggio non è in questo piano, ma l'API c'è. Demo: no-op.
+ *
+ * L'ordine è questo di proposito, ed è il rovescio di uploadMemoryPhoto (bucket
+ * prima, riga dopo): fra le due chiamate la rete può cadere. Cancellando prima
+ * i byte resterebbe una riga che punta a un oggetto inesistente — createSignedUrl
+ * risponde 404 e getPhotoUrl lancerebbe a ogni render del retro, e reconcilePhotos
+ * non la ripara: raccoglie oggetti orfani, non riferimenti orfani. Azzerando
+ * prima la riga il caso peggiore è un file orfano, cioè esattamente il caso per
+ * cui reconcilePhotos esiste.
  */
 export async function removeMemoryPhoto(memoryId: string, path: string): Promise<void> {
   if (isDemoMode) return;
+  await updateMemoryPhoto(memoryId, null);
   const { error } = await supabase.storage.from(PHOTO_BUCKET).remove([path]);
   if (error) throw error;
   urlCache.invalidate(path);
-  await updateMemoryPhoto(memoryId, null);
 }
 
 /**
