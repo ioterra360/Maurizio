@@ -191,9 +191,12 @@ export async function removeMemoryPhoto(memoryId: string, path: string): Promise
  *
  * La lista REFERENZIATA deve essere completa, perché la differenza è una
  * CANCELLA: se fetchPhotoPaths tornasse tronca, foto ancora vive finirebbero
- * fra gli orfani e non ci sarebbe modo di riattaccarle. Per questo pagina
- * avanzando di quante righe ha RICEVUTO e si ferma solo su una pagina vuota
- * (lib/api.ts), senza fidarsi del `max_rows` remoto.
+ * fra gli orfani e non ci sarebbe modo di riattaccarle. Per questo pagina a
+ * CURSORE sull'`id` (`.gt(id, ultimo ricevuto)`) e si ferma solo su una pagina
+ * vuota (lib/api.ts): l'offset non basta, perché ogni pagina è una query a sé
+ * e una riga cancellata fra l'una e l'altra fa scalare di uno tutte le
+ * successive, saltandone una viva. Il cursore regge anche un `max_rows`
+ * remoto più basso del previsto.
  * Anche il list() del bucket si pagina qui (SearchOptions.limit ha default
  * 100, index.d.cts:267-285), ma quel lato sbaglia in sicurezza: una vista
  * parziale degli OGGETTI lascia indietro qualche orfano, non cancella nulla

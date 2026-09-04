@@ -79,8 +79,11 @@ export default function TrashScreen() {
       // I ricordi tornati vivi con nextReviewAt ancora nel futuro riavranno
       // il loro avviso; gli altri sono già in coda e non serve nulla.
       fetchMemoriesForFolder(id)
-        .then((items) => {
-          for (const m of items) void scheduleFirstReview(m);
+        .then(async (items) => {
+          // Sequenziale, non `void`: il tetto di lib/notifications.ts conta la
+          // coda prima di ogni richiesta, e N chiamate concorrenti leggerebbero
+          // tutte lo stesso conteggio pre-raffica scavalcandolo.
+          for (const m of items) await scheduleFirstReview(m);
         })
         .catch((e) => reportError("trash/reschedule-folder", e));
       showToast(t("trash.restoredFolder", { name }));
