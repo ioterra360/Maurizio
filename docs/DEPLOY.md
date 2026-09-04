@@ -462,9 +462,8 @@ Una build fallita consuma il numero: l'etichetta va scritta DOPO, da
    fallirebbe con `42703`, eseguirlo dopo lascerebbe Maurizio — vc11, senza
    paywall — bloccato a 10 ricordi nella finestra intermedia.)
 7. La **edge function di verifica RevenueCat** di B4 esiste sul branch
-   (`ls supabase/functions` deve elencare `revenuecat-sync`; oggi quella
-   cartella non esiste affatto: il repo ha solo `config.toml`, `migrations/`,
-   `templates/`) e Angelo ha sottomano la chiave segreta `sk_` di RevenueCat
+   (`ls supabase/functions` deve elencare `revenuecat-sync`; **c'e'**, da B4 —
+   verificato il 2026-09-04) e Angelo ha sottomano la chiave segreta `sk_` di RevenueCat
    da darle, più il valore di `REVENUECAT_WEBHOOK_SECRET`. La spec la rende
    obbligatoria:
    «il client legge l'entitlement e chiama una edge function che verifica con
