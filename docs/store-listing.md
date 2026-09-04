@@ -29,12 +29,14 @@ Nella schermata Oggi vedi cosa è in scadenza e quanto tempo serve. Nelle cartel
 
 Niente streak, niente classifiche, niente pubblicità. Solo un posto tranquillo dove tornare per qualche minuto al giorno.
 
-Memika è gratuita con una cartella di ricordi. Le cartelle illimitate arriveranno con Memika Premium, in abbonamento tramite Google Play.
+Memika è gratuita: 10 ricordi in tutto e una cartella, per sempre e senza pubblicità.
+
+Se ti serve più spazio ci sono due abbonamenti, tramite Google Play. Pro: ricordi illimitati, 5 cartelle, 3 sezioni per cartella. Premium: tutto illimitato, più le foto da allegare ai ricordi. Si rinnovano automaticamente e si disdicono quando vuoi dal Play Store.
 
 I ricordi sono tuoi. Puoi cancellare tutto quando vuoi dalle Impostazioni e chiederci una copia dei tuoi dati in qualsiasi momento. Informativa sulla privacy: https://ioterra360.github.io/memika-legal/privacy/
 ```
 
-> Nota 2026-09-03: dalla build 3 il limite delle cartelle è applicato dal database (free = 1, pro = 5, premium illimitate; trigger `folders_enforce_plan_limit`, che conta le sole cartelle vive). Gli account dei due tester sono `premium` dal seed della migrazione, quindi non lo incontrano. La frase "gratuita con una cartella" è di nuovo vera.
+> Nota 2026-09-04 (build 3): i tetti del piano Free sono applicati dal database — 10 ricordi in tutto (`memories_enforce_plan_limit`, P0004, cestino compreso), 1 cartella viva (`folders_enforce_plan_limit`, P0005), 0 sezioni (`enforce_subfolder_rules`, P0003) — e le quattro descrizioni li dicono tutti e tre, insieme ai due abbonamenti. La versione precedente prometteva solo "gratuita con una cartella" e rimandava le cartelle illimitate a un Premium futuro: taceva il tetto che l'utente incontra per primo (il decimo ricordo) e non nominava il piano Pro. Gli account dei due tester sono `premium` dal seed della migrazione, quindi non incontrano nulla di tutto questo. Se la build uscisse con le chiavi RevenueCat vuote (bivio del punto 4 di `docs/DEPLOY.md` § "Prima di lanciare"), i tetti restano veri ma i piani non sono acquistabili: togliere il secondo paragrafo prima di incollare e non spuntare "contiene acquisti in-app".
 
 **Categoria**: App → Istruzione
 **Tag** (max 5, se disponibili): Apprendimento, Flashcard, Lingue, Studio
@@ -73,7 +75,9 @@ The Today screen shows what is due and how long it takes. Folders keep your memo
 
 No streaks, no leaderboards, no ads. Just a quiet place to come back to for a few minutes a day.
 
-Memika is free with one folder of memories. Unlimited folders will come with Memika Premium, as a subscription through Google Play.
+Memika is free: 10 memories in total and one folder, forever, with no ads.
+
+If you need more room there are two subscriptions, through Google Play. Pro: unlimited memories, 5 folders, 3 sections per folder. Premium: everything unlimited, plus photos attached to your memories. They renew automatically and you can cancel any time from the Play Store.
 
 Your memories are yours. You can delete everything at any time from Settings and ask us for a copy of your data whenever you want. Privacy policy: https://ioterra360.github.io/memika-legal/privacy/
 ```
@@ -85,7 +89,7 @@ Screenshot in inglese: `scripts/store-screenshots/specs.en.json` (stessi 8 file 
 **Short description** (≤80, 69 caratteri):
 `Révise quelques minutes par jour et n'oublie pas ce que tu as étudié.`
 
-**Full description** (1521/4000):
+**Full description** (1742/4000):
 
 ```
 Memika t'aide à ne pas oublier ce que tu as déjà étudié.
@@ -103,7 +107,9 @@ Sur l'écran Aujourd'hui, tu vois ce qui est à réviser et le temps qu'il faut.
 
 Pas de séries à tenir, pas de classements, pas de publicité. Juste un endroit tranquille où revenir quelques minutes par jour.
 
-Memika est gratuite avec un dossier de souvenirs. Les dossiers illimités arriveront avec Memika Premium, sur abonnement via Google Play.
+Memika est gratuite : 10 souvenirs au total et un dossier, pour toujours, sans publicité.
+
+S'il te faut plus de place, il y a deux abonnements, via Google Play. Pro : souvenirs illimités, 5 dossiers, 3 sections par dossier. Premium : tout en illimité, plus les photos à joindre aux souvenirs. Ils se renouvellent automatiquement et se résilient quand tu veux depuis le Play Store.
 
 Tes souvenirs t'appartiennent. Tu peux tout supprimer quand tu veux depuis les Paramètres et nous demander une copie de tes données à tout moment. Politique de confidentialité : https://ioterra360.github.io/memika-legal/privacy/
 ```
@@ -115,7 +121,7 @@ Screenshot: `scripts/store-screenshots/specs.fr.json` → `docs/store-assets/scr
 **Short description** (≤80, 64 caratteri):
 `Repasa unos minutos al día y no olvides lo que ya has estudiado.`
 
-**Full description** (1436/4000):
+**Full description** (1657/4000):
 
 ```
 Memika sirve para no olvidar lo que ya has estudiado.
@@ -133,7 +139,9 @@ En la pantalla Hoy ves qué toca repasar y cuánto tiempo hace falta. En las car
 
 Sin rachas, sin clasificaciones, sin publicidad. Solo un lugar tranquilo al que volver unos minutos al día.
 
-Memika es gratuita con una carpeta de recuerdos. Las carpetas ilimitadas llegarán con Memika Premium, por suscripción a través de Google Play.
+Memika es gratuita: 10 recuerdos en total y una carpeta, para siempre y sin publicidad.
+
+Si necesitas más sitio hay dos suscripciones, a través de Google Play. Pro: recuerdos ilimitados, 5 carpetas, 3 secciones por carpeta. Premium: todo ilimitado, además de las fotos para adjuntar a los recuerdos. Se renuevan automáticamente y puedes cancelarlas cuando quieras desde Play Store.
 
 Tus recuerdos son tuyos. Puedes borrarlo todo cuando quieras desde Ajustes y pedirnos una copia de tus datos en cualquier momento. Política de privacidad: https://ioterra360.github.io/memika-legal/privacy/
 ```
@@ -193,5 +201,5 @@ Screenshot: `scripts/store-screenshots/specs.es.json` → `docs/store-assets/scr
 ## Da fare quando ci sono gli IAP (RevenueCat)
 - Classificazione contenuti: "acquisti di beni digitali" → sì
 - Impostazioni store: "contiene acquisti in-app" → sì
-- Prodotti → Abbonamenti: creare il prodotto Premium (prezzo, periodo, prova gratuita)
+- Prodotti → Abbonamenti: creare **quattro** prodotti, con gli id identici in Play Console, App Store Connect e RevenueCat (`PRODUCT_IDS` in `lib/plan.ts`): `memika_pro_monthly`, `memika_pro_yearly`, `memika_premium_monthly`, `memika_premium_yearly`. L'offerta `default` di questo ciclo espone solo i due mensili.
 - Profilo pagamenti merchant sotto l'owner (memikaapp@gmail.com) — solo DOPO la finalizzazione del trasferimento

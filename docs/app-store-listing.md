@@ -77,8 +77,13 @@ sarà attivo aggiungere: Diagnostica → Dati sugli arresti anomali (non collega
   usare mai l'account admin per i revisori.
 - **Note**: "Memika è un'app di ripetizione spaziata. Accedi con l'account demo, apri
   Oggi e tocca Inizia il ripasso: le tre fasi Scan, Reinforcement e Focus. La
-  cancellazione dell'account è in Impostazioni → Elimina account. Nessun acquisto
-  in-app in questa versione."
+  cancellazione dell'account è in Impostazioni → Elimina account."
+  Da vc13 / iOS 3 aggiungere: "Il piano Free tiene 10 ricordi in tutto e una
+  cartella; Impostazioni → Piano apre il paywall con Pro e Premium. L'account
+  demo è Premium, quindi non incontra i limiti." (Con le chiavi RevenueCat
+  vuote i bottoni del paywall sono spenti e il binario NON ha acquisti in-app:
+  in quel caso tenere la vecchia frase "Nessun acquisto in-app in questa
+  versione" e non spuntare la casella IAP.)
 - **Contatto**: Angelo Casula, acasula97@gmail.com, telefono da inserire.
 
 ## Testi scheda
@@ -87,8 +92,19 @@ Limiti Apple: nome 30, sottotitolo 30, testo promozionale 170 (modificabile senz
 nuova build), descrizione 4000, parole chiave 100 (con le virgole, senza spazi
 dopo la virgola, senza ripetere il nome), novità 4000.
 
-Nota: finché Premium (RevenueCat) non esiste, la descrizione dice solo "Memika è
-gratuita", senza promettere abbonamenti (Linee guida 2.3, metadati accurati).
+Nota (aggiornata 2026-09-04, build 3): la vecchia riga "finché Premium non esiste
+la descrizione dice solo «Memika è gratuita»" non vale più. Da vc13 / iOS 3 il
+binario porta `app/paywall.tsx` con due abbonamenti a rinnovo automatico e un
+piano Free tappato dai trigger Postgres a 10 ricordi in tutto, 1 cartella e 0
+sezioni. Le quattro descrizioni dicono ora i tetti del piano Free e i due piani a
+pagamento: una pagina prodotto che promette "Memika è gratuita" mentre Apple le
+appiccica il badge "Acquisti in-app", e un utente fermato al decimo ricordo da un
+limite che la scheda non nomina, sono 2.3.1 (metadati accurati) e 3.1.2
+(informazioni sull'abbonamento). Se per qualsiasi motivo la build uscisse con le
+chiavi RevenueCat vuote (bivio del punto 4 di `docs/DEPLOY.md` § "Prima di
+lanciare"), i tetti Free restano veri e vanno comunque dichiarati: cambia solo
+che i due piani non sono acquistabili, e in quel caso i due paragrafi sugli
+abbonamenti vanno tolti prima di incollare.
 
 ### Italiano (it) — principale
 
@@ -115,7 +131,9 @@ Nella schermata Oggi vedi cosa è in scadenza e quanto tempo serve. Nelle cartel
 
 Niente streak, niente classifiche, niente pubblicità. Solo un posto tranquillo dove tornare per qualche minuto al giorno.
 
-Memika è gratuita.
+Memika è gratuita: 10 ricordi in tutto e una cartella, per sempre e senza pubblicità.
+
+Se ti serve più spazio ci sono due abbonamenti. Pro: ricordi illimitati, 5 cartelle, 3 sezioni per cartella. Premium: tutto illimitato, più le foto da allegare ai ricordi. Si rinnovano automaticamente e si disdicono quando vuoi dalle impostazioni del tuo account App Store.
 
 I ricordi sono tuoi. Puoi cancellare tutto quando vuoi dalle Impostazioni e chiederci una copia dei tuoi dati in qualsiasi momento. Informativa sulla privacy: https://ioterra360.github.io/memika-legal/privacy/
 
@@ -146,7 +164,9 @@ The Today screen shows what is due and how long it takes. Folders keep your memo
 
 No streaks, no leaderboards, no ads. Just a quiet place to come back to for a few minutes a day.
 
-Memika is free.
+Memika is free: 10 memories in total and one folder, forever, with no ads.
+
+If you need more room there are two subscriptions. Pro: unlimited memories, 5 folders, 3 sections per folder. Premium: everything unlimited, plus photos attached to your memories. They renew automatically and you can cancel any time from your App Store account settings.
 
 Your memories are yours. You can delete everything at any time from Settings and ask us for a copy of your data whenever you want. Privacy policy: https://ioterra360.github.io/memika-legal/privacy/
 
@@ -177,7 +197,9 @@ Sur l'écran Aujourd'hui, tu vois ce qui est à réviser et le temps qu'il faut.
 
 Pas de séries à tenir, pas de classements, pas de publicité. Juste un endroit tranquille où revenir quelques minutes par jour.
 
-Memika est gratuite.
+Memika est gratuite : 10 souvenirs au total et un dossier, pour toujours, sans publicité.
+
+S'il te faut plus de place, il y a deux abonnements. Pro : souvenirs illimités, 5 dossiers, 3 sections par dossier. Premium : tout en illimité, plus les photos à joindre aux souvenirs. Ils se renouvellent automatiquement et se résilient quand tu veux depuis les réglages de ton compte App Store.
 
 Tes souvenirs t'appartiennent. Tu peux tout supprimer quand tu veux depuis les Réglages et nous demander une copie de tes données à tout moment. Politique de confidentialité : https://ioterra360.github.io/memika-legal/privacy/
 
@@ -208,7 +230,9 @@ En la pantalla Hoy ves qué toca repasar y cuánto tiempo hace falta. En las car
 
 Sin rachas, sin clasificaciones, sin publicidad. Solo un lugar tranquilo al que volver unos minutos al día.
 
-Memika es gratuita.
+Memika es gratuita: 10 recuerdos en total y una carpeta, para siempre y sin publicidad.
+
+Si necesitas más sitio hay dos suscripciones. Pro: recuerdos ilimitados, 5 carpetas, 3 secciones por carpeta. Premium: todo ilimitado, además de las fotos para adjuntar a los recuerdos. Se renuevan automáticamente y puedes cancelarlas cuando quieras desde los ajustes de tu cuenta de App Store.
 
 Tus recuerdos son tuyos. Puedes borrarlo todo cuando quieras desde Ajustes y pedirnos una copia de tus datos en cualquier momento. Política de privacidad: https://ioterra360.github.io/memika-legal/privacy/
 
