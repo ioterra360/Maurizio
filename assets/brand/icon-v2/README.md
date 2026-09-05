@@ -17,6 +17,33 @@ Al momento della PROSSIMA BUILD NATIVA (build 3 / vc13):
 copie per gli store sono in `docs/store-assets/`. Il passo 4 resta manuale
 in Play Console al momento dell'upload di vc13.
 
+## Lo splash mancava da questa lista (2026-09-05)
+
+Questa checklist aveva quattro voci e **nessuna era lo splash**. Risultato: la
+build 3 è andata sugli store con l'icona v2 sulla home e l'icona **v1** nella
+schermata di caricamento, e me ne sono accorto solo guardando l'app aprirsi.
+Nessun test legava `splash-icon.png` all'icona, quindi niente ha protestato.
+
+Ora `assets/splash-icon.png` si genera dall'icona:
+
+```bash
+node assets/brand/icon-v2/splash-source.cjs
+```
+
+L'arte viene ritagliata nella superellisse `|u|^5 + |v|^5 <= 1`, cioè la
+silhouette con cui iOS ritaglia le icone: lo splash è letteralmente la stessa
+figura che l'utente ha appena toccato. Fuori dalla forma l'alpha è 0 — deve
+restarci, perché il plugin disegna l'immagine su **due** fondali, `#F5F3EF`
+in tema chiaro e `#0E1015` in tema scuro, e un fondale cotto nel PNG si
+vedrebbe come una toppa su uno dei due.
+
+Legato da `lib/native-config.test.ts` ("lo splash è l'icona v2 ritagliata a
+superellisse"): confronta l'RGB pixel per pixel con `assets/icon.png` dove
+è opaco, e pretende angoli trasparenti e centri dei lati pieni. Verificato
+rosso/verde il 2026-09-05 rimettendo lo splash vecchio al suo posto.
+
+**Rigenerare dopo OGNI modifica a `icon.png`**, come per l'adaptive.
+
 ## `adaptive-icon.png` non è `icon.png` (2026-09-04)
 
 Su iOS l'icona è a tutto campo e nessuno la maschera: `icon.png` va bene così.

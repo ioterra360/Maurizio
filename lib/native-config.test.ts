@@ -239,8 +239,9 @@ describe("app.json — build 3", () => {
     // Con userInterfaceStyle "automatic" il launch screen resterebbe #F5F3EF
     // anche a telefono scuro: un lampo bianco prima che React monti. Il fondo
     // scuro è bgScreen della palette scura (theme/palettes.ts), lo stesso che
-    // l'app disegna un istante dopo. L'arte non cambia: la sua placca navy
-    // (#132447 sul bordo) stacca a sufficienza sul nero.
+    // l'app disegna un istante dopo. L'arte è la stessa nei due temi: il rosa
+    // #F8D2C4 dell'icona v2 stacca sia sulla crema chiara sia sul quasi nero,
+    // e fuori dalla superellisse è trasparente, quindi il fondale giusto passa.
     const props = pluginProps("expo-splash-screen");
     expect(props?.backgroundColor).toBe("#F5F3EF");
     expect(props?.image).toBe("./assets/splash-icon.png");
@@ -252,6 +253,44 @@ describe("app.json — build 3", () => {
     });
     // Senza "automatic" la variante scura non verrebbe mai scelta.
     expect(appJson.expo.userInterfaceStyle).toBe("automatic");
+  });
+
+  it("lo splash è l'icona v2 ritagliata a superellisse, non un'arte a parte", () => {
+    // La build 3 è uscita con lo splash v1: la checklist di icon-v2/README.md
+    // elencava icon.png, adaptive-icon.png e il backgroundColor, e lo splash
+    // non c'era. Nessun test lo legava all'icona, quindi niente ha protestato.
+    // Rigenerare con: node assets/brand/icon-v2/splash-source.cjs
+    expect(sameBytes("assets/splash-icon.png", "assets/brand/icon-v2/splash-icon.png")).toBe(true);
+    expect(pngHeader("assets/splash-icon.png")).toEqual({ width: 1024, height: 1024, colorType: 6 });
+
+    const splash = decodeRgba("assets/splash-icon.png");
+    const icon = decodeRgba("assets/icon.png");
+    const at = (px: Buffer, x: number, y: number) => (y * 1024 + x) * 4;
+
+    // Gli angoli sono fuori dalla superellisse: lì deve passare il fondale del
+    // plugin, che in tema chiaro e in tema scuro è diverso.
+    for (const [x, y] of [[0, 0], [1023, 0], [0, 1023], [1023, 1023]]) {
+      expect(splash.px[at(splash.px, x, y) + 3]).toBe(0);
+    }
+    // Il centro dei lati invece tocca il bordo: la superellisse è inscritta nel
+    // quadrato, non un cerchio.
+    expect(splash.px[at(splash.px, 512, 0) + 3]).toBe(255);
+    expect(splash.px[at(splash.px, 0, 512) + 3]).toBe(255);
+
+    // Dove è opaco, il colore è ESATTAMENTE quello dell'icona: è ciò che
+    // impedisce allo splash di tornare a essere un'arte diversa dall'icona.
+    let confrontati = 0;
+    for (let y = 0; y < 1024; y += 7) {
+      for (let x = 0; x < 1024; x += 7) {
+        const i = at(splash.px, x, y);
+        if (splash.px[i + 3] !== 255) continue;
+        expect([splash.px[i], splash.px[i + 1], splash.px[i + 2]]).toEqual([
+          icon.px[i], icon.px[i + 1], icon.px[i + 2],
+        ]);
+        confrontati += 1;
+      }
+    }
+    expect(confrontati).toBeGreaterThan(15000);
   });
 
   it("monta l'icona v2 byte per byte, su sfondo rosa", () => {
