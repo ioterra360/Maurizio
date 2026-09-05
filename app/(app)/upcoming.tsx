@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Modal, Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { ChevronLeft, ChevronRight } from "lucide-react-native";
 
 import { TopBar } from "@/components/TopBar";
@@ -42,11 +42,17 @@ export default function UpcomingScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const user = useAuthStore((s) => s.user);
+  // `day` arriva dalle righe "Domani · N ricordi" della Home: quella riga
+  // apre direttamente il foglio di quel giorno, mentre "Vedi ripassi
+  // successivi" arriva qui senza parametro e mostra il calendario e basta.
+  const { day: dayParam } = useLocalSearchParams<{ day?: string }>();
+  const requestedDay = typeof dayParam === "string" && /^\d{4}-\d{2}-\d{2}$/.test(dayParam) ? dayParam : null;
 
-  // Primo giorno del mese visualizzato (mezzanotte locale).
+  // Primo giorno del mese visualizzato (mezzanotte locale) — quello del
+  // giorno richiesto, se c'è, così il foglio si apre sopra il mese giusto.
   const [monthStart, setMonthStart] = useState(() => {
-    const now = new Date();
-    return new Date(now.getFullYear(), now.getMonth(), 1);
+    const base = requestedDay ? new Date(`${requestedDay}T12:00:00`) : new Date();
+    return new Date(base.getFullYear(), base.getMonth(), 1);
   });
   const [counts, setCounts] = useState<Map<string, number>>(() => new Map());
   const [loading, setLoading] = useState(true);
@@ -70,19 +76,31 @@ export default function UpcomingScreen() {
 
   useEffect(load, [load]);
 
-  const openDaySheet = (dayKey: string) => {
-    if (!user) return;
-    setOpenDay(dayKey);
-    setDayItems(null);
-    const from = new Date(`${dayKey}T00:00:00`);
-    const to = new Date(`${dayKey}T23:59:59.999`);
-    fetchMemoriesInRange(user.id, from.toISOString(), to.toISOString())
-      .then((items) => setDayItems(items))
-      .catch((e) => {
-        reportError("upcoming/day-items", e);
-        setDayItems([]);
-      });
-  };
+  const openDaySheet = useCallback(
+    (dayKey: string) => {
+      if (!user) return;
+      setOpenDay(dayKey);
+      setDayItems(null);
+      const from = new Date(`${dayKey}T00:00:00`);
+      const to = new Date(`${dayKey}T23:59:59.999`);
+      fetchMemoriesInRange(user.id, from.toISOString(), to.toISOString())
+        .then((items) => setDayItems(items))
+        .catch((e) => {
+          reportError("upcoming/day-items", e);
+          setDayItems([]);
+        });
+    },
+    [user],
+  );
+
+  // Apertura automatica del giorno richiesto: una volta sola, appena c'è
+  // l'utente. Se poi chiude il foglio, resta sul calendario.
+  const autoOpened = useRef(false);
+  useEffect(() => {
+    if (!requestedDay || !user || autoOpened.current) return;
+    autoOpened.current = true;
+    openDaySheet(requestedDay);
+  }, [requestedDay, user, openDaySheet]);
 
   // Celle del mese: offset del primo giorno (settimana che parte dal lunedì).
   const cells = useMemo(() => {

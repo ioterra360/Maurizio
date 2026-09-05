@@ -137,20 +137,22 @@ Funzione pura: niente React, niente Supabase, niente I/O. `lib/api.ts`
 persiste (`createMemory` semina `firstReview()`, `applyPhaseUpdate` scrive il
 risultato), `lib/review-store.ts` orchestra (`phaseByCard`).
 
-## Time-budget chips
+## Dimensione della sessione
 
-5 / 15 / 30 / 1 hr. They cap the number of memories per session, not the wall
-clock. Approximations:
+La sessione propone **tutta la coda in scadenza**, fase per fase, senza tetto
+(deciso il 4/9/2026, in codice dal 5/9). Fino ad allora la Home aveva un
+selettore "Quanto tempo hai oggi?" (5 / 15 / 30 / 1 h) che ripartiva un tetto
+di carte sulle tre fasi; è stato tolto perché la scelta non serviva a nulla —
+l'utente vuole sapere cosa c'è da ripassare, non decidere quanto ignorarne.
 
-| Budget | Items |
-|---|---|
-| 5 min | 8-10 |
-| 15 min | 25-30 |
-| 30 min | 50-60 |
-| 1 hr | 100-120 |
+I minuti mostrati restano una **stima**, non una scelta:
+`SECONDS_PER_ITEM` in `lib/queue.ts` (20 / 35 / 40 s per Scan / Reinforcement /
+Focus) × carte in coda, arrotondato per fase. Sono euristiche da tarare
+quando ci sarà telemetria.
 
-These are heuristics. We'll measure actual session length once we have
-telemetry (Sentry breadcrumbs).
+Il tetto per fase (`layerCaps`) esiste ancora nello store, ma la Home lo passa
+**uguale alla coda**: serve all'handoff per saltare le fasi vuote. Le sessioni
+per singola cartella (`/folder/[id]`) passano ancora `budgetCap: 28`.
 
 ## Edge cases
 

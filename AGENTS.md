@@ -198,7 +198,7 @@ features/           Feature folders (review, folders, …) — add as needed in 
 lib/
   api.ts            SINGLE point of Supabase access. Components import from here.
   mappers.ts        DB row → frontend model mappers (camelCase boundary).
-  constants.ts      Domain constants (folder kinds, time budgets, etc.).
+  constants.ts      Domain constants (folder kinds, review phases, limits, etc.).
   supabase.ts       Supabase client + SecureStore adapter + demo-mode toggle.
   auth-store.ts     Zustand auth store with onAuthStateChange subscription.
   auth-gate.tsx     useAuthGate(surface) — single source of routing decisions.

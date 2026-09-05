@@ -347,8 +347,8 @@ export const en: Record<keyof typeof it, string> = {
   "coachTips.sciDiagramsBody": "Trying to draw a mechanism before seeing it fixes it better than copying it from the book.",
   "coachTips.sciDiagramsSource": "Van Meter, Educational Psychology 2001",
   "coachTips.sciDiagramsTitle": "Draw it even if you're unsure",
-  "coachTips.todayBudgetBody": "Even 5 minutes count. Consistency beats quantity: better short today than long \"tomorrow\".",
-  "coachTips.todayBudgetTitle": "Choose how much time you have",
+  "coachTips.todayConsistencyBody": "Consistency beats quantity: better a short review today than a long one \"tomorrow\".",
+  "coachTips.todayConsistencyTitle": "Even five minutes count",
   "coachTips.todayFlowBody": "The Scan → Reinforcement → Focus flow is designed to cover everything in a few minutes. Try doing it at the same time every day.",
   "coachTips.todayFlowTitle": "One round a day",
 
@@ -380,14 +380,6 @@ export const en: Record<keyof typeof it, string> = {
   "complete.tierTopTitle": "A brilliant session!",
 
   // ---- constants -----------------------------------------------------------
-  "constants.budget15Label": "15 min",
-  "constants.budget15Sublabel": "Standard",
-  "constants.budget30Label": "30 min",
-  "constants.budget30Sublabel": "In-depth",
-  "constants.budget5Label": "5 min",
-  "constants.budget5Sublabel": "Quick",
-  "constants.budget60Label": "1+ hour",
-  "constants.budget60Sublabel": "Marathon",
   "constants.itemTypeCase": "Case",
   "constants.itemTypeConcept": "Concept",
   "constants.itemTypeDoctrine": "Doctrine",
@@ -968,9 +960,6 @@ export const en: Record<keyof typeof it, string> = {
   "tabs.settings": "Settings",
   "tabs.today": "Today",
 
-  // ---- timeBudgetChips -----------------------------------------------------
-  "timeBudgetChips.setA11y": "Set study time to {label}",
-  "timeBudgetChips.title": "How much time do you have today?",
 
   // ---- today ---------------------------------------------------------------
   "today.approxMinutes": "~{minutes} min",

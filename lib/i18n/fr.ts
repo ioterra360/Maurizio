@@ -347,8 +347,8 @@ export const fr: Record<keyof typeof it, string> = {
   "coachTips.sciDiagramsBody": "Essayer de dessiner un mécanisme avant de le voir le fixe mieux que le recopier du livre.",
   "coachTips.sciDiagramsSource": "Van Meter, Educational Psychology 2001",
   "coachTips.sciDiagramsTitle": "Dessine même sans savoir",
-  "coachTips.todayBudgetBody": "Même 5 minutes comptent. La régularité l'emporte sur la quantité : mieux vaut court aujourd'hui que long « demain ».",
-  "coachTips.todayBudgetTitle": "Choisis le temps dont tu disposes",
+  "coachTips.todayConsistencyBody": "La régularité l'emporte sur la quantité : mieux vaut une courte révision aujourd'hui qu'une longue « demain ».",
+  "coachTips.todayConsistencyTitle": "Même cinq minutes comptent",
   "coachTips.todayFlowBody": "Le parcours Scan → Reinforcement → Focus est conçu pour tout couvrir en quelques minutes. Essaie de le faire chaque jour à la même heure.",
   "coachTips.todayFlowTitle": "Un tour par jour",
 
@@ -380,14 +380,6 @@ export const fr: Record<keyof typeof it, string> = {
   "complete.tierTopTitle": "Session brillante !",
 
   // ---- constants -----------------------------------------------------------
-  "constants.budget15Label": "15 min",
-  "constants.budget15Sublabel": "Standard",
-  "constants.budget30Label": "30 min",
-  "constants.budget30Sublabel": "Approfondie",
-  "constants.budget5Label": "5 min",
-  "constants.budget5Sublabel": "Rapide",
-  "constants.budget60Label": "1 h+",
-  "constants.budget60Sublabel": "Marathon",
   "constants.itemTypeCase": "Cas",
   "constants.itemTypeConcept": "Concept",
   "constants.itemTypeDoctrine": "Doctrine",
@@ -968,9 +960,6 @@ export const fr: Record<keyof typeof it, string> = {
   "tabs.settings": "Réglages",
   "tabs.today": "Aujourd'hui",
 
-  // ---- timeBudgetChips -----------------------------------------------------
-  "timeBudgetChips.setA11y": "Régler le temps d'étude sur {label}",
-  "timeBudgetChips.title": "Combien de temps as-tu aujourd'hui ?",
 
   // ---- today ---------------------------------------------------------------
   "today.approxMinutes": "~{minutes} min",

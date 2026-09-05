@@ -1,7 +1,11 @@
 /**
- * Logica pura della coda di ripasso: ripartizione del budget tempo sui tre
- * livelli e mapping Memory → ReviewCard. Nessun I/O — testato con vitest
- * (lib/queue.test.ts).
+ * Logica pura della coda di ripasso: stima dei minuti per fase, priorità
+ * per cartella e mapping Memory → ReviewCard. Nessun I/O — testato con
+ * vitest (lib/queue.test.ts).
+ *
+ * Non esiste più una ripartizione di "budget tempo" sulle fasi (tolta il
+ * 5/9/2026 insieme al selettore "quanto tempo hai"): la sessione propone
+ * tutta la coda in scadenza, e i minuti sono una stima, non un tetto.
  */
 import type { LayerKey } from "@/theme/tokens";
 import { toPhaseState, type Memory } from "./mappers";
@@ -16,8 +20,6 @@ import { type FolderKind, type MemoryState } from "./constants";
 
 export type LayerCounts = { scan: number; reinforcement: number; focus: number };
 
-const LAYER_ORDER: readonly LayerKey[] = ["scan", "reinforcement", "focus"];
-
 /** Dimensioni dei mazzi demo statici (review-store DECKS) per i conteggi offline. */
 export const DEMO_DUE_COUNTS: LayerCounts = { scan: 4, reinforcement: 3, focus: 3 };
 
@@ -27,33 +29,6 @@ export const SECONDS_PER_ITEM: Record<LayerKey, number> = {
   reinforcement: 35,
   focus: 40,
 };
-
-/**
- * Ripartisce il tetto `capTotal` sui tre livelli in proporzione alla coda,
- * senza mai superare la coda del singolo livello. Il resto della divisione
- * va ai livelli con domanda residua in ordine Scan → Reinforcement → Focus.
- */
-export function splitBudget(counts: LayerCounts, capTotal: number): LayerCounts {
-  const total = counts.scan + counts.reinforcement + counts.focus;
-  if (total <= capTotal) return { ...counts };
-  const out: LayerCounts = { scan: 0, reinforcement: 0, focus: 0 };
-  for (const l of LAYER_ORDER) {
-    out[l] = Math.min(counts[l], Math.floor((capTotal * counts[l]) / total));
-  }
-  let rest = capTotal - (out.scan + out.reinforcement + out.focus);
-  while (rest > 0) {
-    let gave = false;
-    for (const l of LAYER_ORDER) {
-      if (rest > 0 && out[l] < counts[l]) {
-        out[l] += 1;
-        rest -= 1;
-        gave = true;
-      }
-    }
-    if (!gave) break; // ogni livello è saturo
-  }
-  return out;
-}
 
 /**
  * Livello di ripasso di una memoria, dedotto dalla sua FASE.

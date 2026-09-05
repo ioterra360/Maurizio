@@ -347,8 +347,8 @@ export const it = {
   "coachTips.sciDiagramsBody": "Provare a disegnare un meccanismo prima di vederlo lo fissa meglio di copiarlo dal libro.",
   "coachTips.sciDiagramsSource": "Van Meter, Educational Psychology 2001",
   "coachTips.sciDiagramsTitle": "Disegna anche se non sai",
-  "coachTips.todayBudgetBody": "Anche 5 minuti contano. La costanza vince sulla quantità: meglio breve oggi che lungo \"domani\".",
-  "coachTips.todayBudgetTitle": "Scegli quanto tempo hai",
+  "coachTips.todayConsistencyBody": "La costanza vince sulla quantità: meglio un ripasso breve oggi che uno lungo \"domani\".",
+  "coachTips.todayConsistencyTitle": "Anche cinque minuti contano",
   "coachTips.todayFlowBody": "Il flow Scan → Reinforcement → Focus è pensato per coprire tutto in pochi minuti. Prova a farlo ogni giorno alla stessa ora.",
   "coachTips.todayFlowTitle": "Un giro al giorno",
 
@@ -380,14 +380,6 @@ export const it = {
   "complete.tierTopTitle": "Sessione brillante!",
 
   // ---- constants -----------------------------------------------------------
-  "constants.budget15Label": "15 min",
-  "constants.budget15Sublabel": "Standard",
-  "constants.budget30Label": "30 min",
-  "constants.budget30Sublabel": "Approfondita",
-  "constants.budget5Label": "5 min",
-  "constants.budget5Sublabel": "Veloce",
-  "constants.budget60Label": "1+ ora",
-  "constants.budget60Sublabel": "Maratona",
   "constants.itemTypeCase": "Caso",
   "constants.itemTypeConcept": "Concetto",
   "constants.itemTypeDoctrine": "Dottrina",
@@ -968,9 +960,6 @@ export const it = {
   "tabs.settings": "Impostazioni",
   "tabs.today": "Oggi",
 
-  // ---- timeBudgetChips -----------------------------------------------------
-  "timeBudgetChips.setA11y": "Imposta tempo di studio a {label}",
-  "timeBudgetChips.title": "Quanto tempo hai oggi?",
 
   // ---- today ---------------------------------------------------------------
   "today.approxMinutes": "~{minutes} min",

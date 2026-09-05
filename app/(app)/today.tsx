@@ -1,11 +1,9 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { ScrollView, Text, View, useWindowDimensions } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useFocusEffect } from "expo-router";
 import { CalendarDays, ChevronRight, Clock } from "lucide-react-native";
 
-import { TimeBudgetChips } from "@/components/TimeBudgetChips";
 import { SectionLabel } from "@/components/SectionLabel";
 import { LayerCard } from "@/components/LayerCard";
 import { PrimaryButton } from "@/components/PrimaryButton";
@@ -27,19 +25,10 @@ import { dayKeyOf, upcomingDays, type UpcomingDay } from "@/lib/upcoming";
 import { reportError } from "@/lib/report-error";
 import { isDemoMode } from "@/lib/supabase";
 import { useT } from "@/lib/i18n";
-import {
-  DEMO_DUE_COUNTS,
-  layerMinutes,
-  splitBudget,
-  totalMinutes,
-  type LayerCounts,
-} from "@/lib/queue";
-import { REVIEW_LAYERS, TIME_BUDGETS } from "@/lib/constants";
+import { DEMO_DUE_COUNTS, layerMinutes, totalMinutes, type LayerCounts } from "@/lib/queue";
+import { REVIEW_LAYERS } from "@/lib/constants";
 import { firstName, dateBadge, timeGreeting } from "@/lib/format";
 import { FONT, radii, useThemeTokens } from "@/theme/tokens";
-
-/** Chiave AsyncStorage del budget scelto — la proposta del giorno sopravvive al riavvio. */
-const BUDGET_KEY = "memika.time-budget-minutes";
 
 /** Orizzonte della sezione "Prossimi ripassi" (il calendario copre oltre). */
 const UPCOMING_HORIZON_DAYS = 30;
@@ -49,7 +38,6 @@ export default function TodayScreen() {
   const { colors, layerTint } = useThemeTokens();
   const user = useAuthStore((s) => s.user);
   const display = firstName(user?.name ?? "", t("today.welcomeFallbackName"));
-  const [budget, setBudget] = useState(15);
   const [dueCounts, setDueCounts] = useState<LayerCounts | null>(null);
   // Le sezioni del mockup di Maurizio (2026-09-01): ritardatari, per-cartella
   // e giorni futuri. Se falliscono non bloccano la card hero: la sezione
@@ -68,20 +56,6 @@ export default function TodayScreen() {
 
   const { folders } = useFoldersWithStats();
   const order = useFolderOrderStore((s) => s.order);
-
-  // Budget persistito: la scelta sopravvive al riavvio dell'app.
-  useEffect(() => {
-    AsyncStorage.getItem(BUDGET_KEY)
-      .then((v) => {
-        const n = v ? Number(v) : NaN;
-        if (TIME_BUDGETS.some((b) => b.minutes === n)) setBudget(n);
-      })
-      .catch(() => {});
-  }, []);
-  const pickBudget = (minutes: number) => {
-    setBudget(minutes);
-    AsyncStorage.setItem(BUDGET_KEY, String(minutes)).catch(() => {});
-  };
 
   // Conteggi veri della coda — aggiornati a ogni focus e su "Riprova".
   const loadDueCounts = useCallback(() => {
@@ -146,14 +120,13 @@ export default function TodayScreen() {
         ? { fontSize: 27, lineHeight: 35, paddingRight: 100, mascot: 108 }
         : { fontSize: 32, lineHeight: 42, paddingRight: 128, mascot: 136 };
 
-  // Piano del giorno derivato: coda vera × budget scelto. In demo i conteggi
-  // sono quelli dei mazzi statici; in reale restano null ("…") finché il
-  // fetch non risolve — mai numeri finti a un utente vero.
-  const estItems = TIME_BUDGETS.find((b) => b.minutes === budget)?.estItems ?? 28;
-  const counts = dueCounts ?? (isDemoMode ? DEMO_DUE_COUNTS : null);
-  const plan = counts ? splitBudget(counts, estItems) : null;
-  const totItems = plan ? plan.scan + plan.reinforcement + plan.focus : null;
-  const totDue = counts ? counts.scan + counts.reinforcement + counts.focus : null;
+  // Il piano del giorno È la coda: tutto ciò che è in scadenza, per fase,
+  // senza tetto (deciso il 4/9/2026 — il selettore "quanto tempo hai" non
+  // esiste più, i minuti restano una stima e non una scelta). In demo i
+  // conteggi sono quelli dei mazzi statici; in reale restano null ("…")
+  // finché il fetch non risolve — mai numeri finti a un utente vero.
+  const plan: LayerCounts | null = dueCounts ?? (isDemoMode ? DEMO_DUE_COUNTS : null);
+  const totDue = plan ? plan.scan + plan.reinforcement + plan.focus : null;
   const totMin = plan ? totalMinutes(plan) : null;
   const showPlanError = dueError && !plan;
   const minutesLabel = (l: "scan" | "reinforcement" | "focus") =>
@@ -178,11 +151,14 @@ export default function TodayScreen() {
   const startReview = () => {
     if (!plan) return;
     const first = REVIEW_LAYERS.find((l) => plan[l] > 0) ?? "scan";
-    startSession(first, "flow", { budgetCap: estItems, layerCaps: plan });
+    // layerCaps = la coda: lo store carica ogni fase per intero e l'handoff
+    // salta le fasi vuote. Senza layerCaps ricadrebbe sul suo default di 28.
+    startSession(first, "flow", { layerCaps: plan });
     router.push(`/review/${first}`);
   };
   const startLayer = (path: "scan" | "reinforcement" | "focus") => {
-    startSession(path, "single", { budgetCap: estItems });
+    if (!plan) return;
+    startSession(path, "single", { layerCaps: plan });
     router.push(`/review/${path}`);
   };
 
@@ -311,19 +287,17 @@ export default function TodayScreen() {
               </View>
               <PrimaryButton
                 label={
-                  plan && totItems === 0 ? t("today.nothingToReview") : t("today.startReviewHero")
+                  plan && totDue === 0 ? t("today.nothingToReview") : t("today.startReviewHero")
                 }
                 onPress={startReview}
-                disabled={!plan || totItems === 0}
+                disabled={!plan || totDue === 0}
               />
             </View>
           )}
         </View>
 
-        {/* Time budget chips + flusso consigliato, sotto la card hero. */}
-        <View style={{ paddingHorizontal: 20, marginTop: 18 }}>
-          <TimeBudgetChips value={budget} onChange={pickBudget} />
-        </View>
+        {/* Flusso consigliato, sotto la card hero: i tre numeri sono la coda
+            per fase, cioè esattamente ciò che il CTA farà partire. */}
         <View style={{ paddingHorizontal: 28, paddingTop: 24, paddingBottom: 8 }}>
           <SectionLabel>{t("today.recommendedFlow")}</SectionLabel>
         </View>
@@ -489,7 +463,9 @@ export default function TodayScreen() {
               key={d.dayKey}
               accessibilityRole="button"
               accessibilityLabel={`${upcomingLabel(d.dayKey)} · ${tp("upcoming.dayCount", d.count)}`}
-              onPress={() => router.push("/upcoming" as never)}
+              // La riga di un giorno apre direttamente il foglio di QUEL
+              // giorno; solo "Vedi ripassi successivi" apre il calendario.
+              onPress={() => router.push({ pathname: "/upcoming", params: { day: d.dayKey } } as never)}
               pressedOpacity={0.85}
               style={{
                 flexDirection: "row",

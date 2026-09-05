@@ -231,7 +231,7 @@ export default function NotificationsScreen() {
           ) : null}
         </View>
 
-        {/* Orario del promemoria — lista di slot da mezz'ora (precedente: TimeBudgetChips). */}
+        {/* Orario del promemoria — lista di slot da mezz'ora. */}
         <View style={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 8 }}>
           <SectionLabel>{t("notifications.slotSection")}</SectionLabel>
         </View>
@@ -267,9 +267,8 @@ export default function NotificationsScreen() {
                   pressedOpacity={0.7}
                   containerStyle={{ flexGrow: 1, flexBasis: "22%" }}
                   style={{
-                    // 44 = area tattile minima iOS, come TimeBudgetChips
-                    // (components/TimeBudgetChips.tsx:53). Con 48 chip fitti
-                    // in griglia non è il posto dove risparmiare 4 punti.
+                    // 44 = area tattile minima iOS. Con 48 chip fitti in
+                    // griglia non è il posto dove risparmiare 4 punti.
                     minHeight: 44,
                     alignItems: "center",
                     justifyContent: "center",

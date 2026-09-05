@@ -145,7 +145,7 @@ These are the building blocks the screens are made of. Add new components in
    Delete when each screen has its real implementation.
 3. **Mascot** — image wrapper. `size` prop in px.
 4. **Coach bubble** — Phase 2. Mascot avatar + one sentence + dismiss × button.
-5. **Time chip** — used on Today (5 / 15 / 30 / 1 hr). Two states: idle / selected.
+5. **Time chip** — REMOVED 2026-09-05 (the "how much time do you have" selector is gone; the session proposes the whole due queue). The 30-minute slot chips on Notifications reuse the same 44 pt touch target.
 6. **Layer card** — Scan / Reinforcement / Focus rows on Today. Color stripe
    on the left, icon, label, sub-line.
 7. **Folder row** — Knowledge list item: dot, name, priority pill, retention

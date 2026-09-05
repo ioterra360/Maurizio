@@ -154,53 +154,6 @@ export const REVIEW_LAYERS: ReadonlyArray<LayerKey> = ["scan", "reinforcement", 
 export const REVIEW_RESPONSES = ["remembered", "struggled", "forgot", "skipped"] as const;
 export type ReviewResponse = (typeof REVIEW_RESPONSES)[number];
 
-/**
- * Time-budget options on Today. Four cards: 5 / 15 / 30 / 60+ minutes.
- * `label` / `sublabel` are getters resolved in the current language on access.
- */
-export const TIME_BUDGETS = [
-  {
-    get label() {
-      return t("constants.budget5Label");
-    },
-    get sublabel() {
-      return t("constants.budget5Sublabel");
-    },
-    minutes: 5,
-    estItems: 8,
-  },
-  {
-    get label() {
-      return t("constants.budget15Label");
-    },
-    get sublabel() {
-      return t("constants.budget15Sublabel");
-    },
-    minutes: 15,
-    estItems: 28,
-  },
-  {
-    get label() {
-      return t("constants.budget30Label");
-    },
-    get sublabel() {
-      return t("constants.budget30Sublabel");
-    },
-    minutes: 30,
-    estItems: 55,
-  },
-  {
-    get label() {
-      return t("constants.budget60Label");
-    },
-    get sublabel() {
-      return t("constants.budget60Sublabel");
-    },
-    minutes: 60,
-    estItems: 110,
-  },
-] as const;
-
 export const DAILY_INPUT_CAP_DEFAULT = 20;
 
 /**

@@ -257,7 +257,7 @@ export function pickCategoryTip(
 export const SCREEN_TIPS: Record<string, CoachTip[]> = {
   today: [
     defineTip("today.flow", "coachTips.todayFlowTitle", "coachTips.todayFlowBody"),
-    defineTip("today.budget", "coachTips.todayBudgetTitle", "coachTips.todayBudgetBody"),
+    defineTip("today.consistency", "coachTips.todayConsistencyTitle", "coachTips.todayConsistencyBody"),
   ],
   knowledge: [
     defineTip(

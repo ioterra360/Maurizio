@@ -5,7 +5,6 @@ import {
   allocateByFolderPriority,
   layerFor,
   layerMinutes,
-  splitBudget,
   toReviewCard,
   totalMinutes,
 } from "./queue";
@@ -33,40 +32,6 @@ const mem = (over: Partial<Memory> = {}): Memory => ({
   createdAt: "2026-07-20T08:00:00.000Z",
   updatedAt: "2026-07-20T08:00:00.000Z",
   ...over,
-});
-
-describe("splitBudget", () => {
-  it("returns everything when under cap", () => {
-    expect(splitBudget({ scan: 3, reinforcement: 2, focus: 1 }, 28)).toEqual({
-      scan: 3,
-      reinforcement: 2,
-      focus: 1,
-    });
-  });
-
-  it("splits proportionally with remainder to scan first", () => {
-    // totale 20, cap 8 → quote floor: scan 4, reinf 2, focus 1 (somma 7), resto 1 → scan
-    expect(splitBudget({ scan: 10, reinforcement: 6, focus: 4 }, 8)).toEqual({
-      scan: 5,
-      reinforcement: 2,
-      focus: 1,
-    });
-  });
-
-  it("never allocates beyond a layer's own queue", () => {
-    const r = splitBudget({ scan: 1, reinforcement: 0, focus: 30 }, 8);
-    expect(r.scan).toBe(1);
-    expect(r.reinforcement).toBe(0);
-    expect(r.scan + r.reinforcement + r.focus).toBe(8);
-  });
-
-  it("handles empty queue", () => {
-    expect(splitBudget({ scan: 0, reinforcement: 0, focus: 0 }, 28)).toEqual({
-      scan: 0,
-      reinforcement: 0,
-      focus: 0,
-    });
-  });
 });
 
 describe("minutes", () => {

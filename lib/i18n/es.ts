@@ -347,8 +347,8 @@ export const es: Record<keyof typeof it, string> = {
   "coachTips.sciDiagramsBody": "Intentar dibujar un mecanismo antes de verlo lo fija mejor que copiarlo del libro.",
   "coachTips.sciDiagramsSource": "Van Meter, Educational Psychology 2001",
   "coachTips.sciDiagramsTitle": "Dibuja aunque no sepas",
-  "coachTips.todayBudgetBody": "Incluso 5 minutos cuentan. La constancia gana a la cantidad: mejor breve hoy que largo \"mañana\".",
-  "coachTips.todayBudgetTitle": "Elige cuánto tiempo tienes",
+  "coachTips.todayConsistencyBody": "La constancia gana a la cantidad: mejor un repaso breve hoy que uno largo \"mañana\".",
+  "coachTips.todayConsistencyTitle": "Incluso cinco minutos cuentan",
   "coachTips.todayFlowBody": "El flujo Scan → Reinforcement → Focus está pensado para cubrirlo todo en pocos minutos. Intenta hacerlo cada día a la misma hora.",
   "coachTips.todayFlowTitle": "Una vuelta al día",
 
@@ -380,14 +380,6 @@ export const es: Record<keyof typeof it, string> = {
   "complete.tierTopTitle": "¡Sesión brillante!",
 
   // ---- constants -----------------------------------------------------------
-  "constants.budget15Label": "15 min",
-  "constants.budget15Sublabel": "Estándar",
-  "constants.budget30Label": "30 min",
-  "constants.budget30Sublabel": "A fondo",
-  "constants.budget5Label": "5 min",
-  "constants.budget5Sublabel": "Rápida",
-  "constants.budget60Label": "1 h+",
-  "constants.budget60Sublabel": "Maratón",
   "constants.itemTypeCase": "Caso",
   "constants.itemTypeConcept": "Concepto",
   "constants.itemTypeDoctrine": "Doctrina",
@@ -968,9 +960,6 @@ export const es: Record<keyof typeof it, string> = {
   "tabs.settings": "Ajustes",
   "tabs.today": "Hoy",
 
-  // ---- timeBudgetChips -----------------------------------------------------
-  "timeBudgetChips.setA11y": "Fijar el tiempo de estudio en {label}",
-  "timeBudgetChips.title": "¿Cuánto tiempo tienes hoy?",
 
   // ---- today ---------------------------------------------------------------
   "today.approxMinutes": "~{minutes} min",
