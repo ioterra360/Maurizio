@@ -176,7 +176,21 @@ type PluginEntry = string | [string, Record<string, unknown>];
 type AppJson = {
   expo: {
     icon: string;
+    locales?: Record<string, string>;
     userInterfaceStyle: string;
+    ios: {
+      infoPlist: { CFBundleLocalizations: string[] };
+      privacyManifests?: {
+        NSPrivacyTracking?: boolean;
+        NSPrivacyTrackingDomains?: string[];
+        NSPrivacyCollectedDataTypes?: {
+          NSPrivacyCollectedDataType: string;
+          NSPrivacyCollectedDataTypeLinked: boolean;
+          NSPrivacyCollectedDataTypeTracking: boolean;
+          NSPrivacyCollectedDataTypePurposes: string[];
+        }[];
+      };
+    };
     android: {
       adaptiveIcon: { foregroundImage: string; backgroundColor: string };
       permissions: string[];
@@ -253,6 +267,75 @@ describe("app.json — build 3", () => {
     });
     // Senza "automatic" la variante scura non verrebbe mai scelta.
     expect(appJson.expo.userInterfaceStyle).toBe("automatic");
+  });
+
+  it("dichiara i dati che raccoglie davvero, non un manifest di privacy vuoto", () => {
+    // La build 3 e' andata in revisione con NSPrivacyCollectedDataTypes vuoto
+    // mentre l'app raccoglie email, nome, contenuti e foto — cioe' l'opposto
+    // di quanto dichiarato nell'etichetta App Privacy su App Store Connect.
+    // Expo FONDE questo blocco con le NSPrivacyAccessedAPITypes generate dai
+    // moduli (mergePrivacyInfo in @expo/config-plugins), quindi dichiarare i
+    // tipi di dato qui non cancella le dichiarazioni sulle API.
+    const pm = appJson.expo.ios.privacyManifests;
+    expect(pm?.NSPrivacyTracking).toBe(false);
+    expect(pm?.NSPrivacyTrackingDomains).toEqual([]);
+    const tipi = (pm?.NSPrivacyCollectedDataTypes ?? []).map((d) => d.NSPrivacyCollectedDataType);
+    expect(tipi).toEqual([
+      "NSPrivacyCollectedDataTypeEmailAddress", // accesso e registrazione
+      "NSPrivacyCollectedDataTypeName", // nome facoltativo alla registrazione
+      "NSPrivacyCollectedDataTypeUserID", // auth.uid(), la chiave di ogni riga
+      "NSPrivacyCollectedDataTypeOtherUserContent", // i ricordi scritti dall'utente
+      "NSPrivacyCollectedDataTypePhotosorVideos", // le foto allegate ai ricordi
+    ]);
+    // Nessuno di questi serve a tracciare, e tutti sono legati all'identita':
+    // stanno su righe che hanno user_id, non c'e' modo di fingerli anonimi.
+    for (const d of pm?.NSPrivacyCollectedDataTypes ?? []) {
+      expect(d.NSPrivacyCollectedDataTypeTracking).toBe(false);
+      expect(d.NSPrivacyCollectedDataTypeLinked).toBe(true);
+      expect(d.NSPrivacyCollectedDataTypePurposes).toEqual(["NSPrivacyCollectedDataTypePurposeAppFunctionality"]);
+    }
+  });
+
+  it("traduce le finestre di permesso, che erano in italiano per tutti", () => {
+    // Il binario dichiara quattro localizzazioni ma le stringhe dei permessi
+    // erano cablate in italiano nel plugin: un revisore Apple su iPhone in
+    // inglese toccava "aggiungi foto" e leggeva italiano. `locales` genera le
+    // .lproj/InfoPlist.strings; l'italiano resta la base di Info.plist perche'
+    // CFBundleDevelopmentRegion e' "it".
+    const locales = appJson.expo.locales ?? {};
+    expect(Object.keys(locales).sort()).toEqual(["en", "es", "fr", "it"]);
+    expect(Object.keys(locales).sort()).toEqual([...appJson.expo.ios.infoPlist.CFBundleLocalizations].sort());
+    for (const [lang, rel] of Object.entries(locales)) {
+      const strings = JSON.parse(readFileSync(path.join(ROOT, rel as string), "utf8"));
+      expect(Object.keys(strings).sort()).toEqual(["NSCameraUsageDescription", "NSPhotoLibraryUsageDescription"]);
+      for (const v of Object.values(strings)) {
+        expect(typeof v).toBe("string");
+        expect((v as string).length).toBeGreaterThan(20);
+        expect(v).toContain("Memika");
+      }
+      // Solo l'italiano puo' coincidere con le stringhe del plugin: se una
+      // delle altre tre e' identica, quella lingua non e' stata tradotta.
+      const props = pluginProps("expo-image-picker");
+      if (lang !== "it") {
+        expect(strings.NSPhotoLibraryUsageDescription).not.toBe(props?.photosPermission);
+        expect(strings.NSCameraUsageDescription).not.toBe(props?.cameraPermission);
+      } else {
+        expect(strings.NSPhotoLibraryUsageDescription).toBe(props?.photosPermission);
+        expect(strings.NSCameraUsageDescription).toBe(props?.cameraPermission);
+      }
+    }
+  });
+
+  it("non chiede il Face ID: SecureStore non usa requireAuthentication", () => {
+    // expo-secure-store aggiunge NSFaceIDUsageDescription di default, in
+    // inglese. L'app usa SecureStore come semplice archivio del token
+    // (lib/supabase.ts) e non chiama mai requireAuthentication, quindi quel
+    // permesso non si attiva mai: dichiararlo e' una domanda senza risposta
+    // se un revisore chiede a cosa serve.
+    const plugin = appJson.expo.plugins.find(
+      (p): p is [string, Record<string, unknown>] => Array.isArray(p) && p[0] === "expo-secure-store",
+    );
+    expect(plugin?.[1]?.faceIDPermission).toBe(false);
   });
 
   it("lo splash è l'icona v2 ritagliata a superellisse, non un'arte a parte", () => {
