@@ -1,4 +1,6 @@
 {
-  "NSPhotoLibraryUsageDescription": "Memika legge le tue foto per allegarle ai ricordi.",
-  "NSCameraUsageDescription": "Memika usa la fotocamera per allegare immagini ai tuoi ricordi."
+  "ios": {
+    "NSPhotoLibraryUsageDescription": "Memika legge le tue foto per allegarle ai ricordi.",
+    "NSCameraUsageDescription": "Memika usa la fotocamera per allegare immagini ai tuoi ricordi."
+  }
 }

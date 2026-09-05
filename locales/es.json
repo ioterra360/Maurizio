@@ -1,4 +1,6 @@
 {
-  "NSPhotoLibraryUsageDescription": "Memika accede a tus fotos para que puedas adjuntarlas a tus recuerdos.",
-  "NSCameraUsageDescription": "Memika usa la cámara para que puedas adjuntar imágenes a tus recuerdos."
+  "ios": {
+    "NSPhotoLibraryUsageDescription": "Memika accede a tus fotos para que puedas adjuntarlas a tus recuerdos.",
+    "NSCameraUsageDescription": "Memika usa la cámara para que puedas adjuntar imágenes a tus recuerdos."
+  }
 }

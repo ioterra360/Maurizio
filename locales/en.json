@@ -1,4 +1,6 @@
 {
-  "NSPhotoLibraryUsageDescription": "Memika reads your photos so you can attach them to your memories.",
-  "NSCameraUsageDescription": "Memika uses the camera so you can attach images to your memories."
+  "ios": {
+    "NSPhotoLibraryUsageDescription": "Memika reads your photos so you can attach them to your memories.",
+    "NSCameraUsageDescription": "Memika uses the camera so you can attach images to your memories."
+  }
 }

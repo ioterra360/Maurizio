@@ -306,7 +306,15 @@ describe("app.json — build 3", () => {
     expect(Object.keys(locales).sort()).toEqual(["en", "es", "fr", "it"]);
     expect(Object.keys(locales).sort()).toEqual([...appJson.expo.ios.infoPlist.CFBundleLocalizations].sort());
     for (const [lang, rel] of Object.entries(locales)) {
-      const strings = JSON.parse(readFileSync(path.join(ROOT, rel as string), "utf8"));
+      const file = JSON.parse(readFileSync(path.join(ROOT, rel as string), "utf8"));
+      // Le chiavi al primo livello finiscono su ENTRAMBE le piattaforme
+      // (getResolvedLocalesAsync, @expo/config-plugins/build/utils/locales.js).
+      // Queste sono chiavi Info.plist: su Android diventerebbero <string> in
+      // values-b+<lingua>/ senza default in values/, cioe' il caso che lint
+      // segnala come MissingDefaultResource ed e' fatale in release. E' il
+      // motivo per cui la prima vc15 non ha compilato.
+      expect(Object.keys(file)).toEqual(["ios"]);
+      const strings = file.ios;
       expect(Object.keys(strings).sort()).toEqual(["NSCameraUsageDescription", "NSPhotoLibraryUsageDescription"]);
       for (const v of Object.values(strings)) {
         expect(typeof v).toBe("string");
