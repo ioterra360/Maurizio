@@ -272,14 +272,9 @@ export default function NotificationsScreen() {
             defaultOn={prefs.firstReview}
             onChange={onToggleFirstReview}
           />
-          {/* Uncontrolled: la key rimonta il toggle quando arriva il profilo vero. */}
-          <SettingsToggle
-            key={profile ? `digest-${profile.weeklyDigest}` : "digest"}
-            label={t("settings.weeklyDigest")}
-            hint={t("settings.weeklyDigestHint")}
-            defaultOn={profile ? profile.weeklyDigest : false}
-            onChange={(v) => saveProfile({ weeklyDigest: v })}
-          />
+          {/* "Riepilogo settimanale" NON e' qui: prometteva una funzione che non
+              esiste ("arrivera' in un prossimo aggiornamento"). Tolto il 7/9/2026
+              finche' non c'e' davvero; il flag profiles.weekly_digest resta. */}
         </View>
       </ScrollView>
       <TimeWheelSheet visible={sheetOpen} value={slot} onConfirm={pickSlot} onClose={() => setSheetOpen(false)} />
