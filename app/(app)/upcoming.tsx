@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Modal, Pressable, ScrollView, Text, View } from "react-native";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useLocalSearchParams } from "expo-router";
 import { ChevronLeft, ChevronRight } from "lucide-react-native";
 
 import { TopBar } from "@/components/TopBar";
+import { GhostButton } from "@/components/GhostButton";
 import { Tappable } from "@/components/Tappable";
 import { MascotLoader } from "@/components/MascotLoader";
 import { fetchMemoriesInRange, fetchUpcomingCounts } from "@/lib/api";
@@ -40,7 +41,6 @@ const WEEKDAY_KEYS: readonly TKey[] = [
 export default function UpcomingScreen() {
   const { t, tp } = useT();
   const colors = useColors();
-  const insets = useSafeAreaInsets();
   const user = useAuthStore((s) => s.user);
   // `day` arriva dalle righe "Domani · N ricordi" della Home: quella riga
   // apre direttamente il foglio di quel giorno, mentre "Vedi ripassi
@@ -293,45 +293,37 @@ export default function UpcomingScreen() {
         ) : null}
       </ScrollView>
 
-      {/* Foglio del giorno: i ricordi in scadenza, tocco → scheda. */}
+      {/* Finestra del giorno, al centro: i ricordi in scadenza, tocco → scheda.
+          Era un foglio dal basso; Angelo (7/9/2026) la vuole centrata come
+          NamePromptModal. */}
       <Modal
         visible={openDay !== null}
         transparent
-        animationType="slide"
+        animationType="fade"
         onRequestClose={() => setOpenDay(null)}
       >
-        <Pressable
-          accessibilityLabel={t("common.close")}
-          onPress={() => setOpenDay(null)}
-          style={{ position: "absolute", inset: 0, backgroundColor: "rgba(15,27,51,0.32)" }}
-        />
-        <View style={{ flex: 1, justifyContent: "flex-end" }} pointerEvents="box-none">
+        <View style={{ flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 24 }}>
+          <Pressable
+            accessibilityLabel={t("common.close")}
+            onPress={() => setOpenDay(null)}
+            style={{ position: "absolute", inset: 0, backgroundColor: "rgba(26,44,79,0.45)" }}
+          />
           <View
             style={{
-              backgroundColor: colors.warmWhite,
-              borderTopLeftRadius: 22,
-              borderTopRightRadius: 22,
-              paddingHorizontal: 18,
-              paddingTop: 10,
-              paddingBottom: Math.max(insets.bottom, 20),
+              width: "100%",
               maxHeight: "70%",
+              backgroundColor: colors.warmWhite,
+              borderRadius: 18,
+              paddingHorizontal: 18,
+              paddingTop: 20,
+              paddingBottom: 12,
               shadowColor: "#0F1B33",
               shadowOpacity: 0.18,
-              shadowOffset: { width: 0, height: -8 },
+              shadowOffset: { width: 0, height: 12 },
               shadowRadius: 30,
               elevation: 24,
             }}
           >
-            <View
-              style={{
-                alignSelf: "center",
-                width: 36,
-                height: 4,
-                borderRadius: 999,
-                backgroundColor: colors.switchTrackOff,
-                marginBottom: 12,
-              }}
-            />
             <Text
               style={{
                 fontFamily: FONT.bold,
@@ -361,7 +353,7 @@ export default function UpcomingScreen() {
                 {t("upcoming.emptyDay")}
               </Text>
             ) : (
-              <ScrollView showsVerticalScrollIndicator={false}>
+              <ScrollView showsVerticalScrollIndicator={false} style={{ flexGrow: 0 }}>
                 {dayItems.map((m) => (
                   <Tappable
                     key={m.id}
@@ -400,6 +392,9 @@ export default function UpcomingScreen() {
                 ))}
               </ScrollView>
             )}
+            <View style={{ marginTop: 10 }}>
+              <GhostButton label={t("common.close")} onPress={() => setOpenDay(null)} variant="link" />
+            </View>
           </View>
         </View>
       </Modal>
