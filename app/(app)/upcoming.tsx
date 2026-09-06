@@ -93,12 +93,19 @@ export default function UpcomingScreen() {
     [user],
   );
 
-  // Apertura automatica del giorno richiesto: una volta sola, appena c'è
-  // l'utente. Se poi chiude il foglio, resta sul calendario.
-  const autoOpened = useRef(false);
+  // Apertura automatica del giorno richiesto. La guardia e' sul VALORE del
+  // parametro, non un flag una-tantum: questa schermata e' un tab e resta
+  // montata, quindi Home → "Domani" → indietro → "Lunedì" arriva qui con un
+  // `day` diverso sullo stesso componente, e deve aprire il nuovo giorno.
+  // Chiuso il foglio si resta sul calendario; lo stesso giorno non si
+  // riapre da solo finche' il parametro non cambia.
+  const lastAutoOpened = useRef<string | null>(null);
   useEffect(() => {
-    if (!requestedDay || !user || autoOpened.current) return;
-    autoOpened.current = true;
+    if (!requestedDay || !user || lastAutoOpened.current === requestedDay) return;
+    lastAutoOpened.current = requestedDay;
+    // Il mese mostrato segue il giorno richiesto anche se arriva dopo il montaggio.
+    const d = new Date(`${requestedDay}T12:00:00`);
+    setMonthStart(new Date(d.getFullYear(), d.getMonth(), 1));
     openDaySheet(requestedDay);
   }, [requestedDay, user, openDaySheet]);
 

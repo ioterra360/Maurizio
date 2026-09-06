@@ -30,7 +30,7 @@
 
 const FLOOR = 28;
 /** Sotto questa taglia non si scende PER EVITARE l'a-capo: meglio spezzare che rendere illeggibile. */
-const FLOOR_SINGLE_WORD = 24;
+export const FLOOR_SINGLE_WORD = 24;
 // A two-word term at the layer maximum would take two 92 px lines (184 dp)
 // in a column that does not scroll; three quarters keeps it big but leaves
 // room for the reveal panel on 640 dp phones.
