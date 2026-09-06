@@ -166,6 +166,8 @@ If you need more room there are two subscriptions. Plus: unlimited memories, 5 f
 
 Your memories are yours. You can delete everything at any time from Settings and ask us for a copy of your data whenever you want. Privacy policy: https://ioterra360.github.io/memika-legal/privacy/
 
+**What's new (1.0)**: First release of Memika. Save words, terms and concepts, then review them in three phases: Scan, Reinforcement and Focus. Keep your memories in folders and check their health. Available in Italian, English, French and Spanish.
+
 ### Français (fr-FR)
 
 **Sous-titre** (29): Révise peu, retiens longtemps
@@ -226,7 +228,7 @@ Si necesitas más sitio hay dos suscripciones. Plus: recuerdos ilimitados, 5 car
 
 Tus recuerdos son tuyos. Puedes borrarlo todo cuando quieras desde Ajustes y pedirnos una copia de tus datos en cualquier momento. Política de privacidad: https://ioterra360.github.io/memika-legal/privacy/
 
-**Novedades (1.0)**: Primera versión de Memika. Guarda lo que estudias, elige cuánto tiempo tienes cada día y repasa en tres fases: Scan, Reinforcement y Focus.
+**Novedades (1.0)**: Primera versión de Memika. Guarda lo que estudias y repasa en tres fases: Scan, Reinforcement y Focus.
 
 ## Prima del primo build iOS (nel codice, un solo giro di build)
 
