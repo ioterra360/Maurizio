@@ -94,3 +94,30 @@ delle nove email che mancano, non un miglioramento.
 
 I passi 3, 4 e 5 non hanno fretta: nessuno di essi blocca la build 3 né il test
 chiuso.
+
+## Aggiornare i template sul progetto ospitato — la trappola di `smtp_pass`
+
+I template si caricano con un `PATCH /v1/projects/<ref>/config/auth` sui campi
+`mailer_templates_<nome>_content`. Il blocco SMTP va rimandato **intero** nello
+stesso PATCH (`smtp_host`, `smtp_port`, `smtp_user`, `smtp_pass`,
+`smtp_sender_name`, `smtp_admin_email`, `smtp_max_frequency`): un PATCH
+parziale lo azzera.
+
+**Ma `smtp_pass` non si legge dal `GET`.** Il `GET` restituisce un digest
+esadecimale di 64 caratteri della password, deterministico ma non
+reversibile. Rimandarlo come `smtp_pass` fa sì che Supabase lo salvi *come
+nuova password*: l'autenticazione verso Resend fallisce e nessuna email parte.
+È successo il 2026-09-06, per circa due minuti, cambiando la mascotte.
+
+Ricetta giusta:
+
+1. `GET` → tieni `smtp_host/port/user/sender_name/admin_email/max_frequency`
+2. `smtp_pass` = **`RESEND_API_KEY` dal `.env`** (inizia con `re_`), mai il valore del GET
+3. `PATCH` con quel blocco + i template
+4. verifica: il digest di `smtp_pass` nella risposta **deve essere identico** a
+   quello del GET iniziale. Se è diverso, la password è cambiata: ripeti il
+   passo 2.
+
+La mascotte delle email è `https://ioterra360.github.io/memika-legal/assets/mascot-email.png`
+(posa "idea", 168×168, repo `ioterra360/memika-legal`). Se cambia, usare un
+nome nuovo: il proxy immagini di Gmail cachea per URL.
