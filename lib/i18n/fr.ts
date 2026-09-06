@@ -963,16 +963,12 @@ export const fr: Record<keyof typeof it, string> = {
 
   // ---- today ---------------------------------------------------------------
   "today.approxMinutes": "~{minutes} min",
-  "today.focusSubtitle": "Souvenirs d'hier · {minutes}",
   "today.nothingToReview": "Rien à réviser pour l'instant",
   "today.planErrorTitle": "Nous n'avons pas pu préparer le plan du jour.",
   "today.planRetryAccessibility": "Réessayer de charger le plan du jour",
   "today.planTotal_one": "Total · {count} souvenir · environ {minutes} min",
   "today.planTotal_other": "Total · {count} souvenirs · environ {minutes} min",
   "today.preparingPlan": "Préparation du plan du jour…",
-  "today.recommendedFlow": "Parcours conseillé",
-  "today.reinforcementSubtitle": "3–7 derniers jours · {minutes}",
-  "today.scanSubtitle": "Souvenirs plus anciens · {minutes}",
   "today.startReview": "Commencer la révision du jour",
   "today.welcomeFallbackName": "Bienvenue",
   // ---- trash + recover (Cestino 24h / recupero account 72h, 2026-08-30) ----

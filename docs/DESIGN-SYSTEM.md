@@ -146,8 +146,7 @@ These are the building blocks the screens are made of. Add new components in
 3. **Mascot** — image wrapper. `size` prop in px.
 4. **Coach bubble** — Phase 2. Mascot avatar + one sentence + dismiss × button.
 5. **Time chip** — REMOVED 2026-09-05 (the "how much time do you have" selector is gone; the session proposes the whole due queue). The 30-minute slot chips on Notifications reuse the same 44 pt touch target.
-6. **Layer card** — Scan / Reinforcement / Focus rows on Today. Color stripe
-   on the left, icon, label, sub-line.
+6. **Layer card** — REMOVED 2026-09-06 together with the "Flusso consigliato" section: the Home has one CTA that runs the whole due queue through Scan → Reinforcement → Focus. Per-phase entry points are gone.
 7. **Folder row** — Knowledge list item: dot, name, priority pill, retention
    bar inline.
 8. **Recall button** — Forgot / Remembered. Used in Focus review. The
@@ -173,7 +172,7 @@ These are mistakes you'd otherwise default to. Don't.
 - ❌ **No big drop shadows.** This isn't Material Design.
 - ❌ **No emoji in body copy.** Mascot expressions are the only character work.
 - ❌ **No more than three colors per screen** besides neutrals. Each screen
-  has one or two "anchor" colors max (e.g. Today: navy + the recommended-flow
+  has one or two "anchor" colors max (e.g. Today: navy + the phase
   layer color).
 - ❌ **No light/dark toggle.** Editorial is a single mood. Dark mode is a
   later, separate, expensive decision.

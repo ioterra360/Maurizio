@@ -963,16 +963,12 @@ export const it = {
 
   // ---- today ---------------------------------------------------------------
   "today.approxMinutes": "~{minutes} min",
-  "today.focusSubtitle": "Ricordi di ieri · {minutes}",
   "today.nothingToReview": "Niente da ripassare ora",
   "today.planErrorTitle": "Non siamo riusciti a preparare il piano di oggi.",
   "today.planRetryAccessibility": "Riprova a caricare il piano di oggi",
   "today.planTotal_one": "Totale · {count} ricordo · circa {minutes} min",
   "today.planTotal_other": "Totale · {count} ricordi · circa {minutes} min",
   "today.preparingPlan": "Sto preparando il piano di oggi…",
-  "today.recommendedFlow": "Flusso consigliato",
-  "today.reinforcementSubtitle": "Ultimi 3–7 giorni · {minutes}",
-  "today.scanSubtitle": "Ricordi più vecchi · {minutes}",
   "today.startReview": "Inizia il ripasso di oggi",
   "today.welcomeFallbackName": "Benvenuto",
   // ---- trash + recover (Cestino 24h / recupero account 72h, 2026-08-30) ----

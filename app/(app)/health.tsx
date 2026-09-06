@@ -106,13 +106,17 @@ export default function HealthScreen() {
         contentContainerStyle={{ paddingBottom: 140 }}
         showsVerticalScrollIndicator={false}
       >
-        <View style={{ position: "relative" }}>
-          <HeaderHero title={t("health.title")} reservedRight={108} />
+        {/* La mascotte occupa lo spazio a destra del titolo (Angelo 6/9:
+            "c'e' molto spazio, ingrandiamola"). minHeight tiene il pannello
+            sottostante fuori dalla sua impronta anche quando il titolo sta
+            su una riga sola e l'intestazione resta bassa. */}
+        <View style={{ position: "relative", minHeight: 132 }}>
+          <HeaderHero title={t("health.title")} reservedRight={136} />
           <View
             pointerEvents="none"
-            style={{ position: "absolute", top: 2, right: 14 }}
+            style={{ position: "absolute", top: 0, right: 10 }}
           >
-            <Mascot variant="investigate" size={92} withShadow={false} />
+            <Mascot variant="investigate" size={124} withShadow={false} />
           </View>
         </View>
 

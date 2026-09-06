@@ -5,7 +5,6 @@ import { router, useFocusEffect } from "expo-router";
 import { CalendarDays, ChevronRight, Clock } from "lucide-react-native";
 
 import { SectionLabel } from "@/components/SectionLabel";
-import { LayerCard } from "@/components/LayerCard";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { ErrorCard } from "@/components/ErrorCard";
 import { Mascot } from "@/components/Mascot";
@@ -25,7 +24,7 @@ import { dayKeyOf, upcomingDays, type UpcomingDay } from "@/lib/upcoming";
 import { reportError } from "@/lib/report-error";
 import { isDemoMode } from "@/lib/supabase";
 import { useT } from "@/lib/i18n";
-import { DEMO_DUE_COUNTS, layerMinutes, totalMinutes, type LayerCounts } from "@/lib/queue";
+import { DEMO_DUE_COUNTS, totalMinutes, type LayerCounts } from "@/lib/queue";
 import { REVIEW_LAYERS } from "@/lib/constants";
 import { firstName, dateBadge, timeGreeting } from "@/lib/format";
 import { FONT, radii, useThemeTokens } from "@/theme/tokens";
@@ -129,13 +128,6 @@ export default function TodayScreen() {
   const totDue = plan ? plan.scan + plan.reinforcement + plan.focus : null;
   const totMin = plan ? totalMinutes(plan) : null;
   const showPlanError = dueError && !plan;
-  const minutesLabel = (l: "scan" | "reinforcement" | "focus") =>
-    plan ? t("today.approxMinutes", { minutes: layerMinutes(l, plan[l]) }) : "…";
-  const PLAN_LABELS = {
-    scan:          t("today.scanSubtitle", { minutes: minutesLabel("scan") }),
-    reinforcement: t("today.reinforcementSubtitle", { minutes: minutesLabel("reinforcement") }),
-    focus:         t("today.focusSubtitle", { minutes: minutesLabel("focus") }),
-  } as const;
   const startSession = useReviewStore((s) => s.start);
 
   // Cartelle con carte in coda ADESSO, nell'ordine scelto dall'utente —
@@ -155,11 +147,6 @@ export default function TodayScreen() {
     // salta le fasi vuote. Senza layerCaps ricadrebbe sul suo default di 28.
     startSession(first, "flow", { layerCaps: plan });
     router.push(`/review/${first}`);
-  };
-  const startLayer = (path: "scan" | "reinforcement" | "focus") => {
-    if (!plan) return;
-    startSession(path, "single", { layerCaps: plan });
-    router.push(`/review/${path}`);
   };
 
   const tomorrowKey = dayKeyOf(new Date(Date.now() + 24 * 60 * 60 * 1000));
@@ -294,32 +281,6 @@ export default function TodayScreen() {
               />
             </View>
           )}
-        </View>
-
-        {/* Flusso consigliato, sotto la card hero: i tre numeri sono la coda
-            per fase, cioè esattamente ciò che il CTA farà partire. */}
-        <View style={{ paddingHorizontal: 28, paddingTop: 24, paddingBottom: 8 }}>
-          <SectionLabel>{t("today.recommendedFlow")}</SectionLabel>
-        </View>
-        <View style={{ paddingHorizontal: 20, gap: 10 }}>
-          <LayerCard
-            layerKey="scan"
-            items={plan?.scan ?? 0}
-            subtitle={PLAN_LABELS.scan}
-            onPress={() => startLayer("scan")}
-          />
-          <LayerCard
-            layerKey="reinforcement"
-            items={plan?.reinforcement ?? 0}
-            subtitle={PLAN_LABELS.reinforcement}
-            onPress={() => startLayer("reinforcement")}
-          />
-          <LayerCard
-            layerKey="focus"
-            items={plan?.focus ?? 0}
-            subtitle={PLAN_LABELS.focus}
-            onPress={() => startLayer("focus")}
-          />
         </View>
 
         {/* Da recuperare — solo se c'è qualcosa oltre la finestra. */}
