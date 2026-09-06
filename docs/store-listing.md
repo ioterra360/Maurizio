@@ -23,8 +23,6 @@ Scan: un controllo veloce, lo ricordi oppure no.
 Reinforcement: un indizio prima della risposta, per fissare quello che hai visto negli ultimi giorni.
 Focus: il ripasso vero e proprio, in cui decidi tu se lo hai dimenticato o se lo ricordi bene.
 
-Ogni giorno scegli quanto tempo hai, da cinque minuti a più di un'ora, e Memika prepara il piano di ripasso di conseguenza.
-
 Nella schermata Oggi vedi cosa è in scadenza e quanto tempo serve. Nelle cartelle tieni i ricordi divisi per argomento, che sia una lingua, medicina, diritto o la materia di un esame. Nella salute della memoria vedi quali ricordi sono stabili e quali stanno sbiadendo.
 
 Niente streak, niente classifiche, niente pubblicità. Solo un posto tranquillo dove tornare per qualche minuto al giorno.
@@ -37,6 +35,8 @@ I ricordi sono tuoi. Puoi cancellare tutto quando vuoi dalle Impostazioni e chie
 ```
 
 > Nota 2026-09-04 (build 3): i tetti del piano Free sono applicati dal database — 10 ricordi in tutto (`memories_enforce_plan_limit`, P0004, cestino compreso), 1 cartella viva (`folders_enforce_plan_limit`, P0005), 0 sezioni (`enforce_subfolder_rules`, P0003) — e le quattro descrizioni li dicono tutti e tre, insieme ai due abbonamenti. La versione precedente prometteva solo "gratuita con una cartella" e rimandava le cartelle illimitate a un Pro futuro: taceva il tetto che l'utente incontra per primo (il decimo ricordo) e non nominava il piano Plus. Gli account dei due tester sono `pro` dal seed della migrazione, quindi non incontrano nulla di tutto questo. Se la build uscisse con le chiavi RevenueCat vuote (bivio del punto 4 di `docs/DEPLOY.md` § "Prima di lanciare"), i tetti restano veri ma i piani non sono acquistabili: togliere il secondo paragrafo prima di incollare e non spuntare "contiene acquisti in-app".
+
+> Nota 2026-09-06: tolto da tutte le lingue il paragrafo "Ogni giorno scegli quanto tempo hai…". Il selettore non esiste più (OTA `d247109`/`ff3b7ed`): la Home propone tutta la coda in scadenza e i minuti sono una stima. Su App Store Connect le quattro descrizioni sono già corrette via API (versione 1.0 ancora `REJECTED`, quindi modificabile); su Play Console va fatto a mano.
 
 **Categoria**: App → Istruzione
 **Tag** (max 5, se disponibili): Apprendimento, Flashcard, Lingue, Studio
@@ -69,8 +69,6 @@ Scan: a quick check, you remember it or you don't.
 Reinforcement: a hint before the answer, to settle what you saw in the last few days.
 Focus: the real review, where you decide whether you forgot it or remember it well.
 
-Each day you choose how much time you have, from five minutes to more than an hour, and Memika builds the review plan around it.
-
 The Today screen shows what is due and how long it takes. Folders keep your memories organised by topic, whether that is a language, medicine, law or an exam subject. Memory health shows which memories are stable and which are fading.
 
 No streaks, no leaderboards, no ads. Just a quiet place to come back to for a few minutes a day.
@@ -101,8 +99,6 @@ Scan : un contrôle rapide, tu t'en souviens ou non.
 Reinforcement : un indice avant la réponse, pour fixer ce que tu as vu ces derniers jours.
 Focus : la vraie révision, où c'est toi qui décides si tu l'as oublié ou si tu t'en souviens bien.
 
-Chaque jour, tu choisis le temps que tu as, de cinq minutes à plus d'une heure, et Memika prépare le plan de révision en conséquence.
-
 Sur l'écran Aujourd'hui, tu vois ce qui est à réviser et le temps qu'il faut. Dans les dossiers, tu gardes tes souvenirs classés par sujet, que ce soit une langue, la médecine, le droit ou la matière d'un examen. Dans la santé de la mémoire, tu vois quels souvenirs sont stables et lesquels sont en train de s'effacer.
 
 Pas de séries à tenir, pas de classements, pas de publicité. Juste un endroit tranquille où revenir quelques minutes par jour.
@@ -132,8 +128,6 @@ Cada repaso pasa por tres fases, siempre en el mismo orden.
 Scan: una comprobación rápida, lo recuerdas o no.
 Reinforcement: una pista antes de la respuesta, para asentar lo que has visto en los últimos días.
 Focus: el repaso de verdad, en el que decides tú si lo has olvidado o si lo recuerdas bien.
-
-Cada día eliges cuánto tiempo tienes, desde cinco minutos hasta más de una hora, y Memika ajusta el plan de repaso a ese tiempo.
 
 En la pantalla Hoy ves qué toca repasar y cuánto tiempo hace falta. En las carpetas tienes tus recuerdos separados por tema, ya sea un idioma, medicina, derecho o la asignatura de un examen. En la salud de la memoria ves qué recuerdos están estables y cuáles se están desvaneciendo.
 
