@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
-import { ScrollView, Text, View } from "react-native";
+import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect } from "expo-router";
 
 import { SectionLabel } from "@/components/SectionLabel";
 import { SettingsRow, SettingsToggle } from "@/components/SettingsRow";
-import { Tappable } from "@/components/Tappable";
+import { TimeWheelSheet } from "@/components/TimeWheelSheet";
 import { TopBar } from "@/components/TopBar";
 import { fetchMemoriesInRange, fetchProfile, updateProfile } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
@@ -27,15 +27,13 @@ import {
 import {
   DEFAULT_REMINDER_SLOT,
   nextDailyTrigger,
-  reminderSlots,
   slotFromProfileTime,
 } from "@/lib/notifications-core";
 import { reportError } from "@/lib/report-error";
 import { safeBack } from "@/lib/safe-back";
 import { useUIStore } from "@/lib/ui-store";
-import { FONT, radii, useColors } from "@/theme/tokens";
+import { useColors } from "@/theme/tokens";
 
-const SLOTS = reminderSlots();
 const NO_PERMISSION: PermissionState = { allowed: false, canAskAgain: false, undetermined: false };
 /** Orizzonte del primo ripasso: T0+20h. Oltre non c'è niente da riarmare. */
 const FIRST_REVIEW_HORIZON_MS = 20 * 60 * 60 * 1000;
@@ -81,6 +79,7 @@ export default function NotificationsScreen() {
   // di SettingsToggle è uncontrolled (components/SettingsRow.tsx:109) e su
   // un rifiuto del permesso nessuno dei valori della key cambia.
   const [switchNonce, setSwitchNonce] = useState(0);
+  const [sheetOpen, setSheetOpen] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -113,7 +112,10 @@ export default function NotificationsScreen() {
   );
 
   const active = prefs.enabled && permission.allowed;
-  const slotsEnabled = active && !calmMode;
+  // "Promemoria giornaliero" acceso = modalita' calma spenta: e' lo stesso
+  // dato (profiles.calm_mode) letto al contrario. Prima la calma era un
+  // interruttore piu' in basso e l'orario restava grigio senza spiegazione.
+  const dailyEnabled = active && !calmMode;
 
   /**
    * Riaccensione: spegnere un cancello CANCELLA i primi ripassi già in
@@ -181,8 +183,8 @@ export default function NotificationsScreen() {
   };
 
   const pickSlot = (value: string) => {
-    if (!slotsEnabled || value === slot) return;
-    tap();
+    setSheetOpen(false);
+    if (!dailyEnabled || value === slot) return;
     saveProfile({ morningReviewAt: value });
   };
 
@@ -194,13 +196,13 @@ export default function NotificationsScreen() {
     else void cancelAllFirstReviews();
   };
 
-  const slotHint = calmMode
-    ? t("notifications.slotSuspendedByCalm")
-    : !active
-      ? t("notifications.slotDisabled")
+  const slotHint = !active
+    ? t("notifications.slotDisabled")
+    : calmMode
+      ? t("notifications.slotDisabledByToggle")
       : (() => {
           const next = nextDailyTrigger(slot);
-          return next ? t("notifications.slotNext", { time: shortDateTime(next.toISOString()) }) : t("notifications.slotHint");
+          return next ? t("notifications.slotNext", { time: shortDateTime(next.toISOString()) }) : "";
         })();
 
   return (
@@ -231,67 +233,34 @@ export default function NotificationsScreen() {
           ) : null}
         </View>
 
-        {/* Orario del promemoria — lista di slot da mezz'ora. */}
+        {/* Promemoria giornaliero: interruttore (= calma al contrario) e, sotto,
+            l'orario che apre il foglio a rulli. La griglia da 48 caselle e'
+            sparita il 6/9/2026. */}
         <View style={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 8 }}>
-          <SectionLabel>{t("notifications.slotSection")}</SectionLabel>
+          <SectionLabel>{t("notifications.dailySection")}</SectionLabel>
         </View>
-        <View style={{ paddingHorizontal: 16 }}>
-          <Text
-            style={{
-              fontFamily: FONT.regular,
-              fontSize: 13.5,
-              lineHeight: 19,
-              color: colors.midGrey,
-              marginBottom: 10,
-            }}
-          >
-            {slotHint}
-          </Text>
-          {/* Niente opacità sul contenitore: le chip disattivate le sbiadisce
-              già Tappable (opacity 0.5, components/Tappable.tsx:74) e in RN
-              le due si moltiplicano — 0.45 × 0.5 = 0.225, testo navy
-              illeggibile proprio al primo ingresso (modalità calma è
-              `default true` a DB, quindi la griglia parte spenta). */}
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-            {SLOTS.map((value) => {
-              const on = value === slot;
-              return (
-                <Tappable
-                  key={value}
-                  onPress={() => pickSlot(value)}
-                  disabled={!slotsEnabled}
-                  accessibilityRole="button"
-                  accessibilityLabel={t("notifications.slotA11y", { time: value })}
-                  accessibilityState={{ selected: on }}
-                  hitSlop={6}
-                  pressedOpacity={0.7}
-                  containerStyle={{ flexGrow: 1, flexBasis: "22%" }}
-                  style={{
-                    // 44 = area tattile minima iOS. Con 48 chip fitti in
-                    // griglia non è il posto dove risparmiare 4 punti.
-                    minHeight: 44,
-                    alignItems: "center",
-                    justifyContent: "center",
-                    borderRadius: radii.chip,
-                    backgroundColor: on ? colors.accent : colors.surface,
-                    borderWidth: on ? 0 : 1,
-                    borderColor: colors.hairline,
-                  }}
-                >
-                  <Text
-                    style={{
-                      fontFamily: on ? FONT.semibold : FONT.medium,
-                      fontSize: 13.5,
-                      color: on ? colors.onAccent : colors.navy,
-                      fontVariant: ["tabular-nums"],
-                    }}
-                  >
-                    {value}
-                  </Text>
-                </Tappable>
-              );
-            })}
-          </View>
+        <View style={{ paddingHorizontal: 16, gap: 10 }}>
+          <SettingsToggle
+            key={`daily-${!calmMode}-${active}`}
+            label={t("notifications.dailySwitch")}
+            hint={t("notifications.dailySwitchHint")}
+            defaultOn={!calmMode}
+            onChange={(v) => saveProfile({ calmMode: !v })}
+          />
+          <SettingsRow
+            label={t("notifications.slotRow")}
+            hint={slotHint || undefined}
+            value={slot}
+            chevron={dailyEnabled}
+            onPress={
+              dailyEnabled
+                ? () => {
+                    tap();
+                    setSheetOpen(true);
+                  }
+                : undefined
+            }
+          />
         </View>
 
         {/* Avviso del primo ripasso + le due preferenze di profilo. */}
@@ -303,16 +272,7 @@ export default function NotificationsScreen() {
             defaultOn={prefs.firstReview}
             onChange={onToggleFirstReview}
           />
-          {/* I toggle sono uncontrolled: la key li rimonta quando arriva il
-              profilo vero. La calma legge lo stato locale, non `profile`,
-              così resta coerente anche quando il profilo è null. */}
-          <SettingsToggle
-            key={`calm-${calmMode}`}
-            label={t("settings.calmMode")}
-            hint={t("settings.calmModeHint")}
-            defaultOn={calmMode}
-            onChange={(v) => saveProfile({ calmMode: v })}
-          />
+          {/* Uncontrolled: la key rimonta il toggle quando arriva il profilo vero. */}
           <SettingsToggle
             key={profile ? `digest-${profile.weeklyDigest}` : "digest"}
             label={t("settings.weeklyDigest")}
@@ -322,6 +282,7 @@ export default function NotificationsScreen() {
           />
         </View>
       </ScrollView>
+      <TimeWheelSheet visible={sheetOpen} value={slot} onConfirm={pickSlot} onClose={() => setSheetOpen(false)} />
     </SafeAreaView>
   );
 }

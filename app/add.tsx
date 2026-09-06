@@ -273,6 +273,7 @@ export default function AddScreen() {
   // Dopo il dialogo si riprende da dove il salvataggio si era fermato.
   const finishPrompt = (addAnother: boolean) => {
     setNotifPrompt(null);
+    promptBusy.current = false;
     if (addAnother) termRef.current?.focus();
     else safeBack("/(app)/knowledge");
   };
@@ -287,6 +288,14 @@ export default function AddScreen() {
       setPrefs({ enabled: true });
       await scheduleFirstReview(memory);
       void syncDailyReminder(profile);
+      // Senza questa riga "Sì, avvisami" finiva in un dialogo che si chiude
+      // e basta: l'utente premeva Consenti sul foglio dell'OS e non vedeva
+      // nessun segno che fosse successo qualcosa (Angelo, 6/9/2026).
+      showToast(t("notifications.promptEnabledToast"));
+    } else {
+      // Negato sul foglio dell'OS (o non piu' chiedibile): dirlo, invece di
+      // chiudere in silenzio come se avesse funzionato.
+      showToast(t("notifications.deniedToast"));
     }
     finishPrompt(addAnother);
   };

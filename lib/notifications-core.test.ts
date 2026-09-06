@@ -12,7 +12,7 @@ import {
   isFirstReviewPayload,
   nextDailyTrigger,
   parseSlot,
-  reminderSlots,
+  formatSlot,
   routeForPayload,
   shouldScheduleDaily,
   shouldScheduleFirstReview,
@@ -23,18 +23,10 @@ import {
 // non dipendono dal fuso della macchina che li esegue.
 const local = (y: number, m: number, d: number, h = 12, min = 0) => new Date(y, m - 1, d, h, min);
 
-describe("reminderSlots", () => {
-  it("sono 48 slot da mezz'ora, da 00:00 a 23:30", () => {
-    const s = reminderSlots();
-    expect(s).toHaveLength(48);
-    expect(s[0]).toBe("00:00");
-    expect(s[1]).toBe("00:30");
-    expect(s[47]).toBe("23:30");
-    for (const x of s) expect(x).toMatch(/^\d{2}:(00|30)$/);
-  });
-
-  it("contengono il default", () => {
-    expect(reminderSlots()).toContain(DEFAULT_REMINDER_SLOT);
+describe("formatSlot", () => {
+  it("HH:MM con zeri davanti", () => {
+    expect(formatSlot(8, 5)).toBe("08:05");
+    expect(formatSlot(23, 0)).toBe("23:00");
   });
 });
 
@@ -54,10 +46,10 @@ describe("parseSlot", () => {
 });
 
 describe("slotFromProfileTime", () => {
-  it("arrotonda per difetto alla mezz'ora", () => {
+  it("tiene i minuti interi: il selettore a rulli non e' piu' a mezz'ore", () => {
     expect(slotFromProfileTime("08:00:00")).toBe("08:00");
-    expect(slotFromProfileTime("08:15:00")).toBe("08:00");
-    expect(slotFromProfileTime("08:45:00")).toBe("08:30");
+    expect(slotFromProfileTime("08:15:00")).toBe("08:15");
+    expect(slotFromProfileTime("08:45:00")).toBe("08:45");
     expect(slotFromProfileTime("21:30:00")).toBe("21:30");
   });
 

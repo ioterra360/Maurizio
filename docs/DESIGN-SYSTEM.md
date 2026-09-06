@@ -145,7 +145,7 @@ These are the building blocks the screens are made of. Add new components in
    Delete when each screen has its real implementation.
 3. **Mascot** — image wrapper. `size` prop in px.
 4. **Coach bubble** — Phase 2. Mascot avatar + one sentence + dismiss × button.
-5. **Time chip** — REMOVED 2026-09-05 (the "how much time do you have" selector is gone; the session proposes the whole due queue). The 30-minute slot chips on Notifications reuse the same 44 pt touch target.
+5. **Time chip** — REMOVED 2026-09-05 (the "how much time do you have" selector is gone; the session proposes the whole due queue). The 48-slot grid on Notifications went too (2026-09-06): the reminder time is picked with `TimeWheelSheet`, two JS scroll wheels (hours / minutes in 5-minute steps) inside a `BottomSheetShell`, iOS-clock style, no native dependency.
 6. **Layer card** — REMOVED 2026-09-06 together with the "Flusso consigliato" section: the Home has one CTA that runs the whole due queue through Scan → Reinforcement → Focus. Per-phase entry points are gone.
 7. **Folder row** — Knowledge list item: dot, name, priority pill, retention
    bar inline.

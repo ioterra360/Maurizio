@@ -21,13 +21,9 @@ const MIN_LEAD_MS = 2000;
 
 const pad = (n: number) => String(n).padStart(2, "0");
 
-/** I 48 slot da mezz'ora della giornata, "HH:MM". */
-export function reminderSlots(): string[] {
-  const out: string[] = [];
-  for (let h = 0; h < 24; h++) {
-    out.push(`${pad(h)}:00`, `${pad(h)}:30`);
-  }
-  return out;
+/** Ore e minuti → "HH:MM", il formato della colonna `time` senza secondi. */
+export function formatSlot(hour: number, minute: number): string {
+  return `${pad(hour)}:${pad(minute)}`;
 }
 
 /** "HH:MM" o "HH:MM:SS" (com'è la colonna `time` di Postgres) → ore e minuti. */
@@ -41,14 +37,15 @@ export function parseSlot(value: string): { hour: number; minute: number } | nul
 }
 
 /**
- * Da `profiles.morning_review_at` allo slot della lista. La colonna accetta
- * qualunque minuto; la lista no, quindi si arrotonda PER DIFETTO alla
- * mezz'ora. Valore assente o rotto → default.
+ * Da `profiles.morning_review_at` ("HH:MM:SS", colonna `time`) a "HH:MM".
+ * Fino al 6/9/2026 arrotondava alla mezz'ora perche' la schermata offriva 48
+ * caselle; ora il selettore a rulli accetta qualunque minuto e il valore
+ * passa intero. Valore assente o rotto → default.
  */
 export function slotFromProfileTime(value: string | null | undefined): string {
   const p = value ? parseSlot(value) : null;
   if (!p) return DEFAULT_REMINDER_SLOT;
-  return `${pad(p.hour)}:${p.minute >= 30 ? "30" : "00"}`;
+  return formatSlot(p.hour, p.minute);
 }
 
 /**
