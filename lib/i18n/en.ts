@@ -920,8 +920,6 @@ export const en: Record<keyof typeof it, string> = {
   "settings.upgrade": "Go Plus",
   "settings.upgradePro": "Go Pro",
   "settings.version": "Version",
-  "settings.weeklyDigest": "Weekly digest",
-  "settings.weeklyDigestHint": "A weekly summary of what has settled and what is fading. Not active yet: it will arrive in an upcoming update.",
   "settings.write": "Write",
 
   // ---- signup --------------------------------------------------------------

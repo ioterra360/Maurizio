@@ -920,8 +920,6 @@ export const it = {
   "settings.upgrade": "Passa a Plus",
   "settings.upgradePro": "Passa a Pro",
   "settings.version": "Versione",
-  "settings.weeklyDigest": "Riepilogo settimanale",
-  "settings.weeklyDigestHint": "Un riassunto settimanale di cosa si è consolidato e cosa sta sfumando. Non è ancora attivo: arriverà in un prossimo aggiornamento.",
   "settings.write": "Scrivi",
 
   // ---- signup --------------------------------------------------------------

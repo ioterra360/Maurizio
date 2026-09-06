@@ -920,8 +920,6 @@ export const es: Record<keyof typeof it, string> = {
   "settings.upgrade": "Pasar a Plus",
   "settings.upgradePro": "Pasar a Pro",
   "settings.version": "Versión",
-  "settings.weeklyDigest": "Resumen semanal",
-  "settings.weeklyDigestHint": "Un resumen semanal de lo que se ha consolidado y lo que se está desvaneciendo. Aún no está activo: llegará en una próxima actualización.",
   "settings.write": "Escribir",
 
   // ---- signup --------------------------------------------------------------
