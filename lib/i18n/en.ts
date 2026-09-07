@@ -1155,6 +1155,8 @@ export const en: Record<keyof typeof it, string> = {
   // ---- memory photos (B5, 2026-09-03) ----
   "add.photoAdd": "Add a photo",
   "add.photoChange": "Change photo",
+  "add.photoFrontAdd": "Add a photo to the term",
+  "add.photoFrontChange": "Change the term photo",
   "add.photoSheetTitle": "Photo on the back",
   "add.photoCamera": "Take a photo",
   "add.photoLibrary": "Choose from library",

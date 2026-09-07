@@ -311,6 +311,7 @@ export default function ScanScreen() {
             {card.reading}
           </Text>
         ) : null}
+        {card.photoFrontPath ? <MemoryPhoto path={card.photoFrontPath} style={{ marginTop: 16 }} /> : null}
 
         {exampleShown && card.example ? (
           <Text

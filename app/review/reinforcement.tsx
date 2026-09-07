@@ -153,6 +153,7 @@ export default function ReinforcementScreen() {
             {card.reading}
           </Text>
         ) : null}
+        {card.photoFrontPath ? <MemoryPhoto path={card.photoFrontPath} style={{ marginTop: 16 }} /> : null}
 
         {/* Hint card — sparkle + single-line hint, dashed violet border */}
         {stage === "hint" ? (

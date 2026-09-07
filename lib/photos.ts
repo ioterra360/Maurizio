@@ -38,13 +38,14 @@ import {
   makeSignedUrlCache,
   orphanPhotoPaths,
   photoPathFor,
+  type PhotoSide,
   resizeTarget,
   type PhotoBytesCheck,
   type PhotoSource,
   type StoredPhoto,
 } from "./photo-utils";
 
-export type { PhotoSource } from "./photo-utils";
+export type { PhotoSide, PhotoSource } from "./photo-utils";
 
 export type PickOutcome =
   | { status: "picked"; uri: string }
@@ -126,6 +127,7 @@ export async function uploadMemoryPhoto(
   userId: string,
   memoryId: string,
   jpegUri: string,
+  side: PhotoSide = "back",
 ): Promise<string | null> {
   if (isDemoMode) return null;
   // fetch(file://) → ArrayBuffer: la via a zero dipendenze che RN 0.81 serve
@@ -133,7 +135,7 @@ export async function uploadMemoryPhoto(
   const bytes = await fetch(jpegUri).then((r) => r.arrayBuffer());
   const check = checkPhotoBytes(bytes);
   if (check !== "ok") throw new PhotoUploadError(check);
-  const path = photoPathFor(userId, memoryId);
+  const path = photoPathFor(userId, memoryId, side);
   const { error } = await supabase.storage.from(PHOTO_BUCKET).upload(path, bytes, {
     contentType: "image/jpeg", // obbligatorio con un body grezzo: il default è text/plain → 415
     upsert: true, // sostituire = stesso path; richiede la policy update
@@ -141,7 +143,7 @@ export async function uploadMemoryPhoto(
   });
   if (error) throw error;
   urlCache.invalidate(path);
-  await updateMemoryPhoto(memoryId, path);
+  await updateMemoryPhoto(memoryId, path, side);
   return path;
 }
 
@@ -174,9 +176,13 @@ export async function getPhotoUrl(path: string): Promise<string | null> {
  * prima la riga il caso peggiore è un file orfano, cioè esattamente il caso per
  * cui reconcilePhotos esiste.
  */
-export async function removeMemoryPhoto(memoryId: string, path: string): Promise<void> {
+export async function removeMemoryPhoto(
+  memoryId: string,
+  path: string,
+  side: PhotoSide = "back",
+): Promise<void> {
   if (isDemoMode) return;
-  await updateMemoryPhoto(memoryId, null);
+  await updateMemoryPhoto(memoryId, null, side);
   const { error } = await supabase.storage.from(PHOTO_BUCKET).remove([path]);
   if (error) throw error;
   urlCache.invalidate(path);

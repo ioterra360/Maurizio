@@ -18,9 +18,16 @@ export const PHOTO_RECONCILE_GRACE_MS = 10 * 60 * 1000;
 
 export type PhotoSource = "camera" | "library";
 
-/** La chiave dell'oggetto nel bucket: quella che finisce in memories.photo_path. */
-export function photoPathFor(userId: string, memoryId: string): string {
-  return `${userId}/${memoryId}.jpg`;
+/** Il lato del ricordo a cui la foto appartiene: retro (significato) o fronte (termine). */
+export type PhotoSide = "front" | "back";
+
+/**
+ * La chiave dell'oggetto nel bucket: quella che finisce in
+ * memories.photo_path (retro) o memories.photo_front_path (fronte). Stessa
+ * cartella <user_id>/, quindi stesse policy del bucket.
+ */
+export function photoPathFor(userId: string, memoryId: string, side: PhotoSide = "back"): string {
+  return side === "front" ? `${userId}/${memoryId}-front.jpg` : `${userId}/${memoryId}.jpg`;
 }
 
 /**

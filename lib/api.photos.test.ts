@@ -159,16 +159,16 @@ describe("fetchPhotoPaths", () => {
     expect(out).toEqual(["u1/a.jpg", "u1/b.jpg", "u1/c.jpg", "u1/d.jpg", "u1/e.jpg", "u1/f.jpg"]);
   });
 
-  it("interroga memories col cursore, ordine stabile, filtro utente e photo_path non nullo", async () => {
+  it("interroga memories col cursore, ordine stabile, filtro utente e almeno una delle due chiavi foto", async () => {
     results = [{ data: [] }];
 
     await fetchPhotoPaths("u1");
 
     expect(log[0].table).toBe("memories");
     // `id` nella select non è decorativo: è il cursore.
-    expect(call(0, "select")).toContainEqual(["id, photo_path"]);
+    expect(call(0, "select")).toContainEqual(["id, photo_path, photo_front_path"]);
     expect(call(0, "eq")).toContainEqual(["user_id", "u1"]);
-    expect(call(0, "not")).toContainEqual(["photo_path", "is", null]);
+    expect(call(0, "or")).toContainEqual(["photo_path.not.is.null,photo_front_path.not.is.null"]);
     // Senza un order stabile il cursore non definisce nessuna "pagina dopo".
     expect(call(0, "order")).toContainEqual(["id", { ascending: true }]);
     expect(call(0, "limit")).toContainEqual([1000]);

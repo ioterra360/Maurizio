@@ -1155,6 +1155,8 @@ export const es: Record<keyof typeof it, string> = {
   // ---- fotos de los recuerdos (B5, 2026-09-03) ----
   "add.photoAdd": "Añadir una foto",
   "add.photoChange": "Cambiar foto",
+  "add.photoFrontAdd": "Añadir una foto al término",
+  "add.photoFrontChange": "Cambiar la foto del término",
   "add.photoSheetTitle": "Foto en el reverso",
   "add.photoCamera": "Hacer una foto",
   "add.photoLibrary": "Elegir de la galería",

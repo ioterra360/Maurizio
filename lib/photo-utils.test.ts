@@ -14,6 +14,9 @@ import {
 describe("photoPathFor", () => {
   it("compone <user_id>/<memory_id>.jpg, senza prefisso bucket", () => {
     expect(photoPathFor("u-1", "m-2")).toBe("u-1/m-2.jpg");
+    expect(photoPathFor("u-1", "m-2", "back")).toBe("u-1/m-2.jpg");
+    // Il fronte sta nella stessa cartella dell'utente (stesse policy), con un suffisso.
+    expect(photoPathFor("u-1", "m-2", "front")).toBe("u-1/m-2-front.jpg");
   });
 });
 

@@ -1155,6 +1155,8 @@ export const it = {
   // ---- foto sui ricordi (B5, 2026-09-03) ----
   "add.photoAdd": "Aggiungi una foto",
   "add.photoChange": "Cambia foto",
+  "add.photoFrontAdd": "Aggiungi una foto al termine",
+  "add.photoFrontChange": "Cambia la foto del termine",
   "add.photoSheetTitle": "Foto sul retro",
   "add.photoCamera": "Scatta una foto",
   "add.photoLibrary": "Scegli dalla libreria",

@@ -64,6 +64,7 @@ import {
   pickPhoto,
   resizeForUpload,
   uploadMemoryPhoto,
+  type PhotoSide,
   type PhotoSource,
 } from "@/lib/photos";
 
@@ -172,6 +173,10 @@ export default function AddScreen() {
   // perché il path contiene memory_id — e chi abbandona la schermata non
   // lascia file orfani nel bucket.
   const [photoUri, setPhotoUri] = useState<string | null>(null);
+  // Foto sul FRONTE (termine), stessa vita della precedente (Angelo, 8/9/2026).
+  const [photoFrontUri, setPhotoFrontUri] = useState<string | null>(null);
+  /** Quale lato sta scegliendo la foto: il "+" premuto decide. */
+  const [photoTarget, setPhotoTarget] = useState<PhotoSide>("back");
   const [photoSheetOpen, setPhotoSheetOpen] = useState(false);
   // iOS: la sorgente scelta resta in attesa finché il foglio non ha FINITO di
   // chiudersi (vedi requestPick). Su Android è sempre null.
@@ -289,6 +294,7 @@ export default function AddScreen() {
     // La foto è contenuto del ricordo, non contesto di sessione: se restasse,
     // il salvataggio dopo la caricherebbe sotto un altro memory_id.
     setPhotoUri(null);
+    setPhotoFrontUri(null);
   };
 
   // Dopo il dialogo si riprende da dove il salvataggio si era fermato.
@@ -375,12 +381,15 @@ export default function AddScreen() {
       // colpa di una foto sarebbe il peggiore dei due esiti. In demo
       // createMemory è null: niente upload.
       let photoFailed = false;
-      if (saved && photoUri) {
-        try {
-          await uploadMemoryPhoto(user.id, saved.id, photoUri);
-        } catch (e) {
-          reportError("add/photo-upload", e);
-          photoFailed = true;
+      if (saved) {
+        for (const [side, uri] of [["front", photoFrontUri], ["back", photoUri]] as const) {
+          if (!uri) continue;
+          try {
+            await uploadMemoryPhoto(user.id, saved.id, uri, side);
+          } catch (e) {
+            reportError("add/photo-upload", e, { side });
+            photoFailed = true;
+          }
         }
       }
       showToast(
@@ -423,7 +432,8 @@ export default function AddScreen() {
     }
   };
 
-  const openPhotoSheet = () => {
+  const openPhotoSheet = (target: PhotoSide) => {
+    setPhotoTarget(target);
     if (!canUsePhotos(plan)) {
       // Free: la mascotte spiega e propone l'upgrade (spec: "disabilita,
       // spiega, propone l'upgrade"), il bottone resta visibile. Dal
@@ -448,7 +458,8 @@ export default function AddScreen() {
       // da 12 MP decodificato costa ~48 MB, e <Image> lo decodifica intero
       // anche in un box da 240) e il salvataggio non ricodifica più niente.
       const jpeg = await resizeForUpload(outcome.uri);
-      setPhotoUri(jpeg.uri);
+      if (photoTarget === "front") setPhotoFrontUri(jpeg.uri);
+      else setPhotoUri(jpeg.uri);
     } catch (e) {
       reportError("add/photo-pick", e);
       showToast(t("add.photoPickFailed"));
@@ -589,30 +600,60 @@ export default function AddScreen() {
 
           {/* Campi del ricordo — fronte/retro espliciti (spec core-loop §3) */}
           <View style={{ paddingHorizontal: 18, gap: 10 }}>
-            <TextInput
-              ref={termRef}
-              value={term}
-              onChangeText={(t) => {
-                setTerm(t);
-                if (missing === "term") setMissing(null);
-              }}
-              placeholder={t("add.termPlaceholder")}
-              placeholderTextColor={colors.placeholder}
-              accessibilityLabel={t("add.termLabel")}
-              maxLength={TERM_MAX_LENGTH}
-              style={{
-                backgroundColor: colors.surface,
-                borderRadius: 14,
-                borderWidth: 1,
-                borderColor: missing === "term" ? colors.danger : colors.hairline,
-                paddingHorizontal: 16,
-                paddingVertical: 14,
-                fontFamily: FONT.semibold,
-                fontSize: 18,
-                color: colors.navy,
-                letterSpacing: -0.2,
-              }}
-            />
+            {/* Il "+" della foto anche sul termine (Angelo, 8/9/2026): la
+                foto del fronte si vede nel ripasso PRIMA della risposta. */}
+            <View style={{ position: "relative" }}>
+              <TextInput
+                ref={termRef}
+                value={term}
+                onChangeText={(t) => {
+                  setTerm(t);
+                  if (missing === "term") setMissing(null);
+                }}
+                placeholder={t("add.termPlaceholder")}
+                placeholderTextColor={colors.placeholder}
+                accessibilityLabel={t("add.termLabel")}
+                maxLength={TERM_MAX_LENGTH}
+                style={{
+                  backgroundColor: colors.surface,
+                  borderRadius: 14,
+                  borderWidth: 1,
+                  borderColor: missing === "term" ? colors.danger : colors.hairline,
+                  paddingLeft: 16,
+                  paddingRight: 56,
+                  paddingVertical: 14,
+                  fontFamily: FONT.semibold,
+                  fontSize: 18,
+                  color: colors.navy,
+                  letterSpacing: -0.2,
+                }}
+              />
+              <Tappable
+                onPress={() => openPhotoSheet("front")}
+                disabled={saving}
+                accessibilityRole="button"
+                accessibilityLabel={photoFrontUri ? t("add.photoFrontChange") : t("add.photoFrontAdd")}
+                pressedOpacity={0.6}
+                hitSlop={6}
+                containerStyle={{ position: "absolute", right: 8, top: 8 }}
+                style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: 18,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  backgroundColor: photoFrontUri ? colors.accent : colors.canvas,
+                  borderWidth: photoFrontUri ? 0 : 1,
+                  borderColor: colors.hairline,
+                }}
+              >
+                {photoFrontUri ? (
+                  <Camera size={18} color={colors.onAccent} strokeWidth={2} />
+                ) : (
+                  <Plus size={20} color={colors.navy} strokeWidth={2} />
+                )}
+              </Tappable>
+            </View>
             {/* Contatore visibile solo nell'ultimo tratto (da 40 su 50), come
                 da richiesta Maurizio 2026-09-01: limite duro a 50 lettere. */}
             {term.length >= TERM_COUNTER_FROM ? (
@@ -692,7 +733,7 @@ export default function AddScreen() {
                   mentre l'attesa è in corso (fino a 15 s di timeout) andrebbe
                   persa senza caricare niente e senza avviso. */}
               <Tappable
-                onPress={openPhotoSheet}
+                onPress={() => openPhotoSheet("back")}
                 disabled={saving}
                 accessibilityRole="button"
                 accessibilityLabel={photoUri ? t("add.photoChange") : t("add.photoAdd")}
@@ -819,6 +860,7 @@ export default function AddScreen() {
                 >
                   {term.trim() ? term.trim().slice(0, 60) : preview.front}
                 </Text>
+                {photoFrontUri ? <MemoryPhoto localUri={photoFrontUri} style={{ marginTop: 10 }} /> : null}
                 {showReading && reading.trim() ? (
                   <Text
                     style={{
@@ -954,7 +996,7 @@ export default function AddScreen() {
 
       <PhotoSheet
         visible={photoSheetOpen}
-        hasPhoto={photoUri !== null}
+        hasPhoto={(photoTarget === "front" ? photoFrontUri : photoUri) !== null}
         onPick={requestPick}
         onDismissed={() => {
           // iOS: il foglio è chiuso davvero, ora il picker può presentarsi.
@@ -963,7 +1005,8 @@ export default function AddScreen() {
           if (source) void handlePickPhoto(source);
         }}
         onRemove={() => {
-          setPhotoUri(null);
+          if (photoTarget === "front") setPhotoFrontUri(null);
+          else setPhotoUri(null);
           setPhotoSheetOpen(false);
         }}
         onClose={() => setPhotoSheetOpen(false)}

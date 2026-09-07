@@ -142,6 +142,7 @@ export default function FocusScreen() {
             {card.reading}
           </Text>
         ) : null}
+        {card.photoFrontPath ? <MemoryPhoto path={card.photoFrontPath} style={{ marginTop: 16 }} /> : null}
 
         {revealed ? (
           <View

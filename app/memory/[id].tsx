@@ -307,6 +307,9 @@ export default function MemoryDetailScreen() {
                   {memory.reading}
                 </Text>
               ) : null}
+              {memory.photoFrontPath ? (
+                <MemoryPhoto path={memory.photoFrontPath} style={{ marginTop: 14, alignSelf: "stretch" }} />
+              ) : null}
               <View
                 style={{
                   marginTop: 12,

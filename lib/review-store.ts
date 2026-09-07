@@ -35,6 +35,8 @@ export type ReviewCard = {
   hint?: string;
   /** Chiave nel bucket memory-photos. Si mostra SOLO nel pannello rivelato. Le carte demo la omettono. */
   photoPath?: string;
+  /** Foto del fronte: si mostra SUBITO accanto al termine, prima della risposta. */
+  photoFrontPath?: string;
   folder: string;
   /** Folder kind slug — lets a folder-scoped session filter the deck. */
   folderKind?: FolderKind;

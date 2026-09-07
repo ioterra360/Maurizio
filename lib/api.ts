@@ -457,11 +457,17 @@ export async function updateMemoryNotes(id: string, notes: string | null): Promi
  * nello stesso modo. Sostituire la foto dello STESSO ricordo riscrive la sua
  * riga e non consuma un secondo slot.
  */
-export async function updateMemoryPhoto(id: string, photoPath: string | null): Promise<void> {
+export async function updateMemoryPhoto(
+  id: string,
+  photoPath: string | null,
+  side: "front" | "back" = "back",
+): Promise<void> {
   if (isDemoMode) return;
   const now = new Date().toISOString();
-  const patch: { photo_path: string | null; updated_at: string; photo_added_at?: string } = {
-    photo_path: photoPath,
+  // Fronte (termine) e retro (significato) sono due colonne (migration
+  // 20260908100000): il lato decide quale si scrive.
+  const patch: Record<string, string | null> = {
+    [side === "front" ? "photo_front_path" : "photo_path"]: photoPath,
     updated_at: now,
   };
   if (photoPath !== null) patch.photo_added_at = now;
@@ -507,18 +513,25 @@ export async function fetchPhotoPaths(userId: string): Promise<string[]> {
     // `id` entra nella select perché è il cursore, non perché serva a valle.
     let q = supabase
       .from("memories")
-      .select("id, photo_path")
+      .select("id, photo_path, photo_front_path")
       .eq("user_id", userId)
-      .not("photo_path", "is", null)
+      .or("photo_path.not.is.null,photo_front_path.not.is.null")
       .order("id", { ascending: true })
       .limit(PAGE);
     if (cursor) q = q.gt("id", cursor);
     const { data, error } = await q;
     if (error) throw error;
     // Cast al confine: il client non è tipizzato sullo schema (lib/supabase.ts:103).
-    const rows = (data ?? []) as { id: string; photo_path: string | null }[];
+    const rows = (data ?? []) as {
+      id: string;
+      photo_path: string | null;
+      photo_front_path?: string | null;
+    }[];
     if (rows.length === 0) return out; // fine: oltre il cursore non c'è più niente
-    for (const r of rows) if (r.photo_path) out.push(r.photo_path);
+    for (const r of rows) {
+      if (r.photo_path) out.push(r.photo_path);
+      if (r.photo_front_path) out.push(r.photo_front_path);
+    }
     cursor = rows[rows.length - 1]!.id; // l'ultimo id RICEVUTO, non il 1000esimo chiesto
   }
 }
@@ -776,6 +789,7 @@ export async function fetchFolderDetail(
       recoveryFrom: null,
       deletedAt: null,
       photoPath: null,
+      photoFrontPath: null,
       createdAt: now.toISOString(),
       updatedAt: now.toISOString(),
     }));

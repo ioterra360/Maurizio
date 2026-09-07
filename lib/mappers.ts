@@ -222,6 +222,8 @@ export type MemoryRow = {
   notes?: string | null;
   /** Chiave nel bucket memory-photos (migration 20260903110000). Opzionale: le righe lette da un client vecchio non ce l'hanno. */
   photo_path?: string | null;
+  /** Chiave della foto del FRONTE (migration 20260908100000). Opzionale per i client vecchi. */
+  photo_front_path?: string | null;
   item_type: string | null;
   state: MemoryState;
   srs_interval_days: number;
@@ -256,6 +258,8 @@ export type Memory = {
   notes?: string | null;
   /** Chiave nel bucket privato memory-photos; null = nessuna foto. Mai un URL. */
   photoPath: string | null;
+  /** Foto del fronte (termine): si vede prima della risposta. null = nessuna. */
+  photoFrontPath: string | null;
   itemType: string | null;
   state: MemoryState;
   srs: {
@@ -291,6 +295,7 @@ export function mapMemory(row: MemoryRow): Memory {
     example: row.example,
     notes: row.notes ?? null,
     photoPath: row.photo_path ?? null,
+    photoFrontPath: row.photo_front_path ?? null,
     itemType: row.item_type,
     // "In dissolvenza" si calcola alla lettura (finestra scaduta adesso): la
     // colonna puo' dire "fading" per un ricordo ripassato ieri, e viceversa.
