@@ -717,12 +717,6 @@ export const es: Record<keyof typeof it, string> = {
   "memory.title": "Recuerdo",
 
   // ---- onboarding ----------------------------------------------------------
-  "onboarding.focusBody": "Trabajo profundo sobre los recuerdos de ayer. Aquí la memoria se vuelve duradera.",
-  "onboarding.focusTitle": "Focus",
-  "onboarding.reinforcementBody": "Consolidas lo que has visto en los últimos días. Cuanto más reflexionas, mejor se fija.",
-  "onboarding.reinforcementTitle": "Reinforcement",
-  "onboarding.scanBody": "Un vistazo rápido a los recuerdos más antiguos: unos segundos para saber en qué punto estás.",
-  "onboarding.scanTitle": "Scan",
   "onboarding.startNow": "Empezar ahora",
 
   // ---- paywall -------------------------------------------------------------
@@ -984,7 +978,7 @@ export const es: Record<keyof typeof it, string> = {
   "recover.title": "Recupera tu cuenta",
   "settings.trashHint": "Carpetas y recuerdos eliminados, recuperables durante 24 horas",
   "settings.trashLabel": "Papelera",
-  "settings.tutorialHint": "La mascota te explica Memika otra vez en cinco pasos.",
+  "settings.tutorialHint": "La mascota te explica Memika otra vez en siete pasos.",
   "settings.tutorialLabel": "Volver a ver el tutorial",
   "trash.banner": "Todo lo que está aquí se elimina definitivamente después de 24 horas.",
   "trash.empty": "La papelera está vacía.",
@@ -1144,7 +1138,7 @@ export const es: Record<keyof typeof it, string> = {
   "notifications.minutesWheelA11y": "Minutos",
   "notifications.slotDisabled": "Activa las notificaciones para elegir la hora.",
   "notifications.firstReviewSwitch": "Avísame cuando un recuerdo esté listo para el primer repaso",
-  "notifications.firstReviewSwitchHint": "Veinte horas después de guardarlo, para cada recuerdo nuevo. No depende del modo calma.",
+  "notifications.firstReviewSwitchHint": "Veinte horas después de guardarlo, para cada recuerdo nuevo.",
   "notifications.saveFailed": "Ajuste no guardado. Inténtalo de nuevo.",
   "notifications.promptTitle": "¿Te aviso cuando sea la hora?",
   "notifications.promptBody": "El primer repaso de esta palabra es en 20 horas. Con las notificaciones te lo recuerdo yo, sin contadores y sin insistir.",
@@ -1171,13 +1165,17 @@ export const es: Record<keyof typeof it, string> = {
   // ---- tutorial -----------------------------------------------------------
   "tutorial.welcomeTitle": "Hola, soy Memika",
   "tutorial.welcomeBody": "No te empujo a estudiar más. Cuido lo que ya has aprendido y vuelvo solo cuando hace falta.",
+  "tutorial.todayTitle": "Hoy, de un vistazo",
+  "tutorial.todayBody": "Ve cuántos recuerdos te esperan, de qué carpetas vienen y cuándo vuelven los próximos. Toca Empezar el repaso y adelante.",
   "tutorial.foldersTitle": "Una carpeta por tema",
-  "tutorial.foldersBody": "Elige un idioma, una materia o un interés. Yo preparo la carpeta, tú guardas el término, el significado y la frase de ejemplo.",
+  "tutorial.foldersBody": "Un idioma, una materia, un interés. Ordénalas arrastrando: la primera se repasa primero.",
+  "tutorial.addTitle": "Guarda un recuerdo",
+  "tutorial.addBody": "Término, significado, frase de ejemplo. El primer repaso llega 20 horas después, luego los intervalos crecen.",
   "tutorial.reviewTitle": "Tú recuerdas, yo llevo el tiempo",
-  "tutorial.reviewBody": "El primer repaso llega después de 20 horas. Si el recuerdo se sostiene, lo llevo más lejos. Si falla, lo acerco.",
+  "tutorial.reviewBody": "Toca Olvidado o Recordado. Yo acorto o alargo el intervalo mientras Scan, Reinforcement y Focus se alternan solos.",
   "tutorial.healthTitle": "Ve qué se desvanece",
-  "tutorial.healthBody": "Cada recuerdo puede estar estable, desvaneciéndose o archivado. Te muestro dónde hace falta una mano, sin clasificaciones.",
+  "tutorial.healthBody": "Estable, desvaneciéndose o archivado: cada recuerdo tiene un estado. Yo señalo la carpeta que necesita una mano.",
   "tutorial.remindersTitle": "Te aviso cuando toca",
-  "tutorial.remindersBody": "Un recordatorio al día, a la hora que elijas. Te lo pido al guardar tu primer recuerdo. Luego lo cambias en Ajustes.",
+  "tutorial.remindersBody": "En Ajustes, elige un recordatorio diario y la hora. También te aviso cuando el primer repaso está listo.",
 
 };

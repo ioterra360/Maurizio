@@ -717,12 +717,6 @@ export const it = {
   "memory.title": "Ricordo",
 
   // ---- onboarding ----------------------------------------------------------
-  "onboarding.focusBody": "Lavoro profondo sui ricordi di ieri. Qui la memoria diventa duratura.",
-  "onboarding.focusTitle": "Focus",
-  "onboarding.reinforcementBody": "Consolidi quello che hai visto negli ultimi giorni. Più rifletti, più si fissa.",
-  "onboarding.reinforcementTitle": "Reinforcement",
-  "onboarding.scanBody": "Una rapida occhiata ai ricordi più vecchi: pochi secondi, tanta consapevolezza.",
-  "onboarding.scanTitle": "Scan",
   "onboarding.startNow": "Inizia ora",
 
   // ---- paywall -------------------------------------------------------------
@@ -984,7 +978,7 @@ export const it = {
   "recover.title": "Recupera il tuo account",
   "settings.trashHint": "Cartelle e ricordi eliminati, recuperabili per 24 ore",
   "settings.trashLabel": "Cestino",
-  "settings.tutorialHint": "La mascotte ti rispiega Memika in cinque passi.",
+  "settings.tutorialHint": "La mascotte ti rispiega Memika in sette passi.",
   "settings.tutorialLabel": "Rivedi il tutorial",
   "trash.banner": "Tutto ciò che è qui viene eliminato definitivamente dopo 24 ore.",
   "trash.empty": "Il cestino è vuoto.",
@@ -1144,7 +1138,7 @@ export const it = {
   "notifications.minutesWheelA11y": "Minuti",
   "notifications.slotDisabled": "Accendi le notifiche per scegliere l'orario.",
   "notifications.firstReviewSwitch": "Avvisami quando un ricordo è pronto per il primo ripasso",
-  "notifications.firstReviewSwitchHint": "Venti ore dopo il salvataggio, per ogni ricordo nuovo. Non dipende dalla modalità calma.",
+  "notifications.firstReviewSwitchHint": "Venti ore dopo il salvataggio, per ogni ricordo nuovo.",
   "notifications.saveFailed": "Impostazione non salvata. Riprova.",
   "notifications.promptTitle": "Ti avviso quando è ora?",
   "notifications.promptBody": "Il primo ripasso di questa parola è tra 20 ore. Con le notifiche te lo ricordo io, senza contatori e senza insistere.",
@@ -1171,13 +1165,17 @@ export const it = {
   // ---- tutorial -----------------------------------------------------------
   "tutorial.welcomeTitle": "Ciao, sono Memika",
   "tutorial.welcomeBody": "Non ti spingo a studiare di più. Veglio su quello che hai già imparato e torno solo quando serve.",
+  "tutorial.todayTitle": "Oggi, in un colpo d'occhio",
+  "tutorial.todayBody": "Vedi quanti ricordi ti aspettano, da quali cartelle e quando tornano i prossimi. Tocca Inizia il ripasso e parti.",
   "tutorial.foldersTitle": "Una cartella per tema",
-  "tutorial.foldersBody": "Scegli una lingua, una materia o un interesse. Io preparo la cartella, tu ci salvi termine, significato e frase d'esempio.",
+  "tutorial.foldersBody": "Una lingua, una materia, un interesse. Le ordini trascinandole: la prima entra per prima nei ripassi.",
+  "tutorial.addTitle": "Salva un ricordo",
+  "tutorial.addBody": "Termine, significato, frase d'esempio. Il primo ripasso arriva 20 ore dopo, poi gli intervalli crescono.",
   "tutorial.reviewTitle": "Tu ricordi, io tengo il tempo",
-  "tutorial.reviewBody": "Il primo ripasso arriva dopo 20 ore. Se il ricordo regge, lo sposto più avanti. Se inciampa, lo riporto vicino.",
+  "tutorial.reviewBody": "Tocca Dimenticato o Ricordato. Io accorcio o allungo l'intervallo, mentre Scan, Reinforcement e Focus si alternano da soli.",
   "tutorial.healthTitle": "Vedi cosa sta sbiadendo",
-  "tutorial.healthBody": "Ogni ricordo può essere stabile, in dissolvenza o archiviato. Io ti mostro dove serve una mano, senza classifiche.",
+  "tutorial.healthBody": "Stabile, in dissolvenza o archiviato: ogni ricordo ha uno stato. Io ti dico quale cartella ha bisogno di una mano.",
   "tutorial.remindersTitle": "Ti avviso quando è ora",
-  "tutorial.remindersBody": "Un promemoria al giorno, all'ora che scegli. Te lo chiedo al primo ricordo salvato. Poi lo cambi dalle Impostazioni.",
+  "tutorial.remindersBody": "Dalle Impostazioni scegli un promemoria giornaliero e l'orario. Io ti avviso anche quando il primo ripasso è pronto.",
 
 } as const;

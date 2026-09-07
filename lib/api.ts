@@ -1035,7 +1035,23 @@ export async function fetchUpcomingCounts(
   fromISO: string,
   toISO: string,
 ): Promise<Map<string, number>> {
-  if (isDemoMode) return new Map();
+  if (isDemoMode) {
+    // Demo: qualche scadenza nei prossimi giorni, cosi' la Home e il
+    // calendario hanno qualcosa da mostrare (screenshot del tutorial e
+    // degli store). Stesso raggruppamento per giorno locale del ramo vero.
+    const from = Date.parse(fromISO);
+    const to = Date.parse(toISO);
+    const rows: { nextReviewAt: string }[] = [];
+    for (const [days, count] of [[1, 5], [2, 2], [3, 4], [6, 3], [9, 2]] as const) {
+      const at = new Date();
+      at.setDate(at.getDate() + days);
+      at.setHours(9, 0, 0, 0);
+      const ts = at.getTime();
+      if (ts < from || ts > to) continue;
+      for (let i = 0; i < count; i += 1) rows.push({ nextReviewAt: at.toISOString() });
+    }
+    return groupByLocalDay(rows);
+  }
   const paused = await pausedFolderIds(userId);
   let q = supabase
     .from("memories")
@@ -1082,7 +1098,15 @@ export async function fetchMemoriesInRange(
  * (solo folder_id) ridotta lato client; PostgREST non raggruppa.
  */
 export async function fetchDueByFolder(userId: string): Promise<Map<string, number>> {
-  if (isDemoMode) return new Map();
+  if (isDemoMode) {
+    // Demo: i dieci di DEMO_DUE_COUNTS ripartiti sulle quattro cartelle seme.
+    return new Map([
+      ["demo-folder-jp", 4],
+      ["demo-folder-es", 3],
+      ["demo-folder-medicine", 2],
+      ["demo-folder-law", 1],
+    ]);
+  }
   const nowIso = new Date().toISOString();
   const paused = await pausedFolderIds(userId);
   let q = supabase

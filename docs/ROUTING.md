@@ -13,7 +13,7 @@ app/
 ├── choose-topic.tsx             Scegli il tuo argomento — crea l'UNICA cartella (root-level, vedi sotto)
 ├── folder-settings.tsx          Impostazioni cartella (`?kind=`) — push root-level sopra i tab
 ├── paywall.tsx                  Piani Free/Plus/Pro — root-level (foglio dal basso), fuori dai tab
-├── tutorial.tsx                 Tutorial di benvenuto (5 passi, saltabile): root-level, dopo il login (vedi sotto)
+├── tutorial.tsx                 Tutorial di benvenuto (7 passi con gli screenshot veri, saltabile): root-level, dopo il login (vedi sotto)
 │
 ├── (auth)/
 │   ├── _layout.tsx              Redirects out if user already signed in
@@ -62,7 +62,7 @@ app/
 
 ## Onboarding → one folder
 
-`signup` → `/tutorial` (5 passi con la mascotte, saltabile) → `/choose-topic` → `/(app)/today`.
+`signup` → `/tutorial` (7 passi: la mascotte, poi sei schermate vere per lingua e tema, saltabile) → `/choose-topic` → `/(app)/today`.
 Il tutorial vive nello stack ROOT per la stessa ragione di `choose-topic` (sotto).
 Chi entra su un telefono nuovo lo vede UNA volta sopra Today, spinto da
 `app/(app)/_layout.tsx` (flag per dispositivo `memika.tutorial.v1`,

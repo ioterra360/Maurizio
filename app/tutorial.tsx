@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Text, View, useWindowDimensions } from "react-native";
+import { Image, Text, View, useWindowDimensions } from "react-native";
 import Animated, {
   Easing,
   Extrapolation,
@@ -25,9 +25,10 @@ import { Mascot } from "@/components/Mascot";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { Tappable } from "@/components/Tappable";
 import { useAuthStore } from "@/lib/auth-store";
-import { useT, type TKey } from "@/lib/i18n";
+import { useLocaleStore, useT, type TKey } from "@/lib/i18n";
+import { shotSource } from "@/lib/tutorial-shot-sources";
+import { SHOT_ASPECT, type TutorialShot } from "@/lib/tutorial-shots";
 import {
-  LAYER_ROWS,
   TUTORIAL_STEPS,
   pageIndex,
   type TutorialMascot,
@@ -37,8 +38,11 @@ import { useTutorialStore } from "@/lib/tutorial-store";
 import { FONT, useThemeStore, useThemeTokens, type ThemeTokens } from "@/theme/tokens";
 
 /**
- * Il tutorial di benvenuto: cinque passi, la mascotte in primo piano,
- * saltabile in un tocco.
+ * Il tutorial di benvenuto: la mascotte si presenta, poi sei schermate VERE
+ * dell'app in una cornice di telefono, due frasi ciascuna, saltabile in un
+ * tocco (Angelo, 7/9/2026: "deve spiegare come funziona l'app, con le
+ * immagini reali"). Gli screenshot sono per lingua e per tema
+ * (lib/tutorial-shots.ts, scripts/tutorial-shots/).
  *
  * QUANDO COMPARE. Dopo il login, una volta per telefono (lib/tutorial-store):
  *   - dopo la registrazione, spinto da signup.tsx al posto del vecchio
@@ -56,12 +60,12 @@ import { FONT, useThemeStore, useThemeTokens, type ThemeTokens } from "@/theme/t
  *
  * COME SI MUOVE. Tutto e' legato allo scorrimento (reanimated, gia' nel
  * binario: nessuna dipendenza nuova, esce via OTA). Il fondo si dissolve
- * da una tinta all'altra, la mascotte entra a molla e poi respira, il testo
- * sale in dissolvenza, i pallini si allungano. Tre anelli si allargano
- * dietro la mascotte: e' l'unica eccezione al "niente decorazioni" del
- * design system, prevista proprio per l'onboarding (DESIGN-SYSTEM.md
- * § Animation rules). Con "riduci movimento" attivo restano solo le
- * dissolvenze legate al dito.
+ * da una tinta all'altra, la mascotte entra a molla e poi respira, le
+ * cornici scalano, il testo sale in dissolvenza, i pallini si allungano.
+ * Tre anelli si allargano dietro la mascotte del primo passo: e' l'unica
+ * eccezione al "niente decorazioni" del design system, prevista proprio
+ * per l'onboarding (DESIGN-SYSTEM.md § Animation rules). Con "riduci
+ * movimento" attivo restano solo le dissolvenze legate al dito.
  */
 
 const SPRING = { damping: 14, stiffness: 120, mass: 0.9 };
@@ -78,6 +82,12 @@ function resolveTints(tokens: ThemeTokens): Tints {
     active: { page: statusTint.active.bg, ring: colors.active },
     scan: { page: layerTint.scan, ring: colors.scan },
   };
+}
+
+/** Quanto siamo lontani dal centro della pagina `index`: 0 a fuoco, 1 fuori. */
+function distanceFrom(scrollX: number, index: number, width: number): number {
+  "worklet";
+  return Math.min(Math.abs(scrollX - index * width) / width, 1);
 }
 
 export default function TutorialScreen() {
@@ -178,8 +188,10 @@ export default function TutorialScreen() {
   if (!hydrated) return null;
   if (!canShow) return <Redirect href="/(auth)/login" />;
 
-  // La mascotte scala col telefono: grande dove c'e' spazio, mai tanto da
-  // spingere il testo sotto il bottone su uno schermo da 4,7 pollici.
+  // Quanto resta per l'immagine dopo barra, titolo, corpo, pallini e
+  // bottone: su un telefono alto la cornice e' generosa, su uno da 4,7
+  // pollici resta leggibile e il resto scorre (ogni pagina e' uno scroll).
+  const frameHeight = Math.max(250, Math.min(480, Math.round(height - 410)));
   const heroSize = Math.min(200, Math.max(132, Math.round(height * 0.24)));
 
   return (
@@ -226,11 +238,12 @@ export default function TutorialScreen() {
               enter={enter}
               reduced={reduced}
               mascot={s.mascot}
-              heroSize={s.layers ? Math.round(heroSize * 0.82) : heroSize}
+              shot={s.shot}
+              heroSize={heroSize}
+              frameHeight={frameHeight}
               ring={tints[s.tint].ring}
               titleKey={s.titleKey}
               bodyKey={s.bodyKey}
-              layers={s.layers === true}
             />
           ))}
         </Animated.ScrollView>
@@ -258,11 +271,12 @@ type PageProps = {
   enter: SharedValue<number>;
   reduced: boolean;
   mascot: TutorialMascot;
+  shot: TutorialShot | undefined;
   heroSize: number;
+  frameHeight: number;
   ring: string;
   titleKey: TKey;
   bodyKey: TKey;
-  layers: boolean;
 };
 
 function Page({
@@ -272,19 +286,18 @@ function Page({
   enter,
   reduced,
   mascot,
+  shot,
   heroSize,
+  frameHeight,
   ring,
   titleKey,
   bodyKey,
-  layers,
 }: PageProps) {
   const { t } = useT();
   const { colors } = useThemeTokens();
-  const discSize = heroSize + 44;
 
-  // Quanto siamo lontani dal centro: 0 = pagina a fuoco, 1 = fuori.
   const textStyle = useAnimatedStyle(() => {
-    const dist = Math.min(Math.abs(scrollX.value - index * width) / width, 1);
+    const dist = distanceFrom(scrollX.value, index, width);
     return {
       opacity: (1 - dist) * enter.value,
       transform: [{ translateY: dist * 14 + (1 - enter.value) * 8 }],
@@ -304,25 +317,37 @@ function Page({
           paddingVertical: 12,
         }}
       >
-        <Hero
-          index={index}
-          width={width}
-          scrollX={scrollX}
-          enter={enter}
-          reduced={reduced}
-          mascot={mascot}
-          size={heroSize}
-          discSize={discSize}
-          ring={ring}
-        />
+        {shot ? (
+          <ShotFrame
+            index={index}
+            width={width}
+            scrollX={scrollX}
+            enter={enter}
+            shot={shot}
+            mascot={mascot}
+            height={frameHeight}
+          />
+        ) : (
+          <Hero
+            index={index}
+            width={width}
+            scrollX={scrollX}
+            enter={enter}
+            reduced={reduced}
+            mascot={mascot}
+            size={heroSize}
+            discSize={heroSize + 44}
+            ring={ring}
+          />
+        )}
 
         <Animated.View style={[{ alignItems: "center" }, textStyle]}>
           <Text
             style={{
-              marginTop: 34,
+              marginTop: shot ? 26 : 34,
               fontFamily: FONT.bold,
-              fontSize: 28,
-              lineHeight: 34,
+              fontSize: 26,
+              lineHeight: 32,
               letterSpacing: -0.5,
               color: colors.navy,
               textAlign: "center",
@@ -332,10 +357,10 @@ function Page({
           </Text>
           <Text
             style={{
-              marginTop: 12,
+              marginTop: 10,
               fontFamily: FONT.regular,
-              fontSize: 15.5,
-              lineHeight: 24,
+              fontSize: 15,
+              lineHeight: 23,
               color: colors.midGrey,
               textAlign: "center",
               maxWidth: 320,
@@ -343,10 +368,91 @@ function Page({
           >
             {t(bodyKey)}
           </Text>
-          {layers ? <LayerRows /> : null}
         </Animated.View>
       </Animated.ScrollView>
     </View>
+  );
+}
+
+type ShotFrameProps = {
+  index: number;
+  width: number;
+  scrollX: SharedValue<number>;
+  enter: SharedValue<number>;
+  shot: TutorialShot;
+  mascot: TutorialMascot;
+  height: number;
+};
+
+/**
+ * Lo screenshot vero dell'app in una cornice di telefono, con la mascotte
+ * che sbircia dall'angolo. Immagine per lingua e per tema, cosi' quello che
+ * si vede nel tutorial e' quello che si vedra' un attimo dopo.
+ */
+function ShotFrame({ index, width, scrollX, enter, shot, mascot, height }: ShotFrameProps) {
+  const { colors } = useThemeTokens();
+  const scheme = useThemeStore((s) => s.scheme);
+  const locale = useLocaleStore((s) => s.locale);
+  const bezel = 5;
+  const frameW = Math.round(height * SHOT_ASPECT);
+  // In chiaro la scocca e' navy come i bottoni; in scuro navy E' il testo,
+  // quindi si usa il divisore, un grigio appena piu' chiaro del fondo.
+  const shell = scheme === "dark" ? colors.divider : colors.navy;
+
+  const style = useAnimatedStyle(() => {
+    const dist = distanceFrom(scrollX.value, index, width);
+    const scale =
+      interpolate(dist, [0, 1], [1, 0.9], Extrapolation.CLAMP) *
+      interpolate(enter.value, [0, 1], [0.96, 1]);
+    return {
+      opacity: interpolate(dist, [0, 1], [1, 0.3], Extrapolation.CLAMP) * enter.value,
+      transform: [{ translateY: dist * 10 + (1 - enter.value) * 8 }, { scale }],
+    };
+  });
+
+  return (
+    <Animated.View style={[{ width: frameW, height, alignItems: "center" }, style]}>
+      <View
+        style={{
+          width: frameW,
+          height,
+          borderRadius: 30,
+          backgroundColor: shell,
+          padding: bezel,
+          overflow: "hidden",
+        }}
+      >
+        <Image
+          accessibilityIgnoresInvertColors
+          source={shotSource(shot, locale, scheme)}
+          resizeMode="cover"
+          style={{
+            width: frameW - bezel * 2,
+            height: height - bezel * 2,
+            borderRadius: 30 - bezel,
+            backgroundColor: colors.canvas,
+          }}
+        />
+      </View>
+      <View
+        pointerEvents="none"
+        style={{
+          position: "absolute",
+          right: -22,
+          bottom: -14,
+          width: 66,
+          height: 66,
+          borderRadius: 999,
+          backgroundColor: colors.surface,
+          borderWidth: 1,
+          borderColor: colors.hairlineStrong,
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <Mascot variant={mascot} size={50} withShadow={false} />
+      </View>
+    </Animated.View>
   );
 }
 
@@ -386,8 +492,10 @@ function Hero({ index, width, scrollX, enter, reduced, mascot, size, discSize, r
   }, [bob, reduced]);
 
   const mascotStyle = useAnimatedStyle(() => {
-    const dist = Math.min(Math.abs(scrollX.value - index * width) / width, 1);
-    const scale = interpolate(dist, [0, 1], [1, 0.82], Extrapolation.CLAMP) * interpolate(enter.value, [0, 1], [0.86, 1]);
+    const dist = distanceFrom(scrollX.value, index, width);
+    const scale =
+      interpolate(dist, [0, 1], [1, 0.82], Extrapolation.CLAMP) *
+      interpolate(enter.value, [0, 1], [0.86, 1]);
     return {
       opacity: interpolate(dist, [0, 1], [1, 0.25], Extrapolation.CLAMP) * enter.value,
       transform: [{ translateY: bob.value * -6 + dist * 10 }, { scale }],
@@ -456,7 +564,7 @@ function Ring({ delay, index, width, scrollX, reduced, size, color }: RingProps)
   const style = useAnimatedStyle(() => {
     // Gli anelli vivono solo sulla pagina a fuoco: durante lo scorrimento
     // sfumano, cosi' non sbordano nella pagina accanto.
-    const dist = Math.min(Math.abs(scrollX.value - index * width) / width, 1);
+    const dist = distanceFrom(scrollX.value, index, width);
     const focus = interpolate(dist, [0, 0.5], [1, 0], Extrapolation.CLAMP);
     return {
       opacity: interpolate(progress.value, [0, 0.12, 1], [0, 0.32, 0], Extrapolation.CLAMP) * focus,
@@ -480,67 +588,6 @@ function Ring({ delay, index, width, scrollX, reduced, size, color }: RingProps)
         style,
       ]}
     />
-  );
-}
-
-/** Le tre righe dei ritmi, nell'ordine bloccato Scan, Reinforcement, Focus. */
-function LayerRows() {
-  const { t } = useT();
-  const { colors, layer } = useThemeTokens();
-  return (
-    <View
-      style={{
-        marginTop: 20,
-        alignSelf: "stretch",
-        maxWidth: 340,
-        borderRadius: 16,
-        backgroundColor: colors.surface,
-        borderWidth: 1,
-        borderColor: colors.hairline,
-        paddingVertical: 6,
-      }}
-    >
-      {LAYER_ROWS.map((row, i) => (
-        <View
-          key={row}
-          style={{
-            flexDirection: "row",
-            alignItems: "flex-start",
-            gap: 12,
-            paddingHorizontal: 16,
-            paddingVertical: 10,
-            borderTopWidth: i === 0 ? 0 : 1,
-            borderTopColor: colors.hairline,
-          }}
-        >
-          <View
-            style={{
-              width: 10,
-              height: 10,
-              borderRadius: 999,
-              marginTop: 5,
-              backgroundColor: layer[row].color,
-            }}
-          />
-          <View style={{ flex: 1 }}>
-            <Text style={{ fontFamily: FONT.semibold, fontSize: 14, lineHeight: 19, color: colors.navy }}>
-              {t(`onboarding.${row}Title` as TKey)}
-            </Text>
-            <Text
-              style={{
-                marginTop: 2,
-                fontFamily: FONT.regular,
-                fontSize: 13,
-                lineHeight: 18,
-                color: colors.midGrey,
-              }}
-            >
-              {t(`onboarding.${row}Body` as TKey)}
-            </Text>
-          </View>
-        </View>
-      ))}
-    </View>
   );
 }
 

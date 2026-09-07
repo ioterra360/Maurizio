@@ -717,12 +717,6 @@ export const fr: Record<keyof typeof it, string> = {
   "memory.title": "Souvenir",
 
   // ---- onboarding ----------------------------------------------------------
-  "onboarding.focusBody": "Un travail en profondeur sur les souvenirs d'hier. C'est ici que la mémoire devient durable.",
-  "onboarding.focusTitle": "Focus",
-  "onboarding.reinforcementBody": "Tu consolides ce que tu as vu ces derniers jours. Plus tu réfléchis, mieux ça se fixe.",
-  "onboarding.reinforcementTitle": "Reinforcement",
-  "onboarding.scanBody": "Un coup d'œil rapide aux souvenirs les plus anciens : quelques secondes pour savoir où tu en es.",
-  "onboarding.scanTitle": "Scan",
   "onboarding.startNow": "Commencer maintenant",
 
   // ---- paywall -------------------------------------------------------------
@@ -984,7 +978,7 @@ export const fr: Record<keyof typeof it, string> = {
   "recover.title": "Récupère ton compte",
   "settings.trashHint": "Dossiers et souvenirs supprimés, récupérables pendant 24 heures",
   "settings.trashLabel": "Corbeille",
-  "settings.tutorialHint": "La mascotte te réexplique Memika en cinq étapes.",
+  "settings.tutorialHint": "La mascotte te réexplique Memika en sept étapes.",
   "settings.tutorialLabel": "Revoir le tutoriel",
   "trash.banner": "Tout ce qui se trouve ici est supprimé définitivement après 24 heures.",
   "trash.empty": "La corbeille est vide.",
@@ -1144,7 +1138,7 @@ export const fr: Record<keyof typeof it, string> = {
   "notifications.minutesWheelA11y": "Minutes",
   "notifications.slotDisabled": "Active les notifications pour choisir l'heure.",
   "notifications.firstReviewSwitch": "Préviens-moi quand un souvenir est prêt pour sa première révision",
-  "notifications.firstReviewSwitchHint": "Vingt heures après l'enregistrement, pour chaque nouveau souvenir. Le mode calme n'y change rien.",
+  "notifications.firstReviewSwitchHint": "Vingt heures après l'enregistrement, pour chaque nouveau souvenir.",
   "notifications.saveFailed": "Réglage non enregistré. Réessaie.",
   "notifications.promptTitle": "Je te préviens quand c'est l'heure ?",
   "notifications.promptBody": "La première révision de ce mot est dans 20 heures. Avec les notifications, je te le rappelle, sans compteurs et sans insister.",
@@ -1171,13 +1165,17 @@ export const fr: Record<keyof typeof it, string> = {
   // ---- tutorial -----------------------------------------------------------
   "tutorial.welcomeTitle": "Salut, moi c'est Memika",
   "tutorial.welcomeBody": "Je ne te pousse pas à étudier plus. Je veille sur ce que tu as déjà appris et je reviens seulement quand il faut.",
+  "tutorial.todayTitle": "Aujourd'hui, d'un coup d'œil",
+  "tutorial.todayBody": "Vois combien de souvenirs t'attendent, de quels dossiers ils viennent et quand reviennent les prochains. Touche Commencer la révision.",
   "tutorial.foldersTitle": "Un dossier par thème",
-  "tutorial.foldersBody": "Choisis une langue, une matière ou un centre d'intérêt. Je prépare le dossier, tu y ranges le terme, le sens et la phrase d'exemple.",
+  "tutorial.foldersBody": "Une langue, une matière, un centre d'intérêt. Glisse les dossiers pour les classer : le premier passe en révision d'abord.",
+  "tutorial.addTitle": "Enregistre un souvenir",
+  "tutorial.addBody": "Terme, sens, phrase d'exemple. La première révision arrive 20 heures plus tard, puis les intervalles s'allongent.",
   "tutorial.reviewTitle": "Tu retiens, je tiens le tempo",
-  "tutorial.reviewBody": "La première révision arrive après 20 heures. Si le souvenir tient, je l'éloigne. S'il vacille, je le rapproche.",
+  "tutorial.reviewBody": "Touche Oublié ou Retenu. Je raccourcis ou j'allonge l'intervalle, pendant que Scan, Reinforcement et Focus alternent d'eux-mêmes.",
   "tutorial.healthTitle": "Vois ce qui devient fragile",
-  "tutorial.healthBody": "Chaque souvenir peut être stable, fragile ou archivé. Je te montre où un coup de main peut aider, sans classement.",
+  "tutorial.healthBody": "Stable, fragile ou archivé : chaque souvenir a un état. Je te montre le dossier qui a besoin d'un coup de main.",
   "tutorial.remindersTitle": "Je te préviens à temps",
-  "tutorial.remindersBody": "Un rappel par jour, à l'heure que tu choisis. Je te le demande au premier souvenir enregistré. Ensuite, tu le changes dans les Réglages.",
+  "tutorial.remindersBody": "Dans les Réglages, choisis un rappel quotidien et l'heure. Je te préviens aussi quand la première révision est prête.",
 
 };

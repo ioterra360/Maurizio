@@ -1,12 +1,14 @@
 import type { TKey } from "./i18n";
+import type { TutorialShot } from "./tutorial-shots";
 
 /**
  * I passi del tutorial di benvenuto (app/tutorial.tsx). Modulo PURO: solo
  * dati e un'aritmetica, cosi' vitest puo' garantire che ogni chiave esista
- * nel catalogo e che i tre ritmi restino nell'ordine bloccato.
+ * nel catalogo e che ogni screenshot sia fra quelli catturati.
  *
- * Cinque passi, non di piu': l'onboarding e' "volutamente corto"
- * (docs/EMAILS.md) e si salta in un tocco.
+ * Sette passi (Angelo, 7/9/2026): la mascotte si presenta, poi sei
+ * schermate VERE dell'app con due frasi ciascuna: Oggi, Cartelle, Nuovo
+ * ricordo, Ripasso, Salute della memoria, Notifiche. Si salta in un tocco.
  */
 
 /** Le pose hi-res della mascotte (~500 px). La `default` da 130 px sgrana a dimensione hero. */
@@ -21,12 +23,13 @@ export type TutorialTint = "welcome" | "focus" | "reinforcement" | "active" | "s
 
 export type TutorialStep = {
   key: string;
+  /** La posa della mascotte: eroe nel passo di benvenuto, badge sulla cornice negli altri. */
   mascot: TutorialMascot;
   tint: TutorialTint;
   titleKey: TKey;
   bodyKey: TKey;
-  /** Il passo mostra le tre righe dei ritmi sotto il testo. */
-  layers?: true;
+  /** Lo screenshot dell'app mostrato nella cornice; assente nel passo di benvenuto. */
+  shot?: TutorialShot;
 };
 
 export const TUTORIAL_STEPS: readonly TutorialStep[] = [
@@ -38,11 +41,28 @@ export const TUTORIAL_STEPS: readonly TutorialStep[] = [
     bodyKey: "tutorial.welcomeBody",
   },
   {
-    key: "folders",
+    key: "today",
     mascot: "idea",
+    tint: "scan",
+    titleKey: "tutorial.todayTitle",
+    bodyKey: "tutorial.todayBody",
+    shot: "today",
+  },
+  {
+    key: "folders",
+    mascot: "checklist",
     tint: "focus",
     titleKey: "tutorial.foldersTitle",
     bodyKey: "tutorial.foldersBody",
+    shot: "knowledge",
+  },
+  {
+    key: "add",
+    mascot: "idea",
+    tint: "active",
+    titleKey: "tutorial.addTitle",
+    bodyKey: "tutorial.addBody",
+    shot: "add",
   },
   {
     key: "review",
@@ -50,14 +70,15 @@ export const TUTORIAL_STEPS: readonly TutorialStep[] = [
     tint: "reinforcement",
     titleKey: "tutorial.reviewTitle",
     bodyKey: "tutorial.reviewBody",
-    layers: true,
+    shot: "focus",
   },
   {
     key: "health",
-    mascot: "checklist",
+    mascot: "investigate",
     tint: "active",
     titleKey: "tutorial.healthTitle",
     bodyKey: "tutorial.healthBody",
+    shot: "health",
   },
   {
     key: "reminders",
@@ -65,12 +86,9 @@ export const TUTORIAL_STEPS: readonly TutorialStep[] = [
     tint: "scan",
     titleKey: "tutorial.remindersTitle",
     bodyKey: "tutorial.remindersBody",
+    shot: "notifications",
   },
 ];
-
-/** Ordine bloccato (AGENTS.md §3): copy, righe e icone lo rispettano ovunque. */
-export const LAYER_ROWS = ["scan", "reinforcement", "focus"] as const;
-export type LayerRow = (typeof LAYER_ROWS)[number];
 
 /** Pagina piu' vicina a un offset orizzontale; mai fuori da [0, count-1]. */
 export function pageIndex(offsetX: number, width: number, count: number): number {

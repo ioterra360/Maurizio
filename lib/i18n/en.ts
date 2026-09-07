@@ -717,12 +717,6 @@ export const en: Record<keyof typeof it, string> = {
   "memory.title": "Memory",
 
   // ---- onboarding ----------------------------------------------------------
-  "onboarding.focusBody": "Deep work on yesterday's memories. This is where memory becomes lasting.",
-  "onboarding.focusTitle": "Focus",
-  "onboarding.reinforcementBody": "You consolidate what you've seen in recent days. The more you reflect, the better it sticks.",
-  "onboarding.reinforcementTitle": "Reinforcement",
-  "onboarding.scanBody": "A quick look at your oldest memories: a few seconds, a lot of awareness.",
-  "onboarding.scanTitle": "Scan",
   "onboarding.startNow": "Start now",
 
   // ---- paywall -------------------------------------------------------------
@@ -984,7 +978,7 @@ export const en: Record<keyof typeof it, string> = {
   "recover.title": "Recover your account",
   "settings.trashHint": "Deleted folders and memories, recoverable for 24 hours",
   "settings.trashLabel": "Trash",
-  "settings.tutorialHint": "The mascot walks you through Memika again in five steps.",
+  "settings.tutorialHint": "The mascot walks you through Memika again in seven steps.",
   "settings.tutorialLabel": "Review the tutorial",
   "trash.banner": "Everything here is permanently deleted after 24 hours.",
   "trash.empty": "The trash is empty.",
@@ -1144,7 +1138,7 @@ export const en: Record<keyof typeof it, string> = {
   "notifications.minutesWheelA11y": "Minutes",
   "notifications.slotDisabled": "Turn notifications on to choose a time.",
   "notifications.firstReviewSwitch": "Tell me when a memory is ready for its first review",
-  "notifications.firstReviewSwitchHint": "Twenty hours after saving, for every new memory. Calm mode doesn't affect it.",
+  "notifications.firstReviewSwitchHint": "Twenty hours after saving, for every new memory.",
   "notifications.saveFailed": "Setting not saved. Try again.",
   "notifications.promptTitle": "Want me to tell you when it's time?",
   "notifications.promptBody": "This word's first review is in 20 hours. With notifications I'll remind you, with no counters and no nagging.",
@@ -1171,13 +1165,17 @@ export const en: Record<keyof typeof it, string> = {
   // ---- tutorial -----------------------------------------------------------
   "tutorial.welcomeTitle": "Hi, I'm Memika",
   "tutorial.welcomeBody": "I won't push you to study more. I'll watch over what you've already learned and come back only when it's needed.",
+  "tutorial.todayTitle": "Today, at a glance",
+  "tutorial.todayBody": "See how many memories are waiting, which folders they come from, and when the next ones return. Tap Start the review and go.",
   "tutorial.foldersTitle": "One folder per topic",
-  "tutorial.foldersBody": "Choose a language, a subject or an interest. I set up the folder, you save the term, the meaning and an example sentence.",
+  "tutorial.foldersBody": "A language, a subject, an interest. Drag folders into priority order: the first one is reviewed first.",
+  "tutorial.addTitle": "Save a memory",
+  "tutorial.addBody": "Term, meaning, example sentence. The first review comes 20 hours later, then the intervals grow.",
   "tutorial.reviewTitle": "You remember, I keep time",
-  "tutorial.reviewBody": "The first review comes after 20 hours. If the memory holds, I move it further out. If it slips, I bring it closer.",
+  "tutorial.reviewBody": "Tap Forgot or Remembered. I shorten or stretch the interval while Scan, Reinforcement and Focus alternate on their own.",
   "tutorial.healthTitle": "See what's fading",
-  "tutorial.healthBody": "Each memory can be stable, fading or archived. I show you where a hand is needed, no leaderboards.",
+  "tutorial.healthBody": "Stable, fading or archived: every memory has a state. I point to the folder that needs a hand.",
   "tutorial.remindersTitle": "I'll tell you when it's time",
-  "tutorial.remindersBody": "One reminder a day, at the time you choose. I ask after your first saved memory. You can change it later in Settings.",
+  "tutorial.remindersBody": "In Settings, choose a daily reminder and the hour. I also let you know when the first review is ready.",
 
 };
