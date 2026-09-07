@@ -13,14 +13,31 @@
  * 24 ore dopo) e la copy dell'app — "puoi ripristinarli entro 24 ore",
  * "spostane un'altra nel cestino" — lo mandava a perdere anche le altre.
  */
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 
-const SQL = readFileSync(
-  path.join(process.cwd(), "supabase/migrations/20260903100000_plans.sql"),
-  "utf8",
-);
+const MIGRATIONS_DIR = path.join(process.cwd(), "supabase/migrations");
+
+const SQL = readFileSync(path.join(MIGRATIONS_DIR, "20260903100000_plans.sql"), "utf8");
+
+/**
+ * I corpi dollar-quoted (`$$ ... $$`) di TUTTE le migrazioni, con i commenti
+ * di riga tolti prima: un `-- daily_input_cap` in un commento non e' un uso.
+ * Le migrazioni del repo usano solo il tag nudo `$$`, quindi un split basta.
+ */
+function allFunctionBodies(): Array<{ file: string; body: string }> {
+  const out: Array<{ file: string; body: string }> = [];
+  for (const file of readdirSync(MIGRATIONS_DIR).filter((f) => f.endsWith(".sql")).sort()) {
+    const text = readFileSync(path.join(MIGRATIONS_DIR, file), "utf8").replace(/--[^\n]*/g, "");
+    const parts = text.split("$$");
+    // Gli indici dispari stanno FRA un `$$` di apertura e uno di chiusura.
+    for (let i = 1; i < parts.length; i += 2) {
+      out.push({ file, body: parts[i].replace(/\s+/g, " ") });
+    }
+  }
+  return out;
+}
 
 /** Spazi normalizzati: le asserzioni non si rompono per un a capo. */
 const flat = SQL.replace(/\s+/g, " ");
@@ -99,5 +116,45 @@ describe("20260903100000_plans.sql — ripristino cartelle e grandfathering", ()
     // che dice quali sono i due account di cortesia, cioe' quelli che la
     // migrazione futura dovra' escludere dalla revoca in blocco.
     expect(SQL).toContain("RIDONDANTE dal 2026-09-04, e RESTA");
+  });
+});
+
+describe("20260903100000_plans.sql: tetto ricordi TOTALE, cursore giornaliero client-only", () => {
+  // Decisione di Angelo del 7/9/2026: "10 in tutto". Il tetto free sui
+  // ricordi e' TOTALE e conta anche il cestino; il cursore giornaliero
+  // (profiles.daily_input_cap) e' un avviso morbido lato client e MAI un
+  // trigger, perche' la colonna e' scrivibile dall'utente. Vedi
+  // lib/daily-cap.test.ts per il lato client e docs/PAYMENTS.md § I piani.
+  it("enforce_memory_plan_limit conta tutte le righe: niente deleted_at, niente created_at", () => {
+    const body = fnBody("enforce_memory_plan_limit");
+    // Cestino compreso: un `deleted_at is null` riaprirebbe il ciclo
+    // "cestina → inserisci → ripristina" (il ripristino e' una UPDATE).
+    expect(body).not.toContain("deleted_at");
+    // Totale, non giornaliero: nessuna finestra temporale nel conteggio.
+    expect(body).not.toContain("created_at");
+    expect(body).toContain("where user_id = new.user_id; if used >= cap then");
+    expect(body).toContain("errcode = 'P0004'");
+    expect(body).toContain("hint = 'plan-limit:memories'");
+  });
+
+  it("nessuna migrazione applica daily_input_cap dentro una funzione o un trigger", () => {
+    const bodies = allFunctionBodies();
+    // Sanity: l'helper deve vedere davvero dei corpi, altrimenti il test
+    // passerebbe per vuoto.
+    expect(bodies.length).toBeGreaterThan(5);
+    expect(bodies.some((b) => b.file === "20260903100000_plans.sql")).toBe(true);
+    const offenders = bodies.filter((b) => b.body.includes("daily_input_cap")).map((b) => b.file);
+    expect(offenders).toEqual([]);
+  });
+
+  it("daily_input_cap resta nella grant di UPDATE dell'utente: e' una preferenza, non un limite", () => {
+    // 20260825121500_lock_profiles_columns.sql lascia la colonna scrivibile
+    // dal client. E' proprio perche' e' scrivibile che non puo' essere un
+    // tetto server-side: la verita' dei piani e' altrove (plan / plan_until).
+    const lock = readFileSync(
+      path.join(MIGRATIONS_DIR, "20260825121500_lock_profiles_columns.sql"),
+      "utf8",
+    ).replace(/\s+/g, " ");
+    expect(lock).toMatch(/grant update \([^)]*daily_input_cap[^)]*\) on (table )?public\.profiles to authenticated/);
   });
 });

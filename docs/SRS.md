@@ -154,6 +154,12 @@ Il tetto per fase (`layerCaps`) esiste ancora nello store, ma la Home lo passa
 **uguale alla coda**: serve all'handoff per saltare le fasi vuote. Le sessioni
 per singola cartella (`/folder/[id]`) passano ancora `budgetCap: 28`.
 
+Nota: `budgetCap` e' un tetto del mazzo di **ripasso** (quante carte entrano
+nella sessione di una singola cartella), non di **inserimento**: non c'entra
+ne' con il tetto di piano (10 ricordi totali sul Free, trigger `P0004`) ne'
+con il cursore giornaliero di Impostazioni (`profiles.daily_input_cap`). Sono
+tre numeri diversi per tre cose diverse.
+
 ## Edge cases
 
 - **First review ever.** Un ricordo nuovo è programmato a **T0 + 20 ore** e
@@ -166,7 +172,14 @@ per singola cartella (`/folder/[id]`) passano ancora `budgetCap: 28`.
   finché la lista Archiviati non esiste.
 - **Daily input cap reached.** Adding new memories is throttled at 20/day
   (configurable in Settings). The error state on the Add screen is a soft
-  warning, not a block — they can override.
+  warning, not a block — they can override. Il cap giornaliero
+  (`profiles.daily_input_cap`) riguarda **Plus/Pro**: e' un'autoregolazione
+  del carico, lato client, senza trigger. Per il **Free** Add mostra invece il
+  totale di piano (`add.totalCounter` / `add.totalLimitReached`, 10 ricordi
+  in tutto cestino compreso, Angelo 7/9/2026) e il solo blocco vero e' il
+  trigger `P0004`; il cursore non gli morde mai perche' la sua opzione minima
+  (`DAILY_CAP_OPTIONS`, `lib/constants.ts`) e' >= al tetto di piano. Vedi
+  `docs/PAYMENTS.md` § I piani, "Limite giornaliero".
 - **A folder with zero due items.** Knowledge shows the folder with retention
   bar full + no count badge. Tap still opens the folder list.
 - **Time-zone drift.** `next_review_at` e `review_window_end` sono

@@ -40,7 +40,7 @@ is in the `admin_emails` allowlist (currently `memikaapp@gmail.com`).
 | `email` | text | Mirrors auth, kept for join-free reads |
 | `name` | text | Display name (derived from email if not provided) |
 | `role` | enum `user_role` | `user` or `admin` |
-| `daily_input_cap` | int | Max new memories per day (default 20, 1–200) |
+| `daily_input_cap` | int | Max new memories per day (default 20, 1–200). Avviso morbido lato client, nessun trigger; scrivibile dall'utente (e' nella grant di UPDATE, 20260825121500). NON e' il tetto di piano: quello e' `memories_enforce_plan_limit` (P0004, 10 totali sul Free, cestino compreso) e riguarda `plan`. Le opzioni del cursore sono `DAILY_CAP_OPTIONS` in `lib/constants.ts`, con il minimo >= al tetto free (`lib/daily-cap.test.ts`) |
 | `calm_mode` | boolean | Suppresses the daily reminder (the first-review alert stays), default `true` — so the daily reminder is opt-out. Spec 2026-09-02 §F3 |
 | `weekly_digest` | boolean | Saved preference only — no digest is sent yet; default `false` |
 | `morning_review_at` | time | Daily reminder slot (HH:MM, the client floors to a 30-minute slot); default 08:00 |

@@ -157,6 +157,24 @@ export type ReviewResponse = (typeof REVIEW_RESPONSES)[number];
 export const DAILY_INPUT_CAP_DEFAULT = 20;
 
 /**
+ * Le scelte del cursore "Limite giornaliero" in Impostazioni
+ * (profiles.daily_input_cap). E' un'autoregolazione del carico: avviso
+ * morbido lato client in Add, mai un blocco e MAI un trigger, perche' la
+ * colonna e' scrivibile dall'utente (20260825121500_lock_profiles_columns).
+ *
+ * L'opzione MINIMA e' legata a PLAN_LIMITS.free.memories (lib/plan.ts) e
+ * non deve scendere sotto: il tetto del Free e' TOTALE, "10 in tutto"
+ * cestino compreso (Angelo, 7/9/2026), e Add gli mostra QUEL contatore al
+ * posto del giornaliero. Con il minimo >= al tetto, per un Free il cursore
+ * non morde mai (dailyCount <= totalCount <= 10 <= min) e le due verita'
+ * non possono contraddirsi in una stessa schermata: e' cio' che permette di
+ * tenere la riga visibile a tutti senza un gate sul piano, che
+ * docs/PAYMENTS.md § I piani vieta (usePlan() degrada a free se il profilo
+ * non si carica). lib/daily-cap.test.ts lo impone.
+ */
+export const DAILY_CAP_OPTIONS = [10, 15, 20, 25, 30, 50] as const;
+
+/**
  * Limite duro sul termine da ricordare (Maurizio 2026-09-01: "mettiamo un
  * limite di 50 lettere"). Il contatore compare da TERM_COUNTER_FROM in su.
  */

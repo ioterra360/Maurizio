@@ -35,6 +35,7 @@ import { fetchDeletionPreview, fetchProfile, requestAccountDeletion, updateProfi
 import { cancelAllReminders } from "@/lib/notifications";
 import {
   ACCOUNT_DELETION_URL,
+  DAILY_CAP_OPTIONS,
   NOTIFICATIONS_ENABLED,
   PRIVACY_URL,
   SUPPORT_EMAIL,
@@ -186,7 +187,8 @@ export default function SettingsScreen() {
     });
   };
 
-  const DAILY_CAP_OPTIONS = [10, 15, 20, 25, 30, 50] as const;
+  // Le opzioni del cursore stanno in lib/constants.ts (DAILY_CAP_OPTIONS):
+  // il minimo e' vincolato al tetto del piano free, vedi lib/daily-cap.test.ts.
   const saveDailyCap = (cap: number) => {
     if (!user) return;
     setLimitPickerOpen(false);

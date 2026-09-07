@@ -247,6 +247,19 @@ export default function AddScreen() {
   const firstReviewLabel = t("add.previewFirstReview", {
     time: shortDateTime(firstReview().nextReviewAt),
   });
+  // INVARIANTE (Angelo, 7/9/2026: "10 in tutto"). Due tetti, uno solo alla
+  // volta:
+  //   - Free  -> contatore TOTALE dell'account, cestino compreso (stesso
+  //              predicato del trigger P0004): totalCount / totalMax;
+  //   - Plus/Pro -> cursore GIORNALIERO (profiles.daily_input_cap), avviso
+  //              morbido lato client: dailyCount / dailyMax.
+  // Il cursore non morde mai sul Free perche' la sua opzione minima
+  // (DAILY_CAP_OPTIONS, lib/constants.ts) e' >= al tetto di piano:
+  // dailyCount <= totalCount <= 10 <= dailyMax. E' cio' che permette di non
+  // gatare il cursore sul piano (docs/PAYMENTS.md § I piani, "Limite
+  // giornaliero": usePlan() degrada a free se il profilo non si carica).
+  // Per il Free il numero mostrato DEVE restare il totale, non un
+  // Math.min fra i due: e' la semantica del trigger.
   const dailyLimitReached = (dailyCount ?? 0) >= dailyMax;
   const totalMax = PLAN_LIMITS[plan].memories;
   // Il tetto totale del piano e' un AVVISO, non un blocco lato client: il
@@ -259,6 +272,12 @@ export default function AddScreen() {
   // `hydrate()` gira una volta sola. Un abbonato che apre l'app offline si
   // troverebbe murato fuori da Add fino al riavvio.
   const planLimitReached = totalMax !== null && !canAddMemory(totalCount ?? 0, plan);
+  // Il tetto che la riga del contatore LEGGE: lo stesso da cui prende il
+  // testo, cosi' il rosso e la scritta non possono divergere. Con
+  // l'invariante sopra e' equivalente al vecchio `daily || plan`, ma non
+  // dipende piu' da esso: se un giorno l'opzione minima del cursore
+  // scendesse sotto il tetto, un Free vedrebbe "7/10" in nero, non in rosso.
+  const overLimit = totalMax !== null ? planLimitReached : dailyLimitReached;
   // "Salva e aggiungi un altro": campi puliti, si resta qui.
   const clearFields = () => {
     setTerm("");
@@ -900,9 +919,9 @@ export default function AddScreen() {
         >
           <Text
             style={{
-              fontFamily: dailyLimitReached || planLimitReached ? FONT.medium : FONT.regular,
-              fontSize: dailyLimitReached || planLimitReached ? 12.5 : 12,
-              color: dailyLimitReached || planLimitReached ? colors.danger : colors.midGrey,
+              fontFamily: overLimit ? FONT.medium : FONT.regular,
+              fontSize: overLimit ? 12.5 : 12,
+              color: overLimit ? colors.danger : colors.midGrey,
               fontVariant: ["tabular-nums"],
               textAlign: "center",
               paddingHorizontal: 8,
