@@ -18,7 +18,7 @@ import Animated, {
   withTiming,
   type SharedValue,
 } from "react-native-reanimated";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Redirect, router, useLocalSearchParams } from "expo-router";
 
 import { Mascot } from "@/components/Mascot";
@@ -95,6 +95,7 @@ export default function TutorialScreen() {
   const tokens = useThemeTokens();
   const { colors } = tokens;
   const { width, height } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
   const reduced = useReducedMotion();
   const { replay } = useLocalSearchParams<{ replay?: string }>();
   const isReplay = replay === "1";
@@ -188,10 +189,14 @@ export default function TutorialScreen() {
   if (!hydrated) return null;
   if (!canShow) return <Redirect href="/(auth)/login" />;
 
-  // Quanto resta per l'immagine dopo barra, titolo, corpo, pallini e
-  // bottone: su un telefono alto la cornice e' generosa, su uno da 4,7
-  // pollici resta leggibile e il resto scorre (ogni pagina e' uno scroll).
-  const frameHeight = Math.max(250, Math.min(480, Math.round(height - 410)));
+  // Quanto resta per l'immagine, tolti gli inset veri e il cromo fisso:
+  // riga Salta (~26), pallini + bottone + padding (111), padding di pagina
+  // (24), titolo (58) e corpo su quattro righe (102) = ~320 pt. Su un
+  // telefono alto la cornice arriva a 480; su uno da 4,7 pollici e' una
+  // miniatura da ~330 pt (e' il testo a spiegare, non l'immagine da
+  // leggere) e il resto scorre, perche' ogni pagina e' uno scroll.
+  const usable = height - insets.top - insets.bottom;
+  const frameHeight = Math.max(250, Math.min(480, Math.round(usable - 320)));
   const heroSize = Math.min(200, Math.max(132, Math.round(height * 0.24)));
 
   return (

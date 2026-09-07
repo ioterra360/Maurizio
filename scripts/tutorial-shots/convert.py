@@ -2,8 +2,9 @@
 
 Ridimensiona a 720 px di larghezza (da 1236 @3x: sul telefono la cornice del
 tutorial e' larga ~55% dello schermo, quindi 720 px bastano anche a 3x) e
-salva in WebP: 48 immagini in ~3 MB invece dei ~12 MB dei PNG. Metro
-impacchetta solo i file richiesti da lib/tutorial-shots.ts.
+salva in WebP: 48 immagini in ~1,5 MB invece dei ~10 MB dei PNG (il test
+fissa il tetto a 4 MB). Metro impacchetta solo i file richiesti da
+lib/tutorial-shot-sources.ts.
 """
 from pathlib import Path
 
