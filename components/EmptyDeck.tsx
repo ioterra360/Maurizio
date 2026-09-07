@@ -89,13 +89,13 @@ export function EmptyDeck({ title }: Props) {
             >
               {t("review.freeTimeBody")}
             </Text>
-            <View style={{ alignSelf: "stretch", marginTop: 26, gap: 10 }}>
+            <View style={{ alignSelf: "stretch", marginTop: 28, gap: 16 }}>
               <PrimaryButton label={t("review.freeTimeAdd")} onPress={add} />
               <PrimaryButton label={t("review.freeTimePractice")} variant="tonal" onPress={practice} />
             </View>
           </>
         ) : null}
-        <View style={{ marginTop: 14 }}>
+        <View style={{ marginTop: 30 }}>
           <GhostButton variant="link" label={t("common.back")} onPress={() => router.back()} />
         </View>
       </View>
