@@ -82,10 +82,13 @@ Dimenticare **durante** un recupero non lo rende più aggressivo:
 - **"Riequilibra ora"** (Salute) = la stessa sessione limitata alle carte con
   la finestra scaduta (`overdueOnly`, `review_window_end < now()`).
 - **Mazzo vuoto** → `components/EmptyDeck.tsx`: "Hai del tempo libero?" con
-  "Aggiungi una nozione" (Add sulla cartella) ed "Esercitati".
-- **Esercitazione** (`practice`): tutte le parole della cartella, in coda o
-  no, cap 28; NESSUNA persistenza (niente `review_sessions`, niente
-  `review_items`, nessuna fase scritta). Il piano non cambia.
+  il solo "Aggiungi una nozione" (Add sulla cartella). Il tasto "Esercitati"
+  e' stato tolto l'8/9/2026 (Angelo).
+- **Esercitazione** (`practice`, review-store): tutte le parole della
+  cartella, in coda o no, cap 28; NESSUNA persistenza (niente
+  `review_sessions`, niente `review_items`, nessuna fase scritta). Il piano
+  non cambia. Dall'8/9/2026 nessuna schermata la avvia: resta solo come
+  modalita' della store.
 - **Numero di ripassi** = `memories.review_count`, incrementato dal trigger
   `memories_count_review` a ogni cambio di `last_reviewed_at`
   (migration 20260908090000). Esatto da quel giorno; il pregresso e'

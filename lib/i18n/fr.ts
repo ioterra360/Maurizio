@@ -817,10 +817,8 @@ export const fr: Record<keyof typeof it, string> = {
 
   // ---- review (mazzo vuoto + esercitazione, 2026-09-08) --------------------
   "review.freeTimeAdd": "Ajouter un souvenir",
-  "review.freeTimeBody": "Ajoute un nouveau souvenir au dossier ou entraîne-toi avec ceux que tu as déjà.",
-  "review.freeTimePractice": "S'entraîner",
+  "review.freeTimeBody": "Ajoute un nouveau souvenir au dossier.",
   "review.freeTimeTitle": "Tu as un peu de temps ?",
-  "review.practiceToast": "Entraînement : tes réponses ne changent pas le plan de révision.",
 
   // ---- reviewHeader --------------------------------------------------------
   "reviewHeader.exitA11y": "Quitter la révision",

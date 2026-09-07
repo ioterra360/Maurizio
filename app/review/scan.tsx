@@ -271,7 +271,7 @@ export default function ScanScreen() {
 
   // Empty deck — e.g. a folder-scoped session whose folder has no due
   // cards, or a stale deep link. Offer a way back instead of a blank screen.
-  // Mazzo vuoto: "Hai del tempo libero?" con aggiungi / esercitati (components/EmptyDeck).
+  // Mazzo vuoto: "Hai del tempo libero?" con Aggiungi una nozione (components/EmptyDeck).
   if (!card) return <EmptyDeck title={t("scan.emptyDeck")} />;
 
   return (

@@ -85,7 +85,7 @@ export default function ReinforcementScreen() {
     );
   }
 
-  // Mazzo vuoto: "Hai del tempo libero?" con aggiungi / esercitati (components/EmptyDeck).
+  // Mazzo vuoto: "Hai del tempo libero?" con Aggiungi una nozione (components/EmptyDeck).
   if (!card) return <EmptyDeck title={t("reinforcement.emptyDeck")} />;
 
   const advance = (response: "remembered" | "forgot") => {

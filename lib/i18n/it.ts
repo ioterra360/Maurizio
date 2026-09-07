@@ -817,10 +817,8 @@ export const it = {
 
   // ---- review (mazzo vuoto + esercitazione, 2026-09-08) --------------------
   "review.freeTimeAdd": "Aggiungi una nozione",
-  "review.freeTimeBody": "Aggiungi una nuova nozione alla cartella o esercitati con quelle esistenti.",
-  "review.freeTimePractice": "Esercitati",
+  "review.freeTimeBody": "Aggiungi una nuova nozione alla cartella.",
   "review.freeTimeTitle": "Hai del tempo libero?",
-  "review.practiceToast": "Esercitazione: le risposte non cambiano il piano dei ripassi.",
 
   // ---- reviewHeader --------------------------------------------------------
   "reviewHeader.exitA11y": "Esci dal ripasso",
