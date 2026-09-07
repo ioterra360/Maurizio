@@ -724,8 +724,6 @@ export const it = {
   "onboarding.scanBody": "Una rapida occhiata ai ricordi più vecchi: pochi secondi, tanta consapevolezza.",
   "onboarding.scanTitle": "Scan",
   "onboarding.startNow": "Inizia ora",
-  "onboarding.welcomeBody": "La tua memoria, ben curata. Tre ritmi di ripasso che lavorano insieme per te.",
-  "onboarding.welcomeTitle": "Benvenuto in Memika",
 
   // ---- paywall -------------------------------------------------------------
   "paywall.title": "Scegli il tuo piano",
@@ -981,6 +979,8 @@ export const it = {
   "recover.title": "Recupera il tuo account",
   "settings.trashHint": "Cartelle e ricordi eliminati, recuperabili per 24 ore",
   "settings.trashLabel": "Cestino",
+  "settings.tutorialHint": "La mascotte ti rispiega Memika in cinque passi.",
+  "settings.tutorialLabel": "Rivedi il tutorial",
   "trash.banner": "Tutto ciò che è qui viene eliminato definitivamente dopo 24 ore.",
   "trash.empty": "Il cestino è vuoto.",
   "trash.emptyBody": "Le cartelle e i ricordi che elimini restano qui 24 ore, pronti da ripristinare.",
@@ -1162,5 +1162,17 @@ export const it = {
   "add.photoPlusConfirm": "Scopri Plus",
   "add.photoPlusCancel": "Non ora",
   "memory.photoA11y": "Foto del ricordo",
+
+  // ---- tutorial -----------------------------------------------------------
+  "tutorial.welcomeTitle": "Ciao, sono Memika",
+  "tutorial.welcomeBody": "Non ti spingo a studiare di più. Veglio su quello che hai già imparato e torno solo quando serve.",
+  "tutorial.foldersTitle": "Una cartella per tema",
+  "tutorial.foldersBody": "Scegli una lingua, una materia o un interesse. Io preparo la cartella, tu ci salvi termine, significato e frase d'esempio.",
+  "tutorial.reviewTitle": "Tu ricordi, io tengo il tempo",
+  "tutorial.reviewBody": "Il primo ripasso arriva dopo 20 ore. Se il ricordo regge, lo sposto più avanti. Se inciampa, lo riporto vicino.",
+  "tutorial.healthTitle": "Vedi cosa sta sbiadendo",
+  "tutorial.healthBody": "Ogni ricordo può essere stabile, in dissolvenza o archiviato. Io ti mostro dove serve una mano, senza punteggi.",
+  "tutorial.remindersTitle": "Ti avviso quando è ora",
+  "tutorial.remindersBody": "Un promemoria al giorno, all'ora che scegli. Te lo chiedo al primo ricordo salvato. Poi lo cambi dalle Impostazioni.",
 
 } as const;

@@ -1,5 +1,5 @@
-import { useEffect } from "react";
-import { Tabs, router } from "expo-router";
+import { useEffect, useRef } from "react";
+import { Tabs, router, useRootNavigationState } from "expo-router";
 import { StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { BlurView } from "expo-blur";
@@ -11,6 +11,7 @@ import { reconcilePhotos } from "@/lib/photos";
 import { useAuthStore } from "@/lib/auth-store";
 import { reportError } from "@/lib/report-error";
 import { useFolderOrderStore } from "@/lib/folder-order-store";
+import { useTutorialStore } from "@/lib/tutorial-store";
 import { useFolderSortStore } from "@/lib/folder-sort-store";
 import { useT } from "@/lib/i18n";
 import { useColors } from "@/theme/tokens";
@@ -54,6 +55,27 @@ export default function AppLayout() {
       cancelled = true;
     };
   }, [userId]);
+
+  // Tutorial di benvenuto: una volta per telefono, DOPO il login (Angelo,
+  // 7/9/2026). Chi arriva dalla registrazione lo sta gia' vedendo
+  // (pendingOnboarding, spinto da signup.tsx): qui si copre chi entra su un
+  // telefono nuovo, o chi c'era gia' e riceve l'aggiornamento. Lo store e'
+  // idratato nel root layout prima di questo mount; il ref evita un secondo
+  // push se una dipendenza cambia mentre il tutorial e' aperto. Alla fine
+  // il tutorial fa router.back() e Oggi e' qui sotto.
+  const tutorialHydrated = useTutorialStore((s) => s.hydrated);
+  const tutorialSeen = useTutorialStore((s) => s.seen);
+  const pendingOnboarding = useAuthStore((s) => s.pendingOnboarding);
+  const tutorialPushed = useRef(false);
+  // Stessa guardia del root layout: mai navigare prima che il navigatore
+  // abbia una chiave.
+  const navReady = Boolean(useRootNavigationState()?.key);
+  useEffect(() => {
+    if (!navReady || !userId || !tutorialHydrated || tutorialSeen || pendingOnboarding) return;
+    if (tutorialPushed.current) return;
+    tutorialPushed.current = true;
+    router.push("/tutorial" as never);
+  }, [navReady, userId, tutorialHydrated, tutorialSeen, pendingOnboarding]);
 
   // Promemoria giornaliero: riallineato al profilo a ogni avvio/login
   // (spec F3). Le notifiche per singolo ricordo NON si toccano qui: si

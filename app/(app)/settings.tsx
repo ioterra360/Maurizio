@@ -496,6 +496,15 @@ export default function SettingsScreen() {
               router.push("/trash" as never);
             }}
           />
+          <SettingsRow
+            label={tr("settings.tutorialLabel")}
+            hint={tr("settings.tutorialHint")}
+            value={tr("settings.open")}
+            onPress={() => {
+              tap();
+              router.push("/tutorial?replay=1" as never);
+            }}
+          />
           <SettingsRow label={tr("settings.version")} value={APP_VERSION_LABEL} />
           {/* Identità del bundle JS: l'unico modo per un tester (o per noi)
               di distinguere "l'OTA non è arrivata" da "è arrivata e la

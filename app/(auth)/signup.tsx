@@ -109,7 +109,9 @@ export default function SignupScreen() {
         setError(t("signup.confirmEmailSent"));
         return;
       }
-      router.replace("/(auth)/onboarding" as never);
+      // Il tutorial vive nello stack root (app/tutorial.tsx): alla fine
+      // azzera il flag e manda a /choose-topic, come faceva il carosello.
+      router.replace("/tutorial" as never);
     } catch (e) {
       useAuthStore.getState().setPendingOnboarding(false);
       setError(authErrorMessage(e));

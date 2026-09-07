@@ -13,10 +13,11 @@ app/
 ├── choose-topic.tsx             Scegli il tuo argomento — crea l'UNICA cartella (root-level, vedi sotto)
 ├── folder-settings.tsx          Impostazioni cartella (`?kind=`) — push root-level sopra i tab
 ├── paywall.tsx                  Piani Free/Plus/Pro — root-level (foglio dal basso), fuori dai tab
+├── tutorial.tsx                 Tutorial di benvenuto (5 passi, saltabile): root-level, dopo il login (vedi sotto)
 │
 ├── (auth)/
 │   ├── _layout.tsx              Redirects out if user already signed in
-│   ├── login.tsx · signup.tsx · forgot-password.tsx · onboarding.tsx
+│   ├── login.tsx · signup.tsx · forgot-password.tsx
 │   └── reset-password.tsx       "Nuova password" — landing di memika://reset-password#… (vedi Deep links)
 │
 ├── (app)/
@@ -45,6 +46,7 @@ app/
 | `/choose-topic` | `app/choose-topic.tsx` | Signed-in users con 0 cartelle (≥1 → redirect a Today) |
 | `/folder-settings?kind=` | `app/folder-settings.tsx` | Signed-in users |
 | `/paywall` | `app/paywall.tsx` | Signed-in users — da Impostazioni, da `/folder/[id]` o da un limite di piano |
+| `/tutorial` | `app/tutorial.tsx` | Signed-in users: dopo la registrazione, una volta per telefono al primo accesso, e da Impostazioni (`?replay=1`) |
 | `/(auth)/login` | `app/(auth)/login.tsx` | Only when signed out |
 | `/(auth)/reset-password` | `app/(auth)/reset-password.tsx` | Chi apre il link di recovery (gate: `pendingPasswordReset`) |
 | `/auth-callback` | `app/auth-callback.tsx` | Chi apre un link email di conferma (root-level, con o senza sessione) |
@@ -60,7 +62,13 @@ app/
 
 ## Onboarding → one folder
 
-`signup` → `/(auth)/onboarding` (carousel) → `/choose-topic` → `/(app)/today`.
+`signup` → `/tutorial` (5 passi con la mascotte, saltabile) → `/choose-topic` → `/(app)/today`.
+Il tutorial vive nello stack ROOT per la stessa ragione di `choose-topic` (sotto).
+Chi entra su un telefono nuovo lo vede UNA volta sopra Today, spinto da
+`app/(app)/_layout.tsx` (flag per dispositivo `memika.tutorial.v1`,
+`lib/tutorial-store.ts`); da Impostazioni si rivede con `?replay=1`. In
+entrambi i casi alla fine si torna indietro (`router.back()`), mai un
+`replace` verso `(app)`.
 `choose-topic` lives in the ROOT stack, not in `(auth)`: the `(auth)` gate
 redirects any signed-in user to Today, but the same screen must also be
 reachable from `(app)` surfaces. Add redirects there when the user owns zero

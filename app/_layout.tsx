@@ -33,6 +33,7 @@ import { usePlanSync } from "@/lib/use-plan";
 import { useLocaleStore, useT } from "@/lib/i18n";
 import { useThemeStore, useColors } from "@/theme/theme-store";
 import { useNotificationPrefsStore } from "@/lib/notification-prefs-store";
+import { useTutorialStore } from "@/lib/tutorial-store";
 import { parseDevSignOutToken } from "@/lib/auth-links";
 import { SUPPORT_EMAIL } from "@/lib/constants";
 import { reportError } from "@/lib/report-error";
@@ -263,6 +264,7 @@ function RootLayout() {
         useLocaleStore.getState().hydrate(),
         useThemeStore.getState().hydrate(),
         useNotificationPrefsStore.getState().hydrate(),
+        useTutorialStore.getState().hydrate(),
       ]);
       hydrate();
     })();

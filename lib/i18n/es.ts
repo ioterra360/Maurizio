@@ -724,8 +724,6 @@ export const es: Record<keyof typeof it, string> = {
   "onboarding.scanBody": "Un vistazo rápido a los recuerdos más antiguos: unos segundos para saber en qué punto estás.",
   "onboarding.scanTitle": "Scan",
   "onboarding.startNow": "Empezar ahora",
-  "onboarding.welcomeBody": "Tu memoria, bien cuidada. Tres ritmos de repaso que trabajan juntos para ti.",
-  "onboarding.welcomeTitle": "Te damos la bienvenida a Memika",
 
   // ---- paywall -------------------------------------------------------------
   "paywall.title": "Elige tu plan",
@@ -981,6 +979,8 @@ export const es: Record<keyof typeof it, string> = {
   "recover.title": "Recupera tu cuenta",
   "settings.trashHint": "Carpetas y recuerdos eliminados, recuperables durante 24 horas",
   "settings.trashLabel": "Papelera",
+  "settings.tutorialHint": "La mascota te explica Memika otra vez en cinco pasos.",
+  "settings.tutorialLabel": "Volver a ver el tutorial",
   "trash.banner": "Todo lo que está aquí se elimina definitivamente después de 24 horas.",
   "trash.empty": "La papelera está vacía.",
   "trash.emptyBody": "Las carpetas y recuerdos que eliminas se quedan aquí 24 horas, listos para restaurar.",
@@ -1162,5 +1162,17 @@ export const es: Record<keyof typeof it, string> = {
   "add.photoPlusConfirm": "Descubrir Plus",
   "add.photoPlusCancel": "Ahora no",
   "memory.photoA11y": "Foto del recuerdo",
+
+  // ---- tutorial -----------------------------------------------------------
+  "tutorial.welcomeTitle": "Hola, soy Memika",
+  "tutorial.welcomeBody": "No te empujo a estudiar más. Cuido lo que ya has aprendido y vuelvo solo cuando hace falta.",
+  "tutorial.foldersTitle": "Una carpeta por tema",
+  "tutorial.foldersBody": "Elige un idioma, una materia o un interés. Yo preparo la carpeta, tú guardas el término, el significado y la frase de ejemplo.",
+  "tutorial.reviewTitle": "Tú recuerdas, yo llevo el tiempo",
+  "tutorial.reviewBody": "El primer repaso llega después de 20 horas. Si el recuerdo se sostiene, lo llevo más lejos. Si falla, lo acerco.",
+  "tutorial.healthTitle": "Ve qué se desvanece",
+  "tutorial.healthBody": "Cada recuerdo puede estar estable, desvaneciéndose o archivado. Te muestro dónde hace falta una mano, sin puntuaciones.",
+  "tutorial.remindersTitle": "Te aviso cuando toca",
+  "tutorial.remindersBody": "Un recordatorio al día, a la hora que elijas. Te lo pido al guardar tu primer recuerdo. Luego lo cambias en Ajustes.",
 
 };

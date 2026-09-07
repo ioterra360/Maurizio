@@ -724,8 +724,6 @@ export const fr: Record<keyof typeof it, string> = {
   "onboarding.scanBody": "Un coup d'œil rapide aux souvenirs les plus anciens : quelques secondes pour savoir où tu en es.",
   "onboarding.scanTitle": "Scan",
   "onboarding.startNow": "Commencer maintenant",
-  "onboarding.welcomeBody": "Ta mémoire, bien entretenue. Trois rythmes de révision qui travaillent ensemble pour toi.",
-  "onboarding.welcomeTitle": "Bienvenue sur Memika",
 
   // ---- paywall -------------------------------------------------------------
   "paywall.title": "Choisis ton plan",
@@ -981,6 +979,8 @@ export const fr: Record<keyof typeof it, string> = {
   "recover.title": "Récupère ton compte",
   "settings.trashHint": "Dossiers et souvenirs supprimés, récupérables pendant 24 heures",
   "settings.trashLabel": "Corbeille",
+  "settings.tutorialHint": "La mascotte te réexplique Memika en cinq étapes.",
+  "settings.tutorialLabel": "Revoir le tutoriel",
   "trash.banner": "Tout ce qui se trouve ici est supprimé définitivement après 24 heures.",
   "trash.empty": "La corbeille est vide.",
   "trash.emptyBody": "Les dossiers et souvenirs supprimés restent ici 24 heures, prêts à être restaurés.",
@@ -1162,5 +1162,17 @@ export const fr: Record<keyof typeof it, string> = {
   "add.photoPlusConfirm": "Découvrir Plus",
   "add.photoPlusCancel": "Pas maintenant",
   "memory.photoA11y": "Photo du souvenir",
+
+  // ---- tutorial -----------------------------------------------------------
+  "tutorial.welcomeTitle": "Salut, moi c'est Memika",
+  "tutorial.welcomeBody": "Je ne te pousse pas à étudier plus. Je veille sur ce que tu as déjà appris et je reviens seulement quand il faut.",
+  "tutorial.foldersTitle": "Un dossier par thème",
+  "tutorial.foldersBody": "Choisis une langue, une matière ou un centre d'intérêt. Je prépare le dossier, tu y ranges le terme, le sens et la phrase d'exemple.",
+  "tutorial.reviewTitle": "Tu retiens, je tiens le tempo",
+  "tutorial.reviewBody": "La première révision arrive après 20 heures. Si le souvenir tient, je l'éloigne. S'il vacille, je le rapproche.",
+  "tutorial.healthTitle": "Vois ce qui s'estompe",
+  "tutorial.healthBody": "Chaque souvenir peut être stable, en train de s'estomper ou archivé. Je te montre où un coup de main peut aider, sans scores.",
+  "tutorial.remindersTitle": "Je te préviens à temps",
+  "tutorial.remindersBody": "Un rappel par jour, à l'heure que tu choisis. Je te le demande au premier souvenir enregistré. Ensuite, tu le changes dans les Réglages.",
 
 };

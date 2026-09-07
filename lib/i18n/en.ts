@@ -724,8 +724,6 @@ export const en: Record<keyof typeof it, string> = {
   "onboarding.scanBody": "A quick look at your oldest memories: a few seconds, a lot of awareness.",
   "onboarding.scanTitle": "Scan",
   "onboarding.startNow": "Start now",
-  "onboarding.welcomeBody": "Your memory, well cared for. Three review rhythms that work together for you.",
-  "onboarding.welcomeTitle": "Welcome to Memika",
 
   // ---- paywall -------------------------------------------------------------
   "paywall.title": "Choose your plan",
@@ -981,6 +979,8 @@ export const en: Record<keyof typeof it, string> = {
   "recover.title": "Recover your account",
   "settings.trashHint": "Deleted folders and memories, recoverable for 24 hours",
   "settings.trashLabel": "Trash",
+  "settings.tutorialHint": "The mascot walks you through Memika again in five steps.",
+  "settings.tutorialLabel": "Review the tutorial",
   "trash.banner": "Everything here is permanently deleted after 24 hours.",
   "trash.empty": "The trash is empty.",
   "trash.emptyBody": "Folders and memories you delete stay here for 24 hours, ready to restore.",
@@ -1162,5 +1162,17 @@ export const en: Record<keyof typeof it, string> = {
   "add.photoPlusConfirm": "Discover Plus",
   "add.photoPlusCancel": "Not now",
   "memory.photoA11y": "Memory photo",
+
+  // ---- tutorial -----------------------------------------------------------
+  "tutorial.welcomeTitle": "Hi, I'm Memika",
+  "tutorial.welcomeBody": "I won't push you to study more. I'll watch over what you've already learned and come back only when it's needed.",
+  "tutorial.foldersTitle": "One folder per topic",
+  "tutorial.foldersBody": "Choose a language, a subject or an interest. I set up the folder, you save the term, the meaning and an example sentence.",
+  "tutorial.reviewTitle": "You remember, I keep time",
+  "tutorial.reviewBody": "The first review comes after 20 hours. If the memory holds, I move it further out. If it slips, I bring it closer.",
+  "tutorial.healthTitle": "See what's fading",
+  "tutorial.healthBody": "Each memory can be stable, fading or archived. I show you where a hand is needed, without scores.",
+  "tutorial.remindersTitle": "I'll tell you when it's time",
+  "tutorial.remindersBody": "One reminder a day, at the time you choose. I ask after your first saved memory. You can change it later in Settings.",
 
 };
