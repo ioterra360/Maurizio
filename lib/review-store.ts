@@ -7,6 +7,7 @@ import {
   completeReviewSession,
   fetchDueMemoriesByLayer,
   fetchFolders,
+  fetchMemoriesForFolder,
   recordReviewItem,
   startReviewSession,
 } from "./api";
@@ -46,6 +47,8 @@ export type ReviewCard = {
   srs?: SrsState;
   /** Stato di fase della scala di Maurizio. Le carte demo lo omettono. */
   phase?: PhaseState;
+  /** ISO del salvataggio (T0): la seconda tappa della scala si ancora qui. Le carte demo lo omettono. */
+  createdAt?: string;
 };
 
 /**
@@ -241,6 +244,16 @@ type ReviewState = {
   layerCaps: LayerCounts | null;
   /** Tetto items complessivo della sessione (budget tempo). */
   budgetCap: number | null;
+  /** Solo carte con finestra scaduta: la sessione mirata di "Riequilibra ora". */
+  overdueOnly: boolean;
+  /** Tutta la coda della cartella su una schermata sola, senza filtro di fase. */
+  allPhases: boolean;
+  /**
+   * Esercitazione: tutte le parole della cartella, in coda o no, e NESSUNA
+   * persistenza (niente sessione, niente review_items, niente fase). Il
+   * piano dei ripassi non cambia.
+   */
+  practice: boolean;
   /** Esiti per carta della sessione corrente — il recap li legge. */
   results: RecapEntry[];
   index: number;
@@ -280,6 +293,9 @@ type ReviewState = {
       folderId?: string;
       budgetCap?: number;
       layerCaps?: LayerCounts;
+      overdueOnly?: boolean;
+      allPhases?: boolean;
+      practice?: boolean;
     },
   ) => void;
   recordAndAdvance: (
@@ -401,11 +417,21 @@ async function loadDeckFor(
     const targets = s.folderId
       ? [s.folderId]
       : folders.filter((f) => !f.paused).map((f) => f.id);
-    const chunks = await Promise.all(
-      targets.map((fid) =>
-        fetchDueMemoriesByLayer(userId, layer, { folderId: fid, limit: cap }),
-      ),
-    );
+    // Esercitazione: tutte le parole della cartella, in coda o no.
+    const chunks = s.practice
+      ? await Promise.all(
+          targets.map((fid) => fetchMemoriesForFolder(fid).then((ms) => ms.slice(0, cap))),
+        )
+      : await Promise.all(
+          targets.map((fid) =>
+            fetchDueMemoriesByLayer(userId, layer, {
+              folderId: fid,
+              limit: cap,
+              overdueOnly: s.overdueOnly,
+              allPhases: s.allPhases,
+            }),
+          ),
+        );
     if (myId !== deckLoadSeq) return;
     const priorityById = new Map(folders.map((f) => [f.id, f.priority]));
     const memories = allocateByFolderPriority(chunks.flat(), priorityById, cap);
@@ -554,6 +580,9 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
   deckError: false,
   layerCaps: null,
   budgetCap: null,
+  overdueOnly: false,
+  allPhases: false,
+  practice: false,
   results: [],
   index: 0,
   totals: EMPTY_COUNTS,
@@ -584,6 +613,9 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
       // Il piano fluido esegue lo snapshot mostrato su Oggi — niente refetch
       // interno che una sessione più vecchia potrebbe sovrascrivere.
       layerCaps: opts.layerCaps ?? null,
+      overdueOnly: opts.overdueOnly ?? false,
+      allPhases: opts.allPhases ?? false,
+      practice: opts.practice ?? false,
       deck: null,
       deckLoading: !isDemoMode,
       deckError: false,
@@ -596,7 +628,12 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
       pendingItems: [],
       pendingSessionComplete: null,
     });
-    openSessionFor(layer, set, get);
+    if (opts.practice) {
+      // Nessuna riga in review_sessions: l'esercitazione non e' un ripasso.
+      currentSessionPromise = Promise.resolve(null);
+    } else {
+      openSessionFor(layer, set, get);
+    }
     void loadDeckFor(layer, set, get);
   },
 
@@ -685,7 +722,11 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
     // Le carte demo non hanno una fase persistita: firstReview() dà loro uno
     // stato sintetico coerente (il persist per gli id demo è comunque no-op).
     const prior = state.phaseByCard[card.id] ?? card.phase ?? firstReview();
-    const updated = applyReview(prior, response);
+    // T0 = created_at: la seconda tappa (p48h) si ancora al salvataggio,
+    // non al ripasso (tabella di Maurizio, features/srs/phases.ts).
+    const updated = applyReview(prior, response, new Date(), {
+      createdAt: card.createdAt ? new Date(card.createdAt) : undefined,
+    });
     const entry: RecapEntry = {
       id: card.id,
       term: card.front,
@@ -705,7 +746,8 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
     // advanceToLayer/reset possono ripulire lo store prima che la finestra
     // di correzione scada, e la scrittura deve restare attribuita alla
     // sessione in cui la risposta è avvenuta.
-    const canPersist = !!userId && isPersistableMemoryId(card.id);
+    // L'esercitazione non tocca il piano: nessuna scrittura.
+    const canPersist = !!userId && isPersistableMemoryId(card.id) && !state.practice;
     const targetSessionId = state.sessionId;
     const targetSessionPromise = currentSessionPromise;
     const persist = (
@@ -828,6 +870,9 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
       folderKind: null,
       folderId: null,
       budgetCap: null,
+      overdueOnly: false,
+      allPhases: false,
+      practice: false,
       layerCaps: null,
       deck: null,
       deckLoading: !isDemoMode,
@@ -874,6 +919,9 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
       deckError: false,
       layerCaps: null,
       budgetCap: null,
+      overdueOnly: false,
+      allPhases: false,
+      practice: false,
       results: [],
       index: 0,
       totals: EMPTY_COUNTS,

@@ -11,7 +11,7 @@
  */
 
 import type { FolderKind, MemoryState, ReviewResponse } from "./constants";
-import type { PhaseState, ReviewPhase } from "@/features/srs/phases";
+import { lifecycleOf, type PhaseState, type ReviewPhase } from "@/features/srs/phases";
 import { LEGACY_KIND_TO_TEMPLATE, type FolderCategory } from "./folder-taxonomy";
 import { PLANS, type Plan } from "./plan";
 
@@ -234,6 +234,8 @@ export type MemoryRow = {
   review_window_end?: string | null;
   recovery_from?: ReviewPhase | null;
   last_result?: string | null;
+  /** Ripassi fatti davvero, mantenuto dal trigger memories_count_review (migration 20260908090000). Opzionale per i client vecchi. */
+  review_count?: number | null;
   /** Nel cestino da questo istante; null = vivo (migration 20260830120000). */
   deleted_at?: string | null;
   created_at: string;
@@ -262,6 +264,8 @@ export type Memory = {
     repetitions: number;
   };
   lastReviewedAt: string | null;
+  /** Quante volte e' stato ripassato davvero (colonna review_count, trigger sul cambio di last_reviewed_at). */
+  reviewCount: number;
   nextReviewAt: string;
   /** Fase della scala di Maurizio. Decide il layer di ripasso. */
   phase: ReviewPhase;
@@ -288,7 +292,9 @@ export function mapMemory(row: MemoryRow): Memory {
     notes: row.notes ?? null,
     photoPath: row.photo_path ?? null,
     itemType: row.item_type,
-    state: row.state,
+    // "In dissolvenza" si calcola alla lettura (finestra scaduta adesso): la
+    // colonna puo' dire "fading" per un ricordo ripassato ieri, e viceversa.
+    state: lifecycleOf(row.state, row.review_window_end ?? null),
     srs: {
       intervalDays: row.srs_interval_days,
       easeFactor: typeof row.srs_ease_factor === "string"
@@ -297,6 +303,7 @@ export function mapMemory(row: MemoryRow): Memory {
       repetitions: row.srs_repetitions,
     },
     lastReviewedAt: row.last_reviewed_at,
+    reviewCount: row.review_count ?? 0,
     nextReviewAt: row.next_review_at,
     phase: row.review_phase ?? "p20h",
     reviewWindowEnd: row.review_window_end ?? null,

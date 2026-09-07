@@ -5,6 +5,7 @@ import { safeBottom } from "@/lib/safe-bottom";
 import { router, useFocusEffect } from "expo-router";
 
 import { DeckErrorScreen } from "@/components/DeckErrorScreen";
+import { EmptyDeck } from "@/components/EmptyDeck";
 import { MascotLoader } from "@/components/MascotLoader";
 import { MemoryPhoto } from "@/components/MemoryPhoto";
 import { ReviewHeader } from "@/components/ReviewHeader";
@@ -82,28 +83,8 @@ export default function FocusScreen() {
     );
   }
 
-  if (!card) {
-    return (
-      <SafeAreaView className="flex-1 bg-warm-white" edges={["top"]}>
-        <View style={{ flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 32 }}>
-          <Text
-            style={{
-              fontFamily: FONT.semibold,
-              fontSize: 18,
-              color: colors.navy,
-              lineHeight: 26,
-              textAlign: "center",
-            }}
-          >
-            {t("focus.emptyDeck")}
-          </Text>
-          <View style={{ alignSelf: "stretch", marginTop: 24 }}>
-            <PrimaryButton label={t("focus.goBack")} onPress={() => router.back()} />
-          </View>
-        </View>
-      </SafeAreaView>
-    );
-  }
+  // Mazzo vuoto: "Hai del tempo libero?" con aggiungi / esercitati (components/EmptyDeck).
+  if (!card) return <EmptyDeck title={t("focus.emptyDeck")} />;
 
   const advance = (response: "remembered" | "forgot") => {
     // Binary answer (Maurizio, 2026-08-29): success cue on a recall, error

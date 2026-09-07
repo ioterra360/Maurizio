@@ -51,7 +51,6 @@ import {
   cancelAccountDeletion,
   createFolder,
   deleteFolder,
-  fetchReviewCount,
   deleteMemory,
   fetchDueMemoriesByLayer,
   fetchFolders,
@@ -197,14 +196,6 @@ describe("restore", () => {
     expect(payload.category).toBe("lingue");
     expect(payload.template_id).toBe("es");
     expect(payload.emoji).toBe("🇪🇸");
-  });
-
-  it("fetchReviewCount counts review_items rows for the memory", async () => {
-    results = [{ count: 12 }];
-    const n = await fetchReviewCount("m1");
-    expect(n).toBe(12);
-    expect(log[0].table).toBe("review_items");
-    expect(call(0, "eq")).toContainEqual(["memory_id", "m1"]);
   });
 });
 

@@ -815,6 +815,13 @@ export const en: Record<keyof typeof it, string> = {
   // ---- retentionBar --------------------------------------------------------
   "retentionBar.a11y": "Memory health: {active}% stable, {fading}% fading, {archived}% archived",
 
+  // ---- review (mazzo vuoto + esercitazione, 2026-09-08) --------------------
+  "review.freeTimeAdd": "Add a memory",
+  "review.freeTimeBody": "Add a new memory to the folder or practise the ones you already have.",
+  "review.freeTimePractice": "Practise",
+  "review.freeTimeTitle": "Got some free time?",
+  "review.practiceToast": "Practice: your answers don't change the review plan.",
+
   // ---- reviewHeader --------------------------------------------------------
   "reviewHeader.exitA11y": "Leave the review",
 

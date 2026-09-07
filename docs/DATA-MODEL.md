@@ -111,6 +111,7 @@ when it's `<= now()`, the memory is due.
 | `srs_ease_factor` | numeric(3,2) | **LEGACY SM-2** — idem |
 | `srs_repetitions` | int | **LEGACY SM-2** — idem |
 | `last_reviewed_at` | timestamptz | Nullable until first review |
+| `review_count` | int | Ripassi fatti davvero. Default 0, incrementato dal trigger `memories_count_review` (BEFORE UPDATE OF last_reviewed_at, migration 20260908090000): conta ogni `applyPhaseUpdate`, anche se l'insert in review_items fallisse. Backfill = greatest(righe review_items, 1 se last_reviewed_at non e' null). Il client lo legge (`Memory.reviewCount`), non lo scrive. |
 | `next_review_at` | timestamptz | The queue key = inizio finestra. `createMemory` lo semina a **T0+20h** (`firstReview()`); il default DB `now()` non viene mai esercitato |
 | `created_at` / `updated_at` | timestamptz | |
 

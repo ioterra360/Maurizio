@@ -46,8 +46,10 @@ solo per item type dove un richiamo parziale ha senso — la colonna
 
 `applyReview(state, outcome, now)` ha tre rami:
 
-1. **Ricordato in orario** → avanza alla fase successiva, riancorata ad
-   adesso.
+1. **Ricordato in orario** → avanza alla fase successiva. L'ancoraggio
+   segue la tabella: `p48h` si conta da **T0** (`created_at`, passato ad
+   `applyReview` come `anchor.createdAt`), dalla terza tappa in poi da
+   adesso. Senza T0 (carte demo) si riancora ad adesso.
 2. **Ricordato ma oltre la finestra** (= la carta era in ritardo) → **ripete
    la stessa fase una volta** (screenshot 05), con finestra nuova da adesso.
    Non serve un contatore: il ripasso successivo, se puntuale, avanza da solo.
@@ -72,13 +74,36 @@ quanto era stabile il ricordo:
 Dimenticare **durante** un recupero non lo rende più aggressivo:
 `recovery_from` resta quello di partenza e si torna semplicemente a `r24h`.
 
+## Sessioni di cartella, "Riequilibra ora" ed esercitazione (2026-09-08)
+
+- **"Ripassa ora" di una cartella** = tutta la coda della cartella, di ogni
+  fase, sulla carta Focus (`allPhases`). Prima era un singolo livello Scan,
+  cioe' le sole fasi da tre mesi in su: una cartella nuova non partiva mai.
+- **"Riequilibra ora"** (Salute) = la stessa sessione limitata alle carte con
+  la finestra scaduta (`overdueOnly`, `review_window_end < now()`).
+- **Mazzo vuoto** → `components/EmptyDeck.tsx`: "Hai del tempo libero?" con
+  "Aggiungi una nozione" (Add sulla cartella) ed "Esercitati".
+- **Esercitazione** (`practice`): tutte le parole della cartella, in coda o
+  no, cap 28; NESSUNA persistenza (niente `review_sessions`, niente
+  `review_items`, nessuna fase scritta). Il piano non cambia.
+- **Numero di ripassi** = `memories.review_count`, incrementato dal trigger
+  `memories_count_review` a ogni cambio di `last_reviewed_at`
+  (migration 20260908090000). Esatto da quel giorno; il pregresso e'
+  `greatest(righe review_items, 1 se c'e' una data)`.
+
 ## Ritardo (fading) e archivio
 
 - **In ritardo** = `review_window_end < now()`. Non è una colonna di stato né
   un job schedulato: è un confronto calcolato alla lettura, sempre corretto
   per costruzione. `fetchOverdueCount` lo usa per la sezione "Da recuperare".
-- La colonna `state` viene materializzata a `fading` quando l'utente
-  **risponde** a una carta la cui finestra era scaduta.
+- **`state` non si materializza piu' a `fading`** (2026-09-08). Lo stato che
+  l'utente vede si calcola alla lettura in `mapMemory` con `lifecycleOf`
+  (`features/srs/phases.ts`): `archived` resta quello scritto, `fading` =
+  finestra scaduta ADESSO, altrimenti `active`. Dopo una risposta
+  `applyPhaseUpdate` scrive sempre `active`: la finestra e' nuova. Prima
+  Salute contava come "in dissolvenza" i ricordi ripassati ieri in ritardo e
+  ignorava quelli scaduti oggi; "Riequilibra ora" apriva la cartella e non
+  trovava nulla.
 - Le carte in ritardo passano **davanti** nella coda della loro cartella
   (`allocateByFolderPriority`), ma la priorità delle cartelle resta il primo
   criterio.

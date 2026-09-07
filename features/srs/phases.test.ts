@@ -9,6 +9,7 @@ import {
   layerForPhase,
   scheduleFor,
   type PhaseState,
+  lifecycleOf,
 } from "./phases";
 
 const T0 = new Date("2026-09-02T10:00:00.000Z");
@@ -224,5 +225,56 @@ describe("applyReview — dimenticato", () => {
     expect(next.phase).toBe("r24h");
     expect(next.recoveryFrom).toBe("done");
     expect(RECOVERY_ENTRY.done).toBe("r2m");
+  });
+});
+
+describe("applyReview — la seconda tappa si ancora a T0 (tabella di Maurizio)", () => {
+  const createdAt = at("2026-09-02T10:00:00.000Z");
+  const H = 60 * 60 * 1000;
+
+  it("p48h apre a T0 + 48h e scade a T0 + 72h, non 48h dopo il ripasso", () => {
+    // Primo ripasso puntuale, 22 ore dopo il salvataggio.
+    const now = at("2026-09-03T08:00:00.000Z");
+    const next = applyReview(firstReview(createdAt), "remembered", now, { createdAt });
+    expect(next.phase).toBe("p48h");
+    expect(next.nextReviewAt).toBe(new Date(createdAt.getTime() + 48 * H).toISOString());
+    expect(next.reviewWindowEnd).toBe(new Date(createdAt.getTime() + 72 * H).toISOString());
+  });
+
+  it("senza T0 si riancora al ripasso, come le tappe dalla terza in poi", () => {
+    const now = at("2026-09-03T08:00:00.000Z");
+    const next = applyReview(firstReview(createdAt), "remembered", now);
+    expect(next.nextReviewAt).toBe(new Date(now.getTime() + 48 * H).toISOString());
+  });
+
+  it("dalla terza tappa in poi T0 non conta: p7d parte dal ripasso", () => {
+    const now = at("2026-09-05T08:00:00.000Z");
+    const s = applyReview(firstReview(createdAt), "remembered", at("2026-09-03T08:00:00.000Z"), { createdAt });
+    const next = applyReview(s, "remembered", now, { createdAt });
+    expect(next.phase).toBe("p7d");
+    expect(next.nextReviewAt).toBe(new Date(now.getTime() + 7 * 24 * H).toISOString());
+  });
+
+  it("un T0 incoerente (T0 + 48h gia' passato) non manda la carta nel passato", () => {
+    const now = at("2026-09-10T08:00:00.000Z");
+    const late = { ...firstReview(createdAt), reviewWindowEnd: new Date(now.getTime() + H).toISOString() };
+    const next = applyReview(late, "remembered", now, { createdAt });
+    expect(next.phase).toBe("p48h");
+    expect(Date.parse(next.nextReviewAt)).toBeGreaterThan(now.getTime());
+  });
+});
+
+describe("lifecycleOf — in dissolvenza = finestra scaduta adesso", () => {
+  const now = at("2026-09-08T10:00:00.000Z");
+  it("attivo finche' la finestra e' aperta, in dissolvenza appena scade", () => {
+    expect(lifecycleOf("active", "2026-09-08T11:00:00.000Z", now)).toBe("active");
+    expect(lifecycleOf("active", "2026-09-08T09:00:00.000Z", now)).toBe("fading");
+  });
+  it("un fading scritto ieri con finestra nuova torna attivo; senza finestra e' attivo", () => {
+    expect(lifecycleOf("fading", "2026-09-09T10:00:00.000Z", now)).toBe("active");
+    expect(lifecycleOf("fading", null, now)).toBe("active");
+  });
+  it("archiviato resta archiviato", () => {
+    expect(lifecycleOf("archived", "2026-09-01T10:00:00.000Z", now)).toBe("archived");
   });
 });

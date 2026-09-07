@@ -182,15 +182,22 @@ export default function FolderDetailScreen() {
 
   const data = folder;
 
-  // Folder-scoped "Review now" is intentionally a single-layer Scan, not
-  // the full Scan → Reinforcement → Focus flow. Initialize the store
-  // before navigating so the Scan screen's flow-default fallback no-ops.
+  // "Ripassa ora" di una cartella: TUTTA la sua coda (ogni fase) su una
+  // sola schermata, la carta Focus. Prima era un singolo livello Scan, cioe'
+  // le sole fasi da tre mesi in su: per una cartella nuova, con tutto a 20
+  // e 48 ore, non partiva mai niente (Angelo, 8/9/2026). Lo store si
+  // inizializza prima di navigare.
   const startReview = () => {
     const legacyKind = (FOLDER_KINDS as readonly string[]).includes(data.kind)
       ? (data.kind as FolderKind)
       : undefined;
-    startSession("scan", "single", { folderKind: legacyKind, folderId: data.id, budgetCap: 28 });
-    router.push("/review/scan");
+    startSession("focus", "single", {
+      folderKind: legacyKind,
+      folderId: data.id,
+      budgetCap: 28,
+      allPhases: true,
+    });
+    router.push("/review/focus");
   };
   const addItem = () => {
     markAddOpenedIntentionally();

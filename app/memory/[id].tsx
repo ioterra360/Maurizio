@@ -21,7 +21,7 @@ import { PrimaryButton } from "@/components/PrimaryButton";
 import { SectionLabel } from "@/components/SectionLabel";
 import { Tappable } from "@/components/Tappable";
 import { TopBar } from "@/components/TopBar";
-import { deleteMemory, fetchMemoryById, fetchReviewCount, fetchSubfolders, updateMemoryNotes } from "@/lib/api";
+import { deleteMemory, fetchMemoryById, fetchSubfolders, updateMemoryNotes } from "@/lib/api";
 import { cancelFirstReview, scheduleFirstReview } from "@/lib/notifications";
 import { MoveSheet } from "@/components/MoveSheet";
 import { longDate, relativeReviewed } from "@/lib/format";
@@ -64,9 +64,6 @@ export default function MemoryDetailScreen() {
   };
 
   const [memory, setMemory] = useState<Memory | null>(null);
-  // Conteggio vero dei ripassi (righe review_items); null = non caricato →
-  // la riga si nasconde invece di mostrare un numero inventato.
-  const [reviewCount, setReviewCount] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [notes, setNotes] = useState("");
@@ -86,15 +83,8 @@ export default function MemoryDetailScreen() {
     setLoading(true);
     setError(false);
     try {
-      const [m, count] = await Promise.all([
-        fetchMemoryById(id),
-        fetchReviewCount(id).catch((e) => {
-          reportError("memory-detail/review-count", e);
-          return null;
-        }),
-      ]);
+      const m = await fetchMemoryById(id);
       setMemory(m);
-      setReviewCount(count);
       setNotes(m?.notes ?? "");
       if (m?.subfolderId) {
         const subs = await fetchSubfolders(m.folderId).catch(() => []);
@@ -378,9 +368,9 @@ export default function MemoryDetailScreen() {
             >
               <MetaRow label={t("memory.addedOn")} value={longDate(memory.createdAt)} />
               {sectionName ? <MetaRow label={t("memory.section")} value={sectionName} /> : null}
-              {reviewCount !== null ? (
-                <MetaRow label={t("memory.reviewCount")} value={String(reviewCount)} />
-              ) : null}
+              {/* memories.review_count, mantenuto dal trigger sul cambio di
+                  last_reviewed_at: esatto dall'8/9/2026, pregresso stimato. */}
+              <MetaRow label={t("memory.reviewCount")} value={String(memory.reviewCount)} />
               <MetaRow
                 label={t("memory.lastReview")}
                 value={

@@ -815,6 +815,13 @@ export const es: Record<keyof typeof it, string> = {
   // ---- retentionBar --------------------------------------------------------
   "retentionBar.a11y": "Salud de la memoria: {active}% estables, {fading}% desvaneciéndose, {archived}% archivados",
 
+  // ---- review (mazzo vuoto + esercitazione, 2026-09-08) --------------------
+  "review.freeTimeAdd": "Añadir un recuerdo",
+  "review.freeTimeBody": "Añade un nuevo recuerdo a la carpeta o practica con los que ya tienes.",
+  "review.freeTimePractice": "Practicar",
+  "review.freeTimeTitle": "¿Tienes tiempo libre?",
+  "review.practiceToast": "Práctica: tus respuestas no cambian el plan de repasos.",
+
   // ---- reviewHeader --------------------------------------------------------
   "reviewHeader.exitA11y": "Salir del repaso",
 

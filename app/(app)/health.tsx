@@ -15,6 +15,7 @@ import { Mascot } from "@/components/Mascot";
 import { useAuthStore } from "@/lib/auth-store";
 import { useT } from "@/lib/i18n";
 import { useFoldersWithStats } from "@/lib/use-folders";
+import { useReviewStore } from "@/lib/review-store";
 import { applyFolderOrder, useFolderOrderStore } from "@/lib/folder-order-store";
 import { fetchDueCounts } from "@/lib/api";
 import { reportError } from "@/lib/report-error";
@@ -53,6 +54,7 @@ export default function HealthScreen() {
 
   // Insight onesto: la cartella col maggior numero assoluto di ricordi in
   // dissolvenza. Nessuna → niente card.
+  const startSession = useReviewStore((s) => s.start);
   const worst = useMemo(() => {
     let best: { f: FolderWithStats; fadingCount: number } | null = null;
     for (const f of folders) {
@@ -268,9 +270,18 @@ export default function HealthScreen() {
                 {tp("health.insightFading", worst.fadingCount, { name: worst.f.name })}
               </Text>
               <Tappable
-                onPress={() =>
-                  router.push({ pathname: "/folder/[id]", params: { id: worst.f.id } })
-                }
+                onPress={() => {
+                  // Sessione mirata sui ricordi IN RITARDO di quella cartella
+                  // (finestra scaduta), tutte le fasi, sulla carta Focus.
+                  // Prima apriva la cartella e "non partiva nulla" (Angelo).
+                  startSession("focus", "single", {
+                    folderId: worst.f.id,
+                    budgetCap: 28,
+                    allPhases: true,
+                    overdueOnly: true,
+                  });
+                  router.push("/review/focus");
+                }}
                 accessibilityLabel={t("health.rebalanceNowA11y", { name: worst.f.name })}
                 containerStyle={{ marginTop: 6, alignSelf: "flex-end" }}
                 style={{ paddingVertical: 4 }}

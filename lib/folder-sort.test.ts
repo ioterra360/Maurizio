@@ -18,6 +18,7 @@ const mem = (over: Partial<Memory>): Memory => ({
   deletedAt: null,
   photoPath: null,
   lastReviewedAt: null,
+  reviewCount: 0,
   nextReviewAt: "2026-08-29T08:00:00.000Z",
   phase: "p20h",
   reviewWindowEnd: null,

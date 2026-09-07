@@ -769,6 +769,7 @@ export async function fetchFolderDetail(
       // reproduces the same label — otherwise demo rows would all show
       // "Never reviewed" once the adapter swaps to lastReviewedAt.
       lastReviewedAt: isoFromRelativeLabel(it.reviewed, now),
+      reviewCount: 0,
       nextReviewAt: now.toISOString(),
       phase: "p20h",
       reviewWindowEnd: null,
@@ -853,22 +854,6 @@ export async function recordReviewItem(opts: {
 }
 
 /**
- * Quante volte questo ricordo è stato ripassato davvero: righe di
- * review_items (una per risposta registrata). NON srs_repetitions, che è la
- * striscia di successi SM-2 e torna a 0 dopo un "non ricordo" (review
- * 2026-08-30). Demo: 0.
- */
-export async function fetchReviewCount(memoryId: string): Promise<number> {
-  if (isDemoMode) return 0;
-  const { count, error } = await supabase
-    .from("review_items")
-    .select("id", { count: "exact", head: true })
-    .eq("memory_id", memoryId);
-  if (error) throw error;
-  return count ?? 0;
-}
-
-/**
  * Close out a review session with the final counts. Demo no-ops.
  */
 export async function completeReviewSession(
@@ -896,7 +881,7 @@ export async function completeReviewSession(
  */
 export async function applyPhaseUpdate(
   memoryId: string,
-  next: PhaseState & { lifecycle: "active" | "fading" },
+  next: PhaseState,
   result: ReviewOutcome,
 ): Promise<void> {
   if (isDemoMode) return;
@@ -909,7 +894,13 @@ export async function applyPhaseUpdate(
       next_review_at: next.nextReviewAt,
       last_reviewed_at: next.lastReviewedAt,
       last_result: result,
-      state: next.lifecycle,
+      // Un ricordo appena ripassato ha una finestra NUOVA, quindi non e'
+      // in ritardo: "in dissolvenza" si calcola alla lettura dalla finestra
+      // (lifecycleOf), mai da come stava PRIMA della risposta. Scrivere qui
+      // il vecchio "fading" faceva contare a Salute i ricordi ripassati ieri
+      // e ignorare quelli scaduti oggi. review_count lo incrementa il
+      // trigger memories_count_review sul cambio di last_reviewed_at.
+      state: "active",
     })
     .eq("id", memoryId);
   if (error) throw error;
@@ -927,7 +918,14 @@ export async function applyPhaseUpdate(
 export async function fetchDueMemoriesByLayer(
   userId: string,
   layer: LayerKey,
-  opts: { folderId?: string; limit?: number } = {},
+  opts: {
+    folderId?: string;
+    limit?: number;
+    /** Solo le carte con la finestra gia' scaduta: la sessione mirata di "Riequilibra ora". */
+    overdueOnly?: boolean;
+    /** Tutte le fasi, non solo quelle del livello: la sessione di una cartella ripassa tutto cio' che e' in coda. */
+    allPhases?: boolean;
+  } = {},
 ): Promise<Memory[]> {
   if (isDemoMode) return [];
   const limit = opts.limit ?? 30;
@@ -951,7 +949,12 @@ export async function fetchDueMemoriesByLayer(
   // Il livello ora si affetta per FASE. I predicati restano mutuamente
   // esclusivi — nel flusso Scan → Reinforcement → Focus nessuna carta
   // compare due volte — perché ogni fase appartiene a un solo livello.
-  query = query.in("review_phase", PHASES_BY_LAYER[layer]);
+  // Una sessione di cartella (allPhases) invece prende tutta la coda della
+  // cartella su una schermata sola: con le sole fasi Scan un utente nuovo,
+  // che ha tutto a 20/48 ore, non trovava mai niente da ripassare.
+  if (!opts.allPhases) query = query.in("review_phase", PHASES_BY_LAYER[layer]);
+  // In ritardo = finestra scaduta, calcolato alla lettura (docs/SRS.md).
+  if (opts.overdueOnly) query = query.lt("review_window_end", nowIso);
 
   const { data, error } = await query
     .order("next_review_at")

@@ -137,5 +137,6 @@ export function toReviewCard(
     folderKind,
     srs: { ...m.srs, nextReviewAt: m.nextReviewAt, lastReviewedAt: m.lastReviewedAt },
     phase: toPhaseState(m),
+    createdAt: m.createdAt,
   };
 }

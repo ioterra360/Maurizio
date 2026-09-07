@@ -6,6 +6,7 @@ import { router, useFocusEffect } from "expo-router";
 import { Sparkles } from "lucide-react-native";
 
 import { DeckErrorScreen } from "@/components/DeckErrorScreen";
+import { EmptyDeck } from "@/components/EmptyDeck";
 import { MascotLoader } from "@/components/MascotLoader";
 import { MemoryPhoto } from "@/components/MemoryPhoto";
 import { ReviewHeader } from "@/components/ReviewHeader";
@@ -84,44 +85,8 @@ export default function ReinforcementScreen() {
     );
   }
 
-  if (!card) {
-    return (
-      <SafeAreaView className="flex-1 bg-warm-white" edges={["top"]}>
-        <View style={{ flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 32 }}>
-          <Text
-            style={{
-              fontFamily: FONT.semibold,
-              fontSize: 18,
-              color: colors.navy,
-              lineHeight: 26,
-              textAlign: "center",
-            }}
-          >
-            {t("reinforcement.emptyDeck")}
-          </Text>
-          <Tappable
-            onPress={() => router.back()}
-            accessibilityRole="button"
-            accessibilityLabel={t("reinforcement.goBack")}
-            pressedOpacity={0.88}
-            containerStyle={{ marginTop: 24 }}
-            style={{
-              height: 48,
-              paddingHorizontal: 28,
-              borderRadius: radii.pill,
-              alignItems: "center",
-              justifyContent: "center",
-              backgroundColor: colors.accent,
-            }}
-          >
-            <Text style={{ fontFamily: FONT.semibold, fontSize: 16, color: colors.onAccent }}>
-              {t("reinforcement.goBack")}
-            </Text>
-          </Tappable>
-        </View>
-      </SafeAreaView>
-    );
-  }
+  // Mazzo vuoto: "Hai del tempo libero?" con aggiungi / esercitati (components/EmptyDeck).
+  if (!card) return <EmptyDeck title={t("reinforcement.emptyDeck")} />;
 
   const advance = (response: "remembered" | "forgot") => {
     if (response === "forgot") error();

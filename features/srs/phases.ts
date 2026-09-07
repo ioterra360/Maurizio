@@ -127,6 +127,32 @@ export function firstReview(createdAt: Date = new Date()): PhaseState {
 export type ReviewOutcome = "remembered" | "forgot";
 
 /**
+ * Ancoraggi che applyReview non puo' dedurre dallo stato di fase. Le prime
+ * due tappe della scala si contano da T0 = created_at (tabella di Maurizio,
+ * spec F2): senza `createdAt` la seconda tappa si riancora al ripasso.
+ */
+export type ReviewAnchor = { createdAt?: Date };
+
+export type Lifecycle = "active" | "fading" | "archived";
+
+/**
+ * Lo stato che l'utente vede. "Archiviato" resta quello scritto; "in
+ * dissolvenza" e' la finestra scaduta ADESSO, calcolata alla lettura, non
+ * "l'ultima volta l'ho ripassato in ritardo" (screenshot 04: scaduta senza
+ * risposta → fading). Un ricordo ripassato ha sempre una finestra nuova,
+ * quindi torna attivo da solo.
+ */
+export function lifecycleOf(
+  stored: Lifecycle,
+  reviewWindowEnd: string | null,
+  now: Date = new Date(),
+): Lifecycle {
+  if (stored === "archived") return "archived";
+  if (reviewWindowEnd && Date.parse(reviewWindowEnd) < now.getTime()) return "fading";
+  return "active";
+}
+
+/**
  * Dove si rientra dopo il recupero a 24 ore, in base alla fase in cui si è
  * dimenticato (screenshot 03). Più stabile era il ricordo, più dolce il
  * rientro: chi dimentica a 20 ore riparte da 48 ore, chi dimentica a un
@@ -188,6 +214,7 @@ export function applyReview(
   state: PhaseState,
   outcome: ReviewOutcome,
   now: Date = new Date(),
+  anchor: ReviewAnchor = {},
 ): PhaseState & { lifecycle: "active" | "fading" } {
   const lifecycle = isOverdue(state, now) ? ("fading" as const) : ("active" as const);
   const lastReviewedAt = now.toISOString();
@@ -223,9 +250,19 @@ export function applyReview(
       ? RECOVERY_ENTRY[state.recoveryFrom ?? "p20h"]
       : PHASE_SPEC[state.phase].next;
 
+  // Le prime due tappe si ancorano a T0 (created_at), non al ripasso: p48h
+  // apre a T0 + 48h e scade a T0 + 72h. Siamo nel ramo "puntuale", quindi
+  // T0 + 48h e' ancora davanti a noi; se non lo fosse (T0 sconosciuto o
+  // incoerente) si riancora ad adesso, come le tappe dalla terza in poi.
+  const t0 = anchor.createdAt;
+  const anchorAt =
+    nextPhase === "p48h" && t0 && t0.getTime() + PHASE_SPEC.p48h.startMs >= now.getTime()
+      ? t0
+      : now;
+
   return {
     phase: nextPhase,
-    ...scheduleFor(nextPhase, now),
+    ...scheduleFor(nextPhase, anchorAt),
     recoveryFrom: RECOVERY_PHASES.has(nextPhase) ? state.recoveryFrom : null,
     lastReviewedAt,
     lifecycle,
