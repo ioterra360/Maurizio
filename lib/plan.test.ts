@@ -15,10 +15,14 @@ import {
   canUsePhotos,
   effectivePlan,
   memoriesLeft,
+  periodForProductId,
+  periodFromIso,
+  pickPlanPackage,
   planForProductId,
   planFromEntitlements,
   planFromRcEntitlements,
   planLimitFromCode,
+  yearlySavingsPercent,
 } from "./plan";
 
 const NOW = new Date("2026-09-03T10:00:00.000Z");
@@ -259,9 +263,9 @@ describe("planFromRcEntitlements — la risposta REST di RevenueCat", () => {
 });
 
 describe("planForProductId", () => {
-  // In questo ciclo l'offerta `default` vende SOLO i due mensili (Task 10):
-  // gli id annuali sono riservati e la mappa li riconosce gia', cosi'
-  // aggiungerli all'offerta non richiedera' una modifica di codice.
+  // L'offerta `default` porta i quattro pacchetti, mensili e annuali
+  // (selettore Mensile/Annuale nel paywall, 7/9/2026): la mappa deve
+  // riconoscerli tutti, e su Google Play nella forma `prodotto:baseplan`.
   it("riconosce i quattro identificativi, mensili e annuali", () => {
     expect(planForProductId(PRODUCT_IDS.plus.monthly)).toBe("plus");
     expect(planForProductId(PRODUCT_IDS.plus.yearly)).toBe("plus");
@@ -275,6 +279,106 @@ describe("planForProductId", () => {
 
   it("non inventa piani per prodotti sconosciuti", () => {
     expect(planForProductId("qualcosa_altro")).toBeNull();
+  });
+});
+
+describe("periodForProductId — il periodo dall'id, che e' nostro", () => {
+  // Gli id dei prodotti li scegliamo noi e sono identici nei due store: sono
+  // la fonte piu' stabile del periodo, prima ancora della durata ISO che lo
+  // store dichiara (e che Amazon, per dire, non dichiara affatto).
+  it("riconosce i due mensili e i due annuali", () => {
+    expect(periodForProductId(PRODUCT_IDS.plus.monthly)).toBe("monthly");
+    expect(periodForProductId(PRODUCT_IDS.pro.monthly)).toBe("monthly");
+    expect(periodForProductId(PRODUCT_IDS.plus.yearly)).toBe("yearly");
+    expect(periodForProductId(PRODUCT_IDS.pro.yearly)).toBe("yearly");
+  });
+
+  it("regge la forma 'prodotto:baseplan' di Google Play", () => {
+    expect(periodForProductId("memika_plus_yearly:yearly")).toBe("yearly");
+    expect(periodForProductId("memika_pro_monthly:monthly")).toBe("monthly");
+  });
+
+  it("un id ignoto vale null, non un periodo inventato", () => {
+    expect(periodForProductId("qualcosa_altro")).toBeNull();
+    expect(periodForProductId("")).toBeNull();
+  });
+});
+
+describe("periodFromIso — la durata ISO 8601 che lo store dichiara", () => {
+  it("P1M e' mensile, P1Y e' annuale", () => {
+    expect(periodFromIso("P1M")).toBe("monthly");
+    expect(periodFromIso("P1Y")).toBe("yearly");
+  });
+
+  it("qualunque altra durata, o nessuna, e' other", () => {
+    // Trimestrale, semestrale e settimanale non hanno una riga di prezzo
+    // nel paywall: il chiamante li scarta, qui si limitano a non mentire.
+    expect(periodFromIso("P3M")).toBe("other");
+    expect(periodFromIso("P6M")).toBe("other");
+    expect(periodFromIso("P1W")).toBe("other");
+    expect(periodFromIso("")).toBe("other");
+    expect(periodFromIso(null)).toBe("other");
+    expect(periodFromIso(undefined)).toBe("other");
+  });
+});
+
+describe("yearlySavingsPercent — quanto si risparmia con l'annuale", () => {
+  const eur = (price: number) => ({ price, currencyCode: "EUR" });
+
+  it("con i prezzi di Maurizio: Plus 37%, Pro 40%", () => {
+    // 3,99 x 12 = 47,88 contro 29,99; 6,99 x 12 = 83,88 contro 49,99.
+    expect(yearlySavingsPercent(eur(3.99), eur(29.99))).toBe(37);
+    expect(yearlySavingsPercent(eur(6.99), eur(49.99))).toBe(40);
+  });
+
+  it("null quando manca uno dei due pacchetti", () => {
+    expect(yearlySavingsPercent(undefined, eur(29.99))).toBeNull();
+    expect(yearlySavingsPercent(eur(3.99), undefined)).toBeNull();
+    expect(yearlySavingsPercent(undefined, undefined)).toBeNull();
+  });
+
+  it("null con valute diverse: non si confrontano numeri di due monete", () => {
+    expect(yearlySavingsPercent(eur(3.99), { price: 29.99, currencyCode: "USD" })).toBeNull();
+  });
+
+  it("null con un mensile a zero o negativo", () => {
+    expect(yearlySavingsPercent(eur(0), eur(29.99))).toBeNull();
+    expect(yearlySavingsPercent(eur(-1), eur(29.99))).toBeNull();
+  });
+
+  it("null quando l'annuale non conviene: nessuna pillola 'Risparmi lo 0%'", () => {
+    expect(yearlySavingsPercent(eur(2), eur(24))).toBeNull(); // esattamente dodici mensili
+    expect(yearlySavingsPercent(eur(2), eur(30))).toBeNull(); // piu' caro di dodici mensili
+  });
+});
+
+describe("pickPlanPackage — un solo posto decide cosa si mostra e cosa si compra", () => {
+  const list = [
+    { plan: "plus", period: "monthly", id: "plus-m" },
+    { plan: "plus", period: "yearly", id: "plus-y" },
+    { plan: "pro", period: "monthly", id: "pro-m" },
+  ] as const;
+
+  it("trova la coppia esatta piano + periodo", () => {
+    expect(pickPlanPackage(list, "plus", "yearly")?.id).toBe("plus-y");
+    expect(pickPlanPackage(list, "plus", "monthly")?.id).toBe("plus-m");
+  });
+
+  it("ripiega sull'altro periodo dello stesso piano", () => {
+    // Pro ha solo il mensile: con "Annuale" selezionato la scheda mostra e
+    // vende il mensile, invece di restare muta.
+    expect(pickPlanPackage(list, "pro", "yearly")?.id).toBe("pro-m");
+  });
+
+  it("null se il piano non ha pacchetti", () => {
+    expect(pickPlanPackage([], "plus", "monthly")).toBeNull();
+    expect(pickPlanPackage(list, "free", "monthly")).toBeNull();
+  });
+
+  it("mai un pacchetto di un altro piano", () => {
+    const onlyPlus = list.filter((p) => p.plan === "plus");
+    expect(pickPlanPackage(onlyPlus, "pro", "monthly")).toBeNull();
+    expect(pickPlanPackage(onlyPlus, "pro", "yearly")).toBeNull();
   });
 });
 

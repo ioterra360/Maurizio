@@ -107,23 +107,46 @@ deve essere identico in App Store Connect, Play Console e RevenueCat.
 | **Pro** | 6,99 € | 49,99 € | `memika_pro_monthly` · `memika_pro_yearly` |
 
 L'annuale costa quanto sette mesi e mezzo di Plus e sette di Pro: è lo sconto
-che l'utente vede, e va detto sulla scheda del paywall quando il selettore di
-periodicità esistera'.
+che l'utente vede, e la scheda del paywall lo dice con una pillola
+"Risparmi il 37%" / "Risparmi il 40%" (`yearlySavingsPercent()` in
+`lib/plan.ts`, calcolato sui prezzi veri restituiti dallo store, mai su
+numeri scritti nel codice).
 
-**Il paywall oggi non sa vendere l'annuale.** Ha un bottone per scheda e
-nessun selettore mensile/annuale, e `periodOf()` in `lib/purchases.ts`
-riconosce solo `P1M` e `P1Y`: se l'offerta corrente di RevenueCat portasse
-entrambi i pacchetti della stessa fascia, la scheda mostrerebbe il prezzo di
-uno solo. Due strade quando si creano i prodotti: crearli **tutti e quattro**
-(struttura permanente fatta bene una volta sola, in un solo gruppo di
-abbonamenti su Apple) ma tenere gli annuali **fuori dall'offerta corrente**
-finché il selettore non esiste; oppure crearne due e tornarci dopo, con il
-rischio di finire in un gruppo Apple diverso. La prima è preferibile.
+### Il paywall e il selettore Mensile/Annuale (7/9/2026)
 
-Attenzione a una durata diversa da mensile o annuale (trimestrale,
-semestrale): `periodOf()` la ignora, il pacchetto finisce comunque in
-`packages`, e la scheda resta **senza prezzo con il bottone acceso**. Non
-crearne.
+`app/paywall.tsx` ha un selettore a due segmenti sopra le schede, approvato
+da Angelo il 7/9/2026, che vale per tutte le schede insieme:
+
+- **Compare solo se l'offerta porta sia un mensile sia un annuale.** Con i
+  soli mensili la schermata è identica a quella di prima: nessun segmento
+  spento, nessuna funzionalità segnaposto (Apple 2.1). Finché lo store non
+  restituisce un prodotto, RevenueCat omette il pacchetto e il paywall resta
+  com'è oggi, senza toccare una riga.
+- **Annuale preselezionato** quando c'è (decisione Angelo): il risparmio si
+  legge subito, senza un tocco.
+- **Ogni scheda mostra e vende lo stesso pacchetto**, scelto da
+  `pickPlanPackage()` (`lib/plan.ts`): quello del periodo selezionato,
+  altrimenti l'altro periodo dello stesso piano, mai un pacchetto di un altro
+  piano. È l'invariante del piede legale ("si rinnova al prezzo indicato",
+  Apple 3.1.2): si compra ciò di cui si è letto il prezzo. Le righe "al
+  mese" / "all'anno" seguono il periodo del **pacchetto scelto**, non il
+  selettore: un piano che avesse solo il mensile direbbe "al mese" anche con
+  "Annuale" acceso.
+- Sull'annuale la scheda aggiunge "pari a X al mese"
+  (`product.pricePerMonthString`, formattato dallo store) e la pillola del
+  risparmio.
+- **Un bottone solo verso l'alto**: niente CTA sul piano attuale né su quelli
+  sotto (un Pro non vede "Passa a Plus"). Il declassamento si fa dalle
+  impostazioni dello store.
+
+Il periodo di un pacchetto viene prima dall'**identificativo del prodotto**
+(`periodForProductId()`: gli id sono nostri e identici nei due store) e solo
+in seconda battuta dalla durata ISO che lo store dichiara
+(`periodFromIso()`: `P1M`, `P1Y`). Una durata diversa (trimestrale,
+semestrale) **non entra in lista**: `loadPlanPackages()` la scarta e la
+segnala con `reportError("purchases/unknown-period")`. Prima finiva in
+`packages` e la scheda restava senza prezzo con il bottone acceso. Comunque:
+non crearne.
 
 **Rinomina delle fasce (2026-09-04).** Fino al 2026-09-03 la fascia intermedia
 si chiamava `pro` e quella alta `premium`; il listino di Maurizio usa **Plus**
@@ -135,13 +158,14 @@ permanenti una volta creati. Nel codice non esiste piu' nessuna fascia
 l'intermedia) e l'entitlement `pro` fa lo stesso. Nessun tetto e nessun prezzo
 e' cambiato con la rinomina.
 
-Entitlement RevenueCat: **`plus` e `pro`** (due, non uno). Offerta:
-`default`, che **in questo ciclo contiene solo i due pacchetti mensili**. Il
-paywall ha un bottone per scheda e nessun selettore di periodicità: un
-pacchetto annuale accanto a un mensile sarebbe configurato, caricato e mai
-vendibile. I due id annuali restano riservati e `planForProductId()` li
-riconosce già, così aggiungere il piano annuale in futuro sarà lavoro di
-interfaccia e di offerta, non di mappa.
+Entitlement RevenueCat: **`plus` e `pro`** (due, non uno), collegati così:
+`plus` ← `memika_plus_monthly` + `memika_plus_yearly`, `pro` ←
+`memika_pro_monthly` + `memika_pro_yearly`. Offerta: `default`, con **tutti e
+quattro i pacchetti** e identificatori **custom** (per offerta RevenueCat
+ammette un solo `$rc_monthly` e un solo `$rc_annual`, quindi i quattro non
+possono usare i tipi predefiniti). Il paywall non guarda l'identificatore del
+pacchetto: legge piano e periodo dall'id del **prodotto** (`planForProductId`
++ `periodForProductId`), quindi i nomi custom sono liberi.
 
 ## Grandfathering, e come contano i tetti
 
@@ -278,8 +302,9 @@ entra mai nel repo (AGENTS.md).
   nuovo a ogni avvio.
 - `app/paywall.tsx` — stack ROOT (come `/add` e `/trash`, perché tre dei
   punti di ingresso sono schermate root e una rotta di `(app)` spinta da lì
-  monterebbe un secondo navigatore a tab), tre schede, "Ripristina acquisti",
-  piede legale con Termini e Privacy (Apple 3.1.2).
+  monterebbe un secondo navigatore a tab), selettore Mensile/Annuale (solo
+  quando l'offerta ha entrambi), tre schede, "Ripristina acquisti", piede
+  legale con Termini e Privacy (Apple 3.1.2).
 - `components/PlanLimitDialog.tsx` — la mascotte che spiega il limite e porta
   al paywall. Montata in Add, Conoscenza, `/choose-topic`, `/folder/[id]`,
   Impostazioni cartella e Cestino (dove usa `context="restore"`).
@@ -290,19 +315,35 @@ entra mai nel repo (AGENTS.md).
 
 Nulla di tutto questo si fa da questo repo.
 
-**Apple**: Paid Apps Agreement, W-8BEN, IBAN, gruppo di abbonamenti con i due
-prodotti mensili (`memika_plus_monthly`, `memika_pro_monthly`), In-App
-Purchase Key per RevenueCat, tester sandbox.
+**Apple**: Paid Apps Agreement, W-8BEN, IBAN, **un solo** gruppo di
+abbonamenti con i quattro prodotti: `memika_plus_monthly` (3,99 €/mese),
+`memika_plus_yearly` (29,99 €/anno), `memika_pro_monthly` (6,99 €/mese),
+`memika_pro_yearly` (49,99 €/anno). Gli annuali stanno nello **stesso gruppo**
+dei mensili, altrimenti mensile e annuale dello stesso piano sarebbero due
+abbonamenti sovrapponibili invece di un cambio di periodo. Livelli del gruppo:
+**Pro sopra Plus** (è così che Apple sa che Plus → Pro è un upgrade e Pro →
+Plus un downgrade). Poi In-App Purchase Key per RevenueCat e tester sandbox.
 
-**Google Play**: profilo pagamenti, i due abbonamenti con il solo piano base
-mensile, service account con permesso sui dati finanziari collegato a
+**Google Play**: profilo pagamenti, **quattro abbonamenti separati**
+(`memika_plus_monthly`, `memika_plus_yearly`, `memika_pro_monthly`,
+`memika_pro_yearly`) con **un base plan ciascuno** (P1M per i mensili, P1Y
+per gli annuali). **Non** aggiungere l'annuale come secondo base plan del
+prodotto mensile: su Play l'id arriva nella forma `prodotto:baseplan`,
+`planForProductId()` e `periodForProductId()` guardano solo la parte prima
+dei due punti, e `memika_plus_monthly:yearly` verrebbe letto come mensile,
+in silenzio. Service account con permesso sui dati finanziari collegato a
 RevenueCat, license tester.
 
 **RevenueCat**: progetto "Memika", un'app per piattaforma
-(`studio.tailor.memika`), entitlement `plus` e `pro`, offerta `default`
-con i due pacchetti mensili, chiavi pubbliche in `eas.json`, chiave segreta e
-header del webhook nei secrets Supabase, URL del webhook =
+(`studio.tailor.memika`), entitlement `plus` (← `memika_plus_monthly` +
+`memika_plus_yearly`) e `pro` (← `memika_pro_monthly` + `memika_pro_yearly`),
+offerta `default` con i **quattro pacchetti** a identificatore custom (un solo
+`$rc_monthly` / `$rc_annual` per offerta), chiavi pubbliche in `eas.json`,
+chiave segreta e header del webhook nei secrets Supabase, URL del webhook =
 `https://taekvxxljtgzsjrlmumo.supabase.co/functions/v1/revenuecat-sync`.
+Finché uno store non restituisce un prodotto, RevenueCat omette il suo
+pacchetto dall'offerta: il paywall degrada da solo (niente selettore se manca
+un periodo, scheda senza prezzo se manca un piano).
 
 ## Ordine di attivazione
 

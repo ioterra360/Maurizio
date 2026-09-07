@@ -246,13 +246,16 @@ export function planFromRcEntitlements(
 /**
  * Gli identificativi dei prodotti negli store. Devono essere IDENTICI in
  * App Store Connect, Play Console e RevenueCat (checklist, Task 10): il
- * paywall raggruppa i pacchetti per piano a partire da questi.
+ * paywall raggruppa i pacchetti per piano e per periodo a partire da questi
+ * (`planForProductId` + `periodForProductId`).
  *
- * In QUESTO ciclo l'offerta `default` contiene solo i due mensili: il
- * paywall ha un bottone per scheda e non ha un selettore di periodicita',
- * quindi un pacchetto annuale accanto a un mensile resterebbe invendibile.
- * Gli id annuali sono RISERVATI e gia' riconosciuti qui: aggiungere il
- * piano annuale in futuro sara' un lavoro di interfaccia, non di mappa.
+ * L'offerta `default` porta tutti e quattro: il paywall ha un selettore
+ * Mensile/Annuale (7/9/2026) e vende l'annuale accanto al mensile. Su Google
+ * Play gli annuali sono DUE PRODOTTI separati con un base plan P1Y ciascuno,
+ * non un secondo base plan del prodotto mensile: l'id arriva nella forma
+ * `prodotto:baseplan` e le due funzioni guardano solo la parte prima dei
+ * due punti, quindi `memika_plus_monthly:yearly` verrebbe letto come
+ * mensile (docs/PAYMENTS.md).
  */
 export const PRODUCT_IDS = {
   plus: { monthly: "memika_plus_monthly", yearly: "memika_plus_yearly" },
@@ -268,4 +271,78 @@ export function planForProductId(productIdentifier: string): Plan | null {
   if (base === PRODUCT_IDS.pro.monthly || base === PRODUCT_IDS.pro.yearly) return "pro";
   if (base === PRODUCT_IDS.plus.monthly || base === PRODUCT_IDS.plus.yearly) return "plus";
   return null;
+}
+
+// ---------------------------------------------------------------------------
+// Periodo di fatturazione (selettore Mensile/Annuale del paywall, 7/9/2026)
+// ---------------------------------------------------------------------------
+
+export type BillingPeriod = "monthly" | "yearly";
+
+/**
+ * Il periodo dall'IDENTIFICATIVO del prodotto. Siamo noi i proprietari degli
+ * id, identici nei due store: e' la fonte piu' stabile, prima ancora della
+ * durata ISO che lo store dichiara (`periodFromIso`). Stesso split su ':' di
+ * `planForProductId` per la forma `prodotto:baseplan` di Google Play.
+ */
+export function periodForProductId(productIdentifier: string): BillingPeriod | null {
+  const base = productIdentifier.split(":")[0] ?? "";
+  if (base === PRODUCT_IDS.plus.monthly || base === PRODUCT_IDS.pro.monthly) return "monthly";
+  if (base === PRODUCT_IDS.plus.yearly || base === PRODUCT_IDS.pro.yearly) return "yearly";
+  return null;
+}
+
+/**
+ * Il periodo dalla durata ISO 8601 di `product.subscriptionPeriod` (P1M,
+ * P1Y, P3M, P1W...). Tutto cio' che non e' un mese o un anno e' `other`:
+ * il paywall non ha una riga di prezzo per un trimestrale, e chi chiama
+ * deve scartarlo, non venderlo senza prezzo.
+ */
+export function periodFromIso(period: string | null | undefined): BillingPeriod | "other" {
+  if (period === "P1M") return "monthly";
+  if (period === "P1Y") return "yearly";
+  return "other";
+}
+
+type Priced = { price: number; currencyCode: string };
+
+/**
+ * Quanto si risparmia, in percento intero, comprando l'annuale invece di
+ * dodici mensili. null quando il numero non avrebbe senso o non sarebbe un
+ * risparmio: manca un pacchetto, valute diverse, mensile a zero, annuale
+ * che costa quanto o piu' di dodici mensili. Con i prezzi di Maurizio
+ * (Plus 3,99 / 29,99; Pro 6,99 / 49,99) vale 37 e 40.
+ */
+export function yearlySavingsPercent(
+  monthly: Priced | undefined,
+  yearly: Priced | undefined,
+): number | null {
+  if (!monthly || !yearly) return null;
+  if (monthly.currencyCode !== yearly.currencyCode) return null;
+  if (monthly.price <= 0) return null;
+  const percent = Math.round((1 - yearly.price / (monthly.price * 12)) * 100);
+  return percent > 0 ? percent : null;
+}
+
+/**
+ * Il pacchetto di una scheda del paywall: quello del periodo selezionato,
+ * altrimenti l'altro periodo dello STESSO piano, mai un pacchetto di un
+ * altro piano; null se il piano non ne ha.
+ *
+ * Il prezzo mostrato e il pacchetto comprato devono uscire da questa sola
+ * funzione: si compra cio' di cui si e' letto il prezzo, altrimenti il
+ * piede legale "si rinnova al prezzo indicato" (Apple 3.1.2) parlerebbe di
+ * un rinnovo diverso da quello mostrato.
+ */
+export function pickPlanPackage<T extends { plan: Plan; period: string }>(
+  list: readonly T[],
+  plan: Plan,
+  period: BillingPeriod,
+): T | null {
+  const other: BillingPeriod = period === "monthly" ? "yearly" : "monthly";
+  return (
+    list.find((p) => p.plan === plan && p.period === period) ??
+    list.find((p) => p.plan === plan && p.period === other) ??
+    null
+  );
 }

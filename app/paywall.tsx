@@ -7,13 +7,20 @@ import { Redirect } from "expo-router";
 import { TopBar } from "@/components/TopBar";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { GhostButton } from "@/components/GhostButton";
+import { Tappable } from "@/components/Tappable";
 import { useAuthStore } from "@/lib/auth-store";
 import { useT } from "@/lib/i18n";
 import { useUIStore } from "@/lib/ui-store";
 import { reportError } from "@/lib/report-error";
 import { isDemoMode } from "@/lib/supabase";
 import { PRIVACY_URL, TERMS_URL } from "@/lib/constants";
-import { type Plan } from "@/lib/plan";
+import {
+  PLANS,
+  pickPlanPackage,
+  yearlySavingsPercent,
+  type BillingPeriod,
+  type Plan,
+} from "@/lib/plan";
 import { PLAN_NAME_KEY, refreshPlan, usePlan } from "@/lib/use-plan";
 import {
   loadPlanPackages,
@@ -26,8 +33,8 @@ import {
 import { FONT, radii, useColors } from "@/theme/tokens";
 
 /**
- * Il paywall: tre schede, i prezzi veri di RevenueCat, un solo bottone per
- * piano.
+ * Il paywall: tre schede, i prezzi veri di RevenueCat, un selettore
+ * Mensile/Annuale sopra le schede e un solo bottone per piano.
  *
  * Vive nello stack ROOT come /add, /trash e /folder-settings: ci si arriva
  * sia da Impostazioni e da /folder/[id] (dentro i tab) sia da /add,
@@ -37,8 +44,13 @@ import { FONT, radii, useColors } from "@/theme/tokens";
  * il piede legale — obbligatorio su una schermata di abbonamento, Apple
  * 3.1.2 — non rischia di finirci sotto.
  *
- * In questo ciclo si vende solo l'abbonamento MENSILE: un bottone per
- * scheda, nessun selettore di periodicita' (Task 10, offerta `default`).
+ * Il selettore compare SOLO quando l'offerta porta sia un mensile sia un
+ * annuale (design approvato da Angelo il 7/9/2026): l'annuale e'
+ * preselezionato, ogni scheda mostra il prezzo del pacchetto che comprerebbe
+ * con "pari a X al mese" e la pillola del risparmio. Con i soli mensili la
+ * schermata e' identica a prima, senza segmenti spenti: su iOS un controllo
+ * che non fa niente e' la funzionalita' segnaposto che la linea guida 2.1
+ * fa rifiutare.
  *
  * Quando gli acquisti non sono disponibili (Expo Go, demo, chiavi vuote,
  * prodotti non ancora approvati dagli store) le schede restano visibili con
@@ -61,6 +73,7 @@ export default function PaywallScreen() {
   const hydrated = useAuthStore((s) => s.hydrated);
   const showToast = useUIStore((s) => s.showToast);
   const [packages, setPackages] = useState<PlanPackage[] | null>(null);
+  const [period, setPeriod] = useState<BillingPeriod>("monthly");
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -71,7 +84,12 @@ export default function PaywallScreen() {
     let cancelled = false;
     loadPlanPackages()
       .then((pkgs) => {
-        if (!cancelled) setPackages(pkgs);
+        if (cancelled) return;
+        setPackages(pkgs);
+        // ANNUALE preselezionato quando c'e' (Angelo, 7/9/2026): e' il
+        // pacchetto che conviene, e il risparmio si legge subito sulla
+        // scheda invece di restare dietro un tocco.
+        setPeriod(pkgs.some((p) => p.period === "yearly") ? "yearly" : "monthly");
       })
       .catch((err) => {
         reportError("paywall/offerings", err);
@@ -82,26 +100,49 @@ export default function PaywallScreen() {
     };
   }, []);
 
-  // L'offerta `default` di questo ciclo porta solo i due pacchetti mensili
-  // (checklist, Task 10). Il ramo annuale resta come rete di sicurezza: se
-  // un giorno l'offerta contenesse SOLO un annuale, la scheda mostrerebbe
-  // il suo prezzo e `buy` comprerebbe quello, invece di restare muta.
-  const priceFor = (target: Plan): string | null => {
-    if (!packages) return null;
-    const monthly = packages.find((p) => p.plan === target && p.period === "monthly");
-    if (monthly) return t("paywall.monthlyPrice", { price: monthly.priceString });
-    const yearly = packages.find((p) => p.plan === target && p.period === "yearly");
-    if (yearly) return t("paywall.yearlyPrice", { price: yearly.priceString });
-    return null;
+  const hasMonthly = packages?.some((p) => p.period === "monthly") ?? false;
+  const hasYearly = packages?.some((p) => p.period === "yearly") ?? false;
+  // Il selettore esiste solo se c'e' davvero qualcosa fra cui scegliere. Con
+  // i soli mensili (o i soli annuali) la schermata e' quella di prima:
+  // NESSUN segmento spento, niente funzionalita' segnaposto (Apple 2.1).
+  const showSelector = hasMonthly && hasYearly;
+
+  // Il pacchetto di una scheda: quello del periodo selezionato, altrimenti
+  // l'altro periodo dello stesso piano. Prezzo mostrato e pacchetto comprato
+  // escono da QUESTA funzione e da nessun'altra: si compra cio' di cui si e'
+  // letto il prezzo, altrimenti il piede legale ("si rinnova al prezzo
+  // indicato", Apple 3.1.2) parlerebbe di un rinnovo diverso da quello
+  // mostrato.
+  const packageFor = (target: Plan): PlanPackage | null =>
+    packages ? pickPlanPackage(packages, target, period) : null;
+
+  // Le righe di prezzo seguono il PERIODO DEL PACCHETTO scelto, non il
+  // selettore: se un piano ha solo il mensile, la sua scheda dice "al mese"
+  // anche con "Annuale" acceso, perche' e' quello che si comprerebbe.
+  const pricingFor = (target: Plan): Pricing => {
+    const chosen = packageFor(target);
+    if (!chosen) return { priceLine: null, perMonth: null, savings: null };
+    if (chosen.period === "monthly") {
+      return {
+        priceLine: t("paywall.monthlyPrice", { price: chosen.priceString }),
+        perMonth: null,
+        savings: null,
+      };
+    }
+    const monthly = packages?.find((p) => p.plan === target && p.period === "monthly");
+    return {
+      priceLine: t("paywall.yearlyPrice", { price: chosen.priceString }),
+      perMonth: chosen.pricePerMonthString
+        ? t("paywall.yearlyPerMonth", { price: chosen.pricePerMonthString })
+        : null,
+      savings: yearlySavingsPercent(monthly, chosen),
+    };
   };
 
   const buy = async (target: Plan) => {
-    // Stesso ordine di priceFor: quello che si compra e' quello di cui si
-    // e' letto il prezzo, altrimenti il piede legale parlerebbe di un
-    // rinnovo diverso da quello mostrato.
-    const pkg =
-      packages?.find((p) => p.plan === target && p.period === "monthly") ??
-      packages?.find((p) => p.plan === target);
+    // Lo stesso packageFor delle schede: quello che si compra e' quello di
+    // cui si e' letto il prezzo.
+    const pkg = packageFor(target);
     if (!pkg || busy) return;
     setBusy(true);
     try {
@@ -127,11 +168,24 @@ export default function PaywallScreen() {
         showToast(t("paywall.purchasePending"));
         return;
       }
-      reportError("paywall/purchase", err, { plan: target });
+      reportError("paywall/purchase", err, { plan: target, period: pkg.period });
       showToast(t("paywall.purchaseFailed"));
     } finally {
       setBusy(false);
     }
+  };
+
+  // Un bottone solo verso l'ALTO (Angelo, 7/9/2026): niente CTA sul piano
+  // attuale ne' su quelli sotto. Un Pro che vedesse "Passa a Plus" acceso
+  // comprerebbe un secondo abbonamento, non un piano in meno: il
+  // declassamento si fa dalle impostazioni dello store, non da qui.
+  const ctaFor = (target: Plan): CardCta | null => {
+    if (PLANS.indexOf(target) <= PLANS.indexOf(plan)) return null;
+    return {
+      label: t("paywall.chooseCta", { plan: t(PLAN_NAME_KEY[target]) }),
+      disabled: busy || !packageFor(target),
+      onPress: () => void buy(target),
+    };
   };
 
   const restore = async () => {
@@ -198,9 +252,10 @@ export default function PaywallScreen() {
         </Text>
 
         <View style={{ paddingHorizontal: 16, gap: 12 }}>
+          {showSelector ? <PeriodToggle value={period} onChange={setPeriod} /> : null}
           <PlanCard
             name={t("plan.free")}
-            price={null}
+            priceLine={null}
             features={[
               t("paywall.freeMemories"),
               t("paywall.freeFolders"),
@@ -211,7 +266,7 @@ export default function PaywallScreen() {
           />
           <PlanCard
             name={t("plan.plus")}
-            price={priceFor("plus")}
+            {...pricingFor("plus")}
             features={[
               t("paywall.plusMemories"),
               t("paywall.plusFolders"),
@@ -219,19 +274,11 @@ export default function PaywallScreen() {
               t("paywall.plusPhotos"),
             ]}
             current={plan === "plus"}
-            cta={
-              plan === "plus"
-                ? null
-                : {
-                    label: t("paywall.chooseCta", { plan: t("plan.plus") }),
-                    disabled: busy || !packages?.some((p) => p.plan === "plus"),
-                    onPress: () => void buy("plus"),
-                  }
-            }
+            cta={ctaFor("plus")}
           />
           <PlanCard
             name={t("plan.pro")}
-            price={priceFor("pro")}
+            {...pricingFor("pro")}
             features={[
               t("paywall.proMemories"),
               t("paywall.proFolders"),
@@ -239,15 +286,7 @@ export default function PaywallScreen() {
               t("paywall.proPhotos"),
             ]}
             current={plan === "pro"}
-            cta={
-              plan === "pro"
-                ? null
-                : {
-                    label: t("paywall.chooseCta", { plan: t("plan.pro") }),
-                    disabled: busy || !packages?.some((p) => p.plan === "pro"),
-                    onPress: () => void buy("pro"),
-                  }
-            }
+            cta={ctaFor("pro")}
           />
         </View>
 
@@ -309,18 +348,102 @@ export default function PaywallScreen() {
   );
 }
 
+/** Le righe di prezzo di una scheda, tutte derivate dal pacchetto scelto. */
+type Pricing = {
+  /** "X al mese" o "X all'anno", secondo il periodo del PACCHETTO scelto. */
+  priceLine: string | null;
+  /** Solo per l'annuale: "pari a X al mese", formattato dallo store. */
+  perMonth: string | null;
+  /** Solo per l'annuale: il risparmio rispetto a dodici mensili, in percento. */
+  savings: number | null;
+};
+
+type CardCta = { label: string; disabled: boolean; onPress: () => void };
+
+/**
+ * Due segmenti in una pillola: Mensile / Annuale. Stesso linguaggio dei
+ * chip di FilterChip e del ThemePicker delle Impostazioni (accento pieno
+ * sull'attivo, testo navy sull'inattivo), ma dentro un contenitore unico,
+ * perche' qui la scelta e' esclusiva e vale per tutte le schede insieme.
+ */
+function PeriodToggle({
+  value,
+  onChange,
+}: {
+  value: BillingPeriod;
+  onChange: (period: BillingPeriod) => void;
+}) {
+  const colors = useColors();
+  const { t } = useT();
+  const options: ReadonlyArray<{ value: BillingPeriod; label: string }> = [
+    { value: "monthly", label: t("paywall.periodMonthly") },
+    { value: "yearly", label: t("paywall.periodYearly") },
+  ];
+  return (
+    <View
+      accessibilityRole="tablist"
+      accessibilityLabel={t("paywall.periodA11y")}
+      style={{
+        flexDirection: "row",
+        padding: 3,
+        borderRadius: radii.pill,
+        backgroundColor: colors.hairline,
+      }}
+    >
+      {options.map((o) => {
+        const on = value === o.value;
+        return (
+          <Tappable
+            key={o.value}
+            onPress={() => onChange(o.value)}
+            accessibilityRole="tab"
+            accessibilityLabel={o.label}
+            accessibilityState={{ selected: on }}
+            pressedOpacity={0.8}
+            containerStyle={{ flex: 1 }}
+            style={{
+              alignItems: "center",
+              justifyContent: "center",
+              paddingVertical: 9,
+              paddingHorizontal: 12,
+              borderRadius: radii.pill,
+              backgroundColor: on ? colors.accent : "transparent",
+            }}
+          >
+            <Text
+              numberOfLines={1}
+              style={{
+                fontFamily: FONT.semibold,
+                fontSize: 13.5,
+                color: on ? colors.onAccent : colors.navy,
+                letterSpacing: -0.07,
+              }}
+            >
+              {o.label}
+            </Text>
+          </Tappable>
+        );
+      })}
+    </View>
+  );
+}
+
 function PlanCard({
   name,
-  price,
+  priceLine,
+  perMonth = null,
+  savings = null,
   features,
   current,
   cta,
 }: {
   name: string;
-  price: string | null;
+  priceLine: string | null;
+  perMonth?: string | null;
+  savings?: number | null;
   features: string[];
   current: boolean;
-  cta: { label: string; disabled: boolean; onPress: () => void } | null;
+  cta: CardCta | null;
 }) {
   const colors = useColors();
   const { t } = useT();
@@ -342,7 +465,7 @@ function PlanCard({
             style={{
               paddingHorizontal: 10,
               paddingVertical: 4,
-              borderRadius: 999,
+              borderRadius: radii.pill,
               backgroundColor: colors.tagProBg,
             }}
           >
@@ -352,10 +475,33 @@ function PlanCard({
           </View>
         ) : null}
       </View>
-      {price ? (
-        <Text style={{ fontFamily: FONT.semibold, fontSize: 14.5, color: colors.navy }}>
-          {price}
-        </Text>
+      {priceLine ? (
+        <View style={{ gap: 3 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
+            <Text style={{ fontFamily: FONT.semibold, fontSize: 14.5, color: colors.navy }}>
+              {priceLine}
+            </Text>
+            {savings !== null ? (
+              <View
+                style={{
+                  paddingHorizontal: 8,
+                  paddingVertical: 3,
+                  borderRadius: radii.pill,
+                  backgroundColor: colors.tagUserBg,
+                }}
+              >
+                <Text style={{ fontFamily: FONT.semibold, fontSize: 11, color: colors.navy }}>
+                  {t("paywall.yearlySave", { percent: savings })}
+                </Text>
+              </View>
+            ) : null}
+          </View>
+          {perMonth ? (
+            <Text style={{ fontFamily: FONT.regular, fontSize: 12.5, color: colors.midGrey }}>
+              {perMonth}
+            </Text>
+          ) : null}
+        </View>
       ) : null}
       <View style={{ gap: 7 }}>
         {features.map((f) => (

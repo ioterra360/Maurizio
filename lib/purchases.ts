@@ -29,8 +29,11 @@ import { reportError } from "./report-error";
 import {
   ENTITLEMENT_PLUS,
   ENTITLEMENT_PRO,
+  periodForProductId,
+  periodFromIso,
   planForProductId,
   planFromEntitlements,
+  type BillingPeriod,
   type Plan,
 } from "./plan";
 
@@ -89,24 +92,43 @@ export async function signOutPurchases(): Promise<void> {
 
 export type PlanPackage = {
   plan: "plus" | "pro";
-  period: "monthly" | "yearly" | "other";
+  /** Solo mensile o annuale: un periodo diverso non entra mai in lista. */
+  period: BillingPeriod;
   /** Prezzo gia' formattato nella valuta dello store. */
   priceString: string;
+  /** Prezzo numerico e valuta: servono al calcolo del risparmio annuale. */
+  price: number;
+  currencyCode: string;
+  /**
+   * L'annuale diviso dodici, gia' formattato dallo store
+   * (`product.pricePerMonthString`, nullo per i prodotti una tantum). Nel
+   * paywall e' la riga "pari a X al mese" sotto il prezzo annuale.
+   */
+  pricePerMonthString: string | null;
   pkg: PurchasesPackage;
 };
 
-function periodOf(pkg: PurchasesPackage): PlanPackage["period"] {
-  const period = pkg.product.subscriptionPeriod ?? "";
-  if (period === "P1M") return "monthly";
-  if (period === "P1Y") return "yearly";
-  return "other";
+/**
+ * L'id del prodotto e' nostro ed e' la fonte piu' stabile del periodo; la
+ * durata ISO dichiarata dallo store e' la seconda scelta.
+ */
+function periodOf(pkg: PurchasesPackage): BillingPeriod | "other" {
+  return (
+    periodForProductId(pkg.product.identifier) ?? periodFromIso(pkg.product.subscriptionPeriod)
+  );
 }
 
 /**
- * I pacchetti dell'offerta corrente, raggruppabili per piano. `current` e'
- * null quando nessuna offerta e' marcata corrente o quando lo store non ha
- * restituito prodotti (prodotti non approvati, app non ancora su un canale
- * di test): in quel caso il paywall mostra le schede senza prezzo.
+ * I pacchetti dell'offerta corrente, raggruppabili per piano e periodo.
+ * `current` e' null quando nessuna offerta e' marcata corrente o quando lo
+ * store non ha restituito prodotti (prodotti non approvati, app non ancora
+ * su un canale di test): in quel caso il paywall mostra le schede senza
+ * prezzo.
+ *
+ * Un pacchetto con un periodo che non e' mensile ne' annuale (trimestrale,
+ * semestrale) viene SCARTATO e segnalato, non messo in lista: il paywall
+ * non ha una riga di prezzo per lui, e in lista diventerebbe una scheda
+ * senza prezzo con il bottone acceso (docs/PAYMENTS.md).
  */
 export async function loadPlanPackages(): Promise<PlanPackage[]> {
   if (!purchasesAvailable || !configured) return [];
@@ -114,10 +136,27 @@ export async function loadPlanPackages(): Promise<PlanPackage[]> {
   const packages = offerings.current?.availablePackages ?? [];
   const out: PlanPackage[] = [];
   for (const pkg of packages) {
-    const plan = planForProductId(pkg.product.identifier);
-    if (plan === "plus" || plan === "pro") {
-      out.push({ plan, period: periodOf(pkg), priceString: pkg.product.priceString, pkg });
+    const { product } = pkg;
+    const plan = planForProductId(product.identifier);
+    if (plan !== "plus" && plan !== "pro") continue;
+    const period = periodOf(pkg);
+    if (period === "other") {
+      reportError(
+        "purchases/unknown-period",
+        new Error(`periodo non riconosciuto: ${product.subscriptionPeriod ?? "null"}`),
+        { productId: product.identifier },
+      );
+      continue;
     }
+    out.push({
+      plan,
+      period,
+      priceString: product.priceString,
+      price: product.price,
+      currencyCode: product.currencyCode,
+      pricePerMonthString: product.pricePerMonthString,
+      pkg,
+    });
   }
   return out;
 }
