@@ -10,6 +10,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { safeBottom } from "@/lib/safe-bottom";
 import { Redirect, router, useLocalSearchParams } from "expo-router";
 import { PenLine, Search } from "lucide-react-native";
 
@@ -463,7 +464,7 @@ export default function ChooseTopicScreen() {
               borderTopRightRadius: 22,
               paddingHorizontal: 18,
               paddingTop: 10,
-              paddingBottom: Math.max(insets.bottom, 20),
+              paddingBottom: safeBottom(insets.bottom, 20),
               maxHeight: "72%",
               shadowColor: "#0F1B33",
               shadowOpacity: 0.18,

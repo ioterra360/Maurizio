@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ScrollView, Text, View } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { safeBottom } from "@/lib/safe-bottom";
 import { router, useFocusEffect } from "expo-router";
 
 import { DeckErrorScreen } from "@/components/DeckErrorScreen";
@@ -203,7 +204,7 @@ export default function FocusScreen() {
 
       {/* Recall buttons appear only after the answer is revealed — Focus is
           active recall, so the answer stays hidden until the user commits. */}
-      <View style={{ paddingHorizontal: 22, paddingBottom: Math.max(insets.bottom, 32), gap: 10 }}>
+      <View style={{ paddingHorizontal: 22, paddingBottom: safeBottom(insets.bottom, 32), gap: 10 }}>
         {revealed ? (
           <>
             <RecallButton variant="forgot" onPress={() => advance("forgot")} />

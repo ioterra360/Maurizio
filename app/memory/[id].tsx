@@ -11,7 +11,8 @@ import {
   useWindowDimensions,
 } from "react-native";
 import { FolderInput, Trash2 } from "lucide-react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { safeBottom } from "@/lib/safe-bottom";
 import { Redirect, router, useFocusEffect, useLocalSearchParams } from "expo-router";
 
 import { MascotLoader } from "@/components/MascotLoader";
@@ -44,6 +45,7 @@ const NOTES_MAX = 2000;
  */
 export default function MemoryDetailScreen() {
   const { t } = useT();
+  const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const { id } = useLocalSearchParams<{ id: string }>();
   const showToast = useUIStore((s) => s.showToast);
@@ -282,7 +284,7 @@ export default function MemoryDetailScreen() {
           style={{ flex: 1 }}
         >
           <ScrollView
-            contentContainerStyle={{ paddingHorizontal: 22, paddingTop: 8, paddingBottom: 32 }}
+            contentContainerStyle={{ paddingHorizontal: 22, paddingTop: 8, paddingBottom: safeBottom(insets.bottom, 32) }}
             keyboardShouldPersistTaps="handled"
             keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
             showsVerticalScrollIndicator={false}

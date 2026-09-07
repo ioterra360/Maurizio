@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { ScrollView, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { safeBottom } from "@/lib/safe-bottom";
 import { Clock3, RotateCcw, Trash2 } from "lucide-react-native";
 
 import { FolderTile } from "@/components/FolderTile";
@@ -39,6 +40,7 @@ import { scheduleFirstReview } from "@/lib/notifications";
 export default function TrashScreen() {
   const colors = useColors();
   const { t, tp } = useT();
+  const insets = useSafeAreaInsets();
   const user = useAuthStore((s) => s.user);
   const showToast = useUIStore((s) => s.showToast);
   const plan = usePlan();
@@ -183,7 +185,7 @@ export default function TrashScreen() {
         </View>
       ) : (
         <ScrollView
-          contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: 48 }}
+          contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: safeBottom(insets.bottom, 48) }}
           showsVerticalScrollIndicator={false}
         >
           {/* Avviso 24 ore — sempre visibile sopra le liste. */}

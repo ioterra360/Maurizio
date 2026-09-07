@@ -1,6 +1,7 @@
 import { useEffect, useMemo } from "react";
 import { ScrollView, Text, View } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { safeBottom } from "@/lib/safe-bottom";
 import { router } from "expo-router";
 import Animated, {
   useAnimatedStyle,
@@ -228,7 +229,7 @@ export default function CompleteScreen() {
             {t("complete.emptyBody")}
           </Text>
         </View>
-        <View style={{ paddingHorizontal: 22, paddingBottom: Math.max(insets.bottom, 36) }}>
+        <View style={{ paddingHorizontal: 22, paddingBottom: safeBottom(insets.bottom, 36) }}>
           <PrimaryButton label={t("complete.backToToday")} onPress={goHome} />
         </View>
       </SafeAreaView>

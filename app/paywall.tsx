@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Linking, ScrollView, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { safeBottom } from "@/lib/safe-bottom";
 import { Check } from "lucide-react-native";
 import { Redirect } from "expo-router";
 
@@ -61,6 +62,7 @@ import { FONT, radii, useColors } from "@/theme/tokens";
 export default function PaywallScreen() {
   const colors = useColors();
   const { t } = useT();
+  const insets = useSafeAreaInsets();
   const plan = usePlan();
   // Il paywall e' nello stack ROOT, quindi FUORI dal gate di (app): senza
   // questa guardia `memika://paywall` (schema in app.json) apre le schede in
@@ -236,7 +238,7 @@ export default function PaywallScreen() {
   return (
     <SafeAreaView className="flex-1 bg-warm-white" edges={["top"]}>
       <TopBar title={t("paywall.title")} />
-      <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
+      <ScrollView contentContainerStyle={{ paddingBottom: safeBottom(insets.bottom, 40) }}>
         <Text
           style={{
             paddingHorizontal: 22,

@@ -8,7 +8,8 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { safeBottom } from "@/lib/safe-bottom";
 import { Redirect, router, useLocalSearchParams } from "expo-router";
 import { Camera, Plus } from "lucide-react-native";
 
@@ -165,6 +166,7 @@ export default function AddScreen() {
   const promptBusy = useRef(false);
   const showToast = useUIStore((s) => s.showToast);
   const { t } = useT();
+  const insets = useSafeAreaInsets();
   // Foto sul retro (Pro). Fino al salvataggio è solo un file locale, già
   // ridimensionato alla scelta: il CARICAMENTO parte dopo che la riga esiste,
   // perché il path contiene memory_id — e chi abbandona la schermata non
@@ -519,7 +521,7 @@ export default function AddScreen() {
             const h = e.nativeEvent.layout.height;
             setViewportH((prev) => (h > prev ? h : prev));
           }}
-          contentContainerStyle={{ flexGrow: 1, minHeight: viewportH, paddingBottom: 24 }}
+          contentContainerStyle={{ flexGrow: 1, minHeight: viewportH, paddingBottom: safeBottom(insets.bottom, 24) }}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
           showsVerticalScrollIndicator={false}

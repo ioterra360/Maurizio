@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { safeBottom } from "@/lib/safe-bottom";
 import { router, useFocusEffect } from "expo-router";
 
 import { DeckErrorScreen } from "@/components/DeckErrorScreen";
@@ -391,7 +392,7 @@ export default function ScanScreen() {
       </ScrollView>
 
       {/* Actions */}
-      <View style={{ paddingHorizontal: 22, paddingBottom: Math.max(insets.bottom, 32), gap: 12 }}>
+      <View style={{ paddingHorizontal: 22, paddingBottom: safeBottom(insets.bottom, 32), gap: 12 }}>
         <Tappable
           onPress={handleShowMe}
           disabled={showMeDisabled}

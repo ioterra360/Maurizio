@@ -1,4 +1,7 @@
 import { Modal, Text, View, type StyleProp, type ViewStyle } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+import { safeBottom } from "@/lib/safe-bottom";
 
 import { Tappable } from "@/components/Tappable";
 import { useT } from "@/lib/i18n";
@@ -48,6 +51,7 @@ export function BottomSheetShell({
   children,
 }: Props) {
   const { t } = useT();
+  const insets = useSafeAreaInsets();
   const colors = useColors();
   return (
     <Modal
@@ -78,7 +82,7 @@ export function BottomSheetShell({
               borderTopRightRadius: 22,
               paddingHorizontal: 22,
               paddingTop: 16,
-              paddingBottom: 32,
+              paddingBottom: safeBottom(insets.bottom, 32),
               shadowColor: "#0F1B33",
               shadowOpacity: 0.18,
               shadowOffset: { width: 0, height: -8 },

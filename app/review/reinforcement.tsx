@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ScrollView, Text, View } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { safeBottom } from "@/lib/safe-bottom";
 import { router, useFocusEffect } from "expo-router";
 import { Sparkles } from "lucide-react-native";
 
@@ -247,7 +248,7 @@ export default function ReinforcementScreen() {
         ) : null}
       </ScrollView>
 
-      <View style={{ paddingHorizontal: 22, paddingBottom: Math.max(insets.bottom, 32), gap: 10 }}>
+      <View style={{ paddingHorizontal: 22, paddingBottom: safeBottom(insets.bottom, 32), gap: 10 }}>
         {stage === "pre" ? (
           <>
             {/* No hint affordance when the card has nothing safe to show. */}

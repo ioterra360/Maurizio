@@ -1,5 +1,6 @@
 import { Modal, Pressable, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { safeBottom } from "@/lib/safe-bottom";
 
 import { Mascot } from "@/components/Mascot";
 import { PrimaryButton } from "@/components/PrimaryButton";
@@ -71,7 +72,7 @@ export function MascotDialog({
             borderTopRightRadius: 22,
             paddingHorizontal: 22,
             paddingTop: 16,
-            paddingBottom: Math.max(insets.bottom, 28),
+            paddingBottom: safeBottom(insets.bottom, 28),
             shadowColor: "#0F1B33",
             shadowOpacity: 0.18,
             shadowOffset: { width: 0, height: -8 },

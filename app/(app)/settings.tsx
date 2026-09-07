@@ -9,7 +9,8 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { safeBottom } from "@/lib/safe-bottom";
 import { router } from "expo-router";
 import Constants from "expo-constants";
 import * as Updates from "expo-updates";
@@ -118,6 +119,7 @@ export default function SettingsScreen() {
   const colors = useColors();
   const user = useAuthStore((s) => s.user);
   const { t: tr } = useT();
+  const insets = useSafeAreaInsets();
   const signOut = useAuthStore((s) => s.signOut);
   const setUserName = useAuthStore((s) => s.setUserName);
   const viewAsUser = useAuthStore((s) => s.viewAsUser);
@@ -658,7 +660,7 @@ export default function SettingsScreen() {
               borderTopRightRadius: 22,
               paddingHorizontal: 22,
               paddingTop: 16,
-              paddingBottom: 32,
+              paddingBottom: safeBottom(insets.bottom, 32),
               shadowColor: "#0F1B33",
               shadowOpacity: 0.18,
               shadowOffset: { width: 0, height: -8 },
@@ -743,7 +745,7 @@ export default function SettingsScreen() {
               borderTopRightRadius: 22,
               paddingHorizontal: 22,
               paddingTop: 16,
-              paddingBottom: 32,
+              paddingBottom: safeBottom(insets.bottom, 32),
               shadowColor: "#0F1B33",
               shadowOpacity: 0.18,
               shadowOffset: { width: 0, height: -8 },
