@@ -1171,7 +1171,7 @@ export const en: Record<keyof typeof it, string> = {
   "tutorial.addTitle": "Save a memory",
   "tutorial.addBody": "Term, meaning, example sentence. The first review comes 20 hours later, then the intervals grow.",
   "tutorial.reviewTitle": "You remember, I keep time",
-  "tutorial.reviewBody": "Tap Forgot or Remembered. I shorten or stretch the interval while Scan, Reinforcement and Focus alternate on their own.",
+  "tutorial.reviewBody": "Tap Forgot or Remembered. If the memory holds, I move it further out. If it slips, I bring it closer.",
   "tutorial.healthTitle": "See what's fading",
   "tutorial.healthBody": "Stable, fading or archived: every memory has a state. I point to the folder that needs a hand.",
   "tutorial.remindersTitle": "I'll tell you when it's time",

@@ -1171,7 +1171,7 @@ export const fr: Record<keyof typeof it, string> = {
   "tutorial.addTitle": "Enregistre un souvenir",
   "tutorial.addBody": "Terme, sens, phrase d'exemple. La première révision arrive 20 heures plus tard, puis les intervalles s'allongent.",
   "tutorial.reviewTitle": "Tu retiens, je tiens le tempo",
-  "tutorial.reviewBody": "Touche Oublié ou Retenu. Je raccourcis ou j'allonge l'intervalle, pendant que Scan, Reinforcement et Focus alternent d'eux-mêmes.",
+  "tutorial.reviewBody": "Touche Oublié ou Retenu. Si le souvenir tient, je l'éloigne. S'il vacille, je le rapproche.",
   "tutorial.healthTitle": "Vois ce qui devient fragile",
   "tutorial.healthBody": "Stable, fragile ou archivé : chaque souvenir a un état. Je te montre le dossier qui a besoin d'un coup de main.",
   "tutorial.remindersTitle": "Je te préviens à temps",

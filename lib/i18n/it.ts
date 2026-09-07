@@ -1171,7 +1171,7 @@ export const it = {
   "tutorial.addTitle": "Salva un ricordo",
   "tutorial.addBody": "Termine, significato, frase d'esempio. Il primo ripasso arriva 20 ore dopo, poi gli intervalli crescono.",
   "tutorial.reviewTitle": "Tu ricordi, io tengo il tempo",
-  "tutorial.reviewBody": "Tocca Dimenticato o Ricordato. Io accorcio o allungo l'intervallo, mentre Scan, Reinforcement e Focus si alternano da soli.",
+  "tutorial.reviewBody": "Tocca Dimenticato o Ricordato. Se il ricordo regge, lo sposto più avanti. Se inciampa, lo riporto vicino.",
   "tutorial.healthTitle": "Vedi cosa sta sbiadendo",
   "tutorial.healthBody": "Stabile, in dissolvenza o archiviato: ogni ricordo ha uno stato. Io ti dico quale cartella ha bisogno di una mano.",
   "tutorial.remindersTitle": "Ti avviso quando è ora",
