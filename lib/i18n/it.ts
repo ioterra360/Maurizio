@@ -927,7 +927,7 @@ export const it = {
   "signup.alreadyHaveAccount": "Hai già un account?",
   "signup.benefitCloud": "I tuoi ricordi salvati nel cloud, sotto il tuo controllo",
   "signup.benefitNoAds": "Nessuna pubblicità, nessun tracciamento",
-  "signup.benefitThreeRhythms": "Tre ritmi di ripasso: Scan, Reinforcement, Focus",
+  "signup.benefitSpacing": "Il primo ripasso dopo 20 ore, poi a intervalli sempre più lunghi",
   "signup.cannotOpenPage": "Impossibile aprire la pagina. Riprova più tardi.",
   "signup.confirmEmailSent": "Ti abbiamo inviato un'email: apri il link per confermare l'account, poi accedi.",
   "signup.confirmPasswordLabel": "Conferma password",

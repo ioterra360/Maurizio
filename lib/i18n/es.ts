@@ -927,7 +927,7 @@ export const es: Record<keyof typeof it, string> = {
   "signup.alreadyHaveAccount": "¿Ya tienes una cuenta?",
   "signup.benefitCloud": "Tus recuerdos guardados en la nube, bajo tu control",
   "signup.benefitNoAds": "Sin publicidad, sin rastreo",
-  "signup.benefitThreeRhythms": "Tres ritmos de repaso: Scan, Reinforcement, Focus",
+  "signup.benefitSpacing": "Primer repaso a las 20 horas, luego a intervalos cada vez más largos",
   "signup.cannotOpenPage": "No se ha podido abrir la página. Inténtalo más tarde.",
   "signup.confirmEmailSent": "Te hemos enviado un correo: abre el enlace para confirmar la cuenta y luego inicia sesión.",
   "signup.confirmPasswordLabel": "Confirmar contraseña",

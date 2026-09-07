@@ -26,9 +26,11 @@ import { useT, type TKey } from "@/lib/i18n";
 import { reportError } from "@/lib/report-error";
 import { FONT, useColors } from "@/theme/tokens";
 
-/** True, verifiable trust signals — no offline/encryption claims the app can't keep. */
+/** True, verifiable trust signals: no offline/encryption claims the app can't keep.
+    I tre ritmi (Scan/Reinforcement/Focus) non sono piu' una scelta dell'utente
+    dal 6/9/2026: la prima riga dice cosa fa davvero la ripetizione spaziata. */
 const SIGNUP_BENEFIT_KEYS = [
-  "signup.benefitThreeRhythms",
+  "signup.benefitSpacing",
   "signup.benefitCloud",
   "signup.benefitNoAds",
 ] as const satisfies readonly TKey[];
