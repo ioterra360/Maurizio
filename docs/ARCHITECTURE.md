@@ -26,8 +26,9 @@ memika-app/
 ├── app/                Expo Router routes — file-based, typed
 │   ├── _layout.tsx     Root: fonts + splash + auth hydrate gate
 │   ├── index.tsx       Smart redirect (login / today / admin)
-│   ├── (auth)/         login, signup, forgot/reset-password, onboarding
-│   ├── choose-topic.tsx  One-folder topic pick (freemium) after onboarding
+│   ├── (auth)/         login, signup, forgot/reset-password
+│   ├── tutorial.tsx    Tutorial di benvenuto (root-level, dopo il login, una volta per telefono)
+│   ├── choose-topic.tsx  One-folder topic pick (freemium) after the tutorial
 │   ├── auth-callback.tsx Landing route for signup-confirmation deep links
 │   ├── (app)/          User-side routes — Today, Knowledge, Health, Settings, review flow
 │   └── (admin)/        Admin-side routes — guarded by role check

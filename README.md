@@ -70,8 +70,9 @@ Open the QR code with **Expo Go** on iOS or Android.
 app/                       Expo Router routes (file-based)
   _layout.tsx              Root: font loading + auth hydrate + splash gate
   index.tsx                Smart redirect (login / today / admin home)
-  (auth)/                  login, signup, forgot-password, reset-password, onboarding
-  choose-topic.tsx         One-folder topic pick after onboarding (freemium)
+  (auth)/                  login, signup, forgot-password, reset-password
+  tutorial.tsx             Tutorial di benvenuto (root-level, dopo il login, una volta per telefono)
+  choose-topic.tsx         One-folder topic pick after the tutorial (freemium)
   auth-callback.tsx        Landing for signup-confirmation deep links
   (app)/                   User shell with bottom tab bar
     today.tsx              Today's review (Phase 2)

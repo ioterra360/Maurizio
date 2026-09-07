@@ -109,6 +109,12 @@ export default function SignupScreen() {
         setError(t("signup.confirmEmailSent"));
         return;
       }
+      // `user` deve stare nello store PRIMA del replace: il tutorial e
+      // /choose-topic rimbalzano al login se lo trovano null, e il listener
+      // SIGNED_IN lo scrive solo dopo una query rimandata. Nel frattempo il
+      // gate di (auth) ci tiene qui grazie a pendingOnboarding. Un errore
+      // finisce nel catch sotto, che azzera il flag.
+      await useAuthStore.getState().adoptSession(data.session);
       // Il tutorial vive nello stack root (app/tutorial.tsx): alla fine
       // azzera il flag e manda a /choose-topic, come faceva il carosello.
       router.replace("/tutorial" as never);

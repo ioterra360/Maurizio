@@ -23,6 +23,9 @@ import {
   planFromRcEntitlements,
   planLimitFromCode,
   yearlySavingsPercent,
+  hasPeriodChoice,
+  oldProductForChange,
+  resolveBillingPeriod,
 } from "./plan";
 
 const NOW = new Date("2026-09-03T10:00:00.000Z");
@@ -518,5 +521,53 @@ describe("il gemello Deno della derivazione RevenueCat", () => {
     expect(pro).toBeGreaterThanOrEqual(0);
     expect(plus).toBeGreaterThanOrEqual(0);
     expect(pro).toBeLessThan(plus);
+  });
+});
+
+describe("resolveBillingPeriod", () => {
+  it("l'id decide quando la durata ISO e' d'accordo o manca", () => {
+    expect(resolveBillingPeriod("memika_plus_monthly", "P1M")).toBe("monthly");
+    expect(resolveBillingPeriod("memika_pro_yearly", "P1Y")).toBe("yearly");
+    expect(resolveBillingPeriod("memika_plus_yearly", null)).toBe("yearly");
+    expect(resolveBillingPeriod("memika_plus_monthly", "")).toBe("monthly");
+  });
+  it("id ignoto: vale la durata ISO", () => {
+    expect(resolveBillingPeriod("altro_prodotto", "P1M")).toBe("monthly");
+    expect(resolveBillingPeriod("altro_prodotto", "P3M")).toBe("other");
+    expect(resolveBillingPeriod("altro_prodotto", null)).toBe("other");
+  });
+  it("id e durata in disaccordo: 'other', mai venduto come l'uno o l'altro", () => {
+    // Un secondo base plan annuale sotto il prodotto MENSILE su Play:
+    // l'id direbbe mensile, lo store dice un anno. Non si vende.
+    expect(resolveBillingPeriod("memika_plus_monthly:yearly", "P1Y")).toBe("other");
+    expect(resolveBillingPeriod("memika_pro_yearly:monthly", "P1M")).toBe("other");
+  });
+});
+
+describe("hasPeriodChoice", () => {
+  const pkg = (plan: "free" | "plus" | "pro", period: string) => ({ plan, period });
+  it("vero solo se almeno un piano ha ENTRAMBI i periodi", () => {
+    expect(hasPeriodChoice([pkg("plus", "monthly"), pkg("plus", "yearly")])).toBe(true);
+    expect(hasPeriodChoice([pkg("plus", "monthly"), pkg("pro", "monthly"), pkg("pro", "yearly")])).toBe(true);
+  });
+  it("falso con i soli mensili, con i soli annuali, e con periodi diversi su piani diversi", () => {
+    expect(hasPeriodChoice([pkg("plus", "monthly"), pkg("pro", "monthly")])).toBe(false);
+    expect(hasPeriodChoice([pkg("plus", "yearly")])).toBe(false);
+    // Plus solo mensile, Pro solo annuale: due segmenti che non cambierebbero nulla.
+    expect(hasPeriodChoice([pkg("plus", "monthly"), pkg("pro", "yearly")])).toBe(false);
+    expect(hasPeriodChoice([])).toBe(false);
+  });
+});
+
+describe("oldProductForChange", () => {
+  it("trova l'abbonamento attivo del piano corrente, senza il base plan di Play", () => {
+    expect(oldProductForChange(["memika_plus_monthly:monthly"], "plus")).toBe("memika_plus_monthly");
+    expect(oldProductForChange(["memika_plus_yearly"], "plus")).toBe("memika_plus_yearly");
+    expect(oldProductForChange(["altro", "memika_pro_monthly:monthly"], "pro")).toBe("memika_pro_monthly");
+  });
+  it("null per il piano free, per una lista vuota o senza un prodotto di quel piano", () => {
+    expect(oldProductForChange(["memika_plus_monthly"], "free")).toBeNull();
+    expect(oldProductForChange([], "plus")).toBeNull();
+    expect(oldProductForChange(["memika_pro_monthly"], "plus")).toBeNull();
   });
 });

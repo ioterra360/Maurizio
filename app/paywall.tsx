@@ -16,6 +16,7 @@ import { isDemoMode } from "@/lib/supabase";
 import { PRIVACY_URL, TERMS_URL } from "@/lib/constants";
 import {
   PLANS,
+  hasPeriodChoice,
   pickPlanPackage,
   yearlySavingsPercent,
   type BillingPeriod,
@@ -100,12 +101,11 @@ export default function PaywallScreen() {
     };
   }, []);
 
-  const hasMonthly = packages?.some((p) => p.period === "monthly") ?? false;
-  const hasYearly = packages?.some((p) => p.period === "yearly") ?? false;
-  // Il selettore esiste solo se c'e' davvero qualcosa fra cui scegliere. Con
-  // i soli mensili (o i soli annuali) la schermata e' quella di prima:
-  // NESSUN segmento spento, niente funzionalita' segnaposto (Apple 2.1).
-  const showSelector = hasMonthly && hasYearly;
+  // Il selettore esiste solo se ALMENO UN piano ha davvero due pacchetti
+  // fra cui scegliere (hasPeriodChoice). Con i soli mensili, o con Plus
+  // mensile e Pro annuale, la schermata e' quella di prima: NESSUN segmento
+  // spento o inerte, niente funzionalita' segnaposto (Apple 2.1).
+  const showSelector = packages ? hasPeriodChoice(packages) : false;
 
   // Il pacchetto di una scheda: quello del periodo selezionato, altrimenti
   // l'altro periodo dello stesso piano. Prezzo mostrato e pacchetto comprato
@@ -146,7 +146,7 @@ export default function PaywallScreen() {
     if (!pkg || busy) return;
     setBusy(true);
     try {
-      const outcome = await purchasePlan(pkg);
+      const outcome = await purchasePlan(pkg, plan);
       // L'entitlement locale e' solo la via rapida: la verita' la riscrive
       // la edge function dopo aver interrogato RevenueCat. Se quella lettura
       // NON riesce, lo store e' rimasto a "free" e ogni gate dell'app si

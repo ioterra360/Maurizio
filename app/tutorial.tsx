@@ -47,8 +47,8 @@ import { FONT, useThemeStore, useThemeTokens, type ThemeTokens } from "@/theme/t
  *   - per chi entra su un telefono nuovo, spinto da app/(app)/_layout.tsx
  *     sopra Oggi alla prima apertura; alla fine si torna indietro;
  *   - da Impostazioni > Rivedi il tutorial (`?replay=1`), stessa uscita.
- * "Visto" si segna al MOUNT, non alla fine: anche chi torna indietro col
- * gesto di sistema l'ha visto.
+ * "Visto" si segna al MOUNT (se il tutorial viene mostrato davvero), non
+ * alla fine: anche chi torna indietro col gesto di sistema l'ha visto.
  *
  * DOVE VIVE. Nello stack ROOT come /choose-topic (docs/ROUTING.md): il gate
  * di (auth) rimbalza a Oggi qualunque utente loggato, e una rotta di (app)
@@ -99,6 +99,16 @@ export default function TutorialScreen() {
   const count = steps.length;
   const tints = resolveTints(tokens);
 
+  // Chi puo' vederlo: un utente in sessione, oppure chi arriva dalla
+  // registrazione (pendingOnboarding) mentre `user` e' ancora in volo.
+  // signup.tsx aspetta adoptSession() prima di navigare, ma questa guardia
+  // non dipende da quell'ordine: il listener SIGNED_IN scrive `user` solo
+  // dopo una query su profiles rimandata a un setTimeout (lib/auth-store.ts),
+  // e un rimbalzo al login qui lascerebbe il nuovo utente fermo sulla
+  // schermata di accesso, con il gate di (auth) che lo tiene dentro finche'
+  // il flag resta alzato.
+  const canShow = hydrated && (user !== null || pendingOnboarding);
+
   const [step, setStep] = useState(0);
   const scrollX = useSharedValue(0);
   const lastIndex = useSharedValue(0);
@@ -108,8 +118,8 @@ export default function TutorialScreen() {
   // Visto = mostrato. Si segna subito, cosi' anche un'uscita col gesto di
   // sistema conta; il replay da Impostazioni non ha nulla da segnare.
   useEffect(() => {
-    if (!isReplay) markSeen();
-  }, [isReplay, markSeen]);
+    if (canShow && !isReplay) markSeen();
+  }, [canShow, isReplay, markSeen]);
 
   useEffect(() => {
     if (!reduced) enter.value = withSpring(1, SPRING);
@@ -146,7 +156,7 @@ export default function TutorialScreen() {
       // Flusso di registrazione: sotto di noi non c'e' nulla (signup ha
       // fatto replace). Stessa uscita del vecchio carosello.
       setPendingOnboarding(false);
-      router.replace("/choose-topic" as never);
+      router.replace((user ? "/choose-topic" : "/(auth)/login") as never);
       return;
     }
     // Spinto sopra Oggi o sopra Impostazioni: si torna dove si era. Un
@@ -166,7 +176,7 @@ export default function TutorialScreen() {
 
   // Dopo gli hook: il ramo condizionale non deve cambiarne l'ordine.
   if (!hydrated) return null;
-  if (!user) return <Redirect href="/(auth)/login" />;
+  if (!canShow) return <Redirect href="/(auth)/login" />;
 
   // La mascotte scala col telefono: grande dove c'e' spazio, mai tanto da
   // spingere il testo sotto il bottone su uno schermo da 4,7 pollici.

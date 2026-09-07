@@ -346,3 +346,55 @@ export function pickPlanPackage<T extends { plan: Plan; period: string }>(
     null
   );
 }
+
+/**
+ * Il periodo di un pacchetto dello store, da DUE fonti che devono essere
+ * d'accordo: l'id del prodotto (nostro, la fonte piu' stabile) e la durata
+ * ISO dichiarata dallo store. Se l'id e' noto e la durata dice un'altra
+ * cosa (su Play un secondo base plan annuale sotto il prodotto mensile
+ * arriva come "memika_plus_monthly:yearly" con "P1Y"), il pacchetto non si
+ * vende: "other", che loadPlanPackages scarta e segnala. Venderlo come
+ * mensile mostrerebbe "al mese" per un rinnovo annuale (Apple 3.1.2).
+ */
+export function resolveBillingPeriod(
+  productIdentifier: string,
+  isoPeriod: string | null | undefined,
+): BillingPeriod | "other" {
+  const byId = periodForProductId(productIdentifier);
+  const byIso = periodFromIso(isoPeriod);
+  if (byId === null) return byIso;
+  if (byIso !== "other" && byIso !== byId) return "other";
+  return byId;
+}
+
+/**
+ * Il selettore Mensile/Annuale ha senso solo se ALMENO UN piano ha davvero
+ * due pacchetti fra cui scegliere. Con Plus solo mensile e Pro solo annuale
+ * (approvazione parziale dei prodotti) i due segmenti non cambierebbero
+ * nulla: un controllo che non fa niente e' la funzionalita' segnaposto che
+ * Apple rifiuta (2.1).
+ */
+export function hasPeriodChoice(list: readonly { plan: Plan; period: string }[]): boolean {
+  return PLANS.some(
+    (plan) =>
+      list.some((p) => p.plan === plan && p.period === "monthly") &&
+      list.some((p) => p.plan === plan && p.period === "yearly"),
+  );
+}
+
+/**
+ * Su Google Play un acquisto di Pro da parte di un abbonato Plus, senza
+ * dire quale abbonamento sostituisce, crea un SECONDO abbonamento: due
+ * rinnovi, due entitlement. Questo trova, fra gli abbonamenti attivi
+ * riportati da RevenueCat, il prodotto del piano corrente da rimpiazzare.
+ * Su Play gli id arrivano come "prodotto:baseplan": si passa il prodotto.
+ * null = niente da sostituire (free, o nessun prodotto di quel piano).
+ */
+export function oldProductForChange(
+  activeSubscriptions: readonly string[],
+  currentPlan: Plan,
+): string | null {
+  if (currentPlan === "free") return null;
+  const hit = activeSubscriptions.find((id) => planForProductId(id) === currentPlan);
+  return hit ? (hit.split(":")[0] ?? null) : null;
+}

@@ -1176,7 +1176,7 @@ export const en: Record<keyof typeof it, string> = {
   "tutorial.reviewTitle": "You remember, I keep time",
   "tutorial.reviewBody": "The first review comes after 20 hours. If the memory holds, I move it further out. If it slips, I bring it closer.",
   "tutorial.healthTitle": "See what's fading",
-  "tutorial.healthBody": "Each memory can be stable, fading or archived. I show you where a hand is needed, without scores.",
+  "tutorial.healthBody": "Each memory can be stable, fading or archived. I show you where a hand is needed, no leaderboards.",
   "tutorial.remindersTitle": "I'll tell you when it's time",
   "tutorial.remindersBody": "One reminder a day, at the time you choose. I ask after your first saved memory. You can change it later in Settings.",
 

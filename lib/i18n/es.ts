@@ -1176,7 +1176,7 @@ export const es: Record<keyof typeof it, string> = {
   "tutorial.reviewTitle": "Tú recuerdas, yo llevo el tiempo",
   "tutorial.reviewBody": "El primer repaso llega después de 20 horas. Si el recuerdo se sostiene, lo llevo más lejos. Si falla, lo acerco.",
   "tutorial.healthTitle": "Ve qué se desvanece",
-  "tutorial.healthBody": "Cada recuerdo puede estar estable, desvaneciéndose o archivado. Te muestro dónde hace falta una mano, sin puntuaciones.",
+  "tutorial.healthBody": "Cada recuerdo puede estar estable, desvaneciéndose o archivado. Te muestro dónde hace falta una mano, sin clasificaciones.",
   "tutorial.remindersTitle": "Te aviso cuando toca",
   "tutorial.remindersBody": "Un recordatorio al día, a la hora que elijas. Te lo pido al guardar tu primer recuerdo. Luego lo cambias en Ajustes.",
 

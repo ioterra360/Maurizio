@@ -1175,8 +1175,8 @@ export const fr: Record<keyof typeof it, string> = {
   "tutorial.foldersBody": "Choisis une langue, une matière ou un centre d'intérêt. Je prépare le dossier, tu y ranges le terme, le sens et la phrase d'exemple.",
   "tutorial.reviewTitle": "Tu retiens, je tiens le tempo",
   "tutorial.reviewBody": "La première révision arrive après 20 heures. Si le souvenir tient, je l'éloigne. S'il vacille, je le rapproche.",
-  "tutorial.healthTitle": "Vois ce qui s'estompe",
-  "tutorial.healthBody": "Chaque souvenir peut être stable, en train de s'estomper ou archivé. Je te montre où un coup de main peut aider, sans scores.",
+  "tutorial.healthTitle": "Vois ce qui devient fragile",
+  "tutorial.healthBody": "Chaque souvenir peut être stable, fragile ou archivé. Je te montre où un coup de main peut aider, sans classement.",
   "tutorial.remindersTitle": "Je te préviens à temps",
   "tutorial.remindersBody": "Un rappel par jour, à l'heure que tu choisis. Je te le demande au premier souvenir enregistré. Ensuite, tu le changes dans les Réglages.",
 

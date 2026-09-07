@@ -235,5 +235,5 @@ Tema claro y oscuro que sigue los ajustes de tu teléfono.
 ## Da fare quando ci sono gli IAP (RevenueCat)
 - Classificazione contenuti: "acquisti di beni digitali" → sì
 - Impostazioni store: "contiene acquisti in-app" → sì
-- Prodotti → Abbonamenti: creare **quattro** prodotti, con gli id identici in Play Console, App Store Connect e RevenueCat (`PRODUCT_IDS` in `lib/plan.ts`): `memika_plus_monthly`, `memika_plus_yearly`, `memika_pro_monthly`, `memika_pro_yearly`. L'offerta `default` di questo ciclo espone solo i due mensili.
+- Prodotti → Abbonamenti: creare **quattro** prodotti, con gli id identici in Play Console, App Store Connect e RevenueCat (`PRODUCT_IDS` in `lib/plan.ts`): `memika_plus_monthly`, `memika_plus_yearly`, `memika_pro_monthly`, `memika_pro_yearly`. L'offerta `default` porta tutti e quattro i pacchetti (identificatori custom, vedi `docs/PAYMENTS.md` § selettore Mensile/Annuale): su Play gli annuali sono prodotti SEPARATI con un base plan P1Y ciascuno, mai un secondo base plan del mensile.
 - Profilo pagamenti merchant sotto l'owner (memikaapp@gmail.com) — solo DOPO la finalizzazione del trasferimento

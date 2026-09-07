@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Tabs, router, useRootNavigationState } from "expo-router";
 import { StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -41,15 +41,31 @@ export default function AppLayout() {
   // schermata di recupero. Controllo una volta per utente a ogni mount del
   // gruppo (login incluso); un errore di rete non blocca l'uso normale.
   const userId = useAuthStore((s) => s.user?.id);
+  // Vero quando il controllo ha risposto "nessuna eliminazione" (o e'
+  // fallito): il tutorial sotto aspetta questo, cosi' il replace verso
+  // /recover-account non trova mai il tutorial a fuoco al posto di (app).
+  const [deletionChecked, setDeletionChecked] = useState(false);
   useEffect(() => {
     if (!userId) return;
     let cancelled = false;
+    setDeletionChecked(false);
     fetchDeletionRequestedAt(userId)
       .then((ts) => {
-        if (!cancelled && ts) router.replace("/recover-account" as never);
+        if (cancelled) return;
+        if (ts) {
+          // Qualunque rotta root sopra (app) (tutorial, /add, un ricordo)
+          // va chiusa prima, altrimenti il replace sostituirebbe QUELLA e
+          // il back di sistema riporterebbe dentro l'app (stessa mossa di
+          // app/_layout.tsx per il tocco su una notifica).
+          if (router.canDismiss()) router.dismissAll();
+          router.replace("/recover-account" as never);
+          return;
+        }
+        setDeletionChecked(true);
       })
       .catch((err) => {
         reportError("app-layout/deletion-check", err);
+        if (!cancelled) setDeletionChecked(true);
       });
     return () => {
       cancelled = true;
@@ -71,11 +87,12 @@ export default function AppLayout() {
   // abbia una chiave.
   const navReady = Boolean(useRootNavigationState()?.key);
   useEffect(() => {
-    if (!navReady || !userId || !tutorialHydrated || tutorialSeen || pendingOnboarding) return;
+    if (!navReady || !userId || !deletionChecked) return;
+    if (!tutorialHydrated || tutorialSeen || pendingOnboarding) return;
     if (tutorialPushed.current) return;
     tutorialPushed.current = true;
     router.push("/tutorial" as never);
-  }, [navReady, userId, tutorialHydrated, tutorialSeen, pendingOnboarding]);
+  }, [navReady, userId, deletionChecked, tutorialHydrated, tutorialSeen, pendingOnboarding]);
 
   // Promemoria giornaliero: riallineato al profilo a ogni avvio/login
   // (spec F3). Le notifiche per singolo ricordo NON si toccano qui: si

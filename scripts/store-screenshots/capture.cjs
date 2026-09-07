@@ -54,16 +54,9 @@ const tap = (page, text) => page.getByText(text, { exact: true }).first().click(
   const browser = await chromium.launch({ channel: "chrome", headless: true });
   require("fs").mkdirSync(OUT, { recursive: true });
 
-  // Logged-out: onboarding hero (the auth gate only renders it without a session).
-  {
-    const ctx = await newContext(browser);
-    const page = await ctx.newPage();
-    await page.goto(`${BASE}/onboarding`, { waitUntil: "load", timeout: 240000 });
-    await page.waitForFunction(() => document.body.innerText.length > 40, null, { timeout: 240000 });
-    await page.waitForTimeout(2000);
-    await page.screenshot({ path: path.join(OUT, "onboarding-welcome.png") });
-    await ctx.close();
-  }
+  // Il vecchio scatto "onboarding-welcome" e' sparito con app/(auth)/onboarding.tsx
+  // (7/9/2026): il tutorial vive in /tutorial, richiede una sessione e nessuno
+  // specs*.json usa quel PNG.
 
   // Logged-in demo user.
   const ctx = await newContext(browser);

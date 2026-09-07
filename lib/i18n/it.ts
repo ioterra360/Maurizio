@@ -1176,7 +1176,7 @@ export const it = {
   "tutorial.reviewTitle": "Tu ricordi, io tengo il tempo",
   "tutorial.reviewBody": "Il primo ripasso arriva dopo 20 ore. Se il ricordo regge, lo sposto più avanti. Se inciampa, lo riporto vicino.",
   "tutorial.healthTitle": "Vedi cosa sta sbiadendo",
-  "tutorial.healthBody": "Ogni ricordo può essere stabile, in dissolvenza o archiviato. Io ti mostro dove serve una mano, senza punteggi.",
+  "tutorial.healthBody": "Ogni ricordo può essere stabile, in dissolvenza o archiviato. Io ti mostro dove serve una mano, senza classifiche.",
   "tutorial.remindersTitle": "Ti avviso quando è ora",
   "tutorial.remindersBody": "Un promemoria al giorno, all'ora che scegli. Te lo chiedo al primo ricordo salvato. Poi lo cambi dalle Impostazioni.",
 

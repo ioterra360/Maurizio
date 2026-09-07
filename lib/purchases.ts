@@ -19,6 +19,8 @@ import { isRunningInExpoGo } from "expo";
 import Purchases, {
   LOG_LEVEL,
   PURCHASES_ERROR_CODE,
+  STORE_REPLACEMENT_MODE,
+  type StoreProductChangeInfo,
   type CustomerInfo,
   type PurchasesError,
   type PurchasesPackage,
@@ -29,8 +31,8 @@ import { reportError } from "./report-error";
 import {
   ENTITLEMENT_PLUS,
   ENTITLEMENT_PRO,
-  periodForProductId,
-  periodFromIso,
+  oldProductForChange,
+  resolveBillingPeriod,
   planForProductId,
   planFromEntitlements,
   type BillingPeriod,
@@ -110,12 +112,11 @@ export type PlanPackage = {
 
 /**
  * L'id del prodotto e' nostro ed e' la fonte piu' stabile del periodo; la
- * durata ISO dichiarata dallo store e' la seconda scelta.
+ * durata ISO dichiarata dallo store e' la seconda, e se le due non sono
+ * d'accordo il pacchetto non si vende (resolveBillingPeriod, lib/plan.ts).
  */
 function periodOf(pkg: PurchasesPackage): BillingPeriod | "other" {
-  return (
-    periodForProductId(pkg.product.identifier) ?? periodFromIso(pkg.product.subscriptionPeriod)
-  );
+  return resolveBillingPeriod(pkg.product.identifier, pkg.product.subscriptionPeriod);
 }
 
 /**
@@ -170,8 +171,9 @@ export type PurchaseOutcome =
  * L'annullamento dell'utente NON e' un errore da segnalare; il pagamento in
  * attesa (Android) nemmeno: l'entitlement arrivera' dal listener.
  */
-export async function purchasePlan(pkg: PlanPackage): Promise<PurchaseOutcome> {
-  const { customerInfo } = await Purchases.purchasePackage(pkg.pkg).catch((e: unknown) => {
+export async function purchasePlan(pkg: PlanPackage, currentPlan: Plan): Promise<PurchaseOutcome> {
+  const change = await productChangeFor(currentPlan);
+  const { customerInfo } = await Purchases.purchasePackage(pkg.pkg, null, change).catch((e: unknown) => {
     const err = e as PurchasesError;
     if (err?.code === PURCHASES_ERROR_CODE.PURCHASE_CANCELLED_ERROR) {
       throw { memikaOutcome: "cancelled" as const };
@@ -182,6 +184,26 @@ export async function purchasePlan(pkg: PlanPackage): Promise<PurchaseOutcome> {
     throw e;
   });
   return { status: "purchased", plan: planFromCustomerInfo(customerInfo) };
+}
+
+/**
+ * Solo Google Play: chi ha gia' un abbonamento (Plus) e ne compra uno
+ * superiore (Pro) deve dire quale sostituisce, altrimenti Play ne apre un
+ * SECONDO e i due si rinnovano insieme. Su iOS non serve: i quattro
+ * prodotti stanno nello stesso gruppo e Apple fa il cambio da se'. Il tempo
+ * gia' pagato del vecchio piano viene convertito in tempo del nuovo
+ * (WITH_TIME_PRORATION), che e' il cambio meno sorprendente per chi paga.
+ * Se RevenueCat non riporta nessun prodotto del piano corrente si compra
+ * senza cambio: e' il caso di una concessione di cortesia (piano scritto a
+ * mano, nessun abbonamento vero da sostituire).
+ */
+async function productChangeFor(currentPlan: Plan): Promise<StoreProductChangeInfo | null> {
+  if (Platform.OS !== "android" || currentPlan === "free") return null;
+  const info = await Purchases.getCustomerInfo();
+  const old = oldProductForChange(info.activeSubscriptions, currentPlan);
+  return old
+    ? { oldProductIdentifier: old, replacementMode: STORE_REPLACEMENT_MODE.WITH_TIME_PRORATION }
+    : null;
 }
 
 /** Traduce il rifiuto "gentile" di purchasePlan; rilancia tutto il resto. */

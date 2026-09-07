@@ -89,6 +89,13 @@ type AuthState = {
   setPlan: (plan: Plan, planUntil: string | null) => void;
   signIn: (email: string, password: string) => Promise<void>;
   /**
+   * Scrive `user` da una sessione appena creata (registrazione) PRIMA che
+   * il chiamante navighi. Il listener SIGNED_IN rimanda il profilo a un
+   * setTimeout: una schermata montata nel frattempo vedrebbe user null e,
+   * se rimbalzasse al login, il gate di (auth) terrebbe li' il nuovo utente.
+   */
+  adoptSession: (session: { user: { id: string; email?: string; user_metadata?: unknown } }) => Promise<void>;
+  /**
    * Ends the session. `scope: "global"` (default) revokes every session of
    * the user on every device; `"local"` only this one — used when
    * abandoning a recovery link, which must not log the user out of their
@@ -364,6 +371,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     return () => {
       sub?.subscription.unsubscribe();
     };
+  },
+
+  adoptSession: async (session) => {
+    // Stesso schema di signIn e applyAuthLink: l'epoch scarta il fetch
+    // gemello gia' schedulato dal listener, che arriverebbe dopo.
+    const myEpoch = ++authEpoch;
+    const user = await buildAuthUserFromSession(session);
+    if (myEpoch === authEpoch) set({ user });
   },
 
   signIn: async (rawEmail, password) => {

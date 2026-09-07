@@ -167,6 +167,25 @@ possono usare i tipi predefiniti). Il paywall non guarda l'identificatore del
 pacchetto: legge piano e periodo dall'id del **prodotto** (`planForProductId`
 + `periodForProductId`), quindi i nomi custom sono liberi.
 
+Due guardie aggiunte dopo la revisione del 7/9/2026:
+
+- **Il selettore compare solo se ALMENO UN piano ha davvero mensile e
+  annuale** (`hasPeriodChoice`, `lib/plan.ts`). Con Plus solo mensile e Pro
+  solo annuale (approvazione parziale dei prodotti) i due segmenti non
+  cambierebbero nulla: un controllo inerte e' la funzionalita' segnaposto
+  che Apple rifiuta (2.1).
+- **Id e durata devono essere d'accordo** (`resolveBillingPeriod`): se lo
+  store dichiara "P1Y" per un id che dice mensile (un secondo base plan
+  annuale sotto `memika_plus_monthly`, che Play Console propone come
+  modello standard), il pacchetto viene scartato e segnalato, non venduto
+  "al mese".
+- **Su Google Play il passaggio Plus → Pro sostituisce l'abbonamento**
+  (`purchasePlan(pkg, pianoCorrente)` passa `oldProductIdentifier` +
+  `WITH_TIME_PRORATION`): senza, Play aprirebbe un SECONDO abbonamento e i
+  due si rinnoverebbero insieme. Su iOS il cambio lo fa Apple, perche' i
+  quattro prodotti stanno nello stesso gruppo. Il declassamento resta
+  fuori dal paywall (nessun CTA verso il basso): si fa dallo store.
+
 ## Grandfathering, e come contano i tetti
 
 Chi ha già più di 10 ricordi, più di una cartella o delle sezioni li tiene
