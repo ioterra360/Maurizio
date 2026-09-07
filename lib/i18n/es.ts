@@ -978,7 +978,6 @@ export const es: Record<keyof typeof it, string> = {
   "recover.title": "Recupera tu cuenta",
   "settings.trashHint": "Carpetas y recuerdos eliminados, recuperables durante 24 horas",
   "settings.trashLabel": "Papelera",
-  "settings.tutorialHint": "La mascota te explica Memika otra vez en siete pasos.",
   "settings.tutorialLabel": "Volver a ver el tutorial",
   "trash.banner": "Todo lo que está aquí se elimina definitivamente después de 24 horas.",
   "trash.empty": "La papelera está vacía.",

@@ -978,7 +978,6 @@ export const fr: Record<keyof typeof it, string> = {
   "recover.title": "Récupère ton compte",
   "settings.trashHint": "Dossiers et souvenirs supprimés, récupérables pendant 24 heures",
   "settings.trashLabel": "Corbeille",
-  "settings.tutorialHint": "La mascotte te réexplique Memika en sept étapes.",
   "settings.tutorialLabel": "Revoir le tutoriel",
   "trash.banner": "Tout ce qui se trouve ici est supprimé définitivement après 24 heures.",
   "trash.empty": "La corbeille est vide.",

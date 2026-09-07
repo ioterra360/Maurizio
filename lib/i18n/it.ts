@@ -978,7 +978,6 @@ export const it = {
   "recover.title": "Recupera il tuo account",
   "settings.trashHint": "Cartelle e ricordi eliminati, recuperabili per 24 ore",
   "settings.trashLabel": "Cestino",
-  "settings.tutorialHint": "La mascotte ti rispiega Memika in sette passi.",
   "settings.tutorialLabel": "Rivedi il tutorial",
   "trash.banner": "Tutto ciò che è qui viene eliminato definitivamente dopo 24 ore.",
   "trash.empty": "Il cestino è vuoto.",

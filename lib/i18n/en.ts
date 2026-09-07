@@ -978,7 +978,6 @@ export const en: Record<keyof typeof it, string> = {
   "recover.title": "Recover your account",
   "settings.trashHint": "Deleted folders and memories, recoverable for 24 hours",
   "settings.trashLabel": "Trash",
-  "settings.tutorialHint": "The mascot walks you through Memika again in seven steps.",
   "settings.tutorialLabel": "Review the tutorial",
   "trash.banner": "Everything here is permanently deleted after 24 hours.",
   "trash.empty": "The trash is empty.",

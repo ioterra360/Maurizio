@@ -372,81 +372,6 @@ export default function SettingsScreen() {
           </View>
         </View>
 
-        {/* Rivedi il tutorial: un box con la mascotte, non una riga fra le
-            altre (Angelo, 7/9/2026). Tutto il box e' toccabile; la pillola
-            a destra dice solo cosa succede. */}
-        <View style={{ paddingHorizontal: 16, paddingTop: 12 }}>
-          <Tappable
-            onPress={() => {
-              tap();
-              router.push("/tutorial?replay=1" as never);
-            }}
-            accessibilityRole="button"
-            accessibilityLabel={tr("settings.tutorialLabel")}
-            accessibilityHint={tr("settings.tutorialHint")}
-            pressedOpacity={0.85}
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              gap: 14,
-              paddingHorizontal: 16,
-              paddingVertical: 14,
-              borderRadius: radii.card,
-              backgroundColor: colors.surface,
-              borderWidth: 1,
-              borderColor: colors.hairline,
-            }}
-          >
-            <View
-              style={{
-                width: 60,
-                height: 60,
-                borderRadius: 999,
-                alignItems: "center",
-                justifyContent: "center",
-                backgroundColor: colors.tagUserBg,
-              }}
-            >
-              <Mascot variant="idea" size={50} withShadow={false} />
-            </View>
-            <View style={{ flex: 1, minWidth: 0 }}>
-              <Text
-                style={{
-                  fontFamily: FONT.semibold,
-                  fontSize: 15.5,
-                  color: colors.navy,
-                  letterSpacing: -0.15,
-                }}
-              >
-                {tr("settings.tutorialLabel")}
-              </Text>
-              <Text
-                style={{
-                  marginTop: 3,
-                  fontFamily: FONT.regular,
-                  fontSize: 13,
-                  lineHeight: 18,
-                  color: colors.midGrey,
-                }}
-              >
-                {tr("settings.tutorialHint")}
-              </Text>
-            </View>
-            <View
-              style={{
-                paddingHorizontal: 12,
-                paddingVertical: 7,
-                borderRadius: 999,
-                backgroundColor: colors.accent,
-              }}
-            >
-              <Text style={{ fontFamily: FONT.semibold, fontSize: 12.5, color: colors.onAccent }}>
-                {tr("settings.open")}
-              </Text>
-            </View>
-          </Tappable>
-        </View>
-
         {/* Limits */}
         <View style={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 8 }}>
           <SectionLabel>{tr("settings.limitsSection")}</SectionLabel>
@@ -618,6 +543,70 @@ export default function SettingsScreen() {
             onPress={() => openExternal(supportMailto)}
           />
         </View>
+
+        {/* Rivedi il tutorial: un box con la mascotte in fondo, prima della
+            zona pericolosa (Angelo, 7/9/2026). Tutto il box e' toccabile; la
+            pillola a destra dice solo cosa succede. */}
+        <View style={{ paddingHorizontal: 16, paddingTop: 24 }}>
+          <Tappable
+            onPress={() => {
+              tap();
+              router.push("/tutorial?replay=1" as never);
+            }}
+            accessibilityRole="button"
+            accessibilityLabel={tr("settings.tutorialLabel")}
+            pressedOpacity={0.85}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 14,
+              paddingHorizontal: 16,
+              paddingVertical: 14,
+              borderRadius: radii.card,
+              backgroundColor: colors.surface,
+              borderWidth: 1,
+              borderColor: colors.hairline,
+            }}
+          >
+            <View
+              style={{
+                width: 60,
+                height: 60,
+                borderRadius: 999,
+                alignItems: "center",
+                justifyContent: "center",
+                backgroundColor: colors.tagUserBg,
+              }}
+            >
+              <Mascot variant="idea" size={50} withShadow={false} />
+            </View>
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <Text
+                style={{
+                  fontFamily: FONT.semibold,
+                  fontSize: 15.5,
+                  color: colors.navy,
+                  letterSpacing: -0.15,
+                }}
+              >
+                {tr("settings.tutorialLabel")}
+              </Text>
+            </View>
+            <View
+              style={{
+                paddingHorizontal: 12,
+                paddingVertical: 7,
+                borderRadius: 999,
+                backgroundColor: colors.accent,
+              }}
+            >
+              <Text style={{ fontFamily: FONT.semibold, fontSize: 12.5, color: colors.onAccent }}>
+                {tr("settings.open")}
+              </Text>
+            </View>
+          </Tappable>
+        </View>
+
 
         {/* Danger zone: warning header + two icon-led cards */}
         <View style={{ paddingHorizontal: 24, paddingTop: 32, paddingBottom: 10 }}>
