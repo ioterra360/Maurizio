@@ -426,7 +426,9 @@ export default function TodayScreen() {
               accessibilityLabel={`${upcomingLabel(d.dayKey)} · ${tp("upcoming.dayCount", d.count)}`}
               // La riga di un giorno apre direttamente il foglio di QUEL
               // giorno; solo "Vedi ripassi successivi" apre il calendario.
-              onPress={() => router.push({ pathname: "/upcoming", params: { day: d.dayKey } } as never)}
+              // `open` cambia a ogni tocco: /upcoming e' un tab e resta montato, e con
+              // il solo `day` un secondo tocco su "Domani" non riaprirebbe nulla.
+              onPress={() => router.push({ pathname: "/upcoming", params: { day: d.dayKey, open: String(Date.now()) } } as never)}
               pressedOpacity={0.85}
               style={{
                 flexDirection: "row",
@@ -465,7 +467,9 @@ export default function TodayScreen() {
           <Tappable
             accessibilityRole="button"
             accessibilityLabel={t("today.seeUpcoming")}
-            onPress={() => router.push("/upcoming" as never)}
+            // Parametri vuoti di proposito: il tab conserva quelli dell'ultimo
+            // "Domani", e senza azzerarli il calendario riaprirebbe quel giorno.
+            onPress={() => router.push({ pathname: "/upcoming", params: { day: "", open: "" } } as never)}
             pressedOpacity={0.85}
             style={{
               flexDirection: "row",

@@ -45,7 +45,7 @@ export default function UpcomingScreen() {
   // `day` arriva dalle righe "Domani · N ricordi" della Home: quella riga
   // apre direttamente il foglio di quel giorno, mentre "Vedi ripassi
   // successivi" arriva qui senza parametro e mostra il calendario e basta.
-  const { day: dayParam } = useLocalSearchParams<{ day?: string }>();
+  const { day: dayParam, open: openNonce } = useLocalSearchParams<{ day?: string; open?: string }>();
   const requestedDay = typeof dayParam === "string" && /^\d{4}-\d{2}-\d{2}$/.test(dayParam) ? dayParam : null;
 
   // Primo giorno del mese visualizzato (mezzanotte locale) — quello del
@@ -93,21 +93,21 @@ export default function UpcomingScreen() {
     [user],
   );
 
-  // Apertura automatica del giorno richiesto. La guardia e' sul VALORE del
-  // parametro, non un flag una-tantum: questa schermata e' un tab e resta
-  // montata, quindi Home → "Domani" → indietro → "Lunedì" arriva qui con un
-  // `day` diverso sullo stesso componente, e deve aprire il nuovo giorno.
-  // Chiuso il foglio si resta sul calendario; lo stesso giorno non si
-  // riapre da solo finche' il parametro non cambia.
-  const lastAutoOpened = useRef<string | null>(null);
+  // Apertura automatica del giorno richiesto. La guardia e' sul NONCE `open`,
+  // che la Home cambia a ogni tocco: questa schermata e' un tab e resta
+  // montata, quindi Home → "Domani" → chiudi → Home → "Domani" arriva qui con
+  // lo stesso `day` — e deve riaprire lo stesso (Angelo, 7/9/2026). Con la
+  // guardia sul giorno si apriva solo la prima volta. "Vedi ripassi
+  // successivi" arriva con `open` vuoto e non apre niente.
+  const lastOpenNonce = useRef<string | null>(null);
   useEffect(() => {
-    if (!requestedDay || !user || lastAutoOpened.current === requestedDay) return;
-    lastAutoOpened.current = requestedDay;
+    if (!requestedDay || !openNonce || !user || lastOpenNonce.current === openNonce) return;
+    lastOpenNonce.current = openNonce;
     // Il mese mostrato segue il giorno richiesto anche se arriva dopo il montaggio.
     const d = new Date(`${requestedDay}T12:00:00`);
     setMonthStart(new Date(d.getFullYear(), d.getMonth(), 1));
     openDaySheet(requestedDay);
-  }, [requestedDay, user, openDaySheet]);
+  }, [requestedDay, openNonce, user, openDaySheet]);
 
   // Celle del mese: offset del primo giorno (settimana che parte dal lunedì).
   const cells = useMemo(() => {
