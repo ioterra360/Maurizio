@@ -206,7 +206,7 @@ export default function LoginScreen() {
                   color: colors.midGrey,
                 }}
               >
-                Demo mode attivo. Accedi con uno dei due account sopra — le password
+                Demo mode attivo. Accedi con uno dei due account sopra: le password
                 vengono accettate senza verifica. Disattiva{" "}
                 <Text style={{ fontFamily: FONT.semibold }}>EXPO_PUBLIC_DEMO_MODE</Text>{" "}
                 in <Text style={{ fontFamily: FONT.semibold }}>.env</Text> per attivare

@@ -34,6 +34,14 @@ describe("catalogs", () => {
   test("no empty strings", () => {
     for (const [k, v] of Object.entries({ ...it, ...en, ...fr, ...es })) expect(v.trim(), k).not.toBe("");
   });
+  // Il trattino lungo come inciso e' una firma da testo generato: Angelo lo
+  // vuole fuori da ogni stringa che l'utente legge (7/9/2026). Vale per i
+  // VALORI dei quattro cataloghi, non per i commenti dei file.
+  test("no em dash in any user-facing string", () => {
+    for (const [name, cat] of Object.entries({ it, en, fr, es })) {
+      for (const [k, v] of Object.entries(cat)) expect(v, name + ":" + k).not.toContain("—");
+    }
+  });
 });
 
 describe("localeFromTag", () => {
