@@ -25,8 +25,8 @@ import {
   type PermissionState,
 } from "@/lib/notifications";
 import {
+  DAILY_HORIZON_DAYS,
   DEFAULT_REMINDER_SLOT,
-  nextDailyTrigger,
   slotFromProfileTime,
 } from "@/lib/notifications-core";
 import { reportError } from "@/lib/report-error";
@@ -80,6 +80,23 @@ export default function NotificationsScreen() {
   // un rifiuto del permesso nessuno dei valori della key cambia.
   const [switchNonce, setSwitchNonce] = useState(0);
   const [sheetOpen, setSheetOpen] = useState(false);
+  // Primo istante del piano programmato: undefined = non ancora calcolato
+  // (niente riga), null = niente in coda nei prossimi DAILY_HORIZON_DAYS.
+  const [nextAt, setNextAt] = useState<Date | null | undefined>(undefined);
+  const syncDaily = useCallback(
+    async (calm: boolean, s: string) => {
+      if (!user) return;
+      // Durante il ricalcolo la riga sparisce invece di mostrare il valore
+      // vecchio come se fosse quello nuovo.
+      setNextAt(undefined);
+      const plan = await syncDailyReminder(user.id, { calmMode: calm, morningReviewAt: s });
+      // null = piano NON ricalcolato (rete caduta, cancelli chiusi, sync
+      // superata da una piu' recente): il programma vecchio resta in attesa
+      // nell'OS, quindi annunciare "niente in coda" sarebbe falso.
+      if (plan) setNextAt(plan[0] ?? null);
+    },
+    [user],
+  );
 
   useEffect(() => {
     if (!user) return;
@@ -90,12 +107,13 @@ export default function NotificationsScreen() {
         setProfile(p);
         setCalmMode(p.calmMode);
         setSlot(slotFromProfileTime(p.morningReviewAt));
+        void syncDaily(p.calmMode, slotFromProfileTime(p.morningReviewAt));
       })
       .catch((err) => reportError("notifications/profile-load", err));
     return () => {
       cancelled = true;
     };
-  }, [user]);
+  }, [user, syncDaily]);
 
   // Il permesso si rilegge a ogni focus: l'utente può tornare dalle
   // impostazioni del telefono avendolo appena cambiato.
@@ -151,7 +169,7 @@ export default function NotificationsScreen() {
     setPermission(perm);
     if (perm.allowed) {
       setPrefs({ enabled: true });
-      await syncDailyReminder({ calmMode, morningReviewAt: slot });
+      await syncDaily(calmMode, slot);
       await rearmFirstReviews();
       return;
     }
@@ -175,7 +193,7 @@ export default function NotificationsScreen() {
     if (patch.calmMode !== undefined) setCalmMode(patch.calmMode);
     if (patch.morningReviewAt !== undefined) setSlot(patch.morningReviewAt);
     updateProfile(user.id, patch)
-      .then(() => syncDailyReminder({ calmMode: nextCalm, morningReviewAt: nextSlot }))
+      .then(() => syncDaily(nextCalm, nextSlot))
       .catch((err) => {
         reportError("notifications/profile-save", err);
         showToast(t("notifications.saveFailed"));
@@ -200,10 +218,11 @@ export default function NotificationsScreen() {
     ? t("notifications.slotDisabled")
     : calmMode
       ? t("notifications.slotDisabledByToggle")
-      : (() => {
-          const next = nextDailyTrigger(slot);
-          return next ? t("notifications.slotNext", { time: shortDateTime(next.toISOString()) }) : "";
-        })();
+      : nextAt === undefined
+        ? ""
+        : nextAt
+          ? t("notifications.slotNext", { time: shortDateTime(nextAt.toISOString()) })
+          : t("notifications.slotNone", { days: DAILY_HORIZON_DAYS });
 
   return (
     <SafeAreaView className="flex-1 bg-warm-white" edges={["top"]}>

@@ -21,9 +21,6 @@ import {
   type FolderWithStats,
   type Memory,
   type MemoryRow,
-  type Subfolder,
-  type SubfolderRow,
-  mapSubfolder,
   type Profile,
   type ProfileRow,
   type ReviewItem,
@@ -769,7 +766,6 @@ export async function fetchFolderDetail(
       id: `demo-${kind}-${i}`,
       userId,
       folderId: folder.id,
-      subfolderId: null,
       term: it.front,
       reading: it.reading ?? null,
       definition: it.back,
@@ -1041,6 +1037,36 @@ export async function fetchOverdueCount(userId: string): Promise<number> {
 }
 
 /**
+ * La data di ripasso piu' vicina fra i ricordi RIPASSABILI: vivi, non
+ * archiviati, cartella non in pausa (stessi predicati della coda globale
+ * di Oggi, fetchDueMemoriesByLayer senza folderId). E' l'unico dato che
+ * serve al promemoria "solo nei giorni con qualcosa in coda": un ricordo
+ * in coda resta in coda finche' non viene ripassato, quindi da questa data
+ * in poi ogni slot ha qualcosa (docs/superpowers/specs/
+ * 2026-09-08-promemoria-solo-in-coda-design.md). Nessun confronto con
+ * "adesso": il chiamante la confronta con slot FUTURI. Null = mai niente.
+ */
+export async function fetchEarliestDueAt(userId: string): Promise<string | null> {
+  if (isDemoMode) return null;
+  const paused = await pausedFolderIds(userId);
+  let q = supabase
+    .from("memories")
+    .select("next_review_at")
+    .eq("user_id", userId)
+    .is("deleted_at", null)
+    .neq("state", "archived");
+  if (paused.length > 0) q = q.not("folder_id", "in", `(${paused.join(",")})`);
+  // Niente filtro is-not-null: ORDER BY ... ASC mette i NULL in fondo, quindi
+  // la prima riga e' una data se ne esiste una. (Un `.not(..., "is", null)`
+  // in testa alla catena manda tsc in "type instantiation excessively deep"
+  // alla riassegnazione di q, come `.returns<>()`: cast al confine.)
+  const { data, error } = await q.order("next_review_at").limit(1);
+  if (error) throw error;
+  const rows = (data ?? []) as Array<{ next_review_at: string | null }>;
+  return rows[0]?.next_review_at ?? null;
+}
+
+/**
  * Ripassi futuri raggruppati per giorno LOCALE — "Prossimi ripassi" della
  * Home e le celle del calendario. Il raggruppamento avviene lato client
  * (lib/upcoming.ts): per i volumi di un'app personale non serve un
@@ -1262,83 +1288,23 @@ export async function restoreMemory(id: string): Promise<void> {
 }
 
 // ---------------------------------------------------------------------------
-// Sottocartelle (sezioni dentro una cartella — migration 20260831010000) e
-// spostamento dei ricordi. Il tetto per cartella dipende dal piano
-// (PLAN_LIMITS in lib/plan.ts) ed e' applicato dal trigger
-// enforce_subfolder_rules.
+// Spostamento dei ricordi. Le sezioni (sottocartelle, migration
+// 20260831010000) sono uscite dall'app l'8/9/2026 (Angelo): la tabella
+// `subfolders`, la colonna `memories.subfolder_id` e i trigger restano nel
+// database, ma il client non le legge ne' le scrive piu'.
 // ---------------------------------------------------------------------------
 
-export async function fetchSubfolders(folderId: string): Promise<Subfolder[]> {
-  if (isDemoMode) return [];
-  const { data, error } = await supabase
-    .from("subfolders")
-    .select("*")
-    .eq("folder_id", folderId)
-    .order("position")
-    .returns<SubfolderRow[]>();
-  if (error) throw error;
-  return (data ?? []).map(mapSubfolder);
-}
-
 /**
- * Crea una sezione nella cartella. position = max+1 delle esistenti (stessa
- * lettura usata anche dal chiamante per il limite client-side; il trigger
- * enforce_subfolder_rules è il vero guardiano del max 3).
+ * Sposta un ricordo nella radice di un'altra cartella. `subfolder_id` va
+ * azzerato insieme: il trigger memories_subfolder_coherence rifiuta una
+ * sezione che non appartiene alla cartella di destinazione. Appunti, stato
+ * SRS e storia restano.
  */
-export async function createSubfolder(
-  userId: string,
-  folderId: string,
-  name: string,
-): Promise<Subfolder> {
-  const trimmed = name.trim();
-  if (isDemoMode) {
-    const now = new Date().toISOString();
-    return { id: `demo-sub-${trimmed}`, userId, folderId, name: trimmed, position: 1, createdAt: now, updatedAt: now };
-  }
-  const existing = await fetchSubfolders(folderId);
-  const position = existing.reduce((max, s2) => Math.max(max, s2.position), 0) + 1;
-  const { data, error } = await supabase
-    .from("subfolders")
-    .insert({ user_id: userId, folder_id: folderId, name: trimmed, position })
-    .select("*")
-    .single<SubfolderRow>();
-  if (error) throw error;
-  return mapSubfolder(data);
-}
-
-export async function renameSubfolder(id: string, name: string): Promise<void> {
-  if (isDemoMode) return;
-  const { error } = await supabase
-    .from("subfolders")
-    .update({ name: name.trim() })
-    .eq("id", id);
-  if (error) throw error;
-}
-
-/**
- * Elimina la sezione. I suoi ricordi TORNANO alla radice della cartella
- * (memories.subfolder_id on delete set null): nessuna perdita, niente
- * cestino per le sezioni.
- */
-export async function deleteSubfolder(id: string): Promise<void> {
-  if (isDemoMode) return;
-  const { error } = await supabase.from("subfolders").delete().eq("id", id);
-  if (error) throw error;
-}
-
-/**
- * Sposta un ricordo in un'altra cartella (radice) o in una sezione. Il
- * trigger memories_subfolder_coherence garantisce che la sezione appartenga
- * alla cartella di destinazione. Appunti, stato SRS e storia restano.
- */
-export async function moveMemory(
-  id: string,
-  target: { folderId: string; subfolderId?: string | null },
-): Promise<void> {
+export async function moveMemory(id: string, target: { folderId: string }): Promise<void> {
   if (isDemoMode) return;
   const { error } = await supabase
     .from("memories")
-    .update({ folder_id: target.folderId, subfolder_id: target.subfolderId ?? null })
+    .update({ folder_id: target.folderId, subfolder_id: null })
     .eq("id", id);
   if (error) throw error;
 }

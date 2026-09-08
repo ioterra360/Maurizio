@@ -178,9 +178,9 @@ gets Pro.
       without either fails)
 - [ ] Local notifications via `expo-notifications` — CODE READY (2026-09-03,
       plan `docs/superpowers/plans/2026-09-03-notifiche-locali.md`):
-      first-review alert at T0+20h + one daily reminder. Inert until the
-      build-3 native plan adds the config plugin and flips
-      `NOTIFICATIONS_ENABLED`
+      first-review alert at T0+20h + a reminder only on days with something
+      in the queue (2026-09-08). LIVE since build 3 (`95fd5da`): the config
+      plugin is in `app.json` and `NOTIFICATIONS_ENABLED` is true
 - [ ] Custom SMTP (e.g. Resend on a future custom domain, or Gmail app password) + Italian auth email templates,
       then re-enable email confirmation — optional for launch, the built-in
       sender is capped at 2 emails/hour

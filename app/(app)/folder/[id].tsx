@@ -1,17 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ArrowUpDown, Plus, Repeat } from "lucide-react-native";
 
-import { NamePromptModal } from "@/components/NamePromptModal";
-import { createSubfolder, fetchSubfolders } from "@/lib/api";
-import { useAuthStore } from "@/lib/auth-store";
-import { errorCode, reportError } from "@/lib/report-error";
-import { canAddSection, planLimitFromCode, type PlanLimitKind } from "@/lib/plan";
-import { usePlan } from "@/lib/use-plan";
-import { PlanLimitDialog } from "@/components/PlanLimitDialog";
-import { useUIStore } from "@/lib/ui-store";
-import type { Subfolder } from "@/lib/mappers";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 
 import { TopBar } from "@/components/TopBar";
@@ -46,30 +37,8 @@ export default function FolderDetailScreen() {
   // navigazioni salvate dai client pre-OTA (fetchFolderDetail).
   const idParam = params.id && params.id.length > 0 ? params.id : null;
   const { folder, items, loading, error, refetch } = useFolderDetail(idParam);
-  const user = useAuthStore((s) => s.user);
-  const showToast = useUIStore((s) => s.showToast);
   const order = useFolderOrderStore((s) => s.order);
-  // Sezioni della cartella (sottocartelle): chips sotto i filtri di stato.
-  const [subfolders, setSubfolders] = useState<Subfolder[]>([]);
-  const [subFilter, setSubFilter] = useState<"all" | string>("all");
-  const [subModalOpen, setSubModalOpen] = useState(false);
-  const [subSaving, setSubSaving] = useState(false);
-  const plan = usePlan();
-  const [planBlock, setPlanBlock] = useState<PlanLimitKind | null>(null);
   const folderId = folder?.id ?? null;
-  const loadSubfolders = useCallback(async () => {
-    if (!folderId) return;
-    try {
-      const subs = await fetchSubfolders(folderId);
-      setSubfolders(subs);
-      setSubFilter((cur) => (cur === "all" || subs.some((s) => s.id === cur) ? cur : "all"));
-    } catch (e) {
-      reportError("folder/subfolders-load", e);
-    }
-  }, [folderId]);
-  useEffect(() => {
-    void loadSubfolders();
-  }, [loadSubfolders]);
   const startSession = useReviewStore((s) => s.start);
   const [filter, setFilter] = useState<"all" | MemoryState>("all");
   // Ordinamento della lista, ricordato per cartella (lib/folder-sort-store).
@@ -77,29 +46,19 @@ export default function FolderDetailScreen() {
   const setSort = useFolderSortStore((s) => s.setSort);
   const [sortOpen, setSortOpen] = useState(false);
   const sortedItems = useMemo(() => sortMemories(items, sort), [items, sort]);
-  // Filtro per sezione PRIMA dell'adattatore di visualizzazione.
-  const sectionedItems = useMemo(
-    () =>
-      subFilter === "all"
-        ? sortedItems
-        : sortedItems.filter((m) => (m.subfolderId ?? null) === subFilter),
-    [sortedItems, subFilter],
-  );
-
   // Refetch on focus — the name can change in folder-settings, and the hook
   // itself only loads on mount. Runs before the early returns (hooks rule).
   useFocusEffect(
     useCallback(() => {
       refetch();
-      void loadSubfolders();
-    }, [refetch, loadSubfolders]),
+    }, [refetch]),
   );
 
   // Memory (api/db model) → FolderItem (UI/display model) adapter. Kept
   // inline so we can rip it out when ItemRow accepts Memory directly.
   const displayItems = useMemo<FolderItem[]>(
     () =>
-      sectionedItems.map((m) => ({
+      sortedItems.map((m) => ({
         id: m.id,
         front: m.term,
         reading: m.reading ?? undefined,
@@ -108,7 +67,7 @@ export default function FolderDetailScreen() {
         reviewed: relativeReviewed(m.lastReviewedAt),
         layer: layerFor(m.phase, m.state) ?? undefined,
       })),
-    [sectionedItems],
+    [sortedItems],
   );
 
   const filtered = useMemo(() => {
@@ -380,65 +339,6 @@ export default function FolderDetailScreen() {
           />
         </ScrollView>
 
-        {/* Sezioni (sottocartelle) — il tetto per cartella dipende dal piano.
-            La striscia e il "+" restano SEMPRE montati e diramano al tocco.
-            Nasconderli al tetto sarebbe la scelta peggiore: un utente free ha
-            zero sezioni per costruzione, quindi non incontrerebbe mai un
-            motivo per passare a Plus, e un Plus a tre vedrebbe il "+" sparire
-            senza spiegazione. Stesso comportamento di Conoscenza e di Add. */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingHorizontal: 16, gap: 6, paddingBottom: 12 }}
-        >
-          {subfolders.length > 0 ? (
-            <FilterChip
-              label={t("subfolders.chipAll")}
-              count={items.length}
-              active={subFilter === "all"}
-              onPress={() => setSubFilter("all")}
-            />
-          ) : null}
-          {subfolders.map((s) => (
-            <FilterChip
-              key={s.id}
-              label={s.name}
-              count={items.filter((m) => (m.subfolderId ?? null) === s.id).length}
-              active={subFilter === s.id}
-              onPress={() => setSubFilter(s.id)}
-            />
-          ))}
-          <Tappable
-            onPress={() => {
-              if (!canAddSection(subfolders.length, plan)) {
-                setPlanBlock("sections");
-                return;
-              }
-              setSubModalOpen(true);
-            }}
-            accessibilityRole="button"
-            accessibilityLabel={t("subfolders.add")}
-            pressedOpacity={0.7}
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              gap: 5,
-              height: 32,
-              paddingHorizontal: 12,
-              borderRadius: radii.filter,
-              borderWidth: 1,
-              borderColor: colors.hairlineStrong,
-              borderStyle: "dashed",
-              backgroundColor: colors.warmWhite,
-            }}
-          >
-            <Plus size={13} color={colors.navy} strokeWidth={2.2} />
-            <Text style={{ fontFamily: FONT.medium, fontSize: 13, color: colors.navy }}>
-              {t("subfolders.add")}
-            </Text>
-          </Tappable>
-        </ScrollView>
-
         {/* Item list */}
         <View style={{ paddingHorizontal: 16, gap: 6 }}>
           {filtered.length === 0 ? (
@@ -509,47 +409,6 @@ export default function FolderDetailScreen() {
         onClose={() => setSortOpen(false)}
       />
 
-      <NamePromptModal
-        visible={subModalOpen}
-        title={t("subfolders.addTitle")}
-        placeholder={t("subfolders.namePlaceholder")}
-        saving={subSaving}
-        onClose={() => {
-          if (!subSaving) setSubModalOpen(false);
-        }}
-        onSave={(name) => {
-          if (!user || !folderId || subSaving) return;
-          setSubSaving(true);
-          createSubfolder(user.id, folderId, name)
-            .then(() => {
-              setSubModalOpen(false);
-              showToast(t("subfolders.created", { name }));
-              void loadSubfolders();
-            })
-            .catch((e) => {
-              const limit = planLimitFromCode(errorCode(e));
-              if (limit) {
-                // Il prompt del nome si chiude PRIMA del dialogo: due Modal
-                // presentati insieme su iOS possono far sparire il secondo
-                // ("Attempt to present ... which is already presenting"), e
-                // un limite di piano senza spiegazione e' un silenzio. Se
-                // invece appare, "Vedi i piani" navigherebbe lasciando il
-                // backdrop del prompt sopra il paywall.
-                setSubModalOpen(false);
-                setPlanBlock(limit);
-                return;
-              }
-              reportError("folder/subfolder-create", e);
-              showToast(
-                errorCode(e) === "23505"
-                  ? t("subfolders.duplicate")
-                  : t("subfolders.failed"),
-              );
-            })
-            .finally(() => setSubSaving(false));
-        }}
-      />
-      <PlanLimitDialog limit={planBlock} plan={plan} onClose={() => setPlanBlock(null)} />
     </SafeAreaView>
   );
 }

@@ -3,6 +3,8 @@
  *
  * È l'UNICO file che importa expo-notifications. Regole:
  *  - solo locali: nessun token push, nessun server;
+ *  - il promemoria e' un piano di notifiche DATATE, una per giorno con
+ *    qualcosa in coda (spec 2026-09-08), non un trigger giornaliero;
  *  - ogni funzione esce subito se le notifiche non sono disponibili
  *    (flag NOTIFICATIONS_ENABLED spento, o demo mode);
  *  - nessuna funzione lancia: gli errori passano da reportError e i call
@@ -25,21 +27,25 @@ import {
 } from "expo-notifications";
 import { Linking, Platform } from "react-native";
 
+import { fetchEarliestDueAt, fetchProfile } from "./api";
 import { NOTIFICATIONS_ENABLED } from "./constants";
 import { t } from "@/lib/i18n";
 import type { Memory, Profile } from "./mappers";
 import { useNotificationPrefsStore } from "./notification-prefs-store";
 import {
-  DAILY_REMINDER_ID,
+  LEGACY_DAILY_REMINDER_ID,
   REMINDER_CHANNEL_ID,
   canScheduleAt,
+  dailyIdentifierFor,
   dailyPayload,
+  dailyPlan,
+  dailySlotAboutToFire,
   firstReviewCapReached,
   firstReviewIdentifier,
   firstReviewPayload,
+  isDailyPayload,
   isFirstReviewInFolder,
   isFirstReviewPayload,
-  parseSlot,
   routeForPayload,
   shouldScheduleDaily,
   shouldScheduleFirstReview,
@@ -48,6 +54,7 @@ import {
 } from "./notifications-core";
 import { reportError } from "./report-error";
 import { isDemoMode } from "./supabase";
+import { dayKeyOf } from "./upcoming";
 
 /** Il flag lo flippa il piano di configurazione nativa (build 3); in demo l'OS non si tocca mai. */
 export function notificationsAvailable(): boolean {
@@ -229,56 +236,150 @@ export function cancelAllFirstReviews(): Promise<void> {
 }
 
 /**
- * Riallinea il promemoria giornaliero a profilo + prefs + permesso. È
- * l'unico punto che lo programma o lo cancella: chiamarlo è sempre
- * corretto, in qualunque stato ci si trovi. Profilo null (demo, errore di
- * rete) = calma accesa = niente promemoria.
+ * Generazione della sincronizzazione del promemoria. Ogni `syncDailyReminder`
+ * ne prende una all'ingresso; `cancelAllReminders` la incrementa. Dopo ogni
+ * attesa (rete, chiamate native) chi non e' piu' l'ultimo esce SENZA toccare
+ * l'OS: due sincronizzazioni sovrapposte con input diversi — l'interruttore
+ * premuto due volte, un ritorno in primo piano mentre l'utente cambia
+ * l'orario — altrimenti si intrecciano e lasciano nell'OS un insieme che non
+ * e' ne' l'uno ne' l'altro. Vale anche contro "cancella tutto": senza questo,
+ * una sync gia' partita riprogrammerebbe le sue date DOPO la cancellazione.
+ */
+let dailySyncGen = 0;
+
+/**
+ * Riallinea il promemoria a profilo + prefs + permesso + CODA. Dall'8/9/2026
+ * non e' piu' un trigger "ogni giorno": e' una notifica DATATA per ciascuno
+ * dei prossimi DAILY_HORIZON_DAYS giorni in cui, all'orario scelto, c'e'
+ * almeno un ricordo in coda (dailyPlan su fetchEarliestDueAt). E' l'unico
+ * punto che le programma o le cancella: chiamarlo e' sempre corretto, in
+ * qualunque stato. Profilo null (demo, errore di rete) = calma accesa =
+ * niente promemoria.
+ *
+ * Torna gli istanti programmati (il primo e' la riga "Prossimo promemoria"
+ * della schermata Notifiche) oppure **null quando il piano NON e' stato
+ * ricalcolato**: notifiche non disponibili, lettura della coda fallita, o
+ * sincronizzazione superata da una piu' recente. Un array vuoto significa
+ * una cosa sola: ho guardato e non c'e' niente da programmare. Chi mostra
+ * "niente in coda" all'utente deve distinguere i due casi, altrimenti
+ * annuncia una coda vuota mentre il programma vecchio e' ancora in attesa.
  */
 export async function syncDailyReminder(
+  userId: string,
   profile: Pick<Profile, "calmMode" | "morningReviewAt"> | null,
-): Promise<void> {
-  if (!notificationsAvailable()) return;
+): Promise<Date[] | null> {
+  if (!notificationsAvailable()) return null;
+  const gen = ++dailySyncGen;
   try {
-    const prefs = useNotificationPrefsStore.getState().prefs;
     const perm = await getPermission();
+    if (gen !== dailySyncGen) return null;
     const calmMode = profile?.calmMode ?? true;
-    if (!shouldScheduleDaily({ enabled: prefs.enabled, calmMode, allowed: perm.allowed })) {
-      await Notifications.cancelScheduledNotificationAsync(DAILY_REMINDER_ID);
-      return;
+    const slot = slotFromProfileTime(profile?.morningReviewAt);
+    // Le prefs si rileggono qui e di nuovo prima di programmare: fra le due
+    // c'e' la rete, e l'utente puo' spegnere l'interruttore nel frattempo.
+    if (
+      !shouldScheduleDaily({
+        enabled: useNotificationPrefsStore.getState().prefs.enabled,
+        calmMode,
+        allowed: perm.allowed,
+      })
+    ) {
+      await cancelDailyExcept(new Set(), slot);
+      return [];
     }
-    const slot = parseSlot(slotFromProfileTime(profile?.morningReviewAt));
-    if (!slot) {
-      // Oggi irraggiungibile (slotFromProfileTime torna sempre uno slot
-      // valido), ma se le due funzioni divergessero un `return` secco
-      // lascerebbe programmato l'orario VECCHIO mentre il profilo ne dice
-      // un altro. Meglio uscire senza promemoria che con quello sbagliato.
-      await Notifications.cancelScheduledNotificationAsync(DAILY_REMINDER_ID);
-      return;
+    let earliestDueAt: string | null;
+    try {
+      earliestDueAt = await fetchEarliestDueAt(userId);
+    } catch (e) {
+      // Rete assente: meglio il programma stantio in attesa che nessuno.
+      // Il prossimo primo piano rimette a posto. Null, non []: non e' una
+      // coda vuota, e' una lettura mancata.
+      reportError("notifications/sync-daily-fetch", e);
+      return null;
     }
-    await ensureChannel();
-    await Notifications.scheduleNotificationAsync({
-      identifier: DAILY_REMINDER_ID,
-      content: {
-        title: t("notifications.dailyTitle"),
-        body: t("notifications.dailyBody"),
-        data: dailyPayload(),
-        sound: true,
-      },
-      trigger: {
-        type: SchedulableTriggerInputTypes.DAILY,
-        hour: slot.hour,
-        minute: slot.minute,
-        channelId: REMINDER_CHANNEL_ID,
-      },
-    });
+    if (gen !== dailySyncGen) return null;
+    const now = new Date();
+    const plan = dailyPlan({ earliestDueAt, slot, now });
+    // Ricontrollo dopo la rete: l'interruttore puo' essere stato spento
+    // mentre la query era in volo.
+    if (!useNotificationPrefsStore.getState().prefs.enabled) return null;
+    if (plan.length > 0) await ensureChannel();
+    for (const at of plan) {
+      if (gen !== dailySyncGen) return null;
+      // Stesso identificatore = sostituzione: un cambio di orario riscrive
+      // il giorno senza duplicarlo.
+      await Notifications.scheduleNotificationAsync({
+        identifier: dailyIdentifierFor(at),
+        content: {
+          title: t("notifications.dailyTitle"),
+          body: t("notifications.dailyBody"),
+          data: dailyPayload(dayKeyOf(at)),
+          sound: true,
+        },
+        trigger: {
+          type: SchedulableTriggerInputTypes.DATE,
+          date: at.getTime(),
+          channelId: REMINDER_CHANNEL_ID,
+        },
+      });
+    }
+    if (gen !== dailySyncGen) return null;
+    await cancelDailyExcept(new Set(plan.map(dailyIdentifierFor)), slot, now);
+    return plan;
   } catch (e) {
     reportError("notifications/sync-daily", e);
+    return null;
+  }
+}
+
+/**
+ * Cancella le notifiche del promemoria in attesa (payload daily, compreso
+ * il vecchio "daily-reminder" delle installazioni attuali) tranne quelle
+ * in `keep`. Si filtra sul payload e sull'identificatore, mai sul trigger,
+ * che torna in forma nativa diversa fra iOS e Android.
+ *
+ * `slot` protegge il promemoria di OGGI negli ultimi due secondi prima che
+ * suoni: `dailyPlan` non puo' programmarlo cosi' a ridosso, quindi non e'
+ * nel piano, ma e' gia' in attesa nell'OS e cancellarlo lo perderebbe.
+ */
+async function cancelDailyExcept(
+  keep: ReadonlySet<string>,
+  slot?: string,
+  now: Date = new Date(),
+): Promise<void> {
+  const spared = new Set(keep);
+  if (slot && dailySlotAboutToFire(slot, now)) spared.add(dailyIdentifierFor(now));
+  const pending = await Notifications.getAllScheduledNotificationsAsync();
+  const stale = pending.filter(
+    (r) =>
+      (isDailyPayload(r.content.data) || r.identifier === LEGACY_DAILY_REMINDER_ID) &&
+      !spared.has(r.identifier),
+  );
+  await Promise.all(stale.map((r) => Notifications.cancelScheduledNotificationAsync(r.identifier)));
+}
+
+/**
+ * Per chi non ha il profilo sotto mano (layout, fine sessione): lo legge
+ * e riallinea. Null = non ricalcolato (vedi `syncDailyReminder`): un errore
+ * di rete lascia in attesa il programma vecchio.
+ */
+export async function resyncDailyReminder(userId: string): Promise<Date[] | null> {
+  if (!notificationsAvailable()) return null;
+  try {
+    const profile = await fetchProfile(userId);
+    return await syncDailyReminder(userId, profile);
+  } catch (e) {
+    reportError("notifications/resync-daily", e);
+    return null;
   }
 }
 
 /** Interruttore principale spento: niente resta in attesa. */
 export async function cancelAllReminders(): Promise<void> {
   if (!notificationsAvailable()) return;
+  // Invalida le sincronizzazioni in volo: una che avesse gia' letto la coda
+  // riprogrammerebbe le sue date subito DOPO questa cancellazione.
+  dailySyncGen++;
   try {
     await Notifications.cancelAllScheduledNotificationsAsync();
   } catch (e) {

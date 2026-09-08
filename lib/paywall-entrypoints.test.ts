@@ -111,7 +111,7 @@ describe("ingressi al paywall", () => {
     for (const f of feeders) {
       const src = read(f);
       const fromDb = src.includes("planLimitFromCode(");
-      const fromMirror = /canAdd(Memory|Folder|Section)\(/.test(src);
+      const fromMirror = /canAdd(Memory|Folder)\(/.test(src);
       expect(fromDb || fromMirror, `${f} apre PlanLimitDialog fuori da un limite`).toBe(true);
     }
   });

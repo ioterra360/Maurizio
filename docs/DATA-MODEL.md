@@ -41,9 +41,9 @@ is in the `admin_emails` allowlist (currently `memikaapp@gmail.com`).
 | `name` | text | Display name (derived from email if not provided) |
 | `role` | enum `user_role` | `user` or `admin` |
 | `daily_input_cap` | int | Max new memories per day (default 20, 1–200). Avviso morbido lato client, nessun trigger; scrivibile dall'utente (e' nella grant di UPDATE, 20260825121500). NON e' il tetto di piano: quello e' `memories_enforce_plan_limit` (P0004, 10 totali sul Free, cestino compreso) e riguarda `plan`. Le opzioni del cursore sono `DAILY_CAP_OPTIONS` in `lib/constants.ts`, con il minimo >= al tetto free (`lib/daily-cap.test.ts`) |
-| `calm_mode` | boolean | Suppresses the daily reminder (the first-review alert stays), default `true` — so the daily reminder is opt-out. Spec 2026-09-02 §F3 |
+| `calm_mode` | boolean | Suppresses the reminder (the first-review alert stays), default `true`, so the reminder is opt-out. Since 2026-09-08 the reminder is scheduled only on days with something due (14-day horizon, spec `docs/superpowers/specs/2026-09-08-promemoria-solo-in-coda-design.md`) |
 | `weekly_digest` | boolean | Saved preference only — no digest is sent yet; default `false` |
-| `morning_review_at` | time | Daily reminder slot (HH:MM, the client floors to a 30-minute slot); default 08:00 |
+| `morning_review_at` | time | Reminder slot (HH:MM, any minute since 2026-09-06); default 08:00. Fires only on days with something in the queue at that time |
 | `evening_review_at` | time | UNUSED since 2026-09-03 (single reminder); kept for pre-OTA clients, drop in a later migration |
 | `plan` | text | `free` / `plus` / `pro`. Default **`pro`**, not `free` (activation 2026-09-04): neither store can sell a subscription yet, so a user who hit a cap would have no way out — the header of migration 20260903100000 has the reasoning. To be flipped back to `free` by a NEW migration once the RevenueCat keys exist. **Not** in the UPDATE grant: only the `revenuecat-sync` edge function writes it |
 | `plan_until` | timestamptz | Entitlement expiry; in the past = the plan is worth `free` (`current_plan()`). null = never expires (lifetime, promo, or a courtesy grant) |
@@ -189,7 +189,7 @@ sidesteps the recursive-RLS-on-profiles problem.
 | `memories_enforce_plan_limit` | `memories` | BEFORE INSERT | 10 memories on the free plan, **trash included** (`where user_id`, no `deleted_at` filter) → `P0004` |
 | `folders_enforce_plan_limit` | `folders` | BEFORE INSERT | 1 folder (free) / 5 (plus), **live rows only** (`deleted_at is null`) → `P0005` |
 | `folders_enforce_plan_limit_on_restore` | `folders` | BEFORE UPDATE, only on `deleted_at` non-null → null | Restore from the trash while the live folders are at the cap **and** one of them was created after this row was trashed → `P0005` (hint `plan-limit:folders-restore`). Grandfathered accounts (live > cap, nothing created since) are not blocked |
-| `subfolders_enforce_rules` | `subfolders` | BEFORE INSERT OR UPDATE | 0 sections (free) / 3 (plus) → `P0003`, plus the integrity guards (`P0001`) |
+| `subfolders_enforce_rules` | `subfolders` | BEFORE INSERT OR UPDATE | 0 sections (free) / 3 (plus) → `P0003`, plus the integrity guards (`P0001`). Sections left the app on 2026-09-08: table, column and trigger stay, the client no longer reads or writes them |
 
 The two caps count the trash the opposite way on purpose: a memory restore can
 never fail (the total only goes down), while a folder cap of ONE must not lock
@@ -207,7 +207,7 @@ them.
 |---|---|---|
 | `P0004` | memories (10 in total, trash included, free) | `planLimit.memories*` |
 | `P0005` | folders (1 free, 5 plus, live rows only) — both on create and on restore | `planLimit.folders*`, `planLimit.foldersRestore*` |
-| `P0003` | sections (0 free, 3 plus) | `planLimit.sections*` |
+| `P0003` | sections (0 free, 3 plus). Unreachable from the app since 2026-09-08 (sections removed from the client; `planLimitFromCode` returns null) | none |
 | `P0001` | integrity guards, **not** a plan limit | generic message |
 
 PostgREST serves `P0003`/`P0004`/`P0005` as **HTTP 500** — its SQLSTATE→HTTP

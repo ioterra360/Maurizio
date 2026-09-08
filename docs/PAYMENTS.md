@@ -66,7 +66,7 @@ applicato, che dice quali sono i due.
 |---|---|---|---|
 | Ricordi | **10 totali** sull'account | illimitati | illimitati |
 | Cartelle | 1 | 5 | illimitate |
-| Sezioni per cartella | 0 | 3 | illimitate |
+| Sezioni per cartella (uscite dall'app il 2026-09-08: i tetti restano solo nel database, il paywall non le elenca piu') | 0 | 3 | illimitate |
 | Foto sui ricordi | — | ✓ | ✓ |
 
 Le **foto** sono di Plus e Pro dal 2026-09-04 (prima erano della sola fascia

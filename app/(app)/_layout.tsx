@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { Tabs, router, useRootNavigationState } from "expo-router";
-import { StyleSheet } from "react-native";
+import { AppState, StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { BlurView } from "expo-blur";
 import { Home, Folder, BarChart3, Settings as SettingsIcon } from "lucide-react-native";
 
 import { useAuthGate } from "@/lib/auth-gate";
-import { fetchDeletionRequestedAt, fetchProfile } from "@/lib/api";
+import { fetchDeletionRequestedAt } from "@/lib/api";
 import { reconcilePhotos } from "@/lib/photos";
 import { useAuthStore } from "@/lib/auth-store";
 import { reportError } from "@/lib/report-error";
@@ -16,7 +16,7 @@ import { useFolderSortStore } from "@/lib/folder-sort-store";
 import { useT } from "@/lib/i18n";
 import { useColors } from "@/theme/tokens";
 import { useThemeStore } from "@/theme/theme-store";
-import { notificationsAvailable, syncDailyReminder } from "@/lib/notifications";
+import { notificationsAvailable, resyncDailyReminder } from "@/lib/notifications";
 
 export default function AppLayout() {
   const gate = useAuthGate("app");
@@ -94,22 +94,19 @@ export default function AppLayout() {
     router.push("/tutorial" as never);
   }, [navReady, userId, deletionChecked, tutorialHydrated, tutorialSeen, pendingOnboarding]);
 
-  // Promemoria giornaliero: riallineato al profilo a ogni avvio/login
-  // (spec F3). Le notifiche per singolo ricordo NON si toccano qui: si
-  // programmano solo al salvataggio. Senza flag niente query in più.
+  // Promemoria: riallineato alla CODA (spec 2026-09-08) all'avvio, a ogni
+  // ritorno in primo piano e a ogni uscita in background, che e' quando
+  // cestino, pausa e ripassi hanno appena cambiato la coda. `inactive` no:
+  // su iOS precede sempre `background` e raddoppierebbe il lavoro. Le
+  // notifiche per singolo ricordo NON si toccano qui: si programmano solo
+  // al salvataggio. Senza flag niente query in piu'.
   useEffect(() => {
     if (!userId || !notificationsAvailable()) return;
-    let cancelled = false;
-    fetchProfile(userId)
-      .then((p) => {
-        if (!cancelled) return syncDailyReminder(p);
-      })
-      .catch((err) => {
-        reportError("app-layout/daily-reminder-sync", err);
-      });
-    return () => {
-      cancelled = true;
-    };
+    void resyncDailyReminder(userId);
+    const sub = AppState.addEventListener("change", (state) => {
+      if (state === "active" || state === "background") void resyncDailyReminder(userId);
+    });
+    return () => sub.remove();
   }, [userId]);
 
   // Le purghe SQL (cestino 24h) non possono cancellare i FILE del bucket foto

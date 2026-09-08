@@ -21,7 +21,7 @@ import { PrimaryButton } from "@/components/PrimaryButton";
 import { SectionLabel } from "@/components/SectionLabel";
 import { Tappable } from "@/components/Tappable";
 import { TopBar } from "@/components/TopBar";
-import { deleteMemory, fetchMemoryById, fetchSubfolders, updateMemoryNotes } from "@/lib/api";
+import { deleteMemory, fetchMemoryById, updateMemoryNotes } from "@/lib/api";
 import { cancelFirstReview, scheduleFirstReview } from "@/lib/notifications";
 import { MoveSheet } from "@/components/MoveSheet";
 import { longDate, relativeReviewed } from "@/lib/format";
@@ -72,7 +72,6 @@ export default function MemoryDetailScreen() {
   const [deleting, setDeleting] = useState(false);
   const [moveOpen, setMoveOpen] = useState(false);
   // Nome della sezione (sottocartella) del ricordo; null = radice o non caricato.
-  const [sectionName, setSectionName] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     // Il render qui sotto redirige, ma gli effetti di QUESTO render sono già
@@ -86,12 +85,6 @@ export default function MemoryDetailScreen() {
       const m = await fetchMemoryById(id);
       setMemory(m);
       setNotes(m?.notes ?? "");
-      if (m?.subfolderId) {
-        const subs = await fetchSubfolders(m.folderId).catch(() => []);
-        setSectionName(subs.find((s2) => s2.id === m.subfolderId)?.name ?? null);
-      } else {
-        setSectionName(null);
-      }
       if (!m) setError(true);
     } catch (e) {
       reportError("memory-detail/fetch", e);
@@ -107,7 +100,7 @@ export default function MemoryDetailScreen() {
 
   // Ricarica al ritorno sullo schermo (es. dal flusso "Nuova cartella…" del
   // MoveSheet, che sposta la parola da choose-topic): senza, la scheda
-  // mostrava sezione/cartella vecchie e un secondo Sposta poteva riportare
+  // mostrava la cartella vecchia e un secondo Sposta poteva riportare
   // la parola indietro (review 2026-08-31). Il primo focus (mount) è già
   // coperto dall'effect qui sopra.
   const firstFocusRef = useRef(true);
@@ -370,7 +363,6 @@ export default function MemoryDetailScreen() {
               }}
             >
               <MetaRow label={t("memory.addedOn")} value={longDate(memory.createdAt)} />
-              {sectionName ? <MetaRow label={t("memory.section")} value={sectionName} /> : null}
               {/* memories.review_count, mantenuto dal trigger sul cambio di
                   last_reviewed_at: esatto dall'8/9/2026, pregresso stimato. */}
               <MetaRow label={t("memory.reviewCount")} value={String(memory.reviewCount)} />

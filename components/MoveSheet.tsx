@@ -1,17 +1,17 @@
 import { useCallback, useEffect, useState } from "react";
 import { ScrollView, Text, View } from "react-native";
 import { router } from "expo-router";
-import { CornerUpLeft, FolderPlus, Layers } from "lucide-react-native";
+import { FolderPlus } from "lucide-react-native";
 
 import { BottomSheetShell } from "@/components/BottomSheetShell";
 import { FolderTile } from "@/components/FolderTile";
 import { MascotLoader } from "@/components/MascotLoader";
 import { Tappable } from "@/components/Tappable";
-import { fetchFolders, fetchSubfolders, moveMemory } from "@/lib/api";
+import { fetchFolders, moveMemory } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
 import { FOLDER_KINDS, type FolderKind } from "@/lib/constants";
 import { useT } from "@/lib/i18n";
-import type { Folder, Memory, Subfolder } from "@/lib/mappers";
+import type { Folder, Memory } from "@/lib/mappers";
 import { reportError } from "@/lib/report-error";
 import { useUIStore } from "@/lib/ui-store";
 import { FONT, radii, useColors } from "@/theme/tokens";
@@ -21,8 +21,7 @@ const tileKind = (kind: string): FolderKind =>
 
 /**
  * "Sposta in un'altra cartella" (Angelo, 2026-08-31): foglio dal basso con
- * le sezioni della cartella attuale (riassegnazione), le altre cartelle
- * (spostamento alla radice) e "Nuova cartella…" che passa da /choose-topic
+ * le altre cartelle e "Nuova cartella…" che passa da /choose-topic
  * con moveMemoryId — al ritorno la parola è già nella cartella nuova.
  * Appunti, stato SRS e storia viaggiano con la parola.
  */
@@ -44,22 +43,15 @@ export function MoveSheet({
   const showToast = useUIStore((s) => s.showToast);
 
   const [folders, setFolders] = useState<Folder[] | null>(null);
-  const [subfolders, setSubfolders] = useState<Subfolder[]>([]);
   const [busy, setBusy] = useState(false);
 
   const load = useCallback(async () => {
     if (!user) return;
     try {
-      const [fs, subs] = await Promise.all([
-        fetchFolders(user.id),
-        fetchSubfolders(memory.folderId),
-      ]);
-      setFolders(fs);
-      setSubfolders(subs);
+      setFolders(await fetchFolders(user.id));
     } catch (e) {
       reportError("move-sheet/load", e);
       setFolders([]);
-      setSubfolders([]);
     }
   }, [user, memory.folderId]);
 
@@ -71,7 +63,7 @@ export function MoveSheet({
     }
   }, [visible, load]);
 
-  const move = async (target: { folderId: string; subfolderId?: string | null }, label: string) => {
+  const move = async (target: { folderId: string }, label: string) => {
     if (busy) return;
     setBusy(true);
     try {
@@ -86,10 +78,7 @@ export function MoveSheet({
     }
   };
 
-  const currentFolder = folders?.find((f) => f.id === memory.folderId) ?? null;
   const otherFolders = (folders ?? []).filter((f) => f.id !== memory.folderId);
-  const sectionTargets = subfolders.filter((s) => s.id !== (memory.subfolderId ?? null));
-  const showRoot = memory.subfolderId !== null && memory.subfolderId !== undefined;
 
   return (
     <BottomSheetShell
@@ -119,31 +108,6 @@ export function MoveSheet({
         </View>
       ) : (
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 8 }}>
-          {(sectionTargets.length > 0 || showRoot) && currentFolder ? (
-            <>
-              <SheetLabel text={t("move.sectionsHere", { name: currentFolder.name })} />
-              {showRoot ? (
-                <SheetRow
-                  icon={<CornerUpLeft size={18} color={colors.navy} strokeWidth={1.9} />}
-                  label={t("move.rootOfFolder")}
-                  disabled={busy}
-                  onPress={() =>
-                    void move({ folderId: memory.folderId, subfolderId: null }, currentFolder.name)
-                  }
-                />
-              ) : null}
-              {sectionTargets.map((s) => (
-                <SheetRow
-                  key={s.id}
-                  icon={<Layers size={18} color={colors.navy} strokeWidth={1.9} />}
-                  label={s.name}
-                  disabled={busy}
-                  onPress={() => void move({ folderId: memory.folderId, subfolderId: s.id }, s.name)}
-                />
-              ))}
-            </>
-          ) : null}
-
           {otherFolders.length > 0 ? (
             <>
               <SheetLabel text={t("move.otherFolders")} />

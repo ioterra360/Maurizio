@@ -10,7 +10,16 @@
  * l'utente, non a Greenwich.
  */
 
-export const DAILY_REMINDER_ID = "daily-reminder";
+import { dayKeyOf } from "./upcoming";
+
+/**
+ * Il vecchio trigger "ogni giorno" (fino all'8/9/2026). Le installazioni
+ * attuali lo hanno ancora in attesa: la sincronizzazione lo cancella.
+ */
+export const LEGACY_DAILY_REMINDER_ID = "daily-reminder";
+export const DAILY_ID_PREFIX = "daily:";
+/** Quanti giorni avanti si programma il promemoria (spec 2026-09-08). Oltre, serve riaprire l'app. */
+export const DAILY_HORIZON_DAYS = 14;
 export const FIRST_REVIEW_ID_PREFIX = "first-review:";
 /** Canale Android. Importanza e suono sono immutabili dopo la creazione: per cambiarli serve un id nuovo. */
 export const REMINDER_CHANNEL_ID = "reminders";
@@ -48,17 +57,58 @@ export function slotFromProfileTime(value: string | null | undefined): string {
   return formatSlot(p.hour, p.minute);
 }
 
+/** Identificatore stabile per giorno locale: ri-programmare lo stesso giorno sostituisce. */
+export function dailyIdentifier(dayKey: string): string {
+  return `${DAILY_ID_PREFIX}${dayKey}`;
+}
+
+/** `dailyIdentifier` di un istante del piano. */
+export function dailyIdentifierFor(at: Date): string {
+  return dailyIdentifier(dayKeyOf(at));
+}
+
 /**
- * Il prossimo scatto di uno slot, in ora locale: oggi se deve ancora
- * arrivare, altrimenti domani. Usato per la riga "Prossimo promemoria: …";
- * il trigger DAILY dell'OS fa lo stesso conto per conto suo.
+ * Vero se lo slot di OGGI scatta entro il margine minimo, cioe' e' gia'
+ * stato consegnato all'OS e sta per suonare. `dailyPlan` lo scarta (non si
+ * puo' programmare cosi' a ridosso), ma chi ripulisce le notifiche in
+ * attesa non deve cancellarlo: sarebbe l'unico modo di perdere il
+ * promemoria del giorno, per una finestra di due secondi.
  */
-export function nextDailyTrigger(slot: string, now: Date = new Date()): Date | null {
+export function dailySlotAboutToFire(slot: string, now: Date = new Date()): boolean {
   const p = parseSlot(slot);
-  if (!p) return null;
-  const candidate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), p.hour, p.minute, 0, 0);
-  if (candidate.getTime() <= now.getTime()) candidate.setDate(candidate.getDate() + 1);
-  return candidate;
+  if (!p) return false;
+  const at = new Date(now.getFullYear(), now.getMonth(), now.getDate(), p.hour, p.minute, 0, 0).getTime();
+  return at > now.getTime() && at <= now.getTime() + MIN_LEAD_MS;
+}
+
+/**
+ * Gli istanti del promemoria nei prossimi `horizonDays` giorni, a partire
+ * da OGGI. Il giorno d entra se il suo slot e' nel futuro con margine
+ * (`MIN_LEAD_MS`) E la data di ripasso piu' vicina (`earliestDueAt`) lo
+ * precede. Un ricordo in coda resta in coda finche' non viene ripassato:
+ * dal primo giorno utile in poi, tutti. Date locali da componenti: reggono
+ * cambio mese e ora legale. Niente in coda, slot o data rotti: `[]`.
+ */
+export function dailyPlan(input: {
+  earliestDueAt: string | null;
+  slot: string;
+  now?: Date;
+  horizonDays?: number;
+}): Date[] {
+  const p = parseSlot(input.slot);
+  if (!p || !input.earliestDueAt) return [];
+  const earliest = Date.parse(input.earliestDueAt);
+  if (Number.isNaN(earliest)) return [];
+  const now = input.now ?? new Date();
+  const horizon = input.horizonDays ?? DAILY_HORIZON_DAYS;
+  const out: Date[] = [];
+  for (let d = 0; d < horizon; d++) {
+    const at = new Date(now.getFullYear(), now.getMonth(), now.getDate() + d, p.hour, p.minute, 0, 0);
+    if (at.getTime() <= now.getTime() + MIN_LEAD_MS) continue;
+    if (earliest > at.getTime()) continue;
+    out.push(at);
+  }
+  return out;
 }
 
 /** Il promemoria giornaliero esiste solo con permesso, interruttore acceso e modalità calma spenta (spec :331). */
@@ -86,15 +136,15 @@ export function firstReviewIdentifier(memoryId: string): string {
  * Tetto delle richieste di primo ripasso che possono stare IN ATTESA
  * nell'OS. iOS ne tiene al massimo 64 per app e scarta le altre IN
  * SILENZIO, conservando le più imminenti: `scheduleNotificationAsync` non
- * segnala nulla, quindi nessuno qui può accorgersene. Oltre il tetto lo
- * sfrattato naturale è il promemoria GIORNALIERO, che scatta più tardi
- * della raffica dei primi ripassi — l'utente perderebbe l'avviso del
- * mattino senza un segnale da nessuna parte.
+ * segnala nulla, quindi nessuno qui può accorgersene. Oltre il tetto gli
+ * sfrattati naturali sono i promemoria in fondo all'orizzonte, che
+ * scattano più tardi della raffica dei primi ripassi — l'utente perderebbe
+ * l'avviso del mattino senza un segnale da nessuna parte.
  *
- * 50 e non 64: il margine ospita il giornaliero e qualunque secondo tipo di
- * notifica che verrà dopo.
+ * 45 e non 64: 45 + DAILY_HORIZON_DAYS (14) = 59, e il margine ospita
+ * qualunque secondo tipo di notifica che verrà dopo.
  */
-export const MAX_PENDING_FIRST_REVIEWS = 50;
+export const MAX_PENDING_FIRST_REVIEWS = 45;
 
 /**
  * Vero se questo primo ripasso NON va programmato perché la coda è piena.
@@ -113,18 +163,24 @@ export function firstReviewCapReached(pending: readonly string[], identifier: st
 /** Cosa viaggia dentro `content.data`. Solo stringhe: deve essere serializzabile. */
 export type NotificationPayload =
   | { kind: "first-review"; memoryId: string; folderId: string }
-  | { kind: "daily" };
+  | { kind: "daily"; dayKey: string };
 
 export function firstReviewPayload(memoryId: string, folderId: string): NotificationPayload {
   return { kind: "first-review", memoryId, folderId };
 }
 
-export function dailyPayload(): NotificationPayload {
-  return { kind: "daily" };
+export function dailyPayload(dayKey: string): NotificationPayload {
+  return { kind: "daily", dayKey };
 }
 
 function asRecord(data: unknown): Record<string, unknown> | null {
   return data && typeof data === "object" ? (data as Record<string, unknown>) : null;
+}
+
+/** Vero per il payload nuovo (con dayKey) E per quello vecchio `{ kind: "daily" }`. */
+export function isDailyPayload(data: unknown): boolean {
+  const d = asRecord(data);
+  return !!d && d.kind === "daily";
 }
 
 export function isFirstReviewPayload(data: unknown): boolean {

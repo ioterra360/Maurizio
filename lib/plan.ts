@@ -39,8 +39,6 @@ export type PlanLimits = {
    * che il client passa qui è lo stesso che il trigger conta.
    */
   folders: number | null;
-  /** Sezioni (sottocartelle) per cartella. null = illimitate. */
-  sections: number | null;
   /**
    * Foto sui ricordi (sezione Meaning). Il listino di Maurizio le da' sia a
    * Plus sia a Pro: solo il Free ne resta senza (2026-09-04).
@@ -56,9 +54,9 @@ export type PlanLimits = {
 };
 
 export const PLAN_LIMITS: Record<Plan, PlanLimits> = {
-  free: { memories: 10, folders: 1, sections: 0, photos: false },
-  plus: { memories: null, folders: 5, sections: 3, photos: true },
-  pro: { memories: null, folders: null, sections: null, photos: true },
+  free: { memories: 10, folders: 1, photos: false },
+  plus: { memories: null, folders: 5, photos: true },
+  pro: { memories: null, folders: null, photos: true },
 };
 
 function isPlan(value: string | null | undefined): value is Plan {
@@ -103,11 +101,6 @@ export function canAddFolder(count: number, plan: Plan): boolean {
   return under(count, PLAN_LIMITS[plan].folders);
 }
 
-/** `count` = sezioni già presenti NELLA cartella. */
-export function canAddSection(count: number, plan: Plan): boolean {
-  return under(count, PLAN_LIMITS[plan].sections);
-}
-
 /** Quanti ricordi restano; null = illimitati. Mai negativo (grandfathering). */
 export function memoriesLeft(count: number, plan: Plan): number | null {
   const cap = PLAN_LIMITS[plan].memories;
@@ -133,23 +126,23 @@ export function canUsePhotos(plan: Plan): boolean {
 // Errcode → limite
 // ---------------------------------------------------------------------------
 
-export type PlanLimitKind = "memories" | "folders" | "sections";
+export type PlanLimitKind = "memories" | "folders";
 
 /**
- * Gli SQLSTATE sollevati dai tre trigger. P0003 era già il codice del tetto
- * sezioni dal 2026-08-31 e resta invariato; P0004/P0005 sono nuovi.
- * Nessuno di questi è P0001, che le cinque guardie di integrità già usano.
+ * Gli SQLSTATE sollevati dai trigger di piano. P0003 (tetto sezioni,
+ * `subfolders_enforce_rules`) esiste ancora nel database, ma le sezioni sono
+ * uscite dall'app il 8/9/2026: il client non crea piu' sezioni, quindi non
+ * puo' riceverlo e qui non compare. Nessuno di questi è P0001, che le
+ * guardie di integrità già usano.
  */
 export const PLAN_ERRCODE: Record<PlanLimitKind, string> = {
   memories: "P0004",
   folders: "P0005",
-  sections: "P0003",
 };
 
 const CODE_TO_LIMIT: Record<string, PlanLimitKind> = {
   P0004: "memories",
   P0005: "folders",
-  P0003: "sections",
 };
 
 /** `PostgrestError.code` → limite, o null se non è un limite di piano. */

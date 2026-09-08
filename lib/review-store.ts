@@ -301,6 +301,12 @@ type ReviewState = {
    * flash di conferma. Ritorna false se la finestra è già chiusa.
    */
   amendLastAnswer: () => boolean;
+  /**
+   * Chiude la finestra di correzione dello Scan e aspetta le scritture di
+   * ripasso in volo. Chi legge la coda subito dopo una sessione deve
+   * chiamarla PRIMA, altrimenti rilegge le date vecchie (spec 2026-09-08).
+   */
+  flushPersist: () => Promise<void>;
   cards: () => ReviewCard[];
   current: () => ReviewCard | undefined;
   reset: () => void;
@@ -368,6 +374,20 @@ function clearPendingScanPersist(flush = true) {
   pendingScanPersist = null;
   lastScanAnswer = null;
   if (flush) p.run();
+}
+
+/**
+ * Le scritture di ripasso ancora in volo. Servono a `flushPersist()`: chi ha
+ * bisogno di LEGGERE la coda subito dopo una sessione (il promemoria di fine
+ * sessione, spec 2026-09-08) deve aspettare che `next_review_at` sia scritto,
+ * altrimenti rilegge le date vecchie e programma su una coda che non esiste
+ * piu'. La Set si svuota da sola: ogni promise si toglie quando finisce.
+ */
+const inFlightPersists = new Set<Promise<unknown>>();
+
+function trackPersist(p: Promise<unknown>): void {
+  inFlightPersists.add(p);
+  void p.finally(() => inFlightPersists.delete(p));
 }
 
 /** Sequenza monotona per i load del mazzo — l'ultimo vince. */
@@ -736,9 +756,11 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
       finalPhase: PhaseState & { lifecycle: "active" | "fading" },
     ) => {
       if (!canPersist || !userId) return;
-      void applyPhaseUpdate(card.id, finalPhase, finalResponse).catch((e) => {
-        reportError("review/apply-phase", e, { cardId: card.id });
-      });
+      trackPersist(
+        applyPhaseUpdate(card.id, finalPhase, finalResponse).catch((e) => {
+          reportError("review/apply-phase", e, { cardId: card.id });
+        }),
+      );
       const write = (sid: string) =>
         void recordReviewItem({
           sessionId: sid,
@@ -803,6 +825,16 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
       set({ pendingSessionComplete: finalLayerCounts });
     }
     return "done";
+  },
+
+  flushPersist: async () => {
+    // Prima si chiude la finestra dello Scan (che spedisce la scrittura
+    // differita), poi si aspettano TUTTE le scritture aperte — la Set si
+    // popola dentro clearPendingScanPersist, quindi la fotografia va presa
+    // dopo. allSettled: un errore di rete e' gia' passato da reportError e
+    // non deve bloccare chi aspetta.
+    clearPendingScanPersist(true);
+    await Promise.allSettled([...inFlightPersists]);
   },
 
   amendLastAnswer: () => {

@@ -24,8 +24,8 @@ type Props = {
 /**
  * La mascotte spiega quale limite hai incontrato e propone l'upgrade.
  *
- * Un solo componente per cinque schermate (Add, Nuova cartella, Sezioni in
- * due punti, Cestino): la copy cambia col limite, col piano E con il
+ * Un solo componente per tre schermate (Add, Nuova cartella, Cestino): la
+ * copy cambia col limite, col piano E con il
  * contesto — a un utente Plus non si dice "passa a Plus".
  *
  * Il dialogo si chiude PRIMA della navigazione: un Modal ancora montato
@@ -57,14 +57,11 @@ export function PlanLimitDialog({ limit, plan, onClose, context = "add" }: Props
     if (limit === "memories") {
       return { title: t("planLimit.memoriesTitle"), body: t("planLimit.memoriesBody") };
     }
-    if (limit === "folders") {
-      return plan === "free"
-        ? { title: t("planLimit.foldersTitleFree"), body: t("planLimit.foldersBodyFree") }
-        : { title: t("planLimit.foldersTitlePlus"), body: t("planLimit.foldersBodyPlus") };
-    }
+    // Cartelle. (Le sezioni sono uscite dall'app il 8/9/2026: P0003 non
+    // arriva piu' al client.)
     return plan === "free"
-      ? { title: t("planLimit.sectionsTitleFree"), body: t("planLimit.sectionsBodyFree") }
-      : { title: t("planLimit.sectionsTitlePlus"), body: t("planLimit.sectionsBodyPlus") };
+      ? { title: t("planLimit.foldersTitleFree"), body: t("planLimit.foldersBodyFree") }
+      : { title: t("planLimit.foldersTitlePlus"), body: t("planLimit.foldersBodyPlus") };
   };
   const { title, body } = limit ? copy() : { title: "", body: "" };
   return (

@@ -314,7 +314,7 @@ export default function AddScreen() {
     if (perm.allowed) {
       setPrefs({ enabled: true });
       await scheduleFirstReview(memory);
-      void syncDailyReminder(profile);
+      if (user) void syncDailyReminder(user.id, profile);
       // Senza questa riga "Sì, avvisami" finiva in un dialogo che si chiude
       // e basta: l'utente premeva Consenti sul foglio dell'OS e non vedeva
       // nessun segno che fosse successo qualcosa (Angelo, 6/9/2026).

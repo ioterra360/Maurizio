@@ -16,6 +16,8 @@ import Animated, {
 import { Mascot } from "@/components/Mascot";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { SectionLabel } from "@/components/SectionLabel";
+import { useAuthStore } from "@/lib/auth-store";
+import { resyncDailyReminder } from "@/lib/notifications";
 import { useReviewStore, type RecapEntry } from "@/lib/review-store";
 import { success } from "@/lib/feedback";
 import { useT, type TKey } from "@/lib/i18n";
@@ -191,6 +193,22 @@ export default function CompleteScreen() {
   useEffect(() => {
     success();
   }, []);
+
+  // La sessione ha appena svuotato (o ridotto) la coda: il promemoria si
+  // riallinea qui, non al prossimo avvio (spec 2026-09-08).
+  //
+  // `flushPersist()` PRIMA non e' una precauzione: la scrittura di
+  // `next_review_at` e' fire-and-forget e, sullo Scan, differita di 1,4 s
+  // per la finestra di correzione (lib/review-store.ts). Senza attesa il
+  // ricalcolo rilegge le date VECCHIE, vede la carta appena ripassata come
+  // ancora in coda e programma il promemoria di domani su una coda vuota:
+  // esattamente la notifica che questa modifica doveva eliminare.
+  const userId = useAuthStore((s) => s.user?.id ?? null);
+  const flushPersist = useReviewStore((s) => s.flushPersist);
+  useEffect(() => {
+    if (!userId) return;
+    void flushPersist().then(() => resyncDailyReminder(userId));
+  }, [userId, flushPersist]);
 
   const goHome = () => {
     reset();

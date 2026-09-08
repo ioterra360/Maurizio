@@ -261,7 +261,6 @@ export default function PaywallScreen() {
             features={[
               t("paywall.freeMemories"),
               t("paywall.freeFolders"),
-              t("paywall.freeSections"),
             ]}
             current={plan === "free"}
             cta={null}
@@ -272,7 +271,6 @@ export default function PaywallScreen() {
             features={[
               t("paywall.plusMemories"),
               t("paywall.plusFolders"),
-              t("paywall.plusSections"),
               t("paywall.plusPhotos"),
             ]}
             current={plan === "plus"}
@@ -284,7 +282,6 @@ export default function PaywallScreen() {
             features={[
               t("paywall.proMemories"),
               t("paywall.proFolders"),
-              t("paywall.proSections"),
               t("paywall.proPhotos"),
             ]}
             current={plan === "pro"}

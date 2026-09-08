@@ -11,7 +11,6 @@ import {
   PRODUCT_IDS,
   canAddFolder,
   canAddMemory,
-  canAddSection,
   canUsePhotos,
   effectivePlan,
   memoriesLeft,
@@ -32,20 +31,19 @@ const NOW = new Date("2026-09-03T10:00:00.000Z");
 const DAY = 86_400_000;
 
 describe("PLAN_LIMITS — la tabella della spec, alla lettera", () => {
-  it("free: 10 ricordi totali, 1 cartella, 0 sezioni, niente foto", () => {
-    expect(PLAN_LIMITS.free).toEqual({ memories: 10, folders: 1, sections: 0, photos: false });
+  it("free: 10 ricordi totali, 1 cartella, niente foto", () => {
+    expect(PLAN_LIMITS.free).toEqual({ memories: 10, folders: 1, photos: false });
   });
 
-  it("plus: ricordi illimitati, 5 cartelle, 3 sezioni, FOTO incluse", () => {
+  it("plus: ricordi illimitati, 5 cartelle, FOTO incluse", () => {
     // 2026-09-04: il listino di Maurizio da' le foto sia a Plus sia a Pro.
-    expect(PLAN_LIMITS.plus).toEqual({ memories: null, folders: 5, sections: 3, photos: true });
+    expect(PLAN_LIMITS.plus).toEqual({ memories: null, folders: 5, photos: true });
   });
 
   it("pro: tutto illimitato, foto incluse", () => {
     expect(PLAN_LIMITS.pro).toEqual({
       memories: null,
       folders: null,
-      sections: null,
       photos: true,
     });
   });
@@ -108,20 +106,13 @@ describe("canAddMemory — 10 TOTALI sul free, illimitati sopra", () => {
   });
 });
 
-describe("canAddFolder / canAddSection", () => {
+describe("canAddFolder", () => {
   it("cartelle: 1 free, 5 plus, illimitate pro", () => {
     expect(canAddFolder(0, "free")).toBe(true);
     expect(canAddFolder(1, "free")).toBe(false);
     expect(canAddFolder(4, "plus")).toBe(true);
     expect(canAddFolder(5, "plus")).toBe(false);
     expect(canAddFolder(99, "pro")).toBe(true);
-  });
-
-  it("sezioni: nessuna sul free, 3 su plus, illimitate pro", () => {
-    expect(canAddSection(0, "free")).toBe(false);
-    expect(canAddSection(2, "plus")).toBe(true);
-    expect(canAddSection(3, "plus")).toBe(false);
-    expect(canAddSection(9, "pro")).toBe(true);
   });
 });
 
@@ -153,14 +144,15 @@ describe("canUsePhotos — l'interfaccia che consuma il piano B5", () => {
 });
 
 describe("planLimitFromCode — si mappa il codice, mai il messaggio", () => {
-  it("riconosce i tre limiti", () => {
+  it("riconosce i due limiti (le sezioni sono uscite dall'app il 8/9/2026)", () => {
     expect(planLimitFromCode(PLAN_ERRCODE.memories)).toBe("memories");
     expect(planLimitFromCode(PLAN_ERRCODE.folders)).toBe("folders");
-    expect(planLimitFromCode(PLAN_ERRCODE.sections)).toBe("sections");
   });
 
   it("usa i codici concordati con il database", () => {
-    expect(PLAN_ERRCODE).toEqual({ memories: "P0004", folders: "P0005", sections: "P0003" });
+    expect(PLAN_ERRCODE).toEqual({ memories: "P0004", folders: "P0005" });
+    // P0003 (sezioni) resta nel database ma il client non lo mappa piu'.
+    expect(planLimitFromCode("P0003")).toBeNull();
   });
 
   it("non confonde le guardie di integrità con un limite di piano", () => {

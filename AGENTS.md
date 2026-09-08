@@ -23,9 +23,11 @@ memikaapp@gmail.com). Developer: Angelo Casula / Tailor App Studio
 Freemium: tre piani **Free / Plus / Pro** (fasce fissate 2026-09-02,
 RINOMINATE il 2026-09-04 sul listino di Maurizio: la fascia intermedia si
 chiamava `pro` e l'alta `premium`, quindi in un documento precedente a quella
-data "pro" significa l'INTERMEDIA). Free = 10 ricordi TOTALI, 1 cartella,
-0 sezioni; Plus = ricordi illimitati, 5 cartelle, 3 sezioni;
-Pro = tutto illimitato. Le FOTO sui ricordi sono di Plus **e** Pro
+data "pro" significa l'INTERMEDIA). Free = 10 ricordi TOTALI, 1 cartella;
+Plus = ricordi illimitati, 5 cartelle; Pro = tutto illimitato. Le SEZIONI
+(sottocartelle) sono uscite dall'app il 2026-09-08 (Angelo): tabella,
+colonna `memories.subfolder_id` e trigger restano nel database, il client
+non le legge ne' le scrive piu'. Le FOTO sui ricordi sono di Plus **e** Pro
 (2026-09-04, listino Maurizio); il tetto di due al giorno che il listino dà al
 Free non è implementato, quindi il Free resta senza foto. I limiti sono applicati da
 quattro trigger Postgres (`20260903100000_plans.sql`), non dal client.
@@ -148,7 +150,8 @@ These exist because of past decisions documented elsewhere in `docs/`.
   `pro` dei due tester sopravvive alla prima apertura dell'app.
 - **I limiti si mappano per errcode, mai per il testo dell'errore.**
   `P0004` ricordi, `P0005` cartelle (creazione **e** ripristino dal cestino),
-  `P0003` sezioni; `P0001` sono le guardie di integrità e NON è un limite di
+  `P0003` sezioni (solo nel database: dal 2026-09-08 il client non crea piu'
+  sezioni e non lo incontra); `P0001` sono le guardie di integrità e NON è un limite di
   piano. Il solo posto che li conosce è `planLimitFromCode()` in
   `lib/plan.ts`. Un `msg.includes("limit")` si rompe alla prima traduzione —
   è già successo.
